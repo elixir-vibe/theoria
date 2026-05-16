@@ -26,10 +26,33 @@ defimpl Inspect,
   end
 end
 
+defimpl Inspect,
+  for: [
+    Theoria.Level.Zero,
+    Theoria.Level.Succ,
+    Theoria.Level.Max,
+    Theoria.Level.Param
+  ] do
+  def inspect(level, _opts) do
+    level
+    |> Theoria.Pretty.level()
+    |> then(&"level #{&1}")
+    |> Theoria.Inspect.doc()
+  end
+end
+
 defimpl Inspect, for: Theoria.Theorem do
   def inspect(theorem, _opts) do
     theorem
     |> Theoria.Pretty.theorem()
+    |> Theoria.Inspect.doc()
+  end
+end
+
+defimpl Inspect, for: Theoria.Kernel.TrustReport do
+  def inspect(report, _opts) do
+    report
+    |> Theoria.Pretty.trust_report()
     |> Theoria.Inspect.doc()
   end
 end

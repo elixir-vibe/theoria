@@ -2,6 +2,7 @@ defmodule Theoria.Pretty do
   @moduledoc "Human-readable rendering for Theoria values."
 
   alias Theoria.Error
+  alias Theoria.Kernel.TrustReport
   alias Theoria.Term
   alias Theoria.Term.{App, BVar, Const, Eq, Forall, Lam, Let, Refl, Sort}
   alias Theoria.Theorem
@@ -13,6 +14,19 @@ defmodule Theoria.Pretty do
   def theorem(%Theorem{name: name, type: type}) do
     "theorem #{name} : #{term(type)}"
   end
+
+  @spec trust_report(TrustReport.t()) :: String.t()
+  def trust_report(%TrustReport{} = report) do
+    [
+      "trust #{report.name} : #{report.kind}",
+      "axioms: #{render_names(report.axioms)}",
+      "deps: #{render_names(report.transitive_dependencies)}"
+    ]
+    |> Enum.join(", ")
+  end
+
+  @spec level(Theoria.Level.t()) :: String.t()
+  def level(level), do: render_level(level)
 
   @spec error(Error.t()) :: String.t()
   def error(%Error{reason: :type_mismatch, details: details}) do
@@ -172,9 +186,12 @@ defmodule Theoria.Pretty do
   defp render_atomic(term, context), do: "(" <> render_term(term, context) <> ")"
 
   defp render_level(level) do
-    level
-    |> Theoria.Level.normalize()
-    |> do_render_level()
+    level = Theoria.Level.normalize(level)
+
+    case Theoria.Level.to_integer(level) do
+      {:ok, level} -> Integer.to_string(level)
+      :error -> do_render_level(level)
+    end
   end
 
   defp do_render_level(%Theoria.Level.Zero{}), do: "0"
@@ -183,6 +200,15 @@ defmodule Theoria.Pretty do
 
   defp do_render_level(%Theoria.Level.Max{left: left, right: right}) do
     "max(#{render_level(left)}, #{render_level(right)})"
+  end
+
+  defp render_names(names) do
+    names
+    |> Enum.sort()
+    |> case do
+      [] -> "none"
+      names -> Enum.map_join(names, ", ", &Atom.to_string/1)
+    end
   end
 
   defp binder_name(:_), do: "_"

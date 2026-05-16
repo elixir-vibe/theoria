@@ -104,6 +104,13 @@ defmodule Theoria.Normalize.HardeningTest do
     assert Exception.message(error) == "normalization exceeded limit of 4 steps"
   end
 
+  test "let zeta reduction spends normalization fuel" do
+    term = let(:x, sort(0), sort(0), bvar(0))
+
+    assert {:error, error} = Normalize.normalize(Env.new(), term, max_steps: 1)
+    assert Exception.message(error) == "normalization exceeded limit of 1 steps"
+  end
+
   defp nat(0), do: const(:zero)
   defp nat(n) when n > 0, do: app(const(:succ), nat(n - 1))
 

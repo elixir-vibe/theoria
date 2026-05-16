@@ -23,6 +23,12 @@ defmodule Theoria.Term.ConstantsTest do
     assert Term.constants(term) == MapSet.new([:A, :x, :y])
   end
 
+  test "collects constants from lets" do
+    term = let(:x, const(:A), const(:a), app(const(:f), bvar(0)))
+
+    assert Term.constants(term) == MapSet.new([:A, :a, :f])
+  end
+
   test "sorts and bound variables have no dependencies" do
     assert Term.constants(sort(0)) == MapSet.new()
     assert Term.constants(bvar(0)) == MapSet.new()

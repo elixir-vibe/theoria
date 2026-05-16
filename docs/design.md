@@ -39,9 +39,9 @@ A bug in a DSL should at worst generate a rejected proof. It must not be able to
 
 The initial core calculus contains:
 
-- universes, represented as `Sort n`;
+- universes, represented as `Sort u` over `Theoria.Level` terms;
 - de Bruijn bound variables;
-- constants;
+- constants with optional universe arguments;
 - application;
 - lambda abstraction;
 - dependent function types (`forall`);
@@ -61,7 +61,7 @@ The `theorem` macro creates a small function trio: `<name>_type/0`, `<name>_proo
 
 ## Environments
 
-`Theoria.Env` stores checked constants, axioms, definitions, and theorem declarations while preserving declaration insertion order. Constants have no value and represent primitive uninterpreted declarations. Axioms have no value and represent trusted assumptions. Definitions are reducible and unfold during normalization. Theorems store checked proofs but are opaque by default, so normalization does not unfold them. A declaration enters the environment safely through kernel functions that verify its type and, for definitions/theorems, its value. Raw environment constructors remain available for tests and tooling, but malformed environments can be rechecked with `Theoria.Kernel.validate_env/1`. Declaration dependencies can be inspected with `Theoria.Kernel.dependencies/2`, which collects constants referenced by a declaration's type and value. Use `Theoria.Kernel.transitive_dependencies/2` to walk those dependencies recursively, `Theoria.Kernel.axioms/2` to report trusted axiom assumptions used by a declaration, and `Theoria.Kernel.trust_report/2` for a `Theoria.Kernel.TrustReport` summary.
+`Theoria.Env` stores checked constants, axioms, definitions, and theorem declarations while preserving declaration insertion order. Constants have no value and represent primitive uninterpreted declarations. Axioms have no value and represent trusted assumptions. Definitions are reducible and unfold during normalization. Theorems store checked proofs but are opaque by default, so normalization does not unfold them. Declarations may carry explicit universe parameters, and constant references provide matching universe arguments. A declaration enters the environment safely through kernel functions that verify its type and, for definitions/theorems, its value. Raw environment constructors remain available for tests and tooling, but malformed environments can be rechecked with `Theoria.Kernel.validate_env/1`. Declaration dependencies can be inspected with `Theoria.Kernel.dependencies/2`, which collects constants referenced by a declaration's type and value. Use `Theoria.Kernel.transitive_dependencies/2` to walk those dependencies recursively, `Theoria.Kernel.axioms/2` to report trusted axiom assumptions used by a declaration, and `Theoria.Kernel.trust_report/2` for a `Theoria.Kernel.TrustReport` summary.
 
 `Theoria.Prelude.env/0` is the standard environment for users and downstream tooling. It composes the built-in libraries in dependency order: Logic, Bool, Nat, then List.
 
@@ -83,10 +83,27 @@ This keeps malformed or adversarial environments from unfolding forever. Later v
 
 ## Universe model
 
-The current prototype uses a simple cumulative-looking tower where:
+Universe levels are represented by `Theoria.Level` structs:
+
+```elixir
+Level.zero()
+Level.succ(level)
+Level.max(left, right)
+Level.param(:u)
+```
+
+Closed numeric levels are still accepted by public constructors, so `sort(0)` remains the proposition universe. The kernel rule is now:
 
 ```text
-Sort n : Sort (n + 1)
+Sort u : Sort (succ u)
+```
+
+Constants can be universe-polymorphic by declaring parameters and applying constants with matching level arguments:
+
+```elixir
+{:ok, env} = Kernel.add_constant(env, :Box, sort(Level.param(:u)), [:u])
+Kernel.infer(env, const(:Box, [0]))
+#=> {:ok, sort(0)}
 ```
 
 The DSL distinguishes propositions from computational types:

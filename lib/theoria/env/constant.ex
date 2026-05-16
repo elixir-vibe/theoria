@@ -4,13 +4,14 @@ defmodule Theoria.Env.Constant do
   alias Theoria.Term
 
   @enforce_keys [:type]
-  defstruct [:type, :value, kind: :constant, reducible?: false]
+  defstruct [:type, :value, kind: :constant, reducible?: false, universe_params: []]
 
   @type kind :: :constant | :axiom | :definition | :theorem
   @type t :: %__MODULE__{
           type: Term.t(),
           value: Term.t() | nil,
           kind: kind(),
-          reducible?: boolean()
+          reducible?: boolean(),
+          universe_params: [atom()]
         }
 end

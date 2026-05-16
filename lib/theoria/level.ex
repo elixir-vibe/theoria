@@ -1,6 +1,8 @@
 defmodule Theoria.Level do
   @moduledoc "Universe levels."
 
+  import Kernel, except: [max: 2]
+
   defmodule Zero do
     @moduledoc "The zero universe level."
     defstruct []
@@ -21,26 +23,34 @@ defmodule Theoria.Level do
     @type t :: %__MODULE__{left: Theoria.Level.t(), right: Theoria.Level.t()}
   end
 
-  @type t :: Zero.t() | Succ.t() | Max.t()
+  defmodule Param do
+    @moduledoc "A universe level parameter."
+    @enforce_keys [:name]
+    defstruct [:name]
+    @type t :: %__MODULE__{name: atom()}
+  end
+
+  @type t :: Zero.t() | Succ.t() | Max.t() | Param.t()
+  @type subst :: %{optional(atom()) => t()}
 
   @spec zero() :: Zero.t()
   def zero, do: %Zero{}
+
+  @spec param(atom()) :: Param.t()
+  def param(name) when is_atom(name), do: %Param{name: name}
 
   @spec succ(t()) :: Succ.t()
   def succ(level), do: %Succ{level: level}
 
   @spec max(t(), t()) :: t()
-  def max(left, right) do
-    {:ok, left} = to_integer(left)
-    {:ok, right} = to_integer(right)
-    from_integer(Kernel.max(left, right))
-  end
+  def max(left, right), do: normalize(%Max{left: left, right: right})
 
   @spec cast!(non_neg_integer() | t()) :: t()
   def cast!(level) when is_integer(level) and level >= 0, do: from_integer(level)
   def cast!(%Zero{} = level), do: level
   def cast!(%Succ{} = level), do: level
   def cast!(%Max{} = level), do: level
+  def cast!(%Param{} = level), do: level
 
   @spec from_integer(non_neg_integer()) :: t()
   def from_integer(0), do: zero()
@@ -52,21 +62,80 @@ defmodule Theoria.Level do
     |> succ()
   end
 
-  @spec to_integer(t()) :: {:ok, non_neg_integer()}
+  @spec to_integer(t()) :: {:ok, non_neg_integer()} | :error
   def to_integer(%Zero{}), do: {:ok, 0}
 
   def to_integer(%Succ{level: level}) do
-    {:ok, level} = to_integer(level)
-    {:ok, level + 1}
+    case to_integer(level) do
+      {:ok, level} -> {:ok, level + 1}
+      :error -> :error
+    end
   end
 
-  def to_integer(%Max{left: left, right: right}) do
-    {:ok, left} = to_integer(left)
-    {:ok, right} = to_integer(right)
-    {:ok, Kernel.max(left, right)}
+  def to_integer(%Max{} = level) do
+    case normalize(level) do
+      %Max{left: left, right: right} -> max_to_integer(left, right)
+      level -> to_integer(level)
+    end
   end
+
+  def to_integer(%Param{}), do: :error
+
+  @spec params(t()) :: MapSet.t(atom())
+  def params(level), do: collect_params(level, MapSet.new())
+
+  @spec subst(t(), subst()) :: t()
+  def subst(%Zero{} = level, _subst), do: level
+  def subst(%Param{name: name} = level, subst), do: Map.get(subst, name, level)
+  def subst(%Succ{level: level}, subst), do: level |> subst(subst) |> succ() |> normalize()
+
+  def subst(%Max{left: left, right: right}, subst),
+    do: max(subst(left, subst), subst(right, subst))
+
+  @spec normalize(t()) :: t()
+  def normalize(%Zero{} = level), do: level
+  def normalize(%Param{} = level), do: level
+  def normalize(%Succ{level: level}), do: %Succ{level: normalize(level)}
+
+  def normalize(%Max{left: left, right: right}) do
+    left = normalize(left)
+    right = normalize(right)
+
+    cond do
+      left == right -> left
+      zero?(left) -> right
+      zero?(right) -> left
+      true -> normalize_closed_max(left, right)
+    end
+  end
+
+  @spec equal?(t(), t()) :: boolean()
+  def equal?(left, right), do: normalize(left) == normalize(right)
 
   @spec zero?(t()) :: boolean()
-  def zero?(%Zero{}), do: true
-  def zero?(_level), do: false
+  def zero?(level), do: normalize(level) == zero()
+
+  defp max_to_integer(left, right) do
+    case {to_integer(left), to_integer(right)} do
+      {{:ok, left}, {:ok, right}} -> {:ok, Kernel.max(left, right)}
+      _other -> :error
+    end
+  end
+
+  defp collect_params(%Zero{}, params), do: params
+  defp collect_params(%Param{name: name}, params), do: MapSet.put(params, name)
+  defp collect_params(%Succ{level: level}, params), do: collect_params(level, params)
+
+  defp collect_params(%Max{left: left, right: right}, params) do
+    left
+    |> collect_params(params)
+    |> then(&collect_params(right, &1))
+  end
+
+  defp normalize_closed_max(left, right) do
+    case max_to_integer(left, right) do
+      {:ok, level} -> from_integer(level)
+      :error -> %Max{left: left, right: right}
+    end
+  end
 end

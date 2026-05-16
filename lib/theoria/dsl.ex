@@ -42,7 +42,8 @@ defmodule Theoria.DSL do
   def var(name) when is_atom(name), do: Syntax.var(name)
 
   @doc "A named environment constant."
-  def const(name) when is_atom(name), do: Syntax.const(name)
+  def const(name, levels \\ []) when is_atom(name) and is_list(levels),
+    do: Syntax.const(name, levels)
 
   @doc "Function application."
   def app(fun, arg), do: Syntax.app(fun, arg)
@@ -186,6 +187,12 @@ defmodule Theoria.DSL do
   defp quote_term({:const, _meta, [name]}) do
     quote do
       Theoria.Syntax.const(unquote(name_literal!(name)))
+    end
+  end
+
+  defp quote_term({:const, _meta, [name, levels]}) do
+    quote do
+      Theoria.Syntax.const(unquote(name_literal!(name)), unquote(levels))
     end
   end
 

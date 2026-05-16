@@ -30,9 +30,9 @@ defmodule Theoria.Kernel do
     end
   end
 
-  def infer(%Env{} = env, _context, %Const{name: name}) do
+  def infer(%Env{} = env, _context, %Const{name: name, levels: levels}) do
     case Env.fetch(env, name) do
-      {:ok, constant} -> {:ok, constant.type}
+      {:ok, constant} -> instantiate_constant_type(constant, levels)
       :error -> error(:unknown_constant, name: name)
     end
   end
@@ -103,33 +103,47 @@ defmodule Theoria.Kernel do
     end
   end
 
-  def add_constant(%Env{} = env, name, type) when is_atom(name) do
+  def add_constant(%Env{} = env, name, type, universe_params \\ [])
+      when is_atom(name) and is_list(universe_params) do
     with :ok <- ensure_fresh_declaration(env, name),
+         :ok <- ensure_universe_params(universe_params),
+         :ok <- ensure_level_params(type, universe_params),
          {:ok, %Sort{}} <- infer_sort(env, Context.new(), type) do
-      {:ok, Env.put_constant(env, name, type)}
+      {:ok, Env.put_constant(env, name, type, universe_params)}
     end
   end
 
-  def add_axiom(%Env{} = env, name, type) when is_atom(name) do
+  def add_axiom(%Env{} = env, name, type, universe_params \\ [])
+      when is_atom(name) and is_list(universe_params) do
     with :ok <- ensure_fresh_declaration(env, name),
+         :ok <- ensure_universe_params(universe_params),
+         :ok <- ensure_level_params(type, universe_params),
          {:ok, %Sort{}} <- infer_sort(env, Context.new(), type) do
-      {:ok, Env.put_axiom(env, name, type)}
+      {:ok, Env.put_axiom(env, name, type, universe_params)}
     end
   end
 
-  def add_definition(%Env{} = env, name, type, value) when is_atom(name) do
+  def add_definition(%Env{} = env, name, type, value, universe_params \\ [])
+      when is_atom(name) and is_list(universe_params) do
     with :ok <- ensure_fresh_declaration(env, name),
+         :ok <- ensure_universe_params(universe_params),
+         :ok <- ensure_level_params(type, universe_params),
+         :ok <- ensure_level_params(value, universe_params),
          {:ok, %Sort{}} <- infer_sort(env, Context.new(), type),
          :ok <- check(env, Context.new(), value, type) do
-      {:ok, Env.put_definition(env, name, type, value)}
+      {:ok, Env.put_definition(env, name, type, value, universe_params)}
     end
   end
 
-  def add_theorem(%Env{} = env, name, type, proof) when is_atom(name) do
+  def add_theorem(%Env{} = env, name, type, proof, universe_params \\ [])
+      when is_atom(name) and is_list(universe_params) do
     with :ok <- ensure_fresh_declaration(env, name),
+         :ok <- ensure_universe_params(universe_params),
+         :ok <- ensure_level_params(type, universe_params),
+         :ok <- ensure_level_params(proof, universe_params),
          {:ok, %Sort{}} <- infer_sort(env, Context.new(), type),
          :ok <- check(env, Context.new(), proof, type) do
-      {:ok, Env.put_theorem(env, name, type, proof)}
+      {:ok, Env.put_theorem(env, name, type, proof, universe_params)}
     end
   end
 
@@ -210,6 +224,47 @@ defmodule Theoria.Kernel do
     end
   end
 
+  defp instantiate_constant_type(%Constant{type: type, universe_params: params}, levels) do
+    with :ok <- ensure_universe_arity(params, levels) do
+      {:ok, Term.subst_levels(type, Enum.zip(params, levels) |> Map.new())}
+    end
+  end
+
+  defp ensure_universe_arity(params, levels) do
+    if length(params) == length(levels) do
+      :ok
+    else
+      error(:universe_arity_mismatch,
+        expected: length(params),
+        actual: length(levels),
+        params: params
+      )
+    end
+  end
+
+  defp ensure_universe_params(params) do
+    cond do
+      not Enum.all?(params, &is_atom/1) ->
+        error(:invalid_universe_parameters, params: params)
+
+      length(params) != MapSet.size(MapSet.new(params)) ->
+        error(:duplicate_universe_parameter, params: params)
+
+      true ->
+        :ok
+    end
+  end
+
+  defp ensure_level_params(term, allowed_params) do
+    params = Term.level_params(term)
+    allowed_params = MapSet.new(allowed_params)
+
+    case MapSet.difference(params, allowed_params) |> MapSet.to_list() do
+      [] -> :ok
+      params -> error(:unknown_universe_parameter, params: Enum.sort(params))
+    end
+  end
+
   def validate_env(%Env{} = env) do
     with :ok <- validate_declaration_index(env) do
       replay_declarations(env)
@@ -253,17 +308,19 @@ defmodule Theoria.Kernel do
 
   defp validate_declaration(env, checked_env, name) do
     case Env.fetch(env, name) do
-      {:ok, %Constant{kind: :constant, type: type, value: nil}} ->
-        add_constant(checked_env, name, type)
+      {:ok, %Constant{kind: :constant, type: type, value: nil, universe_params: params}} ->
+        add_constant(checked_env, name, type, params)
 
-      {:ok, %Constant{kind: :axiom, type: type, value: nil}} ->
-        add_axiom(checked_env, name, type)
+      {:ok, %Constant{kind: :axiom, type: type, value: nil, universe_params: params}} ->
+        add_axiom(checked_env, name, type, params)
 
-      {:ok, %Constant{kind: :definition, type: type, value: value}} when not is_nil(value) ->
-        add_definition(checked_env, name, type, value)
+      {:ok, %Constant{kind: :definition, type: type, value: value, universe_params: params}}
+      when not is_nil(value) ->
+        add_definition(checked_env, name, type, value, params)
 
-      {:ok, %Constant{kind: :theorem, type: type, value: proof}} when not is_nil(proof) ->
-        add_theorem(checked_env, name, type, proof)
+      {:ok, %Constant{kind: :theorem, type: type, value: proof, universe_params: params}}
+      when not is_nil(proof) ->
+        add_theorem(checked_env, name, type, proof, params)
 
       {:ok, _constant} ->
         error(:invalid_declaration, name: name)

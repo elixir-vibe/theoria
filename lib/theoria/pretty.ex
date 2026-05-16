@@ -85,6 +85,25 @@ defmodule Theoria.Pretty do
     "invalid declaration: #{name}"
   end
 
+  def error(%Error{reason: :universe_arity_mismatch, details: details}) do
+    expected = Keyword.fetch!(details, :expected)
+    actual = Keyword.fetch!(details, :actual)
+    "universe argument mismatch: expected #{expected}, got #{actual}"
+  end
+
+  def error(%Error{reason: :unknown_universe_parameter, details: details}) do
+    params = details |> Keyword.fetch!(:params) |> Enum.join(", ")
+    "unknown universe parameter(s): #{params}"
+  end
+
+  def error(%Error{reason: :invalid_universe_parameters, details: details}) do
+    "invalid universe parameter list: #{inspect(Keyword.fetch!(details, :params))}"
+  end
+
+  def error(%Error{reason: :duplicate_universe_parameter, details: details}) do
+    "duplicate universe parameter in: #{inspect(Keyword.fetch!(details, :params))}"
+  end
+
   def error(%Error{reason: reason, details: details}) do
     "#{reason}: #{inspect(details)}"
   end
@@ -93,6 +112,7 @@ defmodule Theoria.Pretty do
     case Theoria.Level.to_integer(level) do
       {:ok, 0} -> "Prop"
       {:ok, level} -> "Type #{level}"
+      :error -> "Sort #{render_level(level)}"
     end
   end
 
@@ -100,7 +120,12 @@ defmodule Theoria.Pretty do
     Enum.at(context, index) || "##{index}"
   end
 
-  defp render_term(%Const{name: name}, _context), do: Atom.to_string(name)
+  defp render_term(%Const{name: name, levels: []}, _context), do: Atom.to_string(name)
+
+  defp render_term(%Const{name: name, levels: levels}, _context) do
+    rendered_levels = Enum.map_join(levels, ", ", &render_level/1)
+    "#{name}.#{rendered_levels}"
+  end
 
   defp render_term(%App{} = app, context) do
     {fun, args} = Term.Application.collect(app)
@@ -145,6 +170,20 @@ defmodule Theoria.Pretty do
   defp render_atomic(%Const{} = term, context), do: render_term(term, context)
   defp render_atomic(%App{} = term, context), do: render_term(term, context)
   defp render_atomic(term, context), do: "(" <> render_term(term, context) <> ")"
+
+  defp render_level(level) do
+    level
+    |> Theoria.Level.normalize()
+    |> do_render_level()
+  end
+
+  defp do_render_level(%Theoria.Level.Zero{}), do: "0"
+  defp do_render_level(%Theoria.Level.Param{name: name}), do: Atom.to_string(name)
+  defp do_render_level(%Theoria.Level.Succ{level: level}), do: "succ(#{render_level(level)})"
+
+  defp do_render_level(%Theoria.Level.Max{left: left, right: right}) do
+    "max(#{render_level(left)}, #{render_level(right)})"
+  end
 
   defp binder_name(:_), do: "_"
   defp binder_name(name), do: Atom.to_string(name)

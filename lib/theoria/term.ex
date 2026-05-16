@@ -25,9 +25,9 @@ defmodule Theoria.Term do
   defmodule Const do
     @moduledoc "A named environment constant."
     @enforce_keys [:name]
-    defstruct [:name]
+    defstruct [:name, levels: []]
 
-    @type t :: %__MODULE__{name: atom()}
+    @type t :: %__MODULE__{name: atom(), levels: [Theoria.Level.t()]}
   end
 
   defmodule App do
@@ -104,8 +104,10 @@ defmodule Theoria.Term do
   @spec bvar(non_neg_integer()) :: BVar.t()
   def bvar(index) when is_integer(index) and index >= 0, do: %BVar{index: index}
 
-  @spec const(atom()) :: Const.t()
-  def const(name) when is_atom(name), do: %Const{name: name}
+  @spec const(atom(), [non_neg_integer() | Theoria.Level.t()]) :: Const.t()
+  def const(name, levels \\ []) when is_atom(name) and is_list(levels) do
+    %Const{name: name, levels: Enum.map(levels, &Theoria.Level.cast!/1)}
+  end
 
   @spec app(t(), t()) :: App.t()
   def app(fun, arg), do: %App{fun: fun, arg: arg}
@@ -134,6 +136,10 @@ defmodule Theoria.Term do
   @doc "Returns the environment constants referenced by `term`."
   @spec constants(t()) :: MapSet.t(atom())
   def constants(term), do: collect_constants(term, MapSet.new())
+
+  @doc "Returns the universe parameters referenced by `term`."
+  @spec level_params(t()) :: MapSet.t(atom())
+  def level_params(term), do: collect_level_params(term, MapSet.new())
 
   defp collect_constants(%Sort{}, constants), do: constants
   defp collect_constants(%BVar{}, constants), do: constants
@@ -173,6 +179,49 @@ defmodule Theoria.Term do
     domain
     |> collect_constants(constants)
     |> then(&collect_constants(body, &1))
+  end
+
+  defp collect_level_params(%Sort{level: level}, params),
+    do: MapSet.union(params, Theoria.Level.params(level))
+
+  defp collect_level_params(%Const{levels: levels}, params) do
+    Enum.reduce(levels, params, &MapSet.union(&2, Theoria.Level.params(&1)))
+  end
+
+  defp collect_level_params(%BVar{}, params), do: params
+
+  defp collect_level_params(%App{fun: fun, arg: arg}, params) do
+    fun
+    |> collect_level_params(params)
+    |> then(&collect_level_params(arg, &1))
+  end
+
+  defp collect_level_params(%Let{type: type, value: value, body: body}, params) do
+    type
+    |> collect_level_params(params)
+    |> then(&collect_level_params(value, &1))
+    |> then(&collect_level_params(body, &1))
+  end
+
+  defp collect_level_params(%Eq{type: type, left: left, right: right}, params) do
+    type
+    |> collect_level_params(params)
+    |> then(&collect_level_params(left, &1))
+    |> then(&collect_level_params(right, &1))
+  end
+
+  defp collect_level_params(%Refl{value: value}, params), do: collect_level_params(value, params)
+
+  defp collect_level_params(%Lam{domain: domain, body: body}, params) do
+    domain
+    |> collect_level_params(params)
+    |> then(&collect_level_params(body, &1))
+  end
+
+  defp collect_level_params(%Forall{domain: domain, body: body}, params) do
+    domain
+    |> collect_level_params(params)
+    |> then(&collect_level_params(body, &1))
   end
 
   @doc """
@@ -291,6 +340,50 @@ defmodule Theoria.Term do
       domain: subst(domain, index, replacement, depth),
       body: subst(body, index, replacement, depth + 1)
     }
+  end
+
+  @doc "Substitutes universe level parameters in a term."
+  @spec subst_levels(t(), Theoria.Level.subst()) :: t()
+  def subst_levels(term, subst)
+
+  def subst_levels(%Sort{level: level}, subst),
+    do: %Sort{level: Theoria.Level.subst(level, subst)}
+
+  def subst_levels(%Const{levels: levels} = term, subst) do
+    %Const{term | levels: Enum.map(levels, &Theoria.Level.subst(&1, subst))}
+  end
+
+  def subst_levels(%BVar{} = term, _subst), do: term
+
+  def subst_levels(%App{fun: fun, arg: arg}, subst) do
+    %App{fun: subst_levels(fun, subst), arg: subst_levels(arg, subst)}
+  end
+
+  def subst_levels(%Let{name: name, type: type, value: value, body: body}, subst) do
+    %Let{
+      name: name,
+      type: subst_levels(type, subst),
+      value: subst_levels(value, subst),
+      body: subst_levels(body, subst)
+    }
+  end
+
+  def subst_levels(%Eq{type: type, left: left, right: right}, subst) do
+    %Eq{
+      type: subst_levels(type, subst),
+      left: subst_levels(left, subst),
+      right: subst_levels(right, subst)
+    }
+  end
+
+  def subst_levels(%Refl{value: value}, subst), do: %Refl{value: subst_levels(value, subst)}
+
+  def subst_levels(%Lam{name: name, domain: domain, body: body}, subst) do
+    %Lam{name: name, domain: subst_levels(domain, subst), body: subst_levels(body, subst)}
+  end
+
+  def subst_levels(%Forall{name: name, domain: domain, body: body}, subst) do
+    %Forall{name: name, domain: subst_levels(domain, subst), body: subst_levels(body, subst)}
   end
 
   @doc """

@@ -25,9 +25,9 @@ defmodule Theoria.Syntax do
   defmodule Const do
     @moduledoc "A named environment constant."
     @enforce_keys [:name]
-    defstruct [:name]
+    defstruct [:name, levels: []]
 
-    @type t :: %__MODULE__{name: atom()}
+    @type t :: %__MODULE__{name: atom(), levels: [Theoria.Level.t()]}
   end
 
   defmodule App do
@@ -112,8 +112,10 @@ defmodule Theoria.Syntax do
   @spec var(atom()) :: Var.t()
   def var(name) when is_atom(name), do: %Var{name: name}
 
-  @spec const(atom()) :: Const.t()
-  def const(name) when is_atom(name), do: %Const{name: name}
+  @spec const(atom(), [non_neg_integer() | Theoria.Level.t()]) :: Const.t()
+  def const(name, levels \\ []) when is_atom(name) and is_list(levels) do
+    %Const{name: name, levels: Enum.map(levels, &Theoria.Level.cast!/1)}
+  end
 
   @spec app(t(), t()) :: App.t()
   def app(fun, arg), do: %App{fun: fun, arg: arg}

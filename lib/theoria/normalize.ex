@@ -6,7 +6,7 @@ defmodule Theoria.Normalize do
   alias Theoria.Normalize.Fuel
   alias Theoria.Normalize.Primitive
   alias Theoria.Term
-  alias Theoria.Term.{App, Const, Eq, Forall, Lam, Let, Refl}
+  alias Theoria.Term.{App, Const, Eq, Forall, Lam, Let, Refl, Sort}
 
   @type result :: {:ok, Term.t()} | {:error, Theoria.Error.t()}
 
@@ -60,9 +60,15 @@ defmodule Theoria.Normalize do
 
   defp do_whnf_step(%Env{} = env, %Const{name: name} = const, fuel) do
     case Env.fetch(env, name) do
-      {:ok, %Constant{value: value, reducible?: true}} -> do_whnf(env, value, fuel)
-      {:ok, _constant} -> {:ok, const, fuel}
-      :error -> {:ok, const, fuel}
+      {:ok, %Constant{value: value, reducible?: true, universe_params: params}} ->
+        value = Term.subst_levels(value, Enum.zip(params, const.levels) |> Map.new())
+        do_whnf(env, value, fuel)
+
+      {:ok, _constant} ->
+        {:ok, const, fuel}
+
+      :error ->
+        {:ok, const, fuel}
     end
   end
 
@@ -120,6 +126,14 @@ defmodule Theoria.Normalize do
          {:ok, body, fuel} <- do_normalize(env, body, fuel) do
       {:ok, %Forall{name: name, domain: domain, body: body}, fuel}
     end
+  end
+
+  defp normalize_children(_env, %Sort{level: level}, fuel) do
+    {:ok, %Sort{level: Theoria.Level.normalize(level)}, fuel}
+  end
+
+  defp normalize_children(_env, %Const{levels: levels} = term, fuel) do
+    {:ok, %Const{term | levels: Enum.map(levels, &Theoria.Level.normalize/1)}, fuel}
   end
 
   defp normalize_children(_env, term, fuel), do: {:ok, term, fuel}

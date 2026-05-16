@@ -18,28 +18,42 @@ defmodule Theoria.Env do
     Map.fetch(constants, name)
   end
 
-  @spec put_constant(t(), atom(), Term.t()) :: t()
-  def put_constant(%__MODULE__{constants: constants} = env, name, type) when is_atom(name) do
-    %{
-      env
-      | constants: Map.put(constants, name, %Constant{type: type}),
-        declarations: put_order(env, name)
-    }
-  end
-
-  @spec put_axiom(t(), atom(), Term.t()) :: t()
-  def put_axiom(%__MODULE__{constants: constants} = env, name, type) when is_atom(name) do
+  @spec put_constant(t(), atom(), Term.t(), [atom()]) :: t()
+  def put_constant(%__MODULE__{constants: constants} = env, name, type, universe_params \\ [])
+      when is_atom(name) and is_list(universe_params) do
     %{
       env
       | constants:
-          Map.put(constants, name, %Constant{type: type, kind: :axiom, reducible?: false}),
+          Map.put(constants, name, %Constant{type: type, universe_params: universe_params}),
         declarations: put_order(env, name)
     }
   end
 
-  @spec put_definition(t(), atom(), Term.t(), Term.t()) :: t()
-  def put_definition(%__MODULE__{constants: constants} = env, name, type, value)
-      when is_atom(name) do
+  @spec put_axiom(t(), atom(), Term.t(), [atom()]) :: t()
+  def put_axiom(%__MODULE__{constants: constants} = env, name, type, universe_params \\ [])
+      when is_atom(name) and is_list(universe_params) do
+    %{
+      env
+      | constants:
+          Map.put(constants, name, %Constant{
+            type: type,
+            kind: :axiom,
+            reducible?: false,
+            universe_params: universe_params
+          }),
+        declarations: put_order(env, name)
+    }
+  end
+
+  @spec put_definition(t(), atom(), Term.t(), Term.t(), [atom()]) :: t()
+  def put_definition(
+        %__MODULE__{constants: constants} = env,
+        name,
+        type,
+        value,
+        universe_params \\ []
+      )
+      when is_atom(name) and is_list(universe_params) do
     %{
       env
       | constants:
@@ -47,15 +61,22 @@ defmodule Theoria.Env do
             type: type,
             value: value,
             kind: :definition,
-            reducible?: true
+            reducible?: true,
+            universe_params: universe_params
           }),
         declarations: put_order(env, name)
     }
   end
 
-  @spec put_theorem(t(), atom(), Term.t(), Term.t()) :: t()
-  def put_theorem(%__MODULE__{constants: constants} = env, name, type, proof)
-      when is_atom(name) do
+  @spec put_theorem(t(), atom(), Term.t(), Term.t(), [atom()]) :: t()
+  def put_theorem(
+        %__MODULE__{constants: constants} = env,
+        name,
+        type,
+        proof,
+        universe_params \\ []
+      )
+      when is_atom(name) and is_list(universe_params) do
     %{
       env
       | constants:
@@ -63,7 +84,8 @@ defmodule Theoria.Env do
             type: type,
             value: proof,
             kind: :theorem,
-            reducible?: false
+            reducible?: false,
+            universe_params: universe_params
           }),
         declarations: put_order(env, name)
     }

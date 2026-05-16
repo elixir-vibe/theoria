@@ -18,7 +18,7 @@ defmodule Theoria.Elaborator do
 
   @spec elaborate(Syntax.t(), [atom()]) :: result()
   def elaborate(%Sort{level: level}, _context), do: {:ok, Term.sort(level)}
-  def elaborate(%Const{name: name}, _context), do: {:ok, Term.const(name)}
+  def elaborate(%Const{name: name, levels: levels}, _context), do: {:ok, Term.const(name, levels)}
 
   def elaborate(%Var{name: name}, context) do
     case Enum.find_index(context, &(&1 == name)) do

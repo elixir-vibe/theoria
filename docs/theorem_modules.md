@@ -63,7 +63,9 @@ end
 term do
   lam :f, arrow(p, q) do
     lam :x, p do
-      app(f, x)
+      let :result, q, app(f, x) do
+        result
+      end
     end
   end
 end

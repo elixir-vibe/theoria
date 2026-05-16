@@ -5,7 +5,7 @@ defmodule Theoria.Normalize do
   alias Theoria.Normalize.Fuel
   alias Theoria.Normalize.Primitive
   alias Theoria.Term
-  alias Theoria.Term.{App, Const, Eq, Forall, Lam, Refl}
+  alias Theoria.Term.{App, Const, Eq, Forall, Lam, Let, Refl}
 
   @type result :: {:ok, Term.t()} | {:error, Theoria.Error.t()}
 
@@ -53,6 +53,10 @@ defmodule Theoria.Normalize do
     end
   end
 
+  defp do_whnf_step(env, %Let{value: value, body: body}, fuel) do
+    do_whnf(env, Term.subst_top(body, value), fuel)
+  end
+
   defp do_whnf_step(%Env{} = env, %Const{name: name} = const, fuel) do
     case Env.fetch(env, name) do
       {:ok, %{value: nil}} -> {:ok, const, fuel}
@@ -78,6 +82,14 @@ defmodule Theoria.Normalize do
     with {:ok, fun, fuel} <- do_normalize(env, fun, fuel),
          {:ok, arg, fuel} <- do_normalize(env, arg, fuel) do
       {:ok, %App{fun: fun, arg: arg}, fuel}
+    end
+  end
+
+  defp normalize_children(env, %Let{type: type, value: value, body: body, name: name}, fuel) do
+    with {:ok, type, fuel} <- do_normalize(env, type, fuel),
+         {:ok, value, fuel} <- do_normalize(env, value, fuel),
+         {:ok, body, fuel} <- do_normalize(env, body, fuel) do
+      {:ok, %Let{name: name, type: type, value: value, body: body}, fuel}
     end
   end
 

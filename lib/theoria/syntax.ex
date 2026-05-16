@@ -62,6 +62,19 @@ defmodule Theoria.Syntax do
           }
   end
 
+  defmodule Let do
+    @moduledoc "Local definition with a named binder."
+    @enforce_keys [:name, :type, :value, :body]
+    defstruct [:name, :type, :value, :body]
+
+    @type t :: %__MODULE__{
+            name: atom(),
+            type: Theoria.Syntax.t(),
+            value: Theoria.Syntax.t(),
+            body: Theoria.Syntax.t()
+          }
+  end
+
   defmodule Eq do
     @moduledoc "Named-syntax propositional equality."
     @enforce_keys [:type, :left, :right]
@@ -82,7 +95,16 @@ defmodule Theoria.Syntax do
     @type t :: %__MODULE__{value: Theoria.Syntax.t()}
   end
 
-  @type t :: Sort.t() | Var.t() | Const.t() | App.t() | Lam.t() | Forall.t() | Eq.t() | Refl.t()
+  @type t ::
+          Sort.t()
+          | Var.t()
+          | Const.t()
+          | App.t()
+          | Lam.t()
+          | Forall.t()
+          | Let.t()
+          | Eq.t()
+          | Refl.t()
 
   @spec sort(non_neg_integer()) :: Sort.t()
   def sort(level) when is_integer(level) and level >= 0, do: %Sort{level: level}
@@ -105,6 +127,11 @@ defmodule Theoria.Syntax do
 
   @spec arrow(t(), t()) :: Forall.t()
   def arrow(domain, codomain), do: forall(:_, domain, codomain)
+
+  @spec let(atom(), t(), t(), t()) :: Let.t()
+  def let(name, type, value, body) when is_atom(name) do
+    %Let{name: name, type: type, value: value, body: body}
+  end
 
   @spec eq(t(), t(), t()) :: Eq.t()
   def eq(type, left, right), do: %Eq{type: type, left: left, right: right}

@@ -59,6 +59,13 @@ defmodule Theoria.DSL.TermQuoteTest do
                  p
                end
            ) == S.lam(:p, S.sort(0), S.var(:p))
+
+    assert term(
+             do:
+               let :x, prop(), true_prop() do
+                 x
+               end
+           ) == S.let(:x, S.sort(0), S.const(:True), S.var(:x))
   end
 
   test "quoted term can be elaborated and checked" do

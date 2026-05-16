@@ -8,7 +8,7 @@ defmodule Theoria.Elaborator do
 
   alias Theoria.Error
   alias Theoria.Syntax
-  alias Theoria.Syntax.{App, Const, Eq, Forall, Lam, Refl, Sort, Var}
+  alias Theoria.Syntax.{App, Const, Eq, Forall, Lam, Let, Refl, Sort, Var}
   alias Theoria.Term
 
   @type result :: {:ok, Term.t()} | {:error, Error.t()}
@@ -40,6 +40,14 @@ defmodule Theoria.Elaborator do
 
   def elaborate(%Forall{name: name, domain: domain, body: body}, context) do
     elaborate_binder(context, name, domain, body, &Term.forall/3)
+  end
+
+  def elaborate(%Let{name: name, type: type, value: value, body: body}, context) do
+    with {:ok, type} <- elaborate(type, context),
+         {:ok, value} <- elaborate(value, context),
+         {:ok, body} <- elaborate(body, [name | context]) do
+      {:ok, Term.let(name, type, value, body)}
+    end
   end
 
   def elaborate(%Eq{type: type, left: left, right: right}, context) do

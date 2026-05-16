@@ -3,7 +3,7 @@ defmodule Theoria.Pretty do
 
   alias Theoria.Error
   alias Theoria.Term
-  alias Theoria.Term.{App, BVar, Const, Eq, Forall, Lam, Refl, Sort}
+  alias Theoria.Term.{App, BVar, Const, Eq, Forall, Lam, Let, Refl, Sort}
   alias Theoria.Theorem
 
   @spec term(Term.t()) :: String.t()
@@ -114,6 +114,13 @@ defmodule Theoria.Pretty do
     rendered_name = binder_name(name)
     extended = [rendered_name | context]
     "∀ #{rendered_name} : #{render_term(domain, context)}, #{render_term(body, extended)}"
+  end
+
+  defp render_term(%Let{name: name, type: type, value: value, body: body}, context) do
+    rendered_name = binder_name(name)
+    extended = [rendered_name | context]
+
+    "let #{rendered_name} : #{render_term(type, context)} := #{render_term(value, context)} in #{render_term(body, extended)}"
   end
 
   defp render_term(%Eq{left: left, right: right}, context) do

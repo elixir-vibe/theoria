@@ -16,6 +16,7 @@ defimpl Inspect,
     Theoria.Term.App,
     Theoria.Term.Lam,
     Theoria.Term.Forall,
+    Theoria.Term.Let,
     Theoria.Term.Eq,
     Theoria.Term.Refl
   ] do

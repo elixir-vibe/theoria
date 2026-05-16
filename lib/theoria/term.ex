@@ -54,6 +54,19 @@ defmodule Theoria.Term do
     @type t :: %__MODULE__{name: atom(), domain: Theoria.Term.t(), body: Theoria.Term.t()}
   end
 
+  defmodule Let do
+    @moduledoc "Local definition."
+    @enforce_keys [:name, :type, :value, :body]
+    defstruct [:name, :type, :value, :body]
+
+    @type t :: %__MODULE__{
+            name: atom(),
+            type: Theoria.Term.t(),
+            value: Theoria.Term.t(),
+            body: Theoria.Term.t()
+          }
+  end
+
   defmodule Eq do
     @moduledoc "Propositional equality over a type."
     @enforce_keys [:type, :left, :right]
@@ -81,6 +94,7 @@ defmodule Theoria.Term do
           | App.t()
           | Lam.t()
           | Forall.t()
+          | Let.t()
           | Eq.t()
           | Refl.t()
 
@@ -106,6 +120,11 @@ defmodule Theoria.Term do
   @spec arrow(t(), t()) :: Forall.t()
   def arrow(domain, codomain), do: forall(:_, domain, shift(codomain, 1))
 
+  @spec let(atom(), t(), t(), t()) :: Let.t()
+  def let(name, type, value, body) when is_atom(name) do
+    %Let{name: name, type: type, value: value, body: body}
+  end
+
   @spec eq(t(), t(), t()) :: Eq.t()
   def eq(type, left, right), do: %Eq{type: type, left: left, right: right}
 
@@ -124,6 +143,13 @@ defmodule Theoria.Term do
     fun
     |> collect_constants(constants)
     |> then(&collect_constants(arg, &1))
+  end
+
+  defp collect_constants(%Let{type: type, value: value, body: body}, constants) do
+    type
+    |> collect_constants(constants)
+    |> then(&collect_constants(value, &1))
+    |> then(&collect_constants(body, &1))
   end
 
   defp collect_constants(%Eq{type: type, left: left, right: right}, constants) do
@@ -176,6 +202,15 @@ defmodule Theoria.Term do
     %App{fun: shift(fun, amount, cutoff), arg: shift(arg, amount, cutoff)}
   end
 
+  def shift(%Let{name: name, type: type, value: value, body: body}, amount, cutoff) do
+    %Let{
+      name: name,
+      type: shift(type, amount, cutoff),
+      value: shift(value, amount, cutoff),
+      body: shift(body, amount, cutoff + 1)
+    }
+  end
+
   def shift(%Eq{type: type, left: left, right: right}, amount, cutoff) do
     %Eq{
       type: shift(type, amount, cutoff),
@@ -219,6 +254,15 @@ defmodule Theoria.Term do
 
   def subst(%App{fun: fun, arg: arg}, index, replacement, depth) do
     %App{fun: subst(fun, index, replacement, depth), arg: subst(arg, index, replacement, depth)}
+  end
+
+  def subst(%Let{name: name, type: type, value: value, body: body}, index, replacement, depth) do
+    %Let{
+      name: name,
+      type: subst(type, index, replacement, depth),
+      value: subst(value, index, replacement, depth),
+      body: subst(body, index, replacement, depth + 1)
+    }
   end
 
   def subst(%Eq{type: type, left: left, right: right}, index, replacement, depth) do

@@ -85,6 +85,7 @@ defmodule Theoria.DSL do
   def elab!(%Syntax.App{} = term), do: Elaborator.elaborate!(term)
   def elab!(%Syntax.Lam{} = term), do: Elaborator.elaborate!(term)
   def elab!(%Syntax.Forall{} = term), do: Elaborator.elaborate!(term)
+  def elab!(%Syntax.Let{} = term), do: Elaborator.elaborate!(term)
   def elab!(%Syntax.Eq{} = term), do: Elaborator.elaborate!(term)
   def elab!(%Syntax.Refl{} = term), do: Elaborator.elaborate!(term)
 
@@ -311,6 +312,26 @@ defmodule Theoria.DSL do
   defp quote_term({:lam, _meta, _args}) do
     raise ArgumentError,
           "expected lambda binder syntax: lam :name, domain do ... end"
+  end
+
+  defp quote_term({:let, _meta, [name, type, value, [do: body]]}) do
+    type = quote_term(type)
+    value = quote_term(value)
+    body = quote_term(body)
+
+    quote do
+      Theoria.Syntax.let(
+        unquote(name_literal!(name)),
+        unquote(type),
+        unquote(value),
+        unquote(body)
+      )
+    end
+  end
+
+  defp quote_term({:let, _meta, _args}) do
+    raise ArgumentError,
+          "expected let syntax: let :name, type, value do ... end"
   end
 
   defp quote_term({:eq, _meta, [type, left, right]}) do

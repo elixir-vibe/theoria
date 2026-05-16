@@ -56,6 +56,10 @@ defmodule Theoria.DSL.TermQuoteErrorTest do
     assert_raise ArgumentError, ~r/expected lambda binder syntax/, fn ->
       eval_term("lam(:p)")
     end
+
+    assert_raise ArgumentError, ~r/expected let syntax/, fn ->
+      eval_term("let(:x)")
+    end
   end
 
   defp eval_term(body) do

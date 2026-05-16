@@ -45,6 +45,7 @@ The initial core calculus contains:
 - application;
 - lambda abstraction;
 - dependent function types (`forall`);
+- local definitions (`let`);
 - propositional equality;
 - reflexivity proofs.
 
@@ -68,7 +69,7 @@ The `theorem` macro creates a small function trio: `<name>_type/0`, `<name>_proo
 
 ## Normalization and definitional equality
 
-The initial normalizer supports beta reduction, unfolding checked definitions, and primitive recursor reductions. Definitional equality currently normalizes both sides and compares the resulting terms structurally.
+The initial normalizer supports beta reduction, zeta reduction for local definitions, unfolding checked definitions, and primitive recursor reductions. Definitional equality currently normalizes both sides and compares the resulting terms structurally.
 
 Normalization is bounded by `Theoria.Normalize.Fuel`, a shared fuel budget defaulting to 10,000 steps:
 

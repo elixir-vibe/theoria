@@ -43,6 +43,7 @@ The initial kernel supports:
 - constants
 - lambda abstraction
 - dependent function types (`forall`)
+- local definitions (`let`)
 - application
 - propositional equality and reflexivity proofs
 - initial logic library (`False`, `True`, `not`, `and`, `and_intro`, `and_left`, `and_right`)
@@ -50,7 +51,7 @@ The initial kernel supports:
 - initial Nat library (`Nat`, `zero`, `succ`, `nat_rec`, `nat_add`)
 - initial List library (`List`, `list_nil`, `list_cons`, `list_rec`, `list_length`)
 - standard prelude environment composing Logic, Bool, Nat, and List
-- beta reduction
+- beta and zeta reduction
 - bounded normalization with fuel
 - definitional equality by normalization
 - checked constants and definitions in an environment

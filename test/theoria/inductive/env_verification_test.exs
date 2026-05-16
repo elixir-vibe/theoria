@@ -3,7 +3,6 @@ defmodule Theoria.Inductive.EnvVerificationTest do
 
   alias Theoria.Env
   alias Theoria.Env.Constant
-  alias Theoria.Env.Reduction
   alias Theoria.Inductive
   alias Theoria.Library.{Bool, List, Nat}
 
@@ -61,7 +60,7 @@ defmodule Theoria.Inductive.EnvVerificationTest do
 
     env =
       put_constant(env, :nat_rec, fn %Constant{} = constant ->
-        %Constant{constant | reduction: %Reduction.NatInd{}}
+        %Constant{constant | reduction: nil}
       end)
 
     assert {:error, error} = Inductive.verify_env(env, Nat.inductive_spec())

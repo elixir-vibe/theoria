@@ -24,20 +24,6 @@ defmodule Theoria.Normalize.ReductionMetadataTest do
     assert Normalize.defeq?(env, term, const(true))
   end
 
-  test "legacy reduction metadata remains supported" do
-    {:ok, env} = Bool.env()
-    env = put_reduction(env, :bool_rec, %Reduction.BoolRec{})
-
-    term =
-      const(:bool_rec, [1])
-      |> app(const(:Bool))
-      |> app(const(false))
-      |> app(const(true))
-      |> app(const(false))
-
-    assert Normalize.defeq?(env, term, const(true))
-  end
-
   test "recursor without reduction metadata remains stuck" do
     {:ok, env} = Bool.env()
     env = remove_reduction(env, :bool_rec)
@@ -59,19 +45,78 @@ defmodule Theoria.Normalize.ReductionMetadataTest do
 
     assert {:ok,
             %Constant{
-              reduction: %Reduction.Recursor{
-                inductive: :Nat,
-                major_position: 3,
-                constructors: constructors
-              }
-            }} = Env.fetch(checked_env, :nat_ind)
-
-    assert Enum.map(constructors, & &1.name) == [:zero, :succ]
-
-    assert %Theoria.Env.Recursor{rules: rules, num_motives: 1, num_minors: 2} =
-             checked_env.constants.nat_ind.metadata
+              reduction: %Reduction.Iota{},
+              metadata: %Theoria.Env.Recursor{rules: rules, num_motives: 1, num_minors: 2}
+            }} =
+             Env.fetch(checked_env, :nat_ind)
 
     assert Enum.map(rules, &{&1.constructor, &1.field_count}) == [zero: 0, succ: 1]
+    assert Enum.all?(rules, &match?(%Theoria.Term.Lam{}, &1.rhs))
+  end
+
+  test "recursor without recursor metadata remains stuck and fails validation" do
+    {:ok, env} = Bool.env()
+    env = put_metadata(env, :bool_rec, nil)
+
+    term =
+      const(:bool_rec, [1])
+      |> app(const(:Bool))
+      |> app(const(false))
+      |> app(const(true))
+      |> app(const(false))
+
+    assert Normalize.normalize(env, term) == {:ok, term}
+    assert {:error, error} = Kernel.validate_env(env)
+    assert error.reason == :invalid_reduction
+  end
+
+  test "malformed recursor rule rhs fails validation" do
+    {:ok, env} = Bool.env()
+
+    env =
+      put_metadata(env, :bool_rec, fn %Theoria.Env.Recursor{} = recursor ->
+        %Theoria.Env.RecursorRule{} =
+          true_rule = Enum.find(recursor.rules, &(&1.constructor == true))
+
+        bad_rule = %Theoria.Env.RecursorRule{true_rule | rhs: bvar(99)}
+
+        %Theoria.Env.Recursor{
+          recursor
+          | rules: [bad_rule | Enum.reject(recursor.rules, &(&1.constructor == true))]
+        }
+      end)
+
+    assert {:error, error} = Kernel.validate_env(env)
+    assert error.reason == :invalid_reduction
+  end
+
+  test "recursor rule rhs is authoritative" do
+    {:ok, env} = Bool.env()
+
+    env =
+      put_metadata(env, :bool_rec, fn %Theoria.Env.Recursor{} = recursor ->
+        %Theoria.Env.RecursorRule{} =
+          false_rule = Enum.find(recursor.rules, &(&1.constructor == false))
+
+        bad_rule = %Theoria.Env.RecursorRule{
+          false_rule
+          | rhs: lam(:a, sort(0), lam(:t, sort(0), lam(:f, sort(0), const(true))))
+        }
+
+        %Theoria.Env.Recursor{
+          recursor
+          | rules: [bad_rule | Enum.reject(recursor.rules, &(&1.constructor == false))]
+        }
+      end)
+
+    term =
+      const(:bool_rec, [1])
+      |> app(const(:Bool))
+      |> app(const(false))
+      |> app(const(true))
+      |> app(const(false))
+
+    assert Normalize.defeq?(env, term, const(true))
   end
 
   test "environment validation rejects malformed reduction metadata" do
@@ -87,5 +132,18 @@ defmodule Theoria.Normalize.ReductionMetadataTest do
   defp put_reduction(%Env{constants: constants} = env, name, reduction) do
     %Constant{} = constant = Map.fetch!(constants, name)
     %Env{env | constants: Map.put(constants, name, %Constant{constant | reduction: reduction})}
+  end
+
+  defp put_metadata(%Env{constants: constants} = env, name, metadata_or_fun) do
+    %Constant{} = constant = Map.fetch!(constants, name)
+
+    metadata =
+      if is_function(metadata_or_fun, 1) do
+        metadata_or_fun.(constant.metadata)
+      else
+        metadata_or_fun
+      end
+
+    %Env{env | constants: Map.put(constants, name, %Constant{constant | metadata: metadata})}
   end
 end

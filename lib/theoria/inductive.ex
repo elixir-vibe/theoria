@@ -21,9 +21,12 @@ defmodule Theoria.Inductive do
     Spec
   }
 
+  alias Theoria.Elaborator
   alias Theoria.Inductive.Recursor, as: SpecRecursor
   alias Theoria.Kernel
+  alias Theoria.Level
   alias Theoria.Normalize
+  alias Theoria.Syntax, as: S
   alias Theoria.Term
   alias Theoria.Term.{App, Const, Forall}
 
@@ -301,33 +304,118 @@ defmodule Theoria.Inductive do
     }
   end
 
-  defp recursor_metadata(%Spec{} = spec, name, type, %Reduction.Recursor{} = reduction) do
+  defp recursor_metadata(%Spec{} = spec, name, type, %Reduction.Iota{}) do
+    recursor_params = declaration_params(spec, type)
+
     %EnvRecursor{
       name: name,
       type: type,
-      universe_params: declaration_params(spec, type),
+      universe_params: recursor_params,
       inductives: [spec.name],
       num_params: length(spec.parameters),
       num_indices: length(spec.indices),
       num_motives: 1,
       num_minors: length(spec.constructors),
-      rules: recursor_rules(spec, reduction)
+      rules: recursor_rules(spec, name, recursor_params)
     }
   end
 
   defp recursor_metadata(_spec, _name, _type, _reduction), do: nil
 
-  defp recursor_rules(%Spec{} = spec, %Reduction.Recursor{} = reduction) do
-    Enum.map(reduction.constructors, fn constructor_rule ->
-      constructor = Enum.find(spec.constructors, &(&1.name == constructor_rule.name))
+  defp recursor_rules(%Spec{} = spec, recursor_name, recursor_params) do
+    spec.constructors
+    |> Enum.with_index()
+    |> Enum.map(fn {constructor, index} ->
       {:ok, result} = Constructor.result(constructor, spec)
 
       %RecursorRule{
-        constructor: constructor_rule.name,
+        constructor: constructor.name,
         field_count: length(result.binders) - length(spec.parameters),
-        rhs: nil
+        rhs: recursor_rule_rhs(spec, recursor_name, recursor_params, result, index)
       }
     end)
+  end
+
+  defp recursor_rule_rhs(
+         %Spec{} = spec,
+         recursor_name,
+         recursor_params,
+         result,
+         constructor_index
+       ) do
+    prefix_names = Enum.map(spec.parameters, & &1.name) ++ [:motive] ++ minor_names(spec)
+    fields = field_binders(result, length(spec.parameters))
+    minor = S.var(Enum.at(minor_names(spec), constructor_index))
+
+    body =
+      recursor_rule_body(
+        spec,
+        recursor_name,
+        recursor_params,
+        prefix_names,
+        result,
+        fields,
+        minor
+      )
+
+    (prefix_names ++ Enum.map(fields, & &1.name))
+    |> Enum.reverse()
+    |> Enum.reduce(body, fn name, body -> S.lam(name, S.sort(0), body) end)
+    |> Elaborator.elaborate!()
+  end
+
+  defp recursor_rule_body(
+         spec,
+         recursor_name,
+         recursor_params,
+         prefix_names,
+         result,
+         fields,
+         minor
+       ) do
+    Enum.reduce(fields, minor, fn field, body ->
+      body = S.app(body, S.var(field.name))
+
+      if recursive_field?(result, field.position, spec.name) do
+        S.app(body, recursive_call(recursor_name, recursor_params, prefix_names, field.name))
+      else
+        body
+      end
+    end)
+  end
+
+  defp recursive_call(recursor_name, recursor_params, prefix_names, field_name) do
+    levels = Enum.map(recursor_params, &Level.param/1)
+
+    args = Enum.map(prefix_names, &S.var/1) ++ [S.var(field_name)]
+    Enum.reduce(args, S.const(recursor_name, levels), fn arg, fun -> S.app(fun, arg) end)
+  end
+
+  defp minor_names(%Spec{} = spec) do
+    spec.constructors
+    |> Enum.with_index()
+    |> Enum.map(fn {_constructor, index} -> String.to_atom("minor#{index}") end)
+  end
+
+  defp field_binders(result, parameter_count) do
+    result.binders
+    |> Enum.drop(parameter_count)
+    |> Enum.with_index()
+    |> Enum.map(fn {binder, index} ->
+      %{name: field_name(binder.name, index), position: binder.depth}
+    end)
+  end
+
+  defp field_name(:_, index), do: String.to_atom("field#{index}")
+  defp field_name(name, _index), do: name
+
+  defp recursive_field?(result, position, inductive) do
+    result.binders
+    |> Enum.at(position)
+    |> case do
+      %{domain: domain} -> application_head(domain) |> const_named?(inductive)
+      nil -> false
+    end
   end
 
   defp recursive_spec?(%Spec{} = spec) do

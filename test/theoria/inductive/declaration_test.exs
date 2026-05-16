@@ -26,10 +26,16 @@ defmodule Theoria.Inductive.DeclarationTest do
              }
            } = hd(declarations)
 
-    assert %Declaration{reduction: %Reduction.Recursor{inductive: :Bool}} =
+    assert %Declaration{
+             reduction: %Reduction.Iota{},
+             metadata: %Theoria.Env.Recursor{inductives: [:Bool]}
+           } =
              Enum.find(declarations, &(&1.name == :bool_rec))
 
-    assert %Declaration{reduction: %Reduction.Recursor{inductive: :Bool}} =
+    assert %Declaration{
+             reduction: %Reduction.Iota{},
+             metadata: %Theoria.Env.Recursor{inductives: [:Bool]}
+           } =
              Enum.find(declarations, &(&1.name == :bool_ind))
   end
 
@@ -39,7 +45,7 @@ defmodule Theoria.Inductive.DeclarationTest do
     assert Enum.map(declarations, & &1.name) == [:Nat, :zero, :succ, :nat_rec, :nat_ind]
 
     assert %Declaration{
-             reduction: %Reduction.Recursor{inductive: :Nat},
+             reduction: %Reduction.Iota{},
              metadata: %Theoria.Env.Recursor{
                inductives: [:Nat],
                num_params: 0,
@@ -53,7 +59,10 @@ defmodule Theoria.Inductive.DeclarationTest do
              }
            } = Enum.find(declarations, &(&1.name == :nat_rec))
 
-    assert %Declaration{reduction: %Reduction.Recursor{inductive: :Nat}} =
+    assert %Declaration{
+             reduction: %Reduction.Iota{},
+             metadata: %Theoria.Env.Recursor{inductives: [:Nat]}
+           } =
              Enum.find(declarations, &(&1.name == :nat_ind))
   end
 
@@ -91,10 +100,16 @@ defmodule Theoria.Inductive.DeclarationTest do
     assert %Declaration{universe_params: [:u, :v]} =
              Enum.find(declarations, &(&1.name == :list_rec))
 
-    assert %Declaration{reduction: %Reduction.Recursor{inductive: :List}} =
+    assert %Declaration{
+             reduction: %Reduction.Iota{},
+             metadata: %Theoria.Env.Recursor{inductives: [:List]}
+           } =
              Enum.find(declarations, &(&1.name == :list_rec))
 
-    assert %Declaration{reduction: %Reduction.Recursor{inductive: :List}} =
+    assert %Declaration{
+             reduction: %Reduction.Iota{},
+             metadata: %Theoria.Env.Recursor{inductives: [:List]}
+           } =
              Enum.find(declarations, &(&1.name == :list_ind))
   end
 

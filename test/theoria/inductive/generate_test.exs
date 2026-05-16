@@ -18,10 +18,10 @@ defmodule Theoria.Inductive.GenerateTest do
     assert [rec, ind] = Generate.bool_eliminators(spec)
     assert rec.name == :bool_rec
     assert rec.type == bool_rec_type()
-    assert rec.reduction == bool_reduction()
+    assert rec.reduction == %Reduction.Iota{}
     assert ind.name == :bool_ind
     assert ind.type == bool_ind_type()
-    assert ind.reduction == bool_reduction()
+    assert ind.reduction == %Reduction.Iota{}
   end
 
   test "generates Nat eliminators from constructors" do
@@ -30,10 +30,10 @@ defmodule Theoria.Inductive.GenerateTest do
     assert [rec, ind] = Generate.nat_eliminators(spec)
     assert rec.name == :nat_rec
     assert rec.type == nat_rec_type()
-    assert rec.reduction == nat_reduction()
+    assert rec.reduction == %Reduction.Iota{}
     assert ind.name == :nat_ind
     assert ind.type == nat_ind_type()
-    assert ind.reduction == nat_reduction()
+    assert ind.reduction == %Reduction.Iota{}
   end
 
   test "generates List eliminators from constructors" do
@@ -42,11 +42,10 @@ defmodule Theoria.Inductive.GenerateTest do
     assert [rec, ind] = Generate.list_eliminators(spec)
     assert rec.name == :list_rec
     assert rec.type == list_rec_type()
-    assert rec.reduction == list_reduction()
-    assert rec.reduction.constructors |> :lists.last() |> Map.fetch!(:recursive_positions) == [2]
+    assert rec.reduction == %Reduction.Iota{}
     assert ind.name == :list_ind
     assert ind.type == list_ind_type()
-    assert ind.reduction == list_reduction()
+    assert ind.reduction == %Reduction.Iota{}
   end
 
   test "generic eliminators match named generator wrappers" do
@@ -182,44 +181,6 @@ defmodule Theoria.Inductive.GenerateTest do
       end
     end
     |> elab!()
-  end
-
-  defp bool_reduction do
-    %Reduction.Recursor{
-      inductive: :Bool,
-      major_position: 3,
-      constructors: [
-        %{name: true, branch_position: 1, argument_positions: [], recursive_positions: []},
-        %{name: false, branch_position: 2, argument_positions: [], recursive_positions: []}
-      ]
-    }
-  end
-
-  defp nat_reduction do
-    %Reduction.Recursor{
-      inductive: :Nat,
-      major_position: 3,
-      constructors: [
-        %{name: :zero, branch_position: 1, argument_positions: [], recursive_positions: []},
-        %{name: :succ, branch_position: 2, argument_positions: [0], recursive_positions: [0]}
-      ]
-    }
-  end
-
-  defp list_reduction do
-    %Reduction.Recursor{
-      inductive: :List,
-      major_position: 4,
-      constructors: [
-        %{name: :list_nil, branch_position: 2, argument_positions: [], recursive_positions: []},
-        %{
-          name: :list_cons,
-          branch_position: 3,
-          argument_positions: [1, 2],
-          recursive_positions: [2]
-        }
-      ]
-    }
   end
 
   defp vec_spec do

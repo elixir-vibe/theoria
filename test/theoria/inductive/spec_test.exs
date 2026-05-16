@@ -122,7 +122,7 @@ defmodule Theoria.Inductive.SpecTest do
       name: :Nat,
       type: sort(1),
       constructors: [%Constructor{name: :zero, type: const(:Nat)}],
-      recursors: [%Recursor{name: :nat_rec, type: const(:Nat), reduction: %Reduction.NatRec{}}]
+      recursors: [%Recursor{name: :nat_rec, type: const(:Nat), reduction: %Reduction.Iota{}}]
     }
 
     assert Inductive.validate(spec) == :ok

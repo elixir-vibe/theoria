@@ -9,6 +9,9 @@ defmodule Theoria.Kernel do
   alias Theoria.Context
   alias Theoria.Env
   alias Theoria.Env.Constant
+  alias Theoria.Env.Constructor, as: EnvConstructor
+  alias Theoria.Env.Recursor, as: EnvRecursor
+  alias Theoria.Env.RecursorRule
   alias Theoria.Env.Reduction
   alias Theoria.Error
   alias Theoria.Inductive
@@ -111,6 +114,12 @@ defmodule Theoria.Kernel do
     with :ok <- ensure_fresh_declaration(env, name),
          :ok <- ensure_universe_params(universe_params),
          :ok <- ensure_reduction(Keyword.get(opts, :reduction)),
+         :ok <-
+           ensure_reduction_metadata(
+             env,
+             Keyword.get(opts, :reduction),
+             Keyword.get(opts, :metadata)
+           ),
          :ok <- ensure_level_params(type, universe_params),
          {:ok, %Sort{}} <- infer_sort(env, Context.new(), type) do
       {:ok, Env.put_constant(env, name, type, universe_params, opts)}
@@ -272,6 +281,41 @@ defmodule Theoria.Kernel do
       :ok
     else
       error(:invalid_reduction, reduction: reduction)
+    end
+  end
+
+  defp ensure_reduction_metadata(_env, nil, _metadata), do: :ok
+
+  defp ensure_reduction_metadata(env, %Reduction.Iota{}, %EnvRecursor{} = recursor) do
+    cond do
+      recursor.num_minors != length(recursor.rules) ->
+        error(:invalid_reduction, reduction: %Reduction.Iota{}, metadata: recursor)
+
+      Enum.all?(recursor.rules, &valid_recursor_rule?(env, &1)) ->
+        :ok
+
+      true ->
+        error(:invalid_reduction, reduction: %Reduction.Iota{}, metadata: recursor)
+    end
+  end
+
+  defp ensure_reduction_metadata(_env, %Reduction.Iota{} = reduction, metadata) do
+    error(:invalid_reduction, reduction: reduction, metadata: metadata)
+  end
+
+  defp ensure_reduction_metadata(_env, _reduction, _metadata), do: :ok
+
+  defp valid_recursor_rule?(env, %RecursorRule{
+         constructor: constructor,
+         field_count: field_count,
+         rhs: rhs
+       }) do
+    with true <- Term.well_scoped?(rhs),
+         {:ok, %Constant{metadata: %EnvConstructor{num_fields: ^field_count}}} <-
+           Env.fetch(env, constructor) do
+      true
+    else
+      _other -> false
     end
   end
 

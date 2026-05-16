@@ -180,35 +180,7 @@ defmodule Theoria.Inductive.Generate do
   defp invalid(problem),
     do: {:error, %Error{reason: :invalid_inductive, details: [problem: problem]}}
 
-  defp recursor_reduction(%Spec{} = spec, constructors) do
-    parameter_count = length(spec.parameters)
-    branch_start = parameter_count + 1
-
-    %Reduction.Recursor{
-      inductive: spec.name,
-      major_position: branch_start + length(constructors),
-      constructors:
-        constructors
-        |> Enum.with_index()
-        |> Enum.map(fn {constructor, index} ->
-          constructor_reduction(spec, constructor, branch_start + index)
-        end)
-    }
-  end
-
-  defp constructor_reduction(%Spec{} = spec, %Constructor{} = constructor, branch_position) do
-    {:ok, result} = Constructor.result(constructor, spec)
-    parameter_count = length(spec.parameters)
-    argument_positions = Enum.to_list(parameter_count..(length(result.binders) - 1)//1)
-
-    %{
-      name: constructor.name,
-      branch_position: branch_position,
-      argument_positions: argument_positions,
-      recursive_positions:
-        Enum.filter(argument_positions, &recursive_binder?(result, &1, spec.name))
-    }
-  end
+  defp recursor_reduction(%Spec{}, _constructors), do: %Reduction.Iota{}
 
   defp recursive_binder?(result, position, inductive) do
     result.binders

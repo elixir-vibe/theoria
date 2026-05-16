@@ -40,4 +40,9 @@ defmodule Theoria.Env.Recursor do
           rules: [RecursorRule.t()],
           k?: boolean()
         }
+
+  @spec major_index(t()) :: non_neg_integer()
+  def major_index(%__MODULE__{} = recursor) do
+    recursor.num_params + recursor.num_motives + recursor.num_minors + recursor.num_indices
+  end
 end

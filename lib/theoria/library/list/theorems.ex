@@ -10,75 +10,71 @@ defmodule Theoria.Library.List.Theorems do
 
   theorem :list_nil_is_list do
     type do
-      forall :a, type(0) do
-        call(const(:List), var(:a))
+      term do
+        forall :a, type(0) do
+          list(a)
+        end
       end
     end
 
     proof do
-      const(:list_nil)
+      term do
+        list_nil
+      end
     end
   end
 
   theorem :list_cons_is_function do
     type do
-      forall :a, type(0) do
-        arrow(
-          var(:a),
-          arrow(call(const(:List), var(:a)), call(const(:List), var(:a)))
-        )
+      term do
+        forall :a, type(0) do
+          arrow(a, arrow(list(a), list(a)))
+        end
       end
     end
 
     proof do
-      const(:list_cons)
+      term do
+        list_cons
+      end
     end
   end
 
   theorem :list_length_nil do
     type do
-      forall :a, type(0) do
-        eq(
-          const(:Nat),
-          call(const(:list_length), var(:a), call(const(:list_nil), var(:a))),
-          const(:zero)
-        )
+      term do
+        forall :a, type(0) do
+          eq(const(:Nat), list_length(a, list_nil(a)), zero)
+        end
       end
     end
 
     proof do
-      lam :a, type(0) do
-        refl(const(:zero))
+      term do
+        lam :a, type(0) do
+          refl(zero)
+        end
       end
     end
   end
 
   theorem :list_length_singleton do
     type do
-      forall :a, type(0) do
-        forall :x, var(:a) do
-          eq(
-            const(:Nat),
-            call(
-              const(:list_length),
-              var(:a),
-              call(
-                const(:list_cons),
-                var(:a),
-                var(:x),
-                call(const(:list_nil), var(:a))
-              )
-            ),
-            call(const(:succ), const(:zero))
-          )
+      term do
+        forall :a, type(0) do
+          forall :x, a do
+            eq(const(:Nat), list_length(a, list_cons(a, x, list_nil(a))), succ(zero))
+          end
         end
       end
     end
 
     proof do
-      lam :a, type(0) do
-        lam :x, var(:a) do
-          refl(call(const(:succ), const(:zero)))
+      term do
+        lam :a, type(0) do
+          lam :x, a do
+            refl(succ(zero))
+          end
         end
       end
     end
@@ -86,56 +82,25 @@ defmodule Theoria.Library.List.Theorems do
 
   theorem :list_length_cons_nil do
     type do
-      forall :a, type(0) do
-        forall :x, var(:a) do
-          eq(
-            const(:Nat),
-            call(const(:list_rec), [
-              var(:a),
-              const(:Nat),
-              const(:zero),
-              lam :_head, var(:a) do
-                lam :_tail, call(const(:List), var(:a)) do
-                  lam :acc, const(:Nat) do
-                    call(const(:succ), var(:acc))
-                  end
-                end
-              end,
-              call(
-                const(:list_cons),
-                var(:a),
-                var(:x),
-                call(const(:list_nil), var(:a))
-              )
-            ]),
-            call(const(:succ), const(:zero))
-          )
-        end
-      end
-    end
-
-    proof do
-      lam :a, type(0) do
-        lam :x, var(:a) do
-          refl(call(const(:succ), const(:zero)))
-        end
-      end
-    end
-  end
-
-  theorem :list_length_cons do
-    type do
-      forall :a, type(0) do
-        forall :x, var(:a) do
-          forall :xs, call(const(:List), var(:a)) do
+      term do
+        forall :a, type(0) do
+          forall :x, a do
             eq(
               const(:Nat),
-              call(
-                const(:list_length),
-                var(:a),
-                call(const(:list_cons), var(:a), var(:x), var(:xs))
+              list_rec(
+                a,
+                const(:Nat),
+                zero,
+                lam :_head, a do
+                  lam :_tail, list(a) do
+                    lam :acc, const(:Nat) do
+                      succ(acc)
+                    end
+                  end
+                end,
+                list_cons(a, x, list_nil(a))
               ),
-              call(const(:succ), call(const(:list_length), var(:a), var(:xs)))
+              succ(zero)
             )
           end
         end
@@ -143,10 +108,36 @@ defmodule Theoria.Library.List.Theorems do
     end
 
     proof do
-      lam :a, type(0) do
-        lam :x, var(:a) do
-          lam :xs, call(const(:List), var(:a)) do
-            refl(call(const(:succ), call(const(:list_length), var(:a), var(:xs))))
+      term do
+        lam :a, type(0) do
+          lam :x, a do
+            refl(succ(zero))
+          end
+        end
+      end
+    end
+  end
+
+  theorem :list_length_cons do
+    type do
+      term do
+        forall :a, type(0) do
+          forall :x, a do
+            forall :xs, list(a) do
+              eq(const(:Nat), list_length(a, list_cons(a, x, xs)), succ(list_length(a, xs)))
+            end
+          end
+        end
+      end
+    end
+
+    proof do
+      term do
+        lam :a, type(0) do
+          lam :x, a do
+            lam :xs, list(a) do
+              refl(succ(list_length(a, xs)))
+            end
           end
         end
       end
@@ -155,38 +146,28 @@ defmodule Theoria.Library.List.Theorems do
 
   theorem :list_length_two do
     type do
-      forall :a, type(0) do
-        forall :x, var(:a) do
-          forall :y, var(:a) do
-            eq(
-              const(:Nat),
-              call(
-                const(:list_length),
-                var(:a),
-                call(
-                  const(:list_cons),
-                  var(:a),
-                  var(:x),
-                  call(
-                    const(:list_cons),
-                    var(:a),
-                    var(:y),
-                    call(const(:list_nil), var(:a))
-                  )
-                )
-              ),
-              call(const(:succ), call(const(:succ), const(:zero)))
-            )
+      term do
+        forall :a, type(0) do
+          forall :x, a do
+            forall :y, a do
+              eq(
+                const(:Nat),
+                list_length(a, list_cons(a, x, list_cons(a, y, list_nil(a)))),
+                succ(succ(zero))
+              )
+            end
           end
         end
       end
     end
 
     proof do
-      lam :a, type(0) do
-        lam :x, var(:a) do
-          lam :y, var(:a) do
-            refl(call(const(:succ), call(const(:succ), const(:zero))))
+      term do
+        lam :a, type(0) do
+          lam :x, a do
+            lam :y, a do
+              refl(succ(succ(zero)))
+            end
           end
         end
       end

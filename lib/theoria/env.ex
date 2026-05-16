@@ -32,7 +32,29 @@ defmodule Theoria.Env do
       when is_atom(name) do
     %{
       env
-      | constants: Map.put(constants, name, %Constant{type: type, value: value}),
+      | constants:
+          Map.put(constants, name, %Constant{
+            type: type,
+            value: value,
+            kind: :definition,
+            reducible?: true
+          }),
+        declarations: put_order(env, name)
+    }
+  end
+
+  @spec put_theorem(t(), atom(), Term.t(), Term.t()) :: t()
+  def put_theorem(%__MODULE__{constants: constants} = env, name, type, proof)
+      when is_atom(name) do
+    %{
+      env
+      | constants:
+          Map.put(constants, name, %Constant{
+            type: type,
+            value: proof,
+            kind: :theorem,
+            reducible?: false
+          }),
         declarations: put_order(env, name)
     }
   end

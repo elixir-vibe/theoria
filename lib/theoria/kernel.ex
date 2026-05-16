@@ -116,6 +116,14 @@ defmodule Theoria.Kernel do
     end
   end
 
+  def add_theorem(%Env{} = env, name, type, proof) when is_atom(name) do
+    with :ok <- ensure_fresh_declaration(env, name),
+         {:ok, %Sort{}} <- infer_sort(env, Context.new(), type),
+         :ok <- check(env, Context.new(), proof, type) do
+      {:ok, Env.put_theorem(env, name, type, proof)}
+    end
+  end
+
   def dependencies(%Env{} = env, name) when is_atom(name) do
     case Env.fetch(env, name) do
       {:ok, constant} -> {:ok, declaration_dependencies(constant)}
@@ -199,9 +207,17 @@ defmodule Theoria.Kernel do
 
   defp validate_declaration(env, checked_env, name) do
     case Env.fetch(env, name) do
-      {:ok, %{type: type, value: nil}} -> add_constant(checked_env, name, type)
-      {:ok, %{type: type, value: value}} -> add_definition(checked_env, name, type, value)
-      :error -> error(:missing_declaration, name: name)
+      {:ok, %{kind: :constant, type: type}} ->
+        add_constant(checked_env, name, type)
+
+      {:ok, %{kind: :definition, type: type, value: value}} ->
+        add_definition(checked_env, name, type, value)
+
+      {:ok, %{kind: :theorem, type: type, value: proof}} ->
+        add_theorem(checked_env, name, type, proof)
+
+      :error ->
+        error(:missing_declaration, name: name)
     end
   end
 

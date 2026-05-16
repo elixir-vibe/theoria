@@ -59,8 +59,8 @@ defmodule Theoria.Normalize do
 
   defp do_whnf_step(%Env{} = env, %Const{name: name} = const, fuel) do
     case Env.fetch(env, name) do
-      {:ok, %{value: nil}} -> {:ok, const, fuel}
-      {:ok, %{value: value}} -> do_whnf(env, value, fuel)
+      {:ok, %{value: value, reducible?: true}} -> do_whnf(env, value, fuel)
+      {:ok, _constant} -> {:ok, const, fuel}
       :error -> {:ok, const, fuel}
     end
   end

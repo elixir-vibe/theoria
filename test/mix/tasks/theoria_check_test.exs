@@ -19,6 +19,38 @@ defmodule Mix.Tasks.Theoria.CheckTest do
     end
   end
 
+  defmodule DependentProofs do
+    use Theoria.DSL
+
+    theorem :truth do
+      type do
+        term do
+          true_prop()
+        end
+      end
+
+      proof do
+        term do
+          const(:true_intro)
+        end
+      end
+    end
+
+    theorem :truth_again do
+      type do
+        term do
+          true_prop()
+        end
+      end
+
+      proof do
+        term do
+          const(:truth)
+        end
+      end
+    end
+  end
+
   test "checks built-in theorem modules" do
     Mix.Task.clear()
 
@@ -45,6 +77,39 @@ defmodule Mix.Tasks.Theoria.CheckTest do
 
     assert output =~ "Mix.Tasks.Theoria.CheckTest.SampleProofs"
     assert output =~ "Checked 1 theorem(s)."
+  end
+
+  test "installs theorem modules when requested" do
+    Mix.Task.clear()
+
+    output =
+      capture_io(fn ->
+        Check.run(["--install", "Mix.Tasks.Theoria.CheckTest.DependentProofs"])
+      end)
+
+    assert output =~ "Mix.Tasks.Theoria.CheckTest.DependentProofs"
+    assert output =~ "2 theorem(s), installed"
+    assert output =~ "Checked 2 theorem(s)."
+  end
+
+  test "dependent theorem modules fail without installation" do
+    Mix.Task.clear()
+
+    assert_raise Mix.Error, ~r/unknown constant: truth/, fn ->
+      capture_io(fn ->
+        Check.run(["Mix.Tasks.Theoria.CheckTest.DependentProofs"])
+      end)
+    end
+  end
+
+  test "raises for invalid options" do
+    Mix.Task.clear()
+
+    assert_raise Mix.Error, ~r/invalid option\(s\): --bad/, fn ->
+      capture_io(fn ->
+        Check.run(["--bad"])
+      end)
+    end
   end
 
   test "raises for modules that cannot be loaded" do

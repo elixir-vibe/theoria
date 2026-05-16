@@ -42,9 +42,10 @@ From Mix, use:
 
 ```bash
 mix theoria.check MyApp.Proofs
+mix theoria.check --install MyApp.Proofs
 ```
 
-With no module arguments, `mix theoria.check` checks Theoria's built-in theorem corpora against `Theoria.Prelude.env/0`.
+With no module arguments, `mix theoria.check` checks Theoria's built-in theorem corpora against `Theoria.Prelude.env/0`. With `--install`, theorem modules are checked sequentially and installed as opaque theorem declarations, so later theorems/modules can refer to earlier theorem constants.
 
 The generated theorem functions are intentionally normal Elixir functions so ExDoc can document them alongside their surrounding module docs.
 

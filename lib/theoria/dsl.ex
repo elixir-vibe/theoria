@@ -119,7 +119,10 @@ defmodule Theoria.DSL do
   end
 
   @doc "Declares a checked theorem function trio from `type` and `proof` blocks."
-  defmacro theorem(name, do: block) when is_atom(name) do
+  defmacro theorem(name, opts \\ [], do: block) when is_atom(name) and is_list(opts) do
+    universe_params = Keyword.get(opts, :universes, [])
+    validate_universe_params!(universe_params)
+
     {type_ast, proof_ast} = theorem_parts(block)
     type_fun = String.to_atom("#{name}_type")
     proof_fun = String.to_atom("#{name}_proof")
@@ -139,9 +142,29 @@ defmodule Theoria.DSL do
         with {:ok, type} <- Theoria.Elaborator.elaborate(unquote(type_fun)()),
              {:ok, proof} <- Theoria.Elaborator.elaborate(unquote(proof_fun)()),
              :ok <- Theoria.Kernel.check(env, proof, type) do
-          {:ok, %Theoria.Theorem{name: unquote(name), type: type, proof: proof}}
+          {:ok,
+           %Theoria.Theorem{
+             name: unquote(name),
+             type: type,
+             proof: proof,
+             universe_params: unquote(universe_params)
+           }}
         end
       end
+    end
+  end
+
+  defp validate_universe_params!(params) do
+    cond do
+      not is_list(params) or not Enum.all?(params, &is_atom/1) ->
+        raise ArgumentError, "theorem :universes must be a list of atoms"
+
+      length(params) != MapSet.size(MapSet.new(params)) ->
+        raise ArgumentError,
+              "theorem :universes contains duplicate parameters: #{inspect(params)}"
+
+      true ->
+        :ok
     end
   end
 
@@ -191,8 +214,18 @@ defmodule Theoria.DSL do
   end
 
   defp quote_term({:const, _meta, [name, levels]}) do
+    levels = quote_levels!(levels)
+
     quote do
       Theoria.Syntax.const(unquote(name_literal!(name)), unquote(levels))
+    end
+  end
+
+  defp quote_term({:sort, _meta, [level]}) do
+    level = quote_level(level)
+
+    quote do
+      Theoria.Syntax.sort(unquote(level))
     end
   end
 
@@ -474,8 +507,44 @@ defmodule Theoria.DSL do
 
   defp quote_const(name, levels) do
     quote do
-      Theoria.Syntax.const(unquote(name), unquote(levels))
+      Theoria.Syntax.const(unquote(name), unquote(quote_levels!(levels)))
     end
+  end
+
+  defp quote_levels!(levels) when is_list(levels), do: Enum.map(levels, &quote_level/1)
+
+  defp quote_levels!(other) do
+    raise ArgumentError, "expected a list of universe levels, got: #{Macro.to_string(other)}"
+  end
+
+  defp quote_level(level) when is_integer(level) and level >= 0, do: level
+  defp quote_level(level) when is_atom(level), do: quote(do: Theoria.Level.param(unquote(level)))
+
+  defp quote_level({name, _meta, context}) when is_atom(name) and is_atom(context) do
+    quote do
+      Theoria.Level.param(unquote(name))
+    end
+  end
+
+  defp quote_level({:succ, _meta, [level]}) do
+    level = quote_level(level)
+
+    quote do
+      Theoria.Level.succ(unquote(level))
+    end
+  end
+
+  defp quote_level({:max, _meta, [left, right]}) do
+    left = quote_level(left)
+    right = quote_level(right)
+
+    quote do
+      Theoria.Level.max(unquote(left), unquote(right))
+    end
+  end
+
+  defp quote_level(other) do
+    raise ArgumentError, "unsupported universe level syntax: #{Macro.to_string(other)}"
   end
 
   defp name_literal!(atom) when is_atom(atom), do: atom

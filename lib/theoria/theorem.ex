@@ -7,9 +7,14 @@ defmodule Theoria.Theorem do
   alias Theoria.Term
 
   @enforce_keys [:name, :type, :proof]
-  defstruct [:name, :type, :proof]
+  defstruct [:name, :type, :proof, universe_params: []]
 
-  @type t :: %__MODULE__{name: atom(), type: Term.t(), proof: Term.t()}
+  @type t :: %__MODULE__{
+          name: atom(),
+          type: Term.t(),
+          proof: Term.t(),
+          universe_params: [atom()]
+        }
 
   @doc "Checks every theorem registered by a `use Theoria.DSL` theorem module."
   @spec check_all(module(), Env.t()) :: {:ok, [t()]} | {:error, {atom(), Theoria.Error.t()}}
@@ -33,8 +38,13 @@ defmodule Theoria.Theorem do
 
   @doc "Adds a checked theorem to an environment as an opaque theorem declaration."
   @spec add_to_env(Env.t(), t()) :: {:ok, Env.t()} | {:error, Theoria.Error.t()}
-  def add_to_env(%Env{} = env, %__MODULE__{name: name, type: type, proof: proof}) do
-    Kernel.add_theorem(env, name, type, proof)
+  def add_to_env(%Env{} = env, %__MODULE__{
+        name: name,
+        type: type,
+        proof: proof,
+        universe_params: universe_params
+      }) do
+    Kernel.add_theorem(env, name, type, proof, universe_params)
   end
 
   @doc "Checks and installs every theorem registered by a theorem module in order."

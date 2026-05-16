@@ -4,6 +4,26 @@ defmodule Theoria.DSL.TheoremTest do
   defmodule BasicProofs do
     use Theoria.DSL
 
+    theorem :poly_identity, universes: [:u] do
+      type do
+        term do
+          forall :a, sort(u) do
+            a ~> a
+          end
+        end
+      end
+
+      proof do
+        term do
+          lam :a, sort(u) do
+            lam :x, a do
+              x
+            end
+          end
+        end
+      end
+    end
+
     theorem :identity do
       type do
         forall :a, type(0) do
@@ -42,7 +62,7 @@ defmodule Theoria.DSL.TheoremTest do
   end
 
   test "generates theorem registry" do
-    assert BasicProofs.__theoria_theorems__() == [:identity, :bad_identity]
+    assert BasicProofs.__theoria_theorems__() == [:poly_identity, :identity, :bad_identity]
   end
 
   test "generates type and proof syntax functions" do
@@ -55,6 +75,13 @@ defmodule Theoria.DSL.TheoremTest do
     assert theorem.name == :identity
     assert %Theoria.Term.Forall{} = theorem.type
     assert %Theoria.Term.Lam{} = theorem.proof
+  end
+
+  test "checks universe-polymorphic theorem" do
+    assert {:ok, theorem} = BasicProofs.poly_identity_theorem()
+    assert theorem.name == :poly_identity
+    assert theorem.universe_params == [:u]
+    assert inspect(theorem) =~ "theorem poly_identity.{u}"
   end
 
   test "returns kernel error for invalid theorem" do

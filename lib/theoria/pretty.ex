@@ -11,8 +11,8 @@ defmodule Theoria.Pretty do
   def term(term), do: render_term(term, [])
 
   @spec theorem(Theorem.t()) :: String.t()
-  def theorem(%Theorem{name: name, type: type}) do
-    "theorem #{name} : #{term(type)}"
+  def theorem(%Theorem{name: name, type: type, universe_params: universe_params}) do
+    "theorem #{name}#{render_universe_params(universe_params)} : #{term(type)}"
   end
 
   @spec trust_report(TrustReport.t()) :: String.t()
@@ -200,6 +200,13 @@ defmodule Theoria.Pretty do
 
   defp do_render_level(%Theoria.Level.Max{left: left, right: right}) do
     "max(#{render_level(left)}, #{render_level(right)})"
+  end
+
+  defp render_universe_params([]), do: ""
+
+  defp render_universe_params(params) do
+    rendered_params = Enum.map_join(params, ",", &Atom.to_string/1)
+    ".{#{rendered_params}}"
   end
 
   defp render_names(names) do

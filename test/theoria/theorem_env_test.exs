@@ -60,6 +60,19 @@ defmodule Theoria.TheoremEnvTest do
     assert {:ok, %Constant{kind: :theorem, reducible?: false}} = Env.fetch(env, :truth_again)
   end
 
+  test "installs universe-polymorphic theorem declarations" do
+    theorem = %Theorem{
+      name: :poly_id,
+      type: forall(:a, sort(Theoria.Level.param(:u)), arrow(bvar(0), bvar(0))),
+      proof: lam(:a, sort(Theoria.Level.param(:u)), lam(:x, bvar(0), bvar(0))),
+      universe_params: [:u]
+    }
+
+    assert {:ok, env} = Theorem.add_to_env(Env.new(), theorem)
+    assert {:ok, %Constant{kind: :theorem, universe_params: [:u]}} = Env.fetch(env, :poly_id)
+    assert {:ok, _type} = Kernel.infer(env, const(:poly_id, [1]))
+  end
+
   test "reports axioms used by a checked theorem" do
     {:ok, env} = Logic.env()
     {:ok, env} = Kernel.add_axiom(env, :assumed_truth, const(:True))

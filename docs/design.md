@@ -65,7 +65,29 @@ term do
 end
 ```
 
-The `theorem` macro creates a small function trio: `<name>_type/0`, `<name>_proof/0`, and `<name>_theorem/1`. The final function returns a `Theoria.Theorem` only after kernel checking succeeds.
+The `theorem` macro creates a small function trio: `<name>_type/0`, `<name>_proof/0`, and `<name>_theorem/1`. The final function returns a `Theoria.Theorem` only after kernel checking succeeds. Universe-polymorphic theorem declarations can be written with explicit universe parameters:
+
+```elixir
+theorem :poly_identity, universes: [:u] do
+  type do
+    term do
+      forall :a, sort(u) do
+        a ~> a
+      end
+    end
+  end
+
+  proof do
+    term do
+      lam :a, sort(u) do
+        lam :x, a do
+          x
+        end
+      end
+    end
+  end
+end
+```
 
 ## Environments
 

@@ -24,6 +24,30 @@ For each theorem, the macro generates three documented functions:
 - `<name>_proof/0` returns unelaborated proof syntax.
 - `<name>_theorem/1` elaborates and checks the theorem against an environment.
 
+Theorems may be universe-polymorphic:
+
+```elixir
+theorem :identity, universes: [:u] do
+  type do
+    term do
+      forall :a, sort(u) do
+        a ~> a
+      end
+    end
+  end
+
+  proof do
+    term do
+      lam :a, sort(u) do
+        lam :x, a do
+          x
+        end
+      end
+    end
+  end
+end
+```
+
 The macro also registers theorem names through `__theoria_theorems__/0`, which lets tooling check a whole module:
 
 ```elixir
@@ -71,12 +95,12 @@ The quote DSL also supports binder and helper forms:
 ```elixir
 term do
   forall :p, prop() do
-    arrow(p, p)
+    p ~> p
   end
 end
 
 term do
-  lam :f, arrow(p, q) do
+  lam :f, p ~> q do
     lam :x, p do
       let :result, q, app(f, x) do
         result
@@ -102,7 +126,7 @@ term do
 end
 
 term do
-  arrow(true_prop(), false_prop())
+  true_prop() ~> false_prop()
 end
 ```
 

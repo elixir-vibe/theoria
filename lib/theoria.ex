@@ -11,4 +11,7 @@ defmodule Theoria do
 
   @doc "Returns an empty kernel environment."
   def new_env, do: Env.new()
+
+  @doc "Returns the standard prelude environment."
+  def prelude_env, do: Theoria.Prelude.env()
 end

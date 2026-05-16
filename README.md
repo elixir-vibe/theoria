@@ -48,6 +48,7 @@ The initial kernel supports:
 - initial Bool library (`Bool`, `true`, `false`, `bool_rec`, `bool_not`, `bool_and`, `bool_or`)
 - initial Nat library (`Nat`, `zero`, `succ`, `nat_rec`, `nat_add`)
 - initial List library (`List`, `list_nil`, `list_cons`, `list_rec`, `list_length`)
+- standard prelude environment composing Logic, Bool, Nat, and List
 - beta reduction
 - definitional equality by normalization
 - checked constants and definitions in an environment
@@ -112,6 +113,13 @@ The macro only generates syntax/proof-checking functions. The theorem is not
 accepted unless `Theoria.Kernel` checks the elaborated proof against the
 elaborated type.
 
+Built-in theorem corpora can be checked against the standard prelude:
+
+```elixir
+{:ok, env} = Theoria.Prelude.env()
+{:ok, theorems} = Theoria.Theorem.check_all(Theoria.Library.List.Theorems, env)
+```
+
 ## Inspect output
 
 Core terms and checked theorems implement Elixir's `Inspect` protocol:
@@ -152,7 +160,6 @@ architecture/smell checks, Dialyzer, and tests.
 ## Roadmap
 
 1. Continue hardening the kernel with more normalization, substitution, and negative tests.
-2. Add elimination/projection helpers for logical connectives.
-3. Add primitive Bool/Nat/List theories.
-4. Add Nat/List theories and recursor support.
-5. Add finite graph/spec libraries for tools such as Reach.
+2. Add richer Bool/Nat/List theorem corpora.
+3. Add theorem-checking Mix tasks and documentation generation.
+4. Add finite graph/spec libraries for tools such as Reach.

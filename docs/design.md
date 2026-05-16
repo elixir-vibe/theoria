@@ -62,6 +62,8 @@ The `theorem` macro creates a small function trio: `<name>_type/0`, `<name>_proo
 
 `Theoria.Env` stores checked constants and definitions. A declaration enters the environment only through kernel functions that verify its type and, for definitions, its value.
 
+`Theoria.Prelude.env/0` is the standard environment for users and downstream tooling. It composes the built-in libraries in dependency order: Logic, Bool, Nat, then List.
+
 ## Normalization and definitional equality
 
 The initial normalizer supports beta reduction and unfolding checked definitions. Definitional equality currently normalizes both sides and compares the resulting terms structurally.
@@ -117,6 +119,6 @@ This is a pragmatic bootstrap point. Once the calculus grows inductive families 
 
 ## Near-term roadmap
 
-1. Add richer Nat/List theorem corpora.
-2. Improve theorem/error pretty-printing.
+1. Add richer Bool/Nat/List theorem corpora.
+2. Add theorem-checking Mix tasks and documentation generation.
 3. Add finite graph/spec libraries for tools such as Reach.

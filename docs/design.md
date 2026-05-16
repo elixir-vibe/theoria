@@ -78,6 +78,10 @@ Sort n : Sort (n + 1)
 
 There is no separate `Prop` yet. Equality currently infers `Sort 0` as a proposition-like type. This is intentionally provisional and should be revisited when the logic layer grows.
 
+## Inspect and pretty-printing
+
+Core terms and checked theorems implement Elixir's `Inspect` protocol via `Theoria.Pretty`. This keeps everyday `IO.inspect/1`, `dbg/1`, and assertion failures readable while preserving pure rendering functions for future UI and documentation use.
+
 ## Relationship to Elixir set-theoretic types
 
 Elixir's set-theoretic types describe sets of Elixir runtime values. Theoria checks terms in its own object language. These are complementary:

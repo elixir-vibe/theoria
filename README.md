@@ -109,6 +109,20 @@ The macro only generates syntax/proof-checking functions. The theorem is not
 accepted unless `Theoria.Kernel` checks the elaborated proof against the
 elaborated type.
 
+## Inspect output
+
+Core terms and checked theorems implement Elixir's `Inspect` protocol:
+
+```elixir
+inspect(identity_type)
+#=> "#Theoria<∀ a : Prop, a → a>"
+
+inspect(theorem)
+#=> "#Theoria<theorem identity : ∀ p : Prop, p → p>"
+```
+
+`Inspect` delegates to `Theoria.Pretty`, keeping rendering pure and reusable.
+
 ## Quality checks
 
 The repository includes a Reach-style CI alias:

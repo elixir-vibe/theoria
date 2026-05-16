@@ -51,6 +51,7 @@ The initial kernel supports:
 - initial List library (`List`, `list_nil`, `list_cons`, `list_rec`, `list_length`)
 - standard prelude environment composing Logic, Bool, Nat, and List
 - beta reduction
+- bounded normalization with fuel
 - definitional equality by normalization
 - checked constants and definitions in an environment
 - named surface terms elaborated to de Bruijn core terms

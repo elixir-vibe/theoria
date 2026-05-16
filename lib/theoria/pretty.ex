@@ -56,6 +56,11 @@ defmodule Theoria.Pretty do
     "unbound name: #{name} (context: #{inspect(context)})"
   end
 
+  def error(%Error{reason: :normalization_limit, details: details}) do
+    max_steps = Keyword.fetch!(details, :max_steps)
+    "normalization exceeded limit of #{max_steps} steps"
+  end
+
   def error(%Error{reason: reason, details: details}) do
     "#{reason}: #{inspect(details)}"
   end

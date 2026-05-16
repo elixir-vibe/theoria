@@ -1,6 +1,7 @@
 defmodule Theoria.Normalize.HardeningTest do
   use ExUnit.Case, async: true
 
+  alias Theoria.Env
   alias Theoria.Normalize
   alias Theoria.Prelude
 
@@ -80,6 +81,19 @@ defmodule Theoria.Normalize.HardeningTest do
       |> app(nat(1))
 
     assert Normalize.defeq?(env, term, nat(3))
+  end
+
+  test "normalization limit stops unfolding loops" do
+    env = Env.new() |> Env.put_definition(:loop, sort(0), const(:loop))
+
+    assert {:error, error} = Normalize.normalize(env, const(:loop), max_steps: 3)
+    assert Exception.message(error) == "normalization exceeded limit of 3 steps"
+  end
+
+  test "definitional equality returns false when normalization exceeds the limit" do
+    env = Env.new() |> Env.put_definition(:loop, sort(0), const(:loop))
+
+    refute Normalize.defeq?(env, const(:loop), const(:loop), max_steps: 3)
   end
 
   defp nat(0), do: const(:zero)

@@ -68,9 +68,17 @@ The `theorem` macro creates a small function trio: `<name>_type/0`, `<name>_proo
 
 ## Normalization and definitional equality
 
-The initial normalizer supports beta reduction and unfolding checked definitions. Definitional equality currently normalizes both sides and compares the resulting terms structurally.
+The initial normalizer supports beta reduction, unfolding checked definitions, and primitive recursor reductions. Definitional equality currently normalizes both sides and compares the resulting terms structurally.
 
-This is intentionally simple. Later versions may need weak-head reduction, memoization, fuel, and more careful unfolding control.
+Normalization is bounded by a named fuel option, defaulting to 10,000 steps:
+
+```elixir
+Theoria.Normalize.normalize(env, term, max_steps: 10_000)
+Theoria.Normalize.whnf(env, term, max_steps: 10_000)
+Theoria.Normalize.defeq?(env, left, right, max_steps: 10_000)
+```
+
+This keeps malformed or adversarial environments from unfolding forever. Later versions may need memoization and more careful unfolding control.
 
 ## Universe model
 

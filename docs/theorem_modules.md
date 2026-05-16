@@ -38,6 +38,12 @@ Checked theorems can also be installed into an environment as opaque theorem dec
 {:ok, env, theorems} = Theoria.Theorem.add_all_to_env(MyApp.Proofs, env)
 ```
 
+A checked theorem's trusted assumptions can be inspected with:
+
+```elixir
+{:ok, axioms} = Theoria.Theorem.axioms(env, theorem)
+```
+
 From Mix, use:
 
 ```bash

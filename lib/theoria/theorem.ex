@@ -23,6 +23,13 @@ defmodule Theoria.Theorem do
     |> reverse_checked()
   end
 
+  @doc "Returns trusted axioms used by a checked theorem."
+  @spec axioms(Env.t(), t()) :: {:ok, MapSet.t(atom())}
+  def axioms(%Env{} = env, %__MODULE__{type: type, proof: proof}) do
+    dependencies = MapSet.union(Term.constants(type), Term.constants(proof))
+    {:ok, collect_axioms(env, dependencies)}
+  end
+
   @doc "Adds a checked theorem to an environment as an opaque theorem declaration."
   @spec add_to_env(Env.t(), t()) :: {:ok, Env.t()} | {:error, Theoria.Error.t()}
   def add_to_env(%Env{} = env, %__MODULE__{name: name, type: type, proof: proof}) do
@@ -43,6 +50,20 @@ defmodule Theoria.Theorem do
       end
     end)
     |> reverse_installed()
+  end
+
+  defp collect_axioms(env, dependencies) do
+    Enum.reduce(dependencies, MapSet.new(), fn dependency, axioms ->
+      MapSet.union(axioms, dependency_axioms(env, dependency))
+    end)
+  end
+
+  defp dependency_axioms(env, dependency) do
+    case {Env.fetch(env, dependency), Kernel.axioms(env, dependency)} do
+      {{:ok, %{kind: :axiom}}, {:ok, axioms}} -> MapSet.put(axioms, dependency)
+      {_constant, {:ok, axioms}} -> axioms
+      _unknown -> MapSet.new()
+    end
   end
 
   defp check_one(module, name, env) do

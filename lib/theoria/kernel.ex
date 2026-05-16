@@ -88,15 +88,24 @@ defmodule Theoria.Kernel do
   end
 
   def add_constant(%Env{} = env, name, type) when is_atom(name) do
-    with {:ok, %Sort{}} <- infer_sort(env, Context.new(), type) do
+    with :ok <- ensure_fresh_declaration(env, name),
+         {:ok, %Sort{}} <- infer_sort(env, Context.new(), type) do
       {:ok, Env.put_constant(env, name, type)}
     end
   end
 
   def add_definition(%Env{} = env, name, type, value) when is_atom(name) do
-    with {:ok, %Sort{}} <- infer_sort(env, Context.new(), type),
+    with :ok <- ensure_fresh_declaration(env, name),
+         {:ok, %Sort{}} <- infer_sort(env, Context.new(), type),
          :ok <- check(env, Context.new(), value, type) do
       {:ok, Env.put_definition(env, name, type, value)}
+    end
+  end
+
+  defp ensure_fresh_declaration(env, name) do
+    case Env.fetch(env, name) do
+      {:ok, _constant} -> error(:duplicate_declaration, name: name)
+      :error -> :ok
     end
   end
 

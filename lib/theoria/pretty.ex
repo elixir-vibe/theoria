@@ -61,6 +61,11 @@ defmodule Theoria.Pretty do
     "normalization exceeded limit of #{max_steps} steps"
   end
 
+  def error(%Error{reason: :duplicate_declaration, details: details}) do
+    name = Keyword.fetch!(details, :name)
+    "duplicate declaration: #{name}"
+  end
+
   def error(%Error{reason: reason, details: details}) do
     "#{reason}: #{inspect(details)}"
   end

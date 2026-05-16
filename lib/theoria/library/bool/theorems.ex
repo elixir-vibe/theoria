@@ -32,4 +32,44 @@ defmodule Theoria.Library.Bool.Theorems do
       const(:bool_not)
     end
   end
+
+  theorem :bool_not_true do
+    type do
+      eq(const(:Bool), call(const(:bool_not), const(true)), const(false))
+    end
+
+    proof do
+      refl(const(false))
+    end
+  end
+
+  theorem :bool_not_false do
+    type do
+      eq(const(:Bool), call(const(:bool_not), const(false)), const(true))
+    end
+
+    proof do
+      refl(const(true))
+    end
+  end
+
+  theorem :bool_and_true_true do
+    type do
+      eq(const(:Bool), call(const(:bool_and), const(true), const(true)), const(true))
+    end
+
+    proof do
+      refl(const(true))
+    end
+  end
+
+  theorem :bool_and_false_true do
+    type do
+      eq(const(:Bool), call(const(:bool_and), const(false), const(true)), const(false))
+    end
+
+    proof do
+      refl(const(false))
+    end
+  end
 end

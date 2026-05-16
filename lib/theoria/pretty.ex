@@ -70,7 +70,7 @@ defmodule Theoria.Pretty do
   defp render_term(%Const{name: name}, _context), do: Atom.to_string(name)
 
   defp render_term(%App{} = app, context) do
-    {fun, args} = collect_app(app, [])
+    {fun, args} = Term.Application.collect(app)
 
     ([render_atomic(fun, context)] ++ Enum.map(args, &render_atomic(&1, context)))
     |> Enum.join(" ")
@@ -105,9 +105,6 @@ defmodule Theoria.Pretty do
   defp render_atomic(%Const{} = term, context), do: render_term(term, context)
   defp render_atomic(%App{} = term, context), do: render_term(term, context)
   defp render_atomic(term, context), do: "(" <> render_term(term, context) <> ")"
-
-  defp collect_app(%App{fun: fun, arg: arg}, args), do: collect_app(fun, [arg | args])
-  defp collect_app(fun, args), do: {fun, args}
 
   defp binder_name(:_), do: "_"
   defp binder_name(name), do: Atom.to_string(name)

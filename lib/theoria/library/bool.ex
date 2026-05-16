@@ -19,9 +19,10 @@ defmodule Theoria.Library.Bool do
     with {:ok, env} <- Kernel.add_constant(env, :Bool, type()),
          {:ok, env} <- Kernel.add_constant(env, true, Theoria.Term.const(:Bool)),
          {:ok, env} <- Kernel.add_constant(env, false, Theoria.Term.const(:Bool)),
-         {:ok, env} <- Kernel.add_constant(env, :bool_not, bool_not_type()),
-         {:ok, env} <- Kernel.add_constant(env, :bool_and, bool_binary_type()) do
-      Kernel.add_constant(env, :bool_or, bool_binary_type())
+         {:ok, env} <- Kernel.add_constant(env, :bool_rec, bool_rec_type()),
+         {:ok, env} <- Kernel.add_definition(env, :bool_not, bool_not_type(), bool_not_value()),
+         {:ok, env} <- Kernel.add_definition(env, :bool_and, bool_binary_type(), bool_and_value()) do
+      Kernel.add_definition(env, :bool_or, bool_binary_type(), bool_or_value())
     end
   end
 
@@ -30,8 +31,32 @@ defmodule Theoria.Library.Bool do
     extend(Env.new())
   end
 
+  defp bool_rec_type do
+    elab!(
+      forall :a, Theoria.DSL.type(0) do
+        arrow(
+          var(:a),
+          arrow(
+            var(:a),
+            arrow(const(:Bool), var(:a))
+          )
+        )
+      end
+    )
+  end
+
   defp bool_not_type do
     elab!(arrow(const(:Bool), const(:Bool)))
+  end
+
+  defp bool_not_value do
+    elab!(
+      lam :b, const(:Bool) do
+        term do
+          bool_rec(const(:Bool), false, true, b)
+        end
+      end
+    )
   end
 
   defp bool_binary_type do
@@ -40,6 +65,30 @@ defmodule Theoria.Library.Bool do
         const(:Bool),
         arrow(const(:Bool), const(:Bool))
       )
+    )
+  end
+
+  defp bool_and_value do
+    elab!(
+      lam :a, const(:Bool) do
+        lam :b, const(:Bool) do
+          term do
+            bool_rec(const(:Bool), b, false, a)
+          end
+        end
+      end
+    )
+  end
+
+  defp bool_or_value do
+    elab!(
+      lam :a, const(:Bool) do
+        lam :b, const(:Bool) do
+          term do
+            bool_rec(const(:Bool), true, b, a)
+          end
+        end
+      end
     )
   end
 end

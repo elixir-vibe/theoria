@@ -105,7 +105,7 @@ This is a pragmatic bootstrap point. Once the calculus grows inductive families 
 
 ## Bool library
 
-`Theoria.Library.Bool` introduces the first computational data declarations: `Bool`, `true`, `false`, `bool_not`, `bool_and`, and `bool_or`. These are distinct from logical `True` and `False` propositions.
+`Theoria.Library.Bool` introduces the first computational data declarations: `Bool`, `true`, `false`, `bool_rec`, `bool_not`, `bool_and`, and `bool_or`. These are distinct from logical `True` and `False` propositions. The normalizer has primitive reductions for `bool_rec _ t f true` and `bool_rec _ t f false`, so boolean definitions can compute during definitional equality.
 
 ## Near-term roadmap
 

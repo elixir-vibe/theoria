@@ -9,7 +9,11 @@ defmodule Theoria.Library.Bool.TheoremsTest do
     assert Theorems.__theoria_theorems__() == [
              :true_is_bool,
              :false_is_bool,
-             :bool_not_is_function
+             :bool_not_is_function,
+             :bool_not_true,
+             :bool_not_false,
+             :bool_and_true_true,
+             :bool_and_false_true
            ]
   end
 

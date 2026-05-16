@@ -15,12 +15,11 @@ defmodule Theoria.Normalize do
 
   def whnf(env, %App{} = app) do
     with {:ok, fun} <- whnf(env, app.fun) do
-      case fun do
-        %Lam{body: body} ->
-          whnf(env, Term.subst_top(body, app.arg))
+      app = %App{app | fun: fun}
 
-        _ ->
-          {:ok, %App{app | fun: fun}}
+      case fun do
+        %Lam{body: body} -> whnf(env, Term.subst_top(body, app.arg))
+        _ -> reduce_primitive_app(env, app)
       end
     end
   end
@@ -41,6 +40,19 @@ defmodule Theoria.Normalize do
       left == right
     else
       _ -> false
+    end
+  end
+
+  defp reduce_primitive_app(env, app) do
+    case Term.Application.collect(app) do
+      {%Const{name: :bool_rec}, [_type, on_true, _on_false, %Const{name: true}]} ->
+        whnf(env, on_true)
+
+      {%Const{name: :bool_rec}, [_type, _on_true, on_false, %Const{name: false}]} ->
+        whnf(env, on_false)
+
+      _ ->
+        {:ok, app}
     end
   end
 

@@ -9,7 +9,7 @@ defmodule Theoria.Library.BoolTest do
   test "extends an environment with boolean declarations" do
     assert {:ok, env} = Bool.env()
 
-    for name <- [:Bool, true, false, :bool_not, :bool_and, :bool_or] do
+    for name <- [:Bool, true, false, :bool_rec, :bool_not, :bool_and, :bool_or] do
       assert {:ok, _type} = Kernel.infer(env, const(name))
     end
   end

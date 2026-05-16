@@ -144,13 +144,9 @@ defmodule Theoria.Library.Logic.Theorems do
       lam :p, prop() do
         lam :q, prop() do
           lam :h, call(const(:and), var(:p), var(:q)) do
-            call(
-              const(:and_intro),
-              var(:q),
-              var(:p),
-              call(const(:and_right), var(:p), var(:q), var(:h)),
-              call(const(:and_left), var(:p), var(:q), var(:h))
-            )
+            term do
+              and_intro(q, p, and_right(p, q, h), and_left(p, q, h))
+            end
           end
         end
       end

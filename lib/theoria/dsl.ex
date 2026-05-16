@@ -69,6 +69,15 @@ defmodule Theoria.DSL do
   @doc "Elaborates a named syntax term to a core term."
   def elab(term), do: Elaborator.elaborate(term)
 
+  @doc "Builds a Theoria syntax term from a small Elixir-like quoted expression."
+  defmacro term(do: ast) do
+    quoted = quote_term(ast)
+
+    quote do
+      unquote(quoted)
+    end
+  end
+
   @doc "Elaborates a named syntax term or raises `Theoria.Error`."
   def elab!(%Syntax.Sort{} = term), do: Elaborator.elaborate!(term)
   def elab!(%Syntax.Var{} = term), do: Elaborator.elaborate!(term)
@@ -155,4 +164,98 @@ defmodule Theoria.DSL do
     do: raise(ArgumentError, "theorem is missing a proof block")
 
   defp validate_theorem_parts!({type, proof}), do: {type, proof}
+
+  defp quote_term({:__block__, _meta, [expr]}), do: quote_term(expr)
+
+  defp quote_term({:__block__, _meta, exprs}) do
+    raise ArgumentError,
+          "term blocks must contain exactly one expression, got #{length(exprs)}"
+  end
+
+  defp quote_term({:var, _meta, [name]}) do
+    quote do
+      Theoria.Syntax.var(unquote(name_literal!(name)))
+    end
+  end
+
+  defp quote_term({:const, _meta, [name]}) do
+    quote do
+      Theoria.Syntax.const(unquote(name_literal!(name)))
+    end
+  end
+
+  defp quote_term({:prop, _meta, []}) do
+    quote do
+      Theoria.Syntax.sort(0)
+    end
+  end
+
+  defp quote_term({:type, _meta, [level]}) when is_integer(level) and level >= 0 do
+    quote do
+      Theoria.Syntax.sort(unquote(level))
+    end
+  end
+
+  defp quote_term({:refl, _meta, [value]}) do
+    value = quote_term(value)
+
+    quote do
+      Theoria.Syntax.refl(unquote(value))
+    end
+  end
+
+  defp quote_term({:eq, _meta, [type, left, right]}) do
+    type = quote_term(type)
+    left = quote_term(left)
+    right = quote_term(right)
+
+    quote do
+      Theoria.Syntax.eq(unquote(type), unquote(left), unquote(right))
+    end
+  end
+
+  defp quote_term({name, _meta, context}) when is_atom(name) and is_atom(context) do
+    quote do
+      Theoria.Syntax.var(unquote(name))
+    end
+  end
+
+  defp quote_term({name, _meta, args}) when is_atom(name) and is_list(args) do
+    args
+    |> Enum.map(&quote_term/1)
+    |> Enum.reduce(quote_const(name), fn arg, fun ->
+      quote do
+        Theoria.Syntax.app(unquote(fun), unquote(arg))
+      end
+    end)
+  end
+
+  defp quote_term({:__aliases__, _meta, parts}) do
+    quote do
+      Theoria.Syntax.const(unquote(Module.concat(parts)))
+    end
+  end
+
+  defp quote_term(atom) when is_atom(atom) do
+    quote do
+      Theoria.Syntax.const(unquote(atom))
+    end
+  end
+
+  defp quote_term(other) do
+    raise ArgumentError, "unsupported Theoria term syntax: #{Macro.to_string(other)}"
+  end
+
+  defp quote_const(name) do
+    quote do
+      Theoria.Syntax.const(unquote(name))
+    end
+  end
+
+  defp name_literal!(atom) when is_atom(atom), do: atom
+  defp name_literal!({name, _meta, context}) when is_atom(name) and is_atom(context), do: name
+
+  defp name_literal!(other) do
+    raise ArgumentError, "expected an atom or variable name, got: #{Macro.to_string(other)}"
+  end
 end

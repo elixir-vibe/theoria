@@ -3,7 +3,7 @@ defmodule Theoria.Inductive do
 
   alias Theoria.Env.Reduction
   alias Theoria.Error
-  alias Theoria.Inductive.{Constructor, Recursor, Spec}
+  alias Theoria.Inductive.{Constructor, Declaration, Recursor, Spec}
   alias Theoria.Term
   alias Theoria.Term.{App, Const, Forall}
 
@@ -21,6 +21,43 @@ defmodule Theoria.Inductive do
   end
 
   def validate(_spec), do: invalid(:invalid_spec)
+
+  @spec declarations(Spec.t()) :: {:ok, [Declaration.t()]} | {:error, Error.t()}
+  def declarations(%Spec{} = spec) do
+    with :ok <- validate(spec) do
+      {:ok, build_declarations(spec)}
+    end
+  end
+
+  def declarations(_spec), do: invalid(:invalid_spec)
+
+  defp build_declarations(%Spec{} = spec) do
+    [inductive_declaration(spec)] ++
+      Enum.map(spec.constructors, &constructor_declaration(&1, spec)) ++
+      Enum.map(spec.recursors, &recursor_declaration(&1, spec))
+  end
+
+  defp inductive_declaration(%Spec{name: name, type: type, universe_params: universe_params}) do
+    %Declaration{name: name, type: type, kind: :constant, universe_params: universe_params}
+  end
+
+  defp constructor_declaration(%Constructor{name: name, type: type}, %Spec{
+         universe_params: universe_params
+       }) do
+    %Declaration{name: name, type: type, kind: :constant, universe_params: universe_params}
+  end
+
+  defp recursor_declaration(%Recursor{name: name, type: type, reduction: reduction}, %Spec{
+         universe_params: universe_params
+       }) do
+    %Declaration{
+      name: name,
+      type: type,
+      kind: :constant,
+      universe_params: universe_params,
+      reduction: reduction
+    }
+  end
 
   defp run_validations(validations) do
     Enum.reduce_while(validations, :ok, fn validation, :ok ->

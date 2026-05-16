@@ -55,7 +55,15 @@ Names stored on core binders are diagnostic metadata. Binding correctness is det
 
 `Theoria.Syntax` provides named surface terms and `Theoria.Elaborator` converts them to de Bruijn-indexed core terms. This layer is untrusted and exists to make library definitions auditable without hand-maintaining indices.
 
-`Theoria.DSL` adds Elixir-friendly `do` block constructors on top of named syntax. It also remains untrusted: it only builds syntax terms or generates functions that elaborate syntax and call the kernel.
+`Theoria.DSL` adds Elixir-friendly `do` block constructors on top of named syntax. It also remains untrusted: it only builds syntax terms or generates functions that elaborate syntax and call the kernel. Inside quoted `term do ... end` blocks, object-language function types can be written with the Elixir operator `~>`:
+
+```elixir
+term do
+  forall :p, prop() do
+    p ~> p
+  end
+end
+```
 
 The `theorem` macro creates a small function trio: `<name>_type/0`, `<name>_proof/0`, and `<name>_theorem/1`. The final function returns a `Theoria.Theorem` only after kernel checking succeeds.
 

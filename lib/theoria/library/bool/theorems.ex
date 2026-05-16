@@ -39,7 +39,7 @@ defmodule Theoria.Library.Bool.Theorems do
   theorem :bool_not_is_function do
     type do
       term do
-        arrow(bool(), bool())
+        bool() ~> bool()
       end
     end
 

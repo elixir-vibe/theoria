@@ -293,6 +293,15 @@ defmodule Theoria.DSL do
     end
   end
 
+  defp quote_term({operator, _meta, [domain, codomain]}) when operator in [:~>, :~>>] do
+    domain = quote_term(domain)
+    codomain = quote_term(codomain)
+
+    quote do
+      Theoria.Syntax.arrow(unquote(domain), unquote(codomain))
+    end
+  end
+
   defp quote_term({:arrow, _meta, [domain, codomain]}) do
     domain = quote_term(domain)
     codomain = quote_term(codomain)

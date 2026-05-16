@@ -25,7 +25,7 @@ defmodule Theoria.Library.Nat.Theorems do
   theorem :succ_is_function do
     type do
       term do
-        arrow(nat(), nat())
+        nat() ~> nat()
       end
     end
 

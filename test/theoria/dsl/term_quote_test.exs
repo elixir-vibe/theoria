@@ -73,6 +73,7 @@ defmodule Theoria.DSL.TermQuoteTest do
              ])
 
     assert term(do: arrow(p, q)) == arrow(var(:p), var(:q))
+    assert term(do: p ~> q) == arrow(var(:p), var(:q))
     assert term(do: app(f, x)) == app(var(:f), var(:x))
     assert term(do: conj(p, q)) == call(const(:and), var(:p), var(:q))
     assert term(do: neg(p)) == call(const(:not), var(:p))
@@ -82,7 +83,7 @@ defmodule Theoria.DSL.TermQuoteTest do
     assert term(
              do:
                forall :p, prop() do
-                 arrow(p, p)
+                 p ~> p
                end
            ) == S.forall(:p, S.sort(0), S.arrow(S.var(:p), S.var(:p)))
 

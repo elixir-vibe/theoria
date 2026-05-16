@@ -14,7 +14,7 @@ defmodule Theoria.Library.Logic.Theorems do
     type do
       term do
         forall :p, prop() do
-          arrow(p, p)
+          p ~> p
         end
       end
     end
@@ -64,7 +64,7 @@ defmodule Theoria.Library.Logic.Theorems do
     type do
       term do
         forall :p, prop() do
-          arrow(const(:False), p)
+          false_prop() ~> p
         end
       end
     end

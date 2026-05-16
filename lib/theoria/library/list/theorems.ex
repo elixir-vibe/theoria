@@ -28,7 +28,7 @@ defmodule Theoria.Library.List.Theorems do
     type do
       term do
         forall :a, type(0) do
-          arrow(a, arrow(list(a), list(a)))
+          a ~> (list(a) ~> list(a))
         end
       end
     end

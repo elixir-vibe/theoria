@@ -75,10 +75,16 @@ Elixir's set-theoretic types describe sets of Elixir runtime values. Theoria che
 - Elixir types help make Theoria's implementation and API safer.
 - Theoria's kernel checks mathematical proof/spec terms that Elixir's type system does not express.
 
+## Logic library
+
+`Theoria.Library.Logic` extends an environment with the first logical declarations. It keeps logic outside the kernel where possible: `not` is a checked definition, while `False`, `True`, `and`, and constructors/eliminators are environment constants for now.
+
+This is a pragmatic bootstrap point. Once the calculus grows inductive families and a clearer `Prop` story, some primitive logical constants can be revisited as library-defined encodings.
+
 ## Near-term roadmap
 
 1. Harden substitution, shifting, normalization, and type-checking tests.
-2. Add basic logical connectives.
+2. Add elimination/projection helpers for logical connectives.
 3. Add primitive Bool/Nat/List theories.
 4. Add an Elixir DSL that elaborates to checked core terms.
 5. Add finite graph/spec libraries for tools such as Reach.

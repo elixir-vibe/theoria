@@ -93,8 +93,7 @@ This is a pragmatic bootstrap point. Once the calculus grows inductive families 
 
 ## Near-term roadmap
 
-1. Harden dependent checking under nested binders and add regression theorems for multi-argument proofs.
-2. Add elimination/projection helpers for logical connectives.
-3. Add primitive Bool/Nat/List theories.
-4. Add proof modules for larger theorem corpora.
-5. Add finite graph/spec libraries for tools such as Reach.
+1. Add elimination/projection helpers for logical connectives.
+2. Add primitive Bool/Nat/List theories.
+3. Add proof modules for larger theorem corpora.
+4. Add finite graph/spec libraries for tools such as Reach.

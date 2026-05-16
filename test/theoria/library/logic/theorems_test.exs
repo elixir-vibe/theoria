@@ -8,7 +8,10 @@ defmodule Theoria.Library.Logic.TheoremsTest do
   test "registers proof corpus theorem names" do
     assert Theorems.__theoria_theorems__() == [
              :identity,
-             :false_elim_eta
+             :const,
+             :false_elim_eta,
+             :double_negation_intro,
+             :and_intro_eta
            ]
   end
 

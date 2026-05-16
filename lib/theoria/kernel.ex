@@ -74,10 +74,9 @@ defmodule Theoria.Kernel do
 
   def check(env, term, expected), do: check(env, Context.new(), term, expected)
 
-  def check(%Env{} = env, %Context{} = context, %Lam{} = lam, %Forall{} = expected) do
-    with :ok <- ensure_defeq(env, lam.domain, expected.domain, :lambda_domain_mismatch) do
-      extended = Context.push(context, lam.name, expected.domain)
-      check(env, extended, lam.body, expected.body)
+  def check(%Env{} = env, %Context{} = context, %Lam{} = lam, expected) do
+    with {:ok, expected} <- Normalize.whnf(env, expected) do
+      check_lambda(env, context, lam, expected)
     end
   end
 
@@ -98,6 +97,20 @@ defmodule Theoria.Kernel do
     with {:ok, %Sort{}} <- infer_sort(env, Context.new(), type),
          :ok <- check(env, Context.new(), value, type) do
       {:ok, Env.put_definition(env, name, type, value)}
+    end
+  end
+
+  defp check_lambda(env, context, %Lam{} = lam, %Forall{} = expected) do
+    with :ok <- ensure_defeq(env, lam.domain, expected.domain, :lambda_domain_mismatch) do
+      extended = Context.push(context, lam.name, expected.domain)
+      check(env, extended, lam.body, expected.body)
+    end
+  end
+
+  defp check_lambda(env, context, lam, expected) do
+    case infer(env, context, lam) do
+      {:ok, actual} -> ensure_defeq(env, actual, expected, :type_mismatch)
+      {:error, error} -> {:error, error}
     end
   end
 

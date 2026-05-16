@@ -23,6 +23,32 @@ defmodule Theoria.Library.Logic.Theorems do
     end
   end
 
+  theorem :const do
+    type do
+      forall :p, prop() do
+        forall :q, prop() do
+          forall :hp, var(:p) do
+            forall :_hq, var(:q) do
+              var(:p)
+            end
+          end
+        end
+      end
+    end
+
+    proof do
+      lam :p, prop() do
+        lam :q, prop() do
+          lam :hp, var(:p) do
+            lam :_hq, var(:q) do
+              var(:hp)
+            end
+          end
+        end
+      end
+    end
+  end
+
   theorem :false_elim_eta do
     type do
       forall :p, prop() do
@@ -34,6 +60,52 @@ defmodule Theoria.Library.Logic.Theorems do
       lam :p, prop() do
         lam :hfalse, const(:False) do
           call(const(:false_elim), var(:p), var(:hfalse))
+        end
+      end
+    end
+  end
+
+  theorem :double_negation_intro do
+    type do
+      forall :p, prop() do
+        forall :hp, var(:p) do
+          call(const(:not), call(const(:not), var(:p)))
+        end
+      end
+    end
+
+    proof do
+      lam :p, prop() do
+        lam :hp, var(:p) do
+          lam :hnp, call(const(:not), var(:p)) do
+            call(var(:hnp), var(:hp))
+          end
+        end
+      end
+    end
+  end
+
+  theorem :and_intro_eta do
+    type do
+      forall :p, prop() do
+        forall :q, prop() do
+          forall :hp, var(:p) do
+            forall :hq, var(:q) do
+              call(const(:and), var(:p), var(:q))
+            end
+          end
+        end
+      end
+    end
+
+    proof do
+      lam :p, prop() do
+        lam :q, prop() do
+          lam :hp, var(:p) do
+            lam :hq, var(:q) do
+              call(const(:and_intro), var(:p), var(:q), var(:hp), var(:hq))
+            end
+          end
         end
       end
     end

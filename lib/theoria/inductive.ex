@@ -6,6 +6,7 @@ defmodule Theoria.Inductive do
   alias Theoria.Env.Reduction
   alias Theoria.Error
   alias Theoria.Inductive.{Constructor, Declaration, Recursor, Spec}
+  alias Theoria.Kernel
   alias Theoria.Normalize
   alias Theoria.Term
   alias Theoria.Term.{App, Const, Forall}
@@ -42,6 +43,36 @@ defmodule Theoria.Inductive do
   end
 
   def verify_env(_env, _spec), do: invalid(:invalid_spec)
+
+  @spec install(Env.t(), Spec.t()) :: {:ok, Env.t()} | {:error, Error.t()}
+  def install(%Env{} = env, %Spec{} = spec) do
+    with {:ok, declarations} <- declarations(spec),
+         {:ok, env} <- install_declarations(env, declarations),
+         :ok <- verify_env(env, spec) do
+      {:ok, env}
+    end
+  end
+
+  def install(_env, _spec), do: invalid(:invalid_spec)
+
+  defp install_declarations(env, declarations) do
+    Enum.reduce_while(declarations, {:ok, env}, fn declaration, {:ok, env} ->
+      case install_declaration(env, declaration) do
+        {:ok, env} -> {:cont, {:ok, env}}
+        {:error, error} -> {:halt, {:error, error}}
+      end
+    end)
+  end
+
+  defp install_declaration(%Env{} = env, %Declaration{
+         kind: :constant,
+         name: name,
+         type: type,
+         universe_params: universe_params,
+         reduction: reduction
+       }) do
+    Kernel.add_constant(env, name, type, universe_params, reduction: reduction)
+  end
 
   defp verify_declaration(env, %Declaration{} = declaration, :ok) do
     case Env.fetch(env, declaration.name) do

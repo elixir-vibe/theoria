@@ -139,7 +139,17 @@ This is a pragmatic bootstrap point. Once the calculus grows inductive families 
 
 ## Nat library
 
-`Theoria.Library.Nat` introduces natural numbers with `Nat`, `zero`, `succ`, `nat_rec.{u}`, and `nat_add`. The recursor is universe-polymorphic in its result type. The normalizer reduces `nat_rec _ z s zero` to `z` and `nat_rec _ z s (succ n)` to `s n (nat_rec _ z s n)`, enabling simple arithmetic facts to check by reflexivity.
+`Theoria.Library.Nat` introduces natural numbers with `Nat`, `zero`, `succ`, `nat_rec.{u}`, `nat_ind.{u}`, and `nat_add`. The recursor is universe-polymorphic in its result type, while `nat_ind` is the first dependent induction principle:
+
+```text
+nat_ind.{u} :
+  ∀ motive : Nat → Sort u,
+  motive zero →
+  (∀ n : Nat, motive n → motive (succ n)) →
+  ∀ n : Nat, motive n
+```
+
+The normalizer reduces `nat_rec _ z s zero` to `z`, `nat_rec _ z s (succ n)` to `s n (nat_rec _ z s n)`, `nat_ind motive z s zero` to `z`, and `nat_ind motive z s (succ n)` to `s n (nat_ind motive z s n)`, enabling simple arithmetic and dependent induction examples to check by reflexivity.
 
 ## List library
 

@@ -25,7 +25,7 @@ defmodule Theoria.PreludeTest do
       assert {:ok, _type} = Kernel.infer(env, const(name))
     end
 
-    for name <- [:bool_rec, :nat_rec] do
+    for name <- [:bool_rec, :nat_rec, :nat_ind] do
       assert {:ok, _type} = Kernel.infer(env, const(name, [1]))
     end
 

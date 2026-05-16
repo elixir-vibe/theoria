@@ -48,6 +48,9 @@ defmodule Theoria.DSL.TermQuoteTest do
     assert term(do: nat_rec(nat(), zero, succ, zero)) ==
              call(const(:nat_rec, [1]), [const(:Nat), const(:zero), const(:succ), const(:zero)])
 
+    assert term(do: nat_ind(f, z, s, n)) ==
+             call(const(:nat_ind, [1]), [var(:f), var(:z), var(:s), var(:n)])
+
     assert term(do: list_rec(nat(), nat(), zero, succ, list_nil(nat()))) ==
              call(const(:list_rec, [1, 1]), [
                const(:Nat),

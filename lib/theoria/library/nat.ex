@@ -17,7 +17,8 @@ defmodule Theoria.Library.Nat do
     with {:ok, env} <- Kernel.add_constant(env, :Nat, type()),
          {:ok, env} <- Kernel.add_constant(env, :zero, Theoria.Term.const(:Nat)),
          {:ok, env} <- Kernel.add_constant(env, :succ, succ_type()),
-         {:ok, env} <- Kernel.add_constant(env, :nat_rec, nat_rec_type(), [:u]) do
+         {:ok, env} <- Kernel.add_constant(env, :nat_rec, nat_rec_type(), [:u]),
+         {:ok, env} <- Kernel.add_constant(env, :nat_ind, nat_ind_type(), [:u]) do
       Kernel.add_definition(env, :nat_add, nat_add_type(), nat_add_value())
     end
   end
@@ -41,6 +42,29 @@ defmodule Theoria.Library.Nat do
           arrow(
             arrow(const(:Nat), arrow(var(:a), var(:a))),
             arrow(const(:Nat), var(:a))
+          )
+        )
+      end
+    )
+  end
+
+  defp nat_ind_type do
+    u = Level.param(:u)
+
+    elab!(
+      forall :motive, arrow(const(:Nat), Theoria.Syntax.sort(u)) do
+        arrow(
+          call(var(:motive), const(:zero)),
+          arrow(
+            forall :n, const(:Nat) do
+              arrow(
+                call(var(:motive), var(:n)),
+                call(var(:motive), call(const(:succ), var(:n)))
+              )
+            end,
+            forall :n, const(:Nat) do
+              call(var(:motive), var(:n))
+            end
           )
         )
       end

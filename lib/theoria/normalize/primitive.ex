@@ -22,8 +22,14 @@ defmodule Theoria.Normalize.Primitive do
       {%Const{name: :nat_rec}, [_type, on_zero, _on_succ, %Const{name: :zero}]} ->
         whnf.(env, on_zero)
 
-      {%Const{name: :nat_rec}, [type, on_zero, on_succ, %App{} = nat]} ->
-        reduce_nat_succ(env, type, on_zero, on_succ, nat, app, whnf)
+      {%Const{name: :nat_rec}, [_type, _on_zero, on_succ, %App{} = nat]} ->
+        reduce_nat_succ(env, on_succ, nat, app, whnf)
+
+      {%Const{name: :nat_ind}, [_motive, on_zero, _on_succ, %Const{name: :zero}]} ->
+        whnf.(env, on_zero)
+
+      {%Const{name: :nat_ind}, [_motive, _on_zero, on_succ, %App{} = nat]} ->
+        reduce_nat_ind_succ(env, on_succ, nat, app, whnf)
 
       {%Const{name: :list_rec}, [_element_type, _result_type, on_nil, _on_cons, %App{} = list]} ->
         reduce_list(env, on_nil, list, app, whnf)
@@ -33,7 +39,15 @@ defmodule Theoria.Normalize.Primitive do
     end
   end
 
-  defp reduce_nat_succ(env, _type, _on_zero, on_succ, nat, fallback, whnf) do
+  defp reduce_nat_succ(env, on_succ, nat, fallback, whnf) do
+    reduce_nat_succ_like(env, on_succ, nat, fallback, whnf)
+  end
+
+  defp reduce_nat_ind_succ(env, on_succ, nat, fallback, whnf) do
+    reduce_nat_succ_like(env, on_succ, nat, fallback, whnf)
+  end
+
+  defp reduce_nat_succ_like(env, on_succ, nat, fallback, whnf) do
     case Term.Application.collect(nat) do
       {%Const{name: :succ}, [pred]} ->
         recursive = replace_last_arg(fallback, pred)

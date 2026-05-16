@@ -265,7 +265,8 @@ defmodule Theoria.DSL do
     end
   end
 
-  defp quote_term({name, _meta, args}) when name in [:bool_rec, :nat_rec] and is_list(args) do
+  defp quote_term({name, _meta, args})
+       when name in [:bool_rec, :nat_rec, :nat_ind] and is_list(args) do
     quote_level_application(name, [1], args)
   end
 

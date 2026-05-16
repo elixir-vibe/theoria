@@ -15,6 +15,7 @@ defmodule Theoria.Library.NatTest do
     end
 
     assert {:ok, _type} = Kernel.infer(env, const(:nat_rec, [1]))
+    assert {:ok, _type} = Kernel.infer(env, const(:nat_ind, [1]))
   end
 
   test "Nat lives in Type 0" do

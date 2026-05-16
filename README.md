@@ -124,7 +124,10 @@ Or from Mix:
 
 ```bash
 mix theoria.check
+mix theoria.check MyApp.Proofs MyApp.MoreProofs
 ```
+
+With no module arguments, the task checks Theoria's built-in theorem modules.
 
 ## Inspect output
 

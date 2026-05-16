@@ -18,22 +18,52 @@ defmodule Mix.Tasks.Theoria.Check do
   ]
 
   @impl true
-  def run(_args) do
+  def run(args) do
     Mix.Task.run("app.start")
 
     Mix.shell().info("Checking Theoria theorem modules...\n")
 
-    case Theoria.Prelude.env() do
-      {:ok, env} ->
-        check_modules(env)
-
-      {:error, error} ->
+    with {:ok, modules} <- theorem_modules(args),
+         {:ok, env} <- Theoria.Prelude.env() do
+      check_modules(env, modules)
+    else
+      {:error, %Theoria.Error{} = error} ->
         Mix.raise("failed to build Theoria prelude:\n\n#{Exception.message(error)}")
+
+      {:error, message} when is_binary(message) ->
+        Mix.raise(message)
     end
   end
 
-  defp check_modules(env) do
-    @theorem_modules
+  defp theorem_modules([]), do: {:ok, @theorem_modules}
+
+  defp theorem_modules(args) do
+    args
+    |> Enum.map(&Module.concat([&1]))
+    |> Enum.reduce_while({:ok, []}, fn module, {:ok, modules} ->
+      case load_theorem_module(module) do
+        :ok -> {:cont, {:ok, [module | modules]}}
+        {:error, message} -> {:halt, {:error, message}}
+      end
+    end)
+    |> then(fn
+      {:ok, modules} -> {:ok, Enum.reverse(modules)}
+      {:error, message} -> {:error, message}
+    end)
+  end
+
+  defp load_theorem_module(module) do
+    with {:module, ^module} <- Code.ensure_loaded(module),
+         true <- function_exported?(module, :__theoria_theorems__, 0) do
+      :ok
+    else
+      {:error, _reason} -> {:error, "could not load theorem module #{inspect(module)}"}
+      false -> {:error, "#{inspect(module)} is not a Theoria theorem module"}
+    end
+  end
+
+  defp check_modules(env, modules) do
+    modules
     |> Enum.reduce_while(0, fn module, count ->
       case Theorem.check_all(module, env) do
         {:ok, theorems} ->

@@ -64,7 +64,7 @@ The `theorem` macro creates a small function trio: `<name>_type/0`, `<name>_proo
 
 `Theoria.Prelude.env/0` is the standard environment for users and downstream tooling. It composes the built-in libraries in dependency order: Logic, Bool, Nat, then List.
 
-`mix theoria.check` checks the built-in theorem corpora against the prelude and is part of CI.
+`mix theoria.check` checks theorem corpora against the prelude and is part of CI. With no arguments it checks built-in theorem modules; with module arguments it checks those user-provided theorem modules.
 
 ## Normalization and definitional equality
 

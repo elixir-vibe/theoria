@@ -10,9 +10,11 @@ defmodule Theoria.Library.NatTest do
   test "extends an environment with nat declarations" do
     assert {:ok, env} = Nat.env()
 
-    for name <- [:Nat, :zero, :succ, :nat_rec, :nat_add] do
+    for name <- [:Nat, :zero, :succ, :nat_add] do
       assert {:ok, _type} = Kernel.infer(env, const(name))
     end
+
+    assert {:ok, _type} = Kernel.infer(env, const(:nat_rec, [1]))
   end
 
   test "Nat lives in Type 0" do
@@ -26,7 +28,7 @@ defmodule Theoria.Library.NatTest do
     {:ok, env} = Nat.env()
 
     term =
-      const(:nat_rec)
+      const(:nat_rec, [1])
       |> app(const(:Nat))
       |> app(const(:zero))
       |> app(succ_step())
@@ -41,7 +43,7 @@ defmodule Theoria.Library.NatTest do
     one = app(const(:succ), const(:zero))
 
     term =
-      const(:nat_rec)
+      const(:nat_rec, [1])
       |> app(const(:Nat))
       |> app(const(:zero))
       |> app(succ_step())

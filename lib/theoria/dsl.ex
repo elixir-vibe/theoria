@@ -265,9 +265,17 @@ defmodule Theoria.DSL do
     end
   end
 
+  defp quote_term({name, _meta, args}) when name in [:bool_rec, :nat_rec] and is_list(args) do
+    quote_level_application(name, [1], args)
+  end
+
   defp quote_term({name, _meta, args})
-       when name in [:list_nil, :list_cons, :list_rec, :list_length] and is_list(args) do
-    quote_list_application(name, 1, args)
+       when name in [:list_nil, :list_cons, :list_length] and is_list(args) do
+    quote_level_application(name, [1], args)
+  end
+
+  defp quote_term({:list_rec, _meta, args}) when is_list(args) do
+    quote_level_application(:list_rec, [1, 1], args)
   end
 
   defp quote_term({:type, _meta, [level]}) when is_integer(level) and level >= 0 do
@@ -435,9 +443,13 @@ defmodule Theoria.DSL do
   end
 
   defp quote_list_application(name, level, args) do
+    quote_level_application(name, [level], args)
+  end
+
+  defp quote_level_application(name, levels, args) do
     args
     |> Enum.map(&quote_term/1)
-    |> Enum.reduce(quote_const(name, [level]), fn arg, fun ->
+    |> Enum.reduce(quote_const(name, levels), fn arg, fun ->
       quote do
         Theoria.Syntax.app(unquote(fun), unquote(arg))
       end

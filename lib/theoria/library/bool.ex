@@ -8,6 +8,7 @@ defmodule Theoria.Library.Bool do
 
   alias Theoria.Env
   alias Theoria.Kernel
+  alias Theoria.Level
 
   import Theoria.DSL, except: [type: 1]
 
@@ -19,7 +20,7 @@ defmodule Theoria.Library.Bool do
     with {:ok, env} <- Kernel.add_constant(env, :Bool, type()),
          {:ok, env} <- Kernel.add_constant(env, true, Theoria.Term.const(:Bool)),
          {:ok, env} <- Kernel.add_constant(env, false, Theoria.Term.const(:Bool)),
-         {:ok, env} <- Kernel.add_constant(env, :bool_rec, bool_rec_type()),
+         {:ok, env} <- Kernel.add_constant(env, :bool_rec, bool_rec_type(), [:u]),
          {:ok, env} <- Kernel.add_definition(env, :bool_not, bool_not_type(), bool_not_value()),
          {:ok, env} <- Kernel.add_definition(env, :bool_and, bool_binary_type(), bool_and_value()) do
       Kernel.add_definition(env, :bool_or, bool_binary_type(), bool_or_value())
@@ -32,8 +33,10 @@ defmodule Theoria.Library.Bool do
   end
 
   defp bool_rec_type do
+    u = Level.param(:u)
+
     elab!(
-      forall :a, Theoria.DSL.type(0) do
+      forall :a, Theoria.Syntax.sort(u) do
         arrow(
           var(:a),
           arrow(

@@ -10,9 +10,11 @@ defmodule Theoria.Library.ListTest do
   test "extends a nat environment with list declarations" do
     assert {:ok, env} = List.env()
 
-    for name <- [:List, :list_nil, :list_cons, :list_rec, :list_length] do
+    for name <- [:List, :list_nil, :list_cons, :list_length] do
       assert {:ok, _type} = Kernel.infer(env, const(name, [1]))
     end
+
+    assert {:ok, _type} = Kernel.infer(env, const(:list_rec, [1, 1]))
   end
 
   test "List maps Type 0 to Type 0" do
@@ -26,7 +28,7 @@ defmodule Theoria.Library.ListTest do
     {:ok, env} = List.env()
 
     term =
-      const(:list_rec, [1])
+      const(:list_rec, [1, 1])
       |> app(const(:Nat))
       |> app(const(:Nat))
       |> app(const(:zero))
@@ -41,7 +43,7 @@ defmodule Theoria.Library.ListTest do
     one = app(const(:succ), const(:zero))
 
     term =
-      const(:list_rec, [1])
+      const(:list_rec, [1, 1])
       |> app(const(:Nat))
       |> app(const(:Nat))
       |> app(const(:zero))

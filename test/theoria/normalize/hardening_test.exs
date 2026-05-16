@@ -12,7 +12,7 @@ defmodule Theoria.Normalize.HardeningTest do
     two = nat(2)
 
     term =
-      const(:nat_rec)
+      const(:nat_rec, [1])
       |> app(const(:Nat))
       |> app(const(:zero))
       |> app(succ_step())
@@ -55,7 +55,7 @@ defmodule Theoria.Normalize.HardeningTest do
     {:ok, env} = Prelude.env()
 
     term =
-      const(:nat_rec)
+      const(:nat_rec, [1])
       |> app(const(:Nat))
       |> app(const(:zero))
       |> app(succ_step())

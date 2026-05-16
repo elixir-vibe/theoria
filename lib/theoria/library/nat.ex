@@ -5,6 +5,7 @@ defmodule Theoria.Library.Nat do
 
   alias Theoria.Env
   alias Theoria.Kernel
+  alias Theoria.Level
 
   import Theoria.DSL, except: [type: 1]
 
@@ -16,7 +17,7 @@ defmodule Theoria.Library.Nat do
     with {:ok, env} <- Kernel.add_constant(env, :Nat, type()),
          {:ok, env} <- Kernel.add_constant(env, :zero, Theoria.Term.const(:Nat)),
          {:ok, env} <- Kernel.add_constant(env, :succ, succ_type()),
-         {:ok, env} <- Kernel.add_constant(env, :nat_rec, nat_rec_type()) do
+         {:ok, env} <- Kernel.add_constant(env, :nat_rec, nat_rec_type(), [:u]) do
       Kernel.add_definition(env, :nat_add, nat_add_type(), nat_add_value())
     end
   end
@@ -31,8 +32,10 @@ defmodule Theoria.Library.Nat do
   end
 
   defp nat_rec_type do
+    u = Level.param(:u)
+
     elab!(
-      forall :a, Theoria.DSL.type(0) do
+      forall :a, Theoria.Syntax.sort(u) do
         arrow(
           var(:a),
           arrow(
@@ -53,7 +56,7 @@ defmodule Theoria.Library.Nat do
       lam :m, const(:Nat) do
         lam :n, const(:Nat) do
           call(
-            const(:nat_rec),
+            const(:nat_rec, [1]),
             const(:Nat),
             var(:n),
             lam :_pred, const(:Nat) do

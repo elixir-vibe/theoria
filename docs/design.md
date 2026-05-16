@@ -135,15 +135,15 @@ This is a pragmatic bootstrap point. Once the calculus grows inductive families 
 
 ## Bool library
 
-`Theoria.Library.Bool` introduces the first computational data declarations: `Bool`, `true`, `false`, `bool_rec`, `bool_not`, `bool_and`, and `bool_or`. These are distinct from logical `True` and `False` propositions. The normalizer has primitive reductions for `bool_rec _ t f true` and `bool_rec _ t f false`, so boolean definitions can compute during definitional equality.
+`Theoria.Library.Bool` introduces the first computational data declarations: `Bool`, `true`, `false`, `bool_rec.{u}`, `bool_not`, `bool_and`, and `bool_or`. These are distinct from logical `True` and `False` propositions. The recursor is universe-polymorphic in its result type, and the normalizer has primitive reductions for `bool_rec _ t f true` and `bool_rec _ t f false`, so boolean definitions can compute during definitional equality.
 
 ## Nat library
 
-`Theoria.Library.Nat` introduces natural numbers with `Nat`, `zero`, `succ`, `nat_rec`, and `nat_add`. The normalizer reduces `nat_rec _ z s zero` to `z` and `nat_rec _ z s (succ n)` to `s n (nat_rec _ z s n)`, enabling simple arithmetic facts to check by reflexivity.
+`Theoria.Library.Nat` introduces natural numbers with `Nat`, `zero`, `succ`, `nat_rec.{u}`, and `nat_add`. The recursor is universe-polymorphic in its result type. The normalizer reduces `nat_rec _ z s zero` to `z` and `nat_rec _ z s (succ n)` to `s n (nat_rec _ z s n)`, enabling simple arithmetic facts to check by reflexivity.
 
 ## List library
 
-`Theoria.Library.List` introduces universe-polymorphic lists with `List.{u}`, `list_nil.{u}`, `list_cons.{u}`, `list_rec.{u}`, and `list_length.{u}`. `Theoria.Library.List.env/0` composes with `Theoria.Library.Nat.env/0` because length computes into `Nat`. Until Theoria has implicit arguments or level inference, the quoted DSL defaults `list(a)`, `list_nil`, `list_cons`, `list_rec(...)`, and `list_length(...)` to universe level `1`, matching current Bool/Nat examples. The normalizer reduces `list_rec _ _ n c (list_nil _)` to `n` and `list_rec _ _ n c (list_cons _ x xs)` to `c x xs (list_rec _ _ n c xs)`.
+`Theoria.Library.List` introduces universe-polymorphic lists with `List.{u}`, `list_nil.{u}`, `list_cons.{u}`, `list_rec.{u,v}`, and `list_length.{u}`. `Theoria.Library.List.env/0` composes with `Theoria.Library.Nat.env/0` because length computes into `Nat`. Until Theoria has implicit arguments or level inference, the quoted DSL defaults `list(a)`, `list_nil`, `list_cons`, and `list_length(...)` to universe level `1`, and `list_rec(...)` to levels `{1, 1}`, matching current Bool/Nat examples. The normalizer reduces `list_rec _ _ n c (list_nil _)` to `n` and `list_rec _ _ n c (list_cons _ x xs)` to `c x xs (list_rec _ _ n c xs)`.
 
 ## Near-term roadmap
 

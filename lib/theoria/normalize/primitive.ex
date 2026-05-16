@@ -33,15 +33,10 @@ defmodule Theoria.Normalize.Primitive do
     end
   end
 
-  defp reduce_nat_succ(env, type, on_zero, on_succ, nat, fallback, whnf) do
+  defp reduce_nat_succ(env, _type, _on_zero, on_succ, nat, fallback, whnf) do
     case Term.Application.collect(nat) do
       {%Const{name: :succ}, [pred]} ->
-        recursive =
-          %Const{name: :nat_rec}
-          |> app(type)
-          |> app(on_zero)
-          |> app(on_succ)
-          |> app(pred)
+        recursive = replace_last_arg(fallback, pred)
 
         on_succ
         |> app(pred)

@@ -15,7 +15,7 @@ defmodule Theoria.Library.List do
     with {:ok, env} <- Kernel.add_constant(env, :List, list_type(), [:u]),
          {:ok, env} <- Kernel.add_constant(env, :list_nil, list_nil_type(), [:u]),
          {:ok, env} <- Kernel.add_constant(env, :list_cons, list_cons_type(), [:u]),
-         {:ok, env} <- Kernel.add_constant(env, :list_rec, list_rec_type(), [:u]) do
+         {:ok, env} <- Kernel.add_constant(env, :list_rec, list_rec_type(), [:u, :v]) do
       Kernel.add_definition(env, :list_length, list_length_type(), list_length_value(), [:u])
     end
   end
@@ -62,10 +62,11 @@ defmodule Theoria.Library.List do
 
   defp list_rec_type do
     u = Level.param(:u)
+    v = Level.param(:v)
 
     elab!(
       forall :a, Theoria.Syntax.sort(u) do
-        forall :b, Theoria.DSL.type(0) do
+        forall :b, Theoria.Syntax.sort(v) do
           arrow(
             var(:b),
             arrow(
@@ -94,7 +95,7 @@ defmodule Theoria.Library.List do
     elab!(
       lam :a, Theoria.Syntax.sort(u) do
         lam :xs, call(const(:List, [u]), var(:a)) do
-          call(const(:list_rec, [u]), [
+          call(const(:list_rec, [u, 1]), [
             var(:a),
             const(:Nat),
             const(:zero),

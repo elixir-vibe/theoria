@@ -102,6 +102,19 @@ defmodule Theoria.Kernel do
     end
   end
 
+  def dependencies(%Env{} = env, name) when is_atom(name) do
+    case Env.fetch(env, name) do
+      {:ok, %{type: type, value: nil}} ->
+        {:ok, Term.constants(type)}
+
+      {:ok, %{type: type, value: value}} ->
+        {:ok, MapSet.union(Term.constants(type), Term.constants(value))}
+
+      :error ->
+        error(:unknown_constant, name: name)
+    end
+  end
+
   def validate_env(%Env{} = env) do
     with :ok <- validate_declaration_index(env) do
       replay_declarations(env)

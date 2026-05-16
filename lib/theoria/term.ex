@@ -112,6 +112,43 @@ defmodule Theoria.Term do
   @spec refl(t()) :: Refl.t()
   def refl(value), do: %Refl{value: value}
 
+  @doc "Returns the environment constants referenced by `term`."
+  @spec constants(t()) :: MapSet.t(atom())
+  def constants(term), do: collect_constants(term, MapSet.new())
+
+  defp collect_constants(%Sort{}, constants), do: constants
+  defp collect_constants(%BVar{}, constants), do: constants
+  defp collect_constants(%Const{name: name}, constants), do: MapSet.put(constants, name)
+
+  defp collect_constants(%App{fun: fun, arg: arg}, constants) do
+    fun
+    |> collect_constants(constants)
+    |> then(&collect_constants(arg, &1))
+  end
+
+  defp collect_constants(%Eq{type: type, left: left, right: right}, constants) do
+    type
+    |> collect_constants(constants)
+    |> then(&collect_constants(left, &1))
+    |> then(&collect_constants(right, &1))
+  end
+
+  defp collect_constants(%Refl{value: value}, constants) do
+    collect_constants(value, constants)
+  end
+
+  defp collect_constants(%Lam{domain: domain, body: body}, constants) do
+    domain
+    |> collect_constants(constants)
+    |> then(&collect_constants(body, &1))
+  end
+
+  defp collect_constants(%Forall{domain: domain, body: body}, constants) do
+    domain
+    |> collect_constants(constants)
+    |> then(&collect_constants(body, &1))
+  end
+
   @doc """
   Shifts de Bruijn indices by `amount` at and above `cutoff`.
   """

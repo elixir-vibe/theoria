@@ -67,7 +67,7 @@ defmodule Theoria.Normalize.ReductionMetadataTest do
 
     assert Normalize.normalize(env, term) == {:ok, term}
     assert {:error, error} = Kernel.validate_env(env)
-    assert error.reason == :invalid_reduction
+    assert error.reason == :invalid_declaration
   end
 
   test "malformed recursor rule rhs fails validation" do
@@ -124,7 +124,7 @@ defmodule Theoria.Normalize.ReductionMetadataTest do
     env = put_reduction(env, :nat_rec, :not_a_reduction)
 
     assert {:error, error} = Kernel.validate_env(env)
-    assert error.reason == :invalid_reduction
+    assert error.reason == :invalid_declaration
   end
 
   defp remove_reduction(env, name), do: put_reduction(env, name, nil)

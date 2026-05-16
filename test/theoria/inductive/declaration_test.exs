@@ -14,7 +14,7 @@ defmodule Theoria.Inductive.DeclarationTest do
     assert Enum.map(declarations, & &1.name) == [:Bool, true, false, :bool_rec, :bool_ind]
 
     assert %Declaration{
-             kind: :constant,
+             kind: :inductive,
              universe_params: [],
              metadata: %Theoria.Env.Inductive{
                name: :Bool,

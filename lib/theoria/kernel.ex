@@ -113,6 +113,12 @@ defmodule Theoria.Kernel do
       when is_atom(name) and is_list(universe_params) and is_list(opts) do
     with :ok <- ensure_fresh_declaration(env, name),
          :ok <- ensure_universe_params(universe_params),
+         :ok <-
+           ensure_constant_kind(
+             Keyword.get(opts, :kind, :constant),
+             Keyword.get(opts, :metadata),
+             Keyword.get(opts, :reduction)
+           ),
          :ok <- ensure_reduction(Keyword.get(opts, :reduction)),
          :ok <-
            ensure_reduction_metadata(
@@ -274,6 +280,14 @@ defmodule Theoria.Kernel do
     end
   end
 
+  defp ensure_constant_kind(:constant, nil, nil), do: :ok
+  defp ensure_constant_kind(:inductive, %Theoria.Env.Inductive{}, nil), do: :ok
+  defp ensure_constant_kind(:constructor, %EnvConstructor{}, nil), do: :ok
+  defp ensure_constant_kind(:recursor, %EnvRecursor{}, %Reduction.Iota{}), do: :ok
+
+  defp ensure_constant_kind(_kind, _metadata, _reduction),
+    do: error(:invalid_declaration, kind: :metadata)
+
   defp ensure_reduction(nil), do: :ok
 
   defp ensure_reduction(reduction) do
@@ -311,8 +325,8 @@ defmodule Theoria.Kernel do
          rhs: rhs
        }) do
     with true <- Term.well_scoped?(rhs),
-         {:ok, %Constant{metadata: %EnvConstructor{num_fields: ^field_count}}} <-
-           Env.fetch(env, constructor) do
+         {:ok, %EnvConstructor{num_fields: ^field_count}} <-
+           Env.fetch_constructor(env, constructor) do
       true
     else
       _other -> false
@@ -374,14 +388,19 @@ defmodule Theoria.Kernel do
     case Env.fetch(env, name) do
       {:ok,
        %Constant{
-         kind: :constant,
+         kind: kind,
          type: type,
          value: nil,
          universe_params: params,
          reduction: reduction,
          metadata: metadata
-       }} ->
-        add_constant(checked_env, name, type, params, reduction: reduction, metadata: metadata)
+       }}
+      when kind in [:constant, :inductive, :constructor, :recursor] ->
+        add_constant(checked_env, name, type, params,
+          kind: kind,
+          reduction: reduction,
+          metadata: metadata
+        )
 
       {:ok,
        %Constant{kind: :axiom, type: type, value: nil, universe_params: params, reduction: nil}} ->

@@ -37,7 +37,8 @@ defmodule Theoria.Inductive.EnvVerificationTest do
 
   test "reports type mismatches" do
     {:ok, env} = Nat.env()
-    env = put_constant(env, :succ, %Constant{type: const(:Nat)})
+    {:ok, %Constant{} = original} = Env.fetch(env, :succ)
+    env = put_constant(env, :succ, %Constant{original | type: const(:Nat)})
 
     assert {:error, error} = Inductive.verify_env(env, Nat.inductive_spec())
     assert error.details == [name: :succ, problem: :type]

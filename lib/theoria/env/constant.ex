@@ -20,7 +20,8 @@ defmodule Theoria.Env.Constant do
           | Theoria.Env.Recursor.t()
           | nil
 
-  @type kind :: :constant | :axiom | :definition | :theorem
+  @type kind ::
+          :constant | :axiom | :definition | :theorem | :inductive | :constructor | :recursor
   @type t :: %__MODULE__{
           type: Term.t(),
           value: Term.t() | nil,

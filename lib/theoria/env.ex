@@ -4,6 +4,9 @@ defmodule Theoria.Env do
   """
 
   alias Theoria.Env.Constant
+  alias Theoria.Env.Constructor, as: EnvConstructor
+  alias Theoria.Env.Inductive, as: EnvInductive
+  alias Theoria.Env.Recursor, as: EnvRecursor
   alias Theoria.Term
 
   defstruct constants: %{}, declarations: []
@@ -32,6 +35,7 @@ defmodule Theoria.Env do
       | constants:
           Map.put(constants, name, %Constant{
             type: type,
+            kind: Keyword.get(opts, :kind, :constant),
             universe_params: universe_params,
             reduction: Keyword.get(opts, :reduction),
             metadata: Keyword.get(opts, :metadata)
@@ -102,9 +106,37 @@ defmodule Theoria.Env do
     }
   end
 
+  @spec fetch_inductive(t(), atom()) :: {:ok, EnvInductive.t()} | :error
+  def fetch_inductive(%__MODULE__{} = env, name), do: fetch_metadata(env, name, EnvInductive)
+
+  @spec fetch_constructor(t(), atom()) :: {:ok, EnvConstructor.t()} | :error
+  def fetch_constructor(%__MODULE__{} = env, name), do: fetch_metadata(env, name, EnvConstructor)
+
+  @spec fetch_recursor(t(), atom()) :: {:ok, EnvRecursor.t()} | :error
+  def fetch_recursor(%__MODULE__{} = env, name), do: fetch_metadata(env, name, EnvRecursor)
+
+  @spec inductive?(t(), atom()) :: boolean()
+  def inductive?(%__MODULE__{} = env, name),
+    do: match?({:ok, _metadata}, fetch_inductive(env, name))
+
+  @spec constructor?(t(), atom()) :: boolean()
+  def constructor?(%__MODULE__{} = env, name),
+    do: match?({:ok, _metadata}, fetch_constructor(env, name))
+
+  @spec recursor?(t(), atom()) :: boolean()
+  def recursor?(%__MODULE__{} = env, name),
+    do: match?({:ok, _metadata}, fetch_recursor(env, name))
+
   @doc "Returns declaration names in insertion order."
   @spec declarations(t()) :: [atom()]
   def declarations(%__MODULE__{declarations: declarations}), do: declarations
+
+  defp fetch_metadata(%__MODULE__{} = env, name, module) do
+    case fetch(env, name) do
+      {:ok, %Constant{metadata: %{__struct__: ^module} = metadata}} -> {:ok, metadata}
+      _other -> :error
+    end
+  end
 
   defp put_order(%__MODULE__{declarations: declarations}, name) do
     if name in declarations do

@@ -174,7 +174,7 @@ defmodule Theoria.Inductive do
   end
 
   defp install_declaration(%Env{} = env, %Declaration{
-         kind: :constant,
+         kind: kind,
          name: name,
          type: type,
          universe_params: universe_params,
@@ -182,6 +182,7 @@ defmodule Theoria.Inductive do
          metadata: metadata
        }) do
     Kernel.add_constant(env, name, type, universe_params,
+      kind: kind,
       reduction: reduction,
       metadata: metadata
     )
@@ -246,7 +247,7 @@ defmodule Theoria.Inductive do
     %Declaration{
       name: name,
       type: type,
-      kind: :constant,
+      kind: :inductive,
       universe_params: declaration_params(spec, type),
       metadata: inductive_metadata(spec)
     }
@@ -256,7 +257,7 @@ defmodule Theoria.Inductive do
     %Declaration{
       name: name,
       type: type,
-      kind: :constant,
+      kind: :constructor,
       universe_params: declaration_params(spec, type),
       metadata: constructor_metadata(spec, constructor)
     }
@@ -269,7 +270,7 @@ defmodule Theoria.Inductive do
     %Declaration{
       name: name,
       type: type,
-      kind: :constant,
+      kind: :recursor,
       universe_params: declaration_params(spec, type),
       reduction: reduction,
       metadata: recursor_metadata(spec, name, type, reduction)

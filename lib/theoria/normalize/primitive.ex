@@ -25,12 +25,11 @@ defmodule Theoria.Normalize.Primitive do
   end
 
   defp reduce_constant(env, name, levels, args, fallback, whnf) do
-    case Env.fetch(env, name) do
-      {:ok, %Constant{reduction: %Reduction.Iota{}, metadata: %Recursor{} = recursor}} ->
-        reduce_recursor(env, recursor, levels, args, fallback, whnf)
-
-      _other ->
-        {:stuck, fallback}
+    with {:ok, %Constant{reduction: %Reduction.Iota{}}} <- Env.fetch(env, name),
+         {:ok, recursor} <- Env.fetch_recursor(env, name) do
+      reduce_recursor(env, recursor, levels, args, fallback, whnf)
+    else
+      _other -> {:stuck, fallback}
     end
   end
 

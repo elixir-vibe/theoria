@@ -4,7 +4,7 @@ defmodule Theoria.Inductive.Declaration do
   @enforce_keys [:name, :type, :kind]
   defstruct [:name, :type, :kind, universe_params: [], reduction: nil, metadata: nil]
 
-  @type kind :: :constant
+  @type kind :: :inductive | :constructor | :recursor
 
   @type t :: %__MODULE__{
           name: atom(),

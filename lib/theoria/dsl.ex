@@ -294,6 +294,11 @@ defmodule Theoria.DSL do
     end
   end
 
+  defp quote_term({:forall, _meta, _args}) do
+    raise ArgumentError,
+          "expected forall binder syntax: forall :name, domain do ... end"
+  end
+
   defp quote_term({:lam, _meta, [name, domain, [do: body]]}) do
     domain = quote_term(domain)
     body = quote_term(body)
@@ -301,6 +306,11 @@ defmodule Theoria.DSL do
     quote do
       Theoria.Syntax.lam(unquote(name_literal!(name)), unquote(domain), unquote(body))
     end
+  end
+
+  defp quote_term({:lam, _meta, _args}) do
+    raise ArgumentError,
+          "expected lambda binder syntax: lam :name, domain do ... end"
   end
 
   defp quote_term({:eq, _meta, [type, left, right]}) do
@@ -321,6 +331,24 @@ defmodule Theoria.DSL do
     quote_application(:and, [left, right])
   end
 
+  defp quote_term({:__aliases__, _meta, [:Bool]}) do
+    raise ArgumentError, "use bool() for the Theoria Bool type inside term blocks"
+  end
+
+  defp quote_term({:__aliases__, _meta, [:Nat]}) do
+    raise ArgumentError, "use nat() for the Theoria Nat type inside term blocks"
+  end
+
+  defp quote_term({:__aliases__, _meta, [:List]}) do
+    raise ArgumentError, "use list(element_type) for the Theoria List type inside term blocks"
+  end
+
+  defp quote_term({:__aliases__, _meta, parts}) do
+    quote do
+      Theoria.Syntax.const(unquote(Module.concat(parts)))
+    end
+  end
+
   defp quote_term({name, _meta, context}) when is_atom(name) and is_atom(context) do
     quote do
       Theoria.Syntax.var(unquote(name))
@@ -331,16 +359,28 @@ defmodule Theoria.DSL do
     quote_application(name, args)
   end
 
-  defp quote_term({:__aliases__, _meta, parts}) do
-    quote do
-      Theoria.Syntax.const(unquote(Module.concat(parts)))
-    end
+  defp quote_term(list) when is_list(list) do
+    raise ArgumentError,
+          "term blocks do not support Elixir lists; use list_nil/list_cons constants"
+  end
+
+  defp quote_term(tuple) when is_tuple(tuple) do
+    raise ArgumentError,
+          "term blocks do not support Elixir tuples; use explicit Theoria constructors"
   end
 
   defp quote_term(atom) when is_atom(atom) do
     quote do
       Theoria.Syntax.const(unquote(atom))
     end
+  end
+
+  defp quote_term(other) when is_binary(other) do
+    raise ArgumentError, "term blocks do not support Elixir strings: #{inspect(other)}"
+  end
+
+  defp quote_term(other) when is_number(other) do
+    raise ArgumentError, "term blocks do not support Elixir numbers: #{inspect(other)}"
   end
 
   defp quote_term(other) do

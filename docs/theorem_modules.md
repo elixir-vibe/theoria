@@ -90,3 +90,5 @@ end
 ```
 
 `bool()` and `nat()` refer to computational types. `bool_true()` and `bool_false()` refer to computational Bool constructors. `true_prop()` and `false_prop()` refer to logical propositions `True` and `False`.
+
+If unsupported Elixir syntax appears inside a term block, the DSL raises targeted errors for common mistakes such as lists, tuples, strings, numbers, malformed binders, and uppercase `Bool`/`Nat`/`List` aliases.

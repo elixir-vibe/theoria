@@ -194,6 +194,30 @@ defmodule Theoria.DSL do
     end
   end
 
+  defp quote_term({:bool_true, _meta, []}) do
+    quote do
+      Theoria.Syntax.const(true)
+    end
+  end
+
+  defp quote_term({:bool_false, _meta, []}) do
+    quote do
+      Theoria.Syntax.const(false)
+    end
+  end
+
+  defp quote_term({:true_prop, _meta, []}) do
+    quote do
+      Theoria.Syntax.const(:True)
+    end
+  end
+
+  defp quote_term({:false_prop, _meta, []}) do
+    quote do
+      Theoria.Syntax.const(:False)
+    end
+  end
+
   defp quote_term({:type, _meta, [level]}) when is_integer(level) and level >= 0 do
     quote do
       Theoria.Syntax.sort(unquote(level + 1))

@@ -138,6 +138,14 @@ mix theoria.check MyApp.Proofs MyApp.MoreProofs
 
 With no module arguments, the task checks Theoria's built-in theorem modules.
 
+The quoted term DSL includes readable aliases for Elixir-hostile names:
+
+```elixir
+term do
+  eq(const(:Bool), bool_not(bool_true()), bool_false())
+end
+```
+
 ## Inspect output
 
 Core terms and checked theorems implement Elixir's `Inspect` protocol:

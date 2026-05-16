@@ -70,3 +70,17 @@ end
 ```
 
 Because `and`, `or`, and `not` are reserved Elixir words, theorem code should use the readable aliases `conj(p, q)` and `neg(p)` for the object-language constants `:and` and `:not`.
+
+The quote DSL also provides aliases for constants that are awkward or ambiguous in Elixir syntax:
+
+```elixir
+term do
+  eq(const(:Bool), bool_not(bool_true()), bool_false())
+end
+
+term do
+  arrow(true_prop(), false_prop())
+end
+```
+
+`bool_true()` and `bool_false()` refer to computational Bool constructors. `true_prop()` and `false_prop()` refer to logical propositions `True` and `False`.

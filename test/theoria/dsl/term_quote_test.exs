@@ -22,12 +22,32 @@ defmodule Theoria.DSL.TermQuoteTest do
              )
   end
 
-  test "supports explicit const, var, eq, refl, prop, and type forms" do
+  test "supports explicit const, var, eq, refl, prop, type, and arrow forms" do
     assert term(do: eq(type(0), x, x)) == eq(type(0), var(:x), var(:x))
     assert term(do: refl(x)) == refl(var(:x))
     assert term(do: const(:True)) == const(:True)
     assert term(do: var(x)) == var(:x)
     assert term(do: prop()) == prop()
+    assert term(do: arrow(p, q)) == arrow(var(:p), var(:q))
+    assert term(do: app(f, x)) == app(var(:f), var(:x))
+    assert term(do: conj(p, q)) == call(const(:and), var(:p), var(:q))
+    assert term(do: neg(p)) == call(const(:not), var(:p))
+  end
+
+  test "supports binder forms" do
+    assert term(
+             do:
+               forall :p, prop() do
+                 arrow(p, p)
+               end
+           ) == S.forall(:p, S.sort(0), S.arrow(S.var(:p), S.var(:p)))
+
+    assert term(
+             do:
+               lam p, prop() do
+                 p
+               end
+           ) == S.lam(:p, S.sort(0), S.var(:p))
   end
 
   test "quoted term can be elaborated and checked" do

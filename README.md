@@ -92,17 +92,21 @@ defmodule MyProofs do
 
   theorem :identity do
     type do
-      forall :a, type(0) do
-        forall :x, var(:a) do
-          var(:a)
+      term do
+        forall :a, type(0) do
+          forall :x, a do
+            a
+          end
         end
       end
     end
 
     proof do
-      lam :a, type(0) do
-        lam :x, var(:a) do
-          var(:x)
+      term do
+        lam :a, type(0) do
+          lam :x, a do
+            x
+          end
         end
       end
     end

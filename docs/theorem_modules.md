@@ -40,3 +40,33 @@ mix theoria.check MyApp.Proofs
 With no module arguments, `mix theoria.check` checks Theoria's built-in theorem corpora against `Theoria.Prelude.env/0`.
 
 The generated theorem functions are intentionally normal Elixir functions so ExDoc can document them alongside their surrounding module docs.
+
+## Quoted term DSL
+
+Inside `term do ... end`, bare lowercase names become named variables and function calls become constant applications:
+
+```elixir
+term do
+  and_intro(q, p, and_right(p, q, h), and_left(p, q, h))
+end
+```
+
+The quote DSL also supports binder and helper forms:
+
+```elixir
+term do
+  forall :p, prop() do
+    arrow(p, p)
+  end
+end
+
+term do
+  lam :f, arrow(p, q) do
+    lam :x, p do
+      app(f, x)
+    end
+  end
+end
+```
+
+Because `and`, `or`, and `not` are reserved Elixir words, theorem code should use the readable aliases `conj(p, q)` and `neg(p)` for the object-language constants `:and` and `:not`.

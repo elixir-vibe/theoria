@@ -208,6 +208,42 @@ defmodule Theoria.DSL do
     end
   end
 
+  defp quote_term({:arrow, _meta, [domain, codomain]}) do
+    domain = quote_term(domain)
+    codomain = quote_term(codomain)
+
+    quote do
+      Theoria.Syntax.arrow(unquote(domain), unquote(codomain))
+    end
+  end
+
+  defp quote_term({:app, _meta, [fun, arg]}) do
+    fun = quote_term(fun)
+    arg = quote_term(arg)
+
+    quote do
+      Theoria.Syntax.app(unquote(fun), unquote(arg))
+    end
+  end
+
+  defp quote_term({:forall, _meta, [name, domain, [do: body]]}) do
+    domain = quote_term(domain)
+    body = quote_term(body)
+
+    quote do
+      Theoria.Syntax.forall(unquote(name_literal!(name)), unquote(domain), unquote(body))
+    end
+  end
+
+  defp quote_term({:lam, _meta, [name, domain, [do: body]]}) do
+    domain = quote_term(domain)
+    body = quote_term(body)
+
+    quote do
+      Theoria.Syntax.lam(unquote(name_literal!(name)), unquote(domain), unquote(body))
+    end
+  end
+
   defp quote_term({:eq, _meta, [type, left, right]}) do
     type = quote_term(type)
     left = quote_term(left)
@@ -218,6 +254,14 @@ defmodule Theoria.DSL do
     end
   end
 
+  defp quote_term({:neg, _meta, [proposition]}) do
+    quote_application(:not, [proposition])
+  end
+
+  defp quote_term({:conj, _meta, [left, right]}) do
+    quote_application(:and, [left, right])
+  end
+
   defp quote_term({name, _meta, context}) when is_atom(name) and is_atom(context) do
     quote do
       Theoria.Syntax.var(unquote(name))
@@ -225,13 +269,7 @@ defmodule Theoria.DSL do
   end
 
   defp quote_term({name, _meta, args}) when is_atom(name) and is_list(args) do
-    args
-    |> Enum.map(&quote_term/1)
-    |> Enum.reduce(quote_const(name), fn arg, fun ->
-      quote do
-        Theoria.Syntax.app(unquote(fun), unquote(arg))
-      end
-    end)
+    quote_application(name, args)
   end
 
   defp quote_term({:__aliases__, _meta, parts}) do
@@ -248,6 +286,16 @@ defmodule Theoria.DSL do
 
   defp quote_term(other) do
     raise ArgumentError, "unsupported Theoria term syntax: #{Macro.to_string(other)}"
+  end
+
+  defp quote_application(name, args) do
+    args
+    |> Enum.map(&quote_term/1)
+    |> Enum.reduce(quote_const(name), fn arg, fun ->
+      quote do
+        Theoria.Syntax.app(unquote(fun), unquote(arg))
+      end
+    end)
   end
 
   defp quote_const(name) do

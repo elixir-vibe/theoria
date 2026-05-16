@@ -17,6 +17,7 @@ defmodule Theoria.Inductive.ParameterTest do
       name: :BadList,
       type: forall(:a, sort(1), sort(1)),
       universe_params: [:u],
+      num_params: 1,
       parameters: [%Parameter{name: :a, type: sort(1)}],
       constructors: [
         %Constructor{name: :bad_nil, type: forall(:a, sort(1), app(const(:BadList), sort(0)))}

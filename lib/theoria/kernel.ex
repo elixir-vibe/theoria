@@ -14,7 +14,7 @@ defmodule Theoria.Kernel do
   alias Theoria.Env.RecursorRule
   alias Theoria.Env.Reduction
   alias Theoria.Error
-  alias Theoria.Inductive
+  alias Theoria.Inductive.Admission
   alias Theoria.Inductive.Spec
   alias Theoria.Kernel.TrustReport
   alias Theoria.Normalize
@@ -166,11 +166,7 @@ defmodule Theoria.Kernel do
     end
   end
 
-  def add_inductive(%Env{} = env, %Spec{} = spec) do
-    with :ok <- Inductive.check_spec(env, spec) do
-      Inductive.install(env, spec)
-    end
-  end
+  def add_inductive(%Env{} = env, %Spec{} = spec), do: Admission.install(env, spec)
 
   def dependencies(%Env{} = env, name) when is_atom(name) do
     case Env.fetch(env, name) do

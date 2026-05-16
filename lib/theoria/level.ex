@@ -112,6 +112,19 @@ defmodule Theoria.Level do
   @spec equal?(t(), t()) :: boolean()
   def equal?(left, right), do: normalize(left) == normalize(right)
 
+  @spec leq?(t(), t()) :: boolean()
+  def leq?(left, right) do
+    left = normalize(left)
+    right = normalize(right)
+
+    cond do
+      equal?(left, right) -> true
+      zero?(left) -> true
+      symbolic_upper_bound?(left, right) -> true
+      true -> closed_leq?(left, right)
+    end
+  end
+
   @spec zero?(t()) :: boolean()
   def zero?(level), do: normalize(level) == zero()
 
@@ -130,6 +143,17 @@ defmodule Theoria.Level do
     left
     |> collect_params(params)
     |> then(&collect_params(right, &1))
+  end
+
+  defp symbolic_upper_bound?(left, right) do
+    match?({:ok, _level}, to_integer(left)) and not MapSet.equal?(params(right), MapSet.new())
+  end
+
+  defp closed_leq?(left, right) do
+    case {to_integer(left), to_integer(right)} do
+      {{:ok, left}, {:ok, right}} -> left <= right
+      _other -> false
+    end
   end
 
   defp normalize_closed_max(left, right) do

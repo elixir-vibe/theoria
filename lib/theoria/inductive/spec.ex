@@ -10,6 +10,7 @@ defmodule Theoria.Inductive.Spec do
     :type,
     constructors: [],
     universe_params: [],
+    num_params: 0,
     parameters: [],
     indices: [],
     recursors: []
@@ -20,6 +21,7 @@ defmodule Theoria.Inductive.Spec do
           type: Term.t(),
           constructors: [Constructor.t()],
           universe_params: [atom()],
+          num_params: non_neg_integer(),
           parameters: [Parameter.t()],
           indices: [Index.t()],
           recursors: [Recursor.t()]
@@ -27,12 +29,15 @@ defmodule Theoria.Inductive.Spec do
 
   @spec new(atom(), Term.t(), keyword()) :: t()
   def new(name, type, opts \\ []) when is_atom(name) and is_list(opts) do
+    parameters = Enum.map(Keyword.get(opts, :parameters, []), &cast_parameter/1)
+
     %__MODULE__{
       name: name,
       type: type,
       constructors: Keyword.get(opts, :constructors, []),
       universe_params: Keyword.get(opts, :universe_params, Keyword.get(opts, :universes, [])),
-      parameters: Enum.map(Keyword.get(opts, :parameters, []), &cast_parameter/1),
+      num_params: Keyword.get(opts, :num_params, length(parameters)),
+      parameters: parameters,
       indices: Enum.map(Keyword.get(opts, :indices, []), &cast_index/1),
       recursors: Keyword.get(opts, :recursors, [])
     }
@@ -40,7 +45,8 @@ defmodule Theoria.Inductive.Spec do
 
   @spec parameter(t(), atom(), Term.t()) :: t()
   def parameter(%__MODULE__{parameters: parameters} = spec, name, type) when is_atom(name) do
-    %__MODULE__{spec | parameters: parameters ++ [%Parameter{name: name, type: type}]}
+    parameters = parameters ++ [%Parameter{name: name, type: type}]
+    %__MODULE__{spec | parameters: parameters, num_params: length(parameters)}
   end
 
   @spec index(t(), atom(), Term.t()) :: t()

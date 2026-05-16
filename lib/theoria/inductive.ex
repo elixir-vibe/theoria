@@ -21,6 +21,7 @@ defmodule Theoria.Inductive do
     Spec
   }
 
+  alias Theoria.Context
   alias Theoria.Elaborator
   alias Theoria.Inductive.Recursor, as: SpecRecursor
   alias Theoria.Kernel
@@ -38,6 +39,7 @@ defmodule Theoria.Inductive do
       fn -> validate_name(spec.name) end,
       fn -> validate_universe_params(spec.universe_params) end,
       fn -> validate_parameters(spec) end,
+      fn -> validate_num_params(spec) end,
       fn -> validate_indices(spec) end,
       fn -> validate_terms(spec) end,
       fn -> validate_constructors(spec) end,
@@ -113,7 +115,10 @@ defmodule Theoria.Inductive do
   @spec check_spec(Env.t(), Spec.t()) :: validation_result()
   def check_spec(%Env{} = env, %Spec{} = spec) do
     with :ok <- validate(spec),
-         :ok <- check_family_signature(env, spec) do
+         :ok <- check_family_signature(env, spec),
+         {:ok, declarations} <- declarations(spec),
+         {:ok, type_env} <- install_inductive_type(env, declarations),
+         :ok <- check_constructor_field_universes(type_env, spec) do
       check_declarations(env, spec)
     end
   end
@@ -163,6 +168,75 @@ defmodule Theoria.Inductive do
         {:error, %Error{reason: :invalid_inductive, details: [problem: problem, cause: error]}}
     end
   end
+
+  defp install_inductive_type(env, [
+         %Declaration{name: name, type: type, universe_params: params, metadata: metadata} | _rest
+       ]) do
+    Kernel.add_constant(env, name, type, params, kind: :inductive, metadata: metadata)
+  end
+
+  defp check_constructor_field_universes(env, %Spec{} = spec) do
+    result_level = inductive_result_level(spec.type)
+
+    Enum.reduce_while(spec.constructors, :ok, fn constructor, :ok ->
+      case check_constructor_field_universes(env, spec, constructor, result_level) do
+        :ok -> {:cont, :ok}
+        {:error, _error} = error -> {:halt, error}
+      end
+    end)
+  end
+
+  defp check_constructor_field_universes(env, spec, constructor, result_level) do
+    {:ok, result} = Constructor.result(constructor, spec)
+
+    parameter_context =
+      result.binders
+      |> Enum.take(length(spec.parameters))
+      |> Enum.reduce(Context.new(), fn binder, context ->
+        Context.push(context, binder.name, binder.domain)
+      end)
+
+    result.binders
+    |> Enum.drop(length(spec.parameters))
+    |> Enum.reduce_while(parameter_context, fn binder, context ->
+      case check_field_universe(env, context, binder, result_level, constructor.name) do
+        :ok -> {:cont, Context.push(context, binder.name, binder.domain)}
+        {:error, _error} = error -> {:halt, error}
+      end
+    end)
+    |> case do
+      %Context{} -> :ok
+      {:error, _error} = error -> error
+    end
+  end
+
+  defp check_field_universe(env, context, binder, result_level, constructor_name) do
+    case Kernel.infer(env, context, binder.domain) do
+      {:ok, %Theoria.Term.Sort{level: field_level}} ->
+        if Level.zero?(result_level) or Level.leq?(field_level, result_level) do
+          :ok
+        else
+          invalid(:constructor_field_universe_too_large, constructor: constructor_name)
+        end
+
+      {:ok, _other} ->
+        invalid(:constructor_field_not_type, constructor: constructor_name)
+
+      {:error, error} ->
+        {:error,
+         %Error{
+           reason: :invalid_inductive,
+           details: [
+             problem: :constructor_field_type_error,
+             constructor: constructor_name,
+             cause: error
+           ]
+         }}
+    end
+  end
+
+  defp inductive_result_level(%Forall{body: body}), do: inductive_result_level(body)
+  defp inductive_result_level(%Theoria.Term.Sort{level: level}), do: level
 
   defp install_declarations(env, declarations) do
     Enum.reduce_while(declarations, {:ok, env}, fn declaration, {:ok, env} ->
@@ -513,6 +587,17 @@ defmodule Theoria.Inductive do
 
   defp validate_parameters(_spec), do: invalid(:invalid_parameters)
 
+  defp validate_num_params(%Spec{num_params: num_params, parameters: parameters})
+       when is_integer(num_params) and num_params >= 0 do
+    if num_params == length(parameters) do
+      :ok
+    else
+      invalid(:parameter_count_mismatch)
+    end
+  end
+
+  defp validate_num_params(_spec), do: invalid(:invalid_parameter_count)
+
   defp validate_indices(%Spec{indices: indices}) when is_list(indices) do
     cond do
       not Enum.all?(indices, &match?(%Index{name: name} when is_atom(name), &1)) ->
@@ -617,6 +702,9 @@ defmodule Theoria.Inductive do
 
           not parameter_result_args_match?(spec.parameters, result.binders, result.arguments) ->
             :constructor_parameter_mismatch
+
+          Enum.any?(result.indices, &MapSet.member?(Term.constants(&1), spec.name)) ->
+            :constructor_index_recursive_occurrence
 
           true ->
             nil

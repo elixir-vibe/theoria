@@ -27,4 +27,44 @@ defmodule Theoria.Kernel.EnvironmentIntegrityTest do
 
     assert error.reason == :duplicate_declaration
   end
+
+  test "tracks declaration insertion order" do
+    assert {:ok, env} = Kernel.add_constant(Env.new(), :A, sort(0))
+    assert {:ok, env} = Kernel.add_constant(env, :B, sort(0))
+    assert {:ok, env} = Kernel.add_definition(env, :C, sort(1), sort(0))
+
+    assert Env.declarations(env) == [:A, :B, :C]
+  end
+
+  test "validates a checked environment" do
+    assert {:ok, env} = Kernel.add_constant(Env.new(), :A, sort(0))
+    assert {:ok, env} = Kernel.add_definition(env, :id_type, sort(1), sort(0))
+
+    assert {:ok, checked_env} = Kernel.validate_env(env)
+    assert Env.declarations(checked_env) == [:A, :id_type]
+  end
+
+  test "validation rejects malformed constant types inserted outside the kernel" do
+    env = Env.new() |> Env.put_constant(:bad, const(:Missing))
+
+    assert {:error, error} = Kernel.validate_env(env)
+    assert error.reason == :unknown_constant
+  end
+
+  test "validation rejects malformed definition values inserted outside the kernel" do
+    env = Env.new() |> Env.put_definition(:bad, sort(0), sort(1))
+
+    assert {:error, error} = Kernel.validate_env(env)
+    assert error.reason == :type_mismatch
+  end
+
+  test "validation catches dependency ordering problems" do
+    env =
+      %Env{}
+      |> Env.put_constant(:later, const(:Earlier))
+      |> Env.put_constant(:Earlier, sort(0))
+
+    assert {:error, error} = Kernel.validate_env(env)
+    assert error.reason == :unknown_constant
+  end
 end

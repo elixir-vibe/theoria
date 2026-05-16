@@ -60,7 +60,7 @@ The `theorem` macro creates a small function trio: `<name>_type/0`, `<name>_proo
 
 ## Environments
 
-`Theoria.Env` stores checked constants and definitions. A declaration enters the environment only through kernel functions that verify its type and, for definitions, its value.
+`Theoria.Env` stores checked constants and definitions and preserves declaration insertion order. A declaration enters the environment safely through kernel functions that verify its type and, for definitions, its value. Raw environment constructors remain available for tests and tooling, but malformed environments can be rechecked with `Theoria.Kernel.validate_env/1`.
 
 `Theoria.Prelude.env/0` is the standard environment for users and downstream tooling. It composes the built-in libraries in dependency order: Logic, Bool, Nat, then List.
 

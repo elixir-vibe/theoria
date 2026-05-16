@@ -102,6 +102,25 @@ defmodule Theoria.Kernel do
     end
   end
 
+  def validate_env(%Env{} = env) do
+    env
+    |> Env.declarations()
+    |> Enum.reduce_while({:ok, Env.new()}, fn name, {:ok, checked_env} ->
+      case validate_declaration(env, checked_env, name) do
+        {:ok, checked_env} -> {:cont, {:ok, checked_env}}
+        {:error, error} -> {:halt, {:error, error}}
+      end
+    end)
+  end
+
+  defp validate_declaration(env, checked_env, name) do
+    case Env.fetch(env, name) do
+      {:ok, %{type: type, value: nil}} -> add_constant(checked_env, name, type)
+      {:ok, %{type: type, value: value}} -> add_definition(checked_env, name, type, value)
+      :error -> error(:missing_declaration, name: name)
+    end
+  end
+
   defp ensure_fresh_declaration(env, name) do
     case Env.fetch(env, name) do
       {:ok, _constant} -> error(:duplicate_declaration, name: name)

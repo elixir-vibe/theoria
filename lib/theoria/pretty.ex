@@ -66,6 +66,11 @@ defmodule Theoria.Pretty do
     "duplicate declaration: #{name}"
   end
 
+  def error(%Error{reason: :missing_declaration, details: details}) do
+    name = Keyword.fetch!(details, :name)
+    "missing declaration: #{name}"
+  end
+
   def error(%Error{reason: reason, details: details}) do
     "#{reason}: #{inspect(details)}"
   end

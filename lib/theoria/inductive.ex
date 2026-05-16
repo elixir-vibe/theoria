@@ -74,18 +74,10 @@ defmodule Theoria.Inductive do
 
   @spec complete(Spec.t()) :: {:ok, Spec.t()} | {:error, Error.t()}
   def complete(%Spec{recursors: []} = spec) do
-    case classify(spec) do
-      %Shape{kind: :bool_like} = shape ->
-        {:ok, %Spec{spec | recursors: Generate.bool_eliminators(spec, shape)}}
-
-      %Shape{kind: :nat_like} = shape ->
-        {:ok, %Spec{spec | recursors: Generate.nat_eliminators(spec, shape)}}
-
-      %Shape{kind: :list_like} = shape ->
-        {:ok, %Spec{spec | recursors: Generate.list_eliminators(spec, shape)}}
-
-      %Shape{kind: :unknown} ->
-        invalid(:unknown_inductive_shape)
+    case Generate.eliminators(spec) do
+      {:ok, recursors} -> {:ok, %Spec{spec | recursors: recursors}}
+      {:error, %Error{details: [problem: :unknown_shape]}} -> invalid(:unknown_inductive_shape)
+      {:error, error} -> {:error, error}
     end
   end
 
@@ -494,11 +486,10 @@ defmodule Theoria.Inductive do
   end
 
   defp expected_eliminators(%Spec{} = spec) do
-    case classify(%Spec{spec | recursors: []}) do
-      %Shape{kind: :bool_like} = shape -> {:ok, Generate.bool_eliminators(spec, shape)}
-      %Shape{kind: :nat_like} = shape -> {:ok, Generate.nat_eliminators(spec, shape)}
-      %Shape{kind: :list_like} = shape -> {:ok, Generate.list_eliminators(spec, shape)}
-      %Shape{kind: :unknown} -> :unknown
+    case Generate.eliminators(%Spec{spec | recursors: []}) do
+      {:ok, recursors} -> {:ok, recursors}
+      {:error, %Error{details: [problem: :unknown_shape]}} -> :unknown
+      {:error, _error} -> :unknown
     end
   end
 

@@ -49,14 +49,48 @@ defmodule Theoria.Inductive.GenerateTest do
     assert ind.reduction == list_reduction()
   end
 
-  test "built-in libraries use generated eliminators" do
+  test "generic eliminators match named generator wrappers" do
+    assert {:ok, bool_eliminators} =
+             Generate.eliminators(without_recursors(Bool.inductive_spec()))
+
+    assert bool_eliminators == Generate.bool_eliminators(without_recursors(Bool.inductive_spec()))
+
+    assert {:ok, nat_eliminators} = Generate.eliminators(without_recursors(Nat.inductive_spec()))
+    assert nat_eliminators == Generate.nat_eliminators(without_recursors(Nat.inductive_spec()))
+
+    assert {:ok, list_eliminators} =
+             Generate.eliminators(without_recursors(List.inductive_spec()))
+
+    assert list_eliminators == Generate.list_eliminators(without_recursors(List.inductive_spec()))
+  end
+
+  test "built-in libraries use generic generated eliminators" do
     assert Enum.map(Bool.inductive_spec().recursors, & &1.name) == [:bool_rec, :bool_ind]
 
     assert Nat.inductive_spec().recursors ==
-             Generate.nat_eliminators(without_recursors(Nat.inductive_spec()))
+             Generate.eliminators!(without_recursors(Nat.inductive_spec()))
 
     assert List.inductive_spec().recursors ==
-             Generate.list_eliminators(without_recursors(List.inductive_spec()))
+             Generate.eliminators!(without_recursors(List.inductive_spec()))
+  end
+
+  test "reports eliminator generation capabilities" do
+    assert %{supported?: true, simple?: true, indexed?: false, reason: nil, shape: :list_like} =
+             Generate.capabilities(without_recursors(List.inductive_spec()))
+
+    assert Generate.supported?(without_recursors(Nat.inductive_spec()))
+    refute Generate.supported?(vec_spec())
+    assert Generate.unsupported_reason(vec_spec()) == :indexed_eliminators_unsupported
+  end
+
+  test "generic eliminators reject unsupported specs" do
+    assert {:error, indexed_error} = Generate.eliminators(vec_spec())
+    assert indexed_error.reason == :invalid_inductive
+    assert Keyword.fetch!(indexed_error.details, :problem) == :indexed_eliminators_unsupported
+
+    assert {:error, unknown_error} = Generate.eliminators(unit_spec())
+    assert unknown_error.reason == :invalid_inductive
+    assert Keyword.fetch!(unknown_error.details, :problem) == :unknown_shape
   end
 
   defp bool_rec_type do
@@ -186,6 +220,40 @@ defmodule Theoria.Inductive.GenerateTest do
         }
       ]
     }
+  end
+
+  defp vec_spec do
+    u = Theoria.Level.param(:u)
+
+    :Vec
+    |> Spec.new(vec_type(u), universe_params: [:u])
+    |> Spec.parameter(:a, term(do: sort(^u)) |> elab!())
+    |> Spec.index(:n, term(do: nat()) |> elab!())
+    |> Spec.constructor(:vec_nil, vec_nil_type(u))
+  end
+
+  defp vec_type(u) do
+    term do
+      forall :a, sort(^u) do
+        nat() ~> sort(^u)
+      end
+    end
+    |> elab!()
+  end
+
+  defp vec_nil_type(u) do
+    term do
+      forall :a, sort(^u) do
+        app(app(const(:Vec, [^u]), a), zero)
+      end
+    end
+    |> elab!()
+  end
+
+  defp unit_spec do
+    :Unit
+    |> Spec.new(term(do: sort(1)) |> elab!())
+    |> Spec.constructor(:unit, term(do: const(:Unit)) |> elab!())
   end
 
   defp without_recursors(%Theoria.Inductive.Spec{} = spec) do

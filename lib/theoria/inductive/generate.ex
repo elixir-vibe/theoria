@@ -2,12 +2,74 @@ defmodule Theoria.Inductive.Generate do
   @moduledoc "Generators for declarations derived from inductive specs."
 
   alias Theoria.Env.Reduction
+  alias Theoria.Error
   alias Theoria.Inductive.{Constructor, Recursor, Shape, Spec}
   alias Theoria.Level
   alias Theoria.Syntax, as: S
   alias Theoria.Term.{App, Const}
 
   import Theoria.DSL, only: [elab!: 1]
+
+  @doc "Returns eliminator generation capabilities for an inductive spec."
+  @spec capabilities(Spec.t()) :: %{
+          supported?: boolean(),
+          simple?: boolean(),
+          indexed?: boolean(),
+          recursive?: boolean(),
+          shape: Shape.kind(),
+          reason: atom() | nil
+        }
+  def capabilities(%Spec{} = spec) do
+    shape = Shape.classify(spec)
+    indexed? = spec.indices != []
+
+    reason =
+      cond do
+        indexed? -> :indexed_eliminators_unsupported
+        shape.kind == :unknown -> :unknown_shape
+        not simple_recursive_arguments?(spec) -> :nested_or_unsupported_recursive_argument
+        true -> nil
+      end
+
+    %{
+      supported?: is_nil(reason),
+      simple?: is_nil(reason),
+      indexed?: indexed?,
+      recursive?: recursive?(spec),
+      shape: shape.kind,
+      reason: reason
+    }
+  end
+
+  @doc "Returns true when generic eliminator generation supports the spec."
+  @spec supported?(Spec.t()) :: boolean()
+  def supported?(%Spec{} = spec), do: capabilities(spec).supported?
+
+  @doc "Returns the reason generic eliminator generation does not support the spec."
+  @spec unsupported_reason(Spec.t()) :: atom() | nil
+  def unsupported_reason(%Spec{} = spec), do: capabilities(spec).reason
+
+  @doc "Generates non-dependent and dependent eliminators for supported simple inductives."
+  @spec eliminators(Spec.t()) :: {:ok, [Recursor.t()]} | {:error, Error.t()}
+  def eliminators(%Spec{} = spec) do
+    shape = Shape.classify(spec)
+
+    case capabilities(spec).reason do
+      nil -> {:ok, eliminators_for_shape(spec, shape)}
+      reason -> invalid(reason)
+    end
+  end
+
+  def eliminators(_spec), do: invalid(:invalid_spec)
+
+  @doc "Generates eliminators or raises `Theoria.Error`."
+  @spec eliminators!(Spec.t()) :: [Recursor.t()]
+  def eliminators!(%Spec{} = spec) do
+    case eliminators(spec) do
+      {:ok, eliminators} -> eliminators
+      {:error, error} -> raise error
+    end
+  end
 
   @doc "Generates non-dependent and dependent eliminators for a Bool-like inductive."
   @spec bool_eliminators(Spec.t(), Shape.t() | nil) :: [Recursor.t()]
@@ -69,7 +131,54 @@ defmodule Theoria.Inductive.Generate do
     ]
   end
 
+  defp eliminators_for_shape(%Spec{} = spec, %Shape{kind: :bool_like} = shape),
+    do: bool_eliminators(spec, shape)
+
+  defp eliminators_for_shape(%Spec{} = spec, %Shape{kind: :nat_like} = shape),
+    do: nat_eliminators(spec, shape)
+
+  defp eliminators_for_shape(%Spec{} = spec, %Shape{kind: :list_like} = shape),
+    do: list_eliminators(spec, shape)
+
   defp constructors(%Shape{kind: kind, constructors: constructors}, kind), do: constructors
+
+  defp simple_recursive_arguments?(%Spec{} = spec) do
+    Enum.all?(spec.constructors, &simple_recursive_constructor?(&1, spec))
+  end
+
+  defp simple_recursive_constructor?(constructor, spec) do
+    case Constructor.result(constructor, spec) do
+      {:ok, result} -> simple_recursive_result?(result, spec)
+      {:error, _error} -> false
+    end
+  end
+
+  defp simple_recursive_result?(result, spec) do
+    result.binders
+    |> Enum.drop(length(spec.parameters))
+    |> Enum.all?(
+      &(not recursive_binder?(result, &1.depth, spec.name) or
+          direct_recursive_argument?(&1.domain, spec.name))
+    )
+  end
+
+  defp recursive?(%Spec{} = spec) do
+    Enum.any?(spec.constructors, fn constructor ->
+      case Constructor.result(constructor, spec) do
+        {:ok, result} ->
+          Enum.any?(result.binders, &recursive_binder?(result, &1.depth, spec.name))
+
+        {:error, _error} ->
+          false
+      end
+    end)
+  end
+
+  defp direct_recursive_argument?(domain, inductive),
+    do: const_named?(application_head(domain), inductive)
+
+  defp invalid(problem),
+    do: {:error, %Error{reason: :invalid_inductive, details: [problem: problem]}}
 
   defp recursor_reduction(%Spec{} = spec, constructors) do
     parameter_count = length(spec.parameters)

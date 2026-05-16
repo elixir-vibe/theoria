@@ -33,7 +33,7 @@ defmodule Theoria.Library.Nat do
       |> Spec.constructor(:zero, Theoria.Term.const(:Nat))
       |> Spec.constructor(:succ, succ_type())
 
-    %Spec{spec | recursors: Generate.nat_eliminators(spec)}
+    %Spec{spec | recursors: Generate.eliminators!(spec)}
   end
 
   defp succ_type do

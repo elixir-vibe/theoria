@@ -35,7 +35,7 @@ defmodule Theoria.Library.List do
       |> Spec.constructor(:list_nil, list_nil_type())
       |> Spec.constructor(:list_cons, list_cons_type())
 
-    %Spec{spec | recursors: Generate.list_eliminators(spec)}
+    %Spec{spec | recursors: Generate.eliminators!(spec)}
   end
 
   defp list_type do

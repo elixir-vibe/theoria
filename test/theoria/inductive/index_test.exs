@@ -54,6 +54,12 @@ defmodule Theoria.Inductive.IndexTest do
     assert Keyword.fetch!(error.details, :constructor) == :vec_nil
   end
 
+  test "completion rejects indexed eliminators explicitly" do
+    assert {:error, error} = Inductive.complete(vec_spec())
+    assert error.reason == :invalid_inductive
+    assert Keyword.fetch!(error.details, :problem) == :indexed_eliminators_unsupported
+  end
+
   test "environment-backed checks reject missing dependencies" do
     assert Inductive.validate(vec_spec()) == :ok
     assert {:error, error} = Inductive.check_spec(Env.new(), vec_spec())

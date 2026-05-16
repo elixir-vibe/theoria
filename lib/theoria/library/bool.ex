@@ -38,7 +38,7 @@ defmodule Theoria.Library.Bool do
       |> Spec.constructor(true, Theoria.Term.const(:Bool))
       |> Spec.constructor(false, Theoria.Term.const(:Bool))
 
-    %Spec{spec | recursors: Generate.bool_eliminators(spec)}
+    %Spec{spec | recursors: Generate.eliminators!(spec)}
   end
 
   defp bool_not_type do

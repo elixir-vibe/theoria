@@ -1,7 +1,7 @@
 defmodule Theoria.MixProject do
   use Mix.Project
 
-  @source_url "https://github.com/dannote/theoria"
+  @source_url "https://github.com/elixir-vibe/theoria"
 
   def project do
     [
@@ -62,7 +62,7 @@ defmodule Theoria.MixProject do
     [
       main: "readme",
       source_url: @source_url,
-      extras: ["README.md", "LICENSE"]
+      extras: ["README.md", "docs/design.md", "LICENSE"]
     ]
   end
 
@@ -70,7 +70,7 @@ defmodule Theoria.MixProject do
     [
       licenses: ["MIT"],
       links: %{"GitHub" => @source_url},
-      files: ~w(lib mix.exs README.md LICENSE .formatter.exs)
+      files: ~w(lib docs mix.exs README.md LICENSE .formatter.exs)
     ]
   end
 end

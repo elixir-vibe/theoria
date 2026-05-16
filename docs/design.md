@@ -1,0 +1,83 @@
+# Theoria Design
+
+Theoria is an Elixir-native proof/spec engine inspired by Lean's trusted-kernel architecture. It is not a Lean-compatible implementation and does not call Lean as a backend.
+
+## Goals
+
+- Provide a small trusted kernel for checking proof terms.
+- Keep Elixir DSLs, tactics, and automation untrusted: they may generate proofs, but the kernel must check them.
+- Support practical specifications for Elixir tools, static analysis, graph algorithms, compiler passes, and data transformations.
+- Fit naturally into Elixir projects and CI pipelines.
+- Keep data structures friendly to Elixir's gradual set-theoretic type direction by using precise structs and explicit result tuples.
+
+## Non-goals
+
+- Lean syntax compatibility.
+- Lean `.olean` compatibility.
+- A tactic language in the initial kernel.
+- Native code generation.
+- A full standard library before the kernel is hardened.
+
+## Trusted boundary
+
+Only `Theoria.Kernel` should decide whether a proof is accepted. Higher-level APIs may be convenient but must remain untrusted.
+
+The intended flow is:
+
+```text
+Elixir DSL / tactic / domain-specific prover
+  -> core Theoria terms
+  -> Theoria.Kernel.check/4
+  -> checked theorem or error
+```
+
+A bug in a DSL should at worst generate a rejected proof. It must not be able to admit a theorem directly.
+
+## Core terms
+
+The initial core calculus contains:
+
+- universes, represented as `Sort n`;
+- de Bruijn bound variables;
+- constants;
+- application;
+- lambda abstraction;
+- dependent function types (`forall`).
+
+Names stored on binders are diagnostic metadata. Binding correctness is determined by de Bruijn indices.
+
+## Environments
+
+`Theoria.Env` stores checked constants and definitions. A declaration enters the environment only through kernel functions that verify its type and, for definitions, its value.
+
+## Normalization and definitional equality
+
+The initial normalizer supports beta reduction and unfolding checked definitions. Definitional equality currently normalizes both sides and compares the resulting terms structurally.
+
+This is intentionally simple. Later versions may need weak-head reduction, memoization, fuel, and more careful unfolding control.
+
+## Universe model
+
+The current prototype uses a simple cumulative-looking tower where:
+
+```text
+Sort n : Sort (n + 1)
+```
+
+There is no separate `Prop` yet. Equality and propositions will be introduced deliberately once the kernel tests are stronger.
+
+## Relationship to Elixir set-theoretic types
+
+Elixir's set-theoretic types describe sets of Elixir runtime values. Theoria checks terms in its own object language. These are complementary:
+
+- Elixir types help make Theoria's implementation and API safer.
+- Theoria's kernel checks mathematical proof/spec terms that Elixir's type system does not express.
+
+## Near-term roadmap
+
+1. Harden substitution, shifting, normalization, and type-checking tests.
+2. Add equality.
+3. Add basic logical connectives.
+4. Add primitive Bool/Nat/List theories.
+5. Add an Elixir DSL that elaborates to checked core terms.
+6. Add finite graph/spec libraries for tools such as Reach.

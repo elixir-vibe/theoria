@@ -5,9 +5,12 @@ defmodule Theoria.Normalize.Primitive do
   alias Theoria.Term
   alias Theoria.Term.{App, Const}
 
-  @type whnf_fun :: (Env.t(), Term.t() -> Theoria.Normalize.result())
+  @type fuel :: %{remaining_steps: non_neg_integer(), max_steps: pos_integer()}
+  @type whnf_result :: {:ok, Term.t(), fuel()} | {:error, Theoria.Error.t()}
+  @type whnf_fun :: (Env.t(), Term.t() -> whnf_result())
+  @type result :: whnf_result() | {:stuck, App.t()}
 
-  @spec reduce(Env.t(), App.t(), whnf_fun()) :: Theoria.Normalize.result()
+  @spec reduce(Env.t(), App.t(), whnf_fun()) :: result()
   def reduce(%Env{} = env, %App{} = app, whnf) when is_function(whnf, 2) do
     case Term.Application.collect(app) do
       {%Const{name: :bool_rec}, [_type, on_true, _on_false, %Const{name: true}]} ->
@@ -26,7 +29,7 @@ defmodule Theoria.Normalize.Primitive do
         reduce_list(env, on_nil, list, app, whnf)
 
       _ ->
-        {:ok, app}
+        {:stuck, app}
     end
   end
 
@@ -46,7 +49,7 @@ defmodule Theoria.Normalize.Primitive do
         |> then(&whnf.(env, &1))
 
       _ ->
-        {:ok, fallback}
+        {:stuck, fallback}
     end
   end
 
@@ -66,7 +69,7 @@ defmodule Theoria.Normalize.Primitive do
         |> then(&whnf.(env, &1))
 
       _ ->
-        {:ok, fallback}
+        {:stuck, fallback}
     end
   end
 

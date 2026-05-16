@@ -96,6 +96,14 @@ defmodule Theoria.Normalize.HardeningTest do
     refute Normalize.defeq?(env, const(:loop), const(:loop), max_steps: 3)
   end
 
+  test "normalization fuel is shared across child terms" do
+    env = Env.new() |> Env.put_definition(:loop, sort(0), const(:loop))
+    term = eq(sort(0), const(:loop), const(:loop))
+
+    assert {:error, error} = Normalize.normalize(env, term, max_steps: 4)
+    assert Exception.message(error) == "normalization exceeded limit of 4 steps"
+  end
+
   defp nat(0), do: const(:zero)
   defp nat(n) when n > 0, do: app(const(:succ), nat(n - 1))
 

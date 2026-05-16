@@ -14,10 +14,10 @@ defmodule Theoria.Inductive.DeclarationTest do
     assert Enum.map(declarations, & &1.name) == [:Bool, true, false, :bool_rec, :bool_ind]
     assert %Declaration{kind: :constant, universe_params: []} = hd(declarations)
 
-    assert %Declaration{reduction: %Reduction.BoolRec{}} =
+    assert %Declaration{reduction: %Reduction.Recursor{inductive: :Bool}} =
              Enum.find(declarations, &(&1.name == :bool_rec))
 
-    assert %Declaration{reduction: %Reduction.BoolInd{}} =
+    assert %Declaration{reduction: %Reduction.Recursor{inductive: :Bool}} =
              Enum.find(declarations, &(&1.name == :bool_ind))
   end
 
@@ -26,10 +26,10 @@ defmodule Theoria.Inductive.DeclarationTest do
 
     assert Enum.map(declarations, & &1.name) == [:Nat, :zero, :succ, :nat_rec, :nat_ind]
 
-    assert %Declaration{reduction: %Reduction.NatRec{}} =
+    assert %Declaration{reduction: %Reduction.Recursor{inductive: :Nat}} =
              Enum.find(declarations, &(&1.name == :nat_rec))
 
-    assert %Declaration{reduction: %Reduction.NatInd{}} =
+    assert %Declaration{reduction: %Reduction.Recursor{inductive: :Nat}} =
              Enum.find(declarations, &(&1.name == :nat_ind))
   end
 
@@ -49,10 +49,10 @@ defmodule Theoria.Inductive.DeclarationTest do
     assert %Declaration{universe_params: [:u, :v]} =
              Enum.find(declarations, &(&1.name == :list_rec))
 
-    assert %Declaration{reduction: %Reduction.ListRec{}} =
+    assert %Declaration{reduction: %Reduction.Recursor{inductive: :List}} =
              Enum.find(declarations, &(&1.name == :list_rec))
 
-    assert %Declaration{reduction: %Reduction.ListInd{}} =
+    assert %Declaration{reduction: %Reduction.Recursor{inductive: :List}} =
              Enum.find(declarations, &(&1.name == :list_ind))
   end
 

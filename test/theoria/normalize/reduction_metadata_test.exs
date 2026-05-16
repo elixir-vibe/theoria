@@ -24,6 +24,20 @@ defmodule Theoria.Normalize.ReductionMetadataTest do
     assert Normalize.defeq?(env, term, const(true))
   end
 
+  test "legacy reduction metadata remains supported" do
+    {:ok, env} = Bool.env()
+    env = put_reduction(env, :bool_rec, %Reduction.BoolRec{})
+
+    term =
+      const(:bool_rec, [1])
+      |> app(const(:Bool))
+      |> app(const(false))
+      |> app(const(true))
+      |> app(const(false))
+
+    assert Normalize.defeq?(env, term, const(true))
+  end
+
   test "recursor without reduction metadata remains stuck" do
     {:ok, env} = Bool.env()
     env = remove_reduction(env, :bool_rec)
@@ -42,7 +56,17 @@ defmodule Theoria.Normalize.ReductionMetadataTest do
     {:ok, env} = Nat.env()
 
     assert {:ok, checked_env} = Kernel.validate_env(env)
-    assert {:ok, %Constant{reduction: %Reduction.NatInd{}}} = Env.fetch(checked_env, :nat_ind)
+
+    assert {:ok,
+            %Constant{
+              reduction: %Reduction.Recursor{
+                inductive: :Nat,
+                major_position: 3,
+                constructors: constructors
+              }
+            }} = Env.fetch(checked_env, :nat_ind)
+
+    assert Enum.map(constructors, & &1.name) == [:zero, :succ]
   end
 
   test "environment validation rejects malformed reduction metadata" do

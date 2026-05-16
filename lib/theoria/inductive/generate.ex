@@ -18,12 +18,12 @@ defmodule Theoria.Inductive.Generate do
       %Recursor{
         name: String.to_atom("#{base}_rec"),
         type: bool_rec_type(spec),
-        reduction: %Reduction.BoolRec{}
+        reduction: bool_reduction(spec.name)
       },
       %Recursor{
         name: String.to_atom("#{base}_ind"),
         type: bool_ind_type(spec, on_true.name, on_false.name),
-        reduction: %Reduction.BoolInd{}
+        reduction: bool_reduction(spec.name)
       }
     ]
   end
@@ -38,12 +38,12 @@ defmodule Theoria.Inductive.Generate do
       %Recursor{
         name: String.to_atom("#{base}_rec"),
         type: nat_rec_type(spec),
-        reduction: %Reduction.NatRec{}
+        reduction: nat_reduction(spec.name, zero.name, succ.name)
       },
       %Recursor{
         name: String.to_atom("#{base}_ind"),
         type: nat_ind_type(spec, zero.name, succ.name),
-        reduction: %Reduction.NatInd{}
+        reduction: nat_reduction(spec.name, zero.name, succ.name)
       }
     ]
   end
@@ -58,17 +58,55 @@ defmodule Theoria.Inductive.Generate do
       %Recursor{
         name: String.to_atom("#{base}_rec"),
         type: list_rec_type(spec),
-        reduction: %Reduction.ListRec{}
+        reduction: list_reduction(spec.name, nil_constructor.name, cons.name)
       },
       %Recursor{
         name: String.to_atom("#{base}_ind"),
         type: list_ind_type(spec, nil_constructor.name, cons.name),
-        reduction: %Reduction.ListInd{}
+        reduction: list_reduction(spec.name, nil_constructor.name, cons.name)
       }
     ]
   end
 
   defp constructors(%Shape{kind: kind, constructors: constructors}, kind), do: constructors
+
+  defp bool_reduction(inductive) do
+    %Reduction.Recursor{
+      inductive: inductive,
+      major_position: 3,
+      constructors: [
+        %{name: true, branch_position: 1, argument_positions: [], recursive_positions: []},
+        %{name: false, branch_position: 2, argument_positions: [], recursive_positions: []}
+      ]
+    }
+  end
+
+  defp nat_reduction(inductive, zero_name, succ_name) do
+    %Reduction.Recursor{
+      inductive: inductive,
+      major_position: 3,
+      constructors: [
+        %{name: zero_name, branch_position: 1, argument_positions: [], recursive_positions: []},
+        %{name: succ_name, branch_position: 2, argument_positions: [0], recursive_positions: [0]}
+      ]
+    }
+  end
+
+  defp list_reduction(inductive, nil_name, cons_name) do
+    %Reduction.Recursor{
+      inductive: inductive,
+      major_position: 4,
+      constructors: [
+        %{name: nil_name, branch_position: 2, argument_positions: [], recursive_positions: []},
+        %{
+          name: cons_name,
+          branch_position: 3,
+          argument_positions: [1, 2],
+          recursive_positions: [2]
+        }
+      ]
+    }
+  end
 
   defp bool_rec_type(%Spec{name: name}) do
     u = Level.param(:u)

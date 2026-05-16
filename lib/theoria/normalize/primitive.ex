@@ -30,98 +30,139 @@ defmodule Theoria.Normalize.Primitive do
     end
   end
 
+  defp reduce_by_metadata(env, %Reduction.Recursor{} = reduction, args, fallback, whnf) do
+    reduce_recursor(env, reduction, args, fallback, whnf)
+  end
+
   defp reduce_by_metadata(env, %Reduction.BoolRec{}, args, fallback, whnf) do
-    reduce_bool(env, args, fallback, whnf)
+    reduce_recursor(env, bool_recursor(), args, fallback, whnf)
   end
 
   defp reduce_by_metadata(env, %Reduction.BoolInd{}, args, fallback, whnf) do
-    reduce_bool(env, args, fallback, whnf)
+    reduce_recursor(env, bool_recursor(), args, fallback, whnf)
   end
 
   defp reduce_by_metadata(env, %Reduction.NatRec{}, args, fallback, whnf) do
-    reduce_nat(env, args, fallback, whnf)
+    reduce_recursor(env, nat_recursor(), args, fallback, whnf)
   end
 
   defp reduce_by_metadata(env, %Reduction.NatInd{}, args, fallback, whnf) do
-    reduce_nat(env, args, fallback, whnf)
+    reduce_recursor(env, nat_recursor(), args, fallback, whnf)
   end
 
   defp reduce_by_metadata(env, %Reduction.ListRec{}, args, fallback, whnf) do
-    reduce_list(env, args, fallback, whnf)
+    reduce_recursor(env, list_recursor(), args, fallback, whnf)
   end
 
   defp reduce_by_metadata(env, %Reduction.ListInd{}, args, fallback, whnf) do
-    reduce_list(env, args, fallback, whnf)
+    reduce_recursor(env, list_recursor(), args, fallback, whnf)
   end
 
-  defp reduce_bool(env, [_type, on_true, _on_false, %Const{name: true}], _fallback, whnf) do
-    whnf.(env, on_true)
-  end
-
-  defp reduce_bool(env, [_type, _on_true, on_false, %Const{name: false}], _fallback, whnf) do
-    whnf.(env, on_false)
-  end
-
-  defp reduce_bool(_env, _args, fallback, _whnf), do: {:stuck, fallback}
-
-  defp reduce_nat(env, [_type, on_zero, _on_succ, %Const{name: :zero}], _fallback, whnf) do
-    whnf.(env, on_zero)
-  end
-
-  defp reduce_nat(env, [_type, _on_zero, on_succ, %App{} = nat], fallback, whnf) do
-    reduce_nat_succ(env, on_succ, nat, fallback, whnf)
-  end
-
-  defp reduce_nat(_env, _args, fallback, _whnf), do: {:stuck, fallback}
-
-  defp reduce_nat_succ(env, on_succ, nat, fallback, whnf) do
-    case Term.Application.collect(nat) do
-      {%Const{name: :succ}, [pred]} ->
-        recursive = replace_last_arg(fallback, pred)
-
-        on_succ
-        |> app(pred)
-        |> app(recursive)
-        |> then(&whnf.(env, &1))
-
-      _other ->
-        {:stuck, fallback}
+  defp reduce_recursor(env, %Reduction.Recursor{} = reduction, args, fallback, whnf) do
+    with {:ok, major} <- fetch_arg(args, reduction.major_position),
+         {%Const{name: constructor}, constructor_args} <- Term.Application.collect(major),
+         {:ok, branch} <- constructor_branch(reduction, constructor),
+         {:ok, branch_term} <-
+           apply_branch(branch, constructor_args, fallback, reduction.major_position) do
+      whnf.(env, branch_term)
+    else
+      _other -> {:stuck, fallback}
     end
   end
 
-  defp reduce_list(
-         env,
-         [_element_type, _result_type, on_nil, _on_cons, %App{} = list],
-         fallback,
-         whnf
-       ) do
-    case Term.Application.collect(list) do
-      {%Const{name: :list_nil}, [_element_type]} ->
-        whnf.(env, on_nil)
-
-      {%Const{name: :list_cons}, [_element_type, head, tail]} ->
-        recursive = replace_last_arg(fallback, tail)
-        on_cons = list_on_cons(fallback)
-
-        on_cons
-        |> app(head)
-        |> app(tail)
-        |> app(recursive)
-        |> then(&whnf.(env, &1))
-
-      _other ->
-        {:stuck, fallback}
+  defp constructor_branch(%Reduction.Recursor{constructors: constructors}, name) do
+    case Enum.find(constructors, &(&1.name == name)) do
+      nil -> :error
+      constructor -> {:ok, constructor}
     end
   end
 
-  defp reduce_list(_env, _args, fallback, _whnf), do: {:stuck, fallback}
-
-  defp replace_last_arg(%App{} = app, arg), do: %App{app | arg: arg}
-
-  defp list_on_cons(app) do
-    case Term.Application.collect(app) do
-      {_recursor, [_element_type, _result_type, _on_nil, on_cons, _list]} -> on_cons
+  defp apply_branch(constructor, constructor_args, fallback, major_position) do
+    with {:ok, branch} <-
+           fetch_arg(Term.Application.collect(fallback) |> elem(1), constructor.branch_position),
+         {:ok, direct_args} <-
+           select_args(constructor_args, Map.get(constructor, :argument_positions, [])),
+         {:ok, recursive_args} <-
+           recursive_args(
+             constructor_args,
+             fallback,
+             major_position,
+             Map.get(constructor, :recursive_positions, [])
+           ) do
+      {:ok, Enum.reduce(direct_args ++ recursive_args, branch, &app(&2, &1))}
     end
+  end
+
+  defp recursive_args(constructor_args, fallback, major_position, positions) do
+    with {:ok, args} <- select_args(constructor_args, positions) do
+      {:ok, Enum.map(args, &replace_arg(fallback, major_position, &1))}
+    end
+  end
+
+  defp select_args(args, positions) do
+    Enum.reduce_while(positions, {:ok, []}, fn position, {:ok, selected} ->
+      case fetch_arg(args, position) do
+        {:ok, arg} -> {:cont, {:ok, [arg | selected]}}
+        :error -> {:halt, :error}
+      end
+    end)
+    |> case do
+      {:ok, selected} -> {:ok, Enum.reverse(selected)}
+      :error -> :error
+    end
+  end
+
+  defp fetch_arg(args, position) do
+    case Enum.fetch(args, position) do
+      {:ok, arg} -> {:ok, arg}
+      :error -> :error
+    end
+  end
+
+  defp replace_arg(app, position, replacement) do
+    {fun, args} = Term.Application.collect(app)
+
+    args
+    |> List.replace_at(position, replacement)
+    |> Enum.reduce(fun, &app(&2, &1))
+  end
+
+  defp bool_recursor do
+    %Reduction.Recursor{
+      inductive: :Bool,
+      major_position: 3,
+      constructors: [
+        %{name: true, branch_position: 1, argument_positions: [], recursive_positions: []},
+        %{name: false, branch_position: 2, argument_positions: [], recursive_positions: []}
+      ]
+    }
+  end
+
+  defp nat_recursor do
+    %Reduction.Recursor{
+      inductive: :Nat,
+      major_position: 3,
+      constructors: [
+        %{name: :zero, branch_position: 1, argument_positions: [], recursive_positions: []},
+        %{name: :succ, branch_position: 2, argument_positions: [0], recursive_positions: [0]}
+      ]
+    }
+  end
+
+  defp list_recursor do
+    %Reduction.Recursor{
+      inductive: :List,
+      major_position: 4,
+      constructors: [
+        %{name: :list_nil, branch_position: 2, argument_positions: [], recursive_positions: []},
+        %{
+          name: :list_cons,
+          branch_position: 3,
+          argument_positions: [1, 2],
+          recursive_positions: [2]
+        }
+      ]
+    }
   end
 
   defp app(fun, arg), do: %App{fun: fun, arg: arg}

@@ -74,4 +74,4 @@ spec =
   |> Spec.index(:n, term(do: nat()) |> elab!())
 ```
 
-The built-in `Bool`, `Nat`, and `List` libraries use this same path. Their recursors and inductors are generated from structured classifications of recognized constructor shapes and checked against the kernel before entering the environment.
+The built-in `Bool`, `Nat`, and `List` libraries use this same path. Their recursors and inductors are generated from structured classifications of recognized constructor shapes and checked against the kernel before entering the environment. Generated eliminators carry generic `Theoria.Env.Reduction.Recursor` metadata so normalization can select a constructor branch and pass recursive calls without relying on recursor-specific reducer names.

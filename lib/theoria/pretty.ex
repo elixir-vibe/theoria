@@ -127,6 +127,12 @@ defmodule Theoria.Pretty do
     "invalid inductive specification: #{problem}"
   end
 
+  def error(%Error{reason: :inductive_env_mismatch, details: details}) do
+    name = Keyword.fetch!(details, :name)
+    problem = Keyword.fetch!(details, :problem)
+    "inductive declaration #{name} does not match environment: #{problem}"
+  end
+
   def error(%Error{reason: reason, details: details}) do
     "#{reason}: #{inspect(details)}"
   end

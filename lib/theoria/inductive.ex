@@ -1,9 +1,12 @@
 defmodule Theoria.Inductive do
   @moduledoc "Validation helpers for inductive specifications."
 
+  alias Theoria.Env
+  alias Theoria.Env.Constant
   alias Theoria.Env.Reduction
   alias Theoria.Error
   alias Theoria.Inductive.{Constructor, Declaration, Recursor, Spec}
+  alias Theoria.Normalize
   alias Theoria.Term
   alias Theoria.Term.{App, Const, Forall}
 
@@ -31,32 +34,100 @@ defmodule Theoria.Inductive do
 
   def declarations(_spec), do: invalid(:invalid_spec)
 
+  @spec verify_env(Env.t(), Spec.t()) :: validation_result()
+  def verify_env(%Env{} = env, %Spec{} = spec) do
+    with {:ok, declarations} <- declarations(spec) do
+      Enum.reduce_while(declarations, :ok, &verify_declaration(env, &1, &2))
+    end
+  end
+
+  def verify_env(_env, _spec), do: invalid(:invalid_spec)
+
+  defp verify_declaration(env, %Declaration{} = declaration, :ok) do
+    case Env.fetch(env, declaration.name) do
+      {:ok, constant} -> verify_constant(env, declaration, constant)
+      :error -> env_mismatch(declaration.name, :missing)
+    end
+    |> case do
+      :ok -> {:cont, :ok}
+      {:error, _error} = error -> {:halt, error}
+    end
+  end
+
+  defp verify_constant(env, declaration, %Constant{} = constant) do
+    run_validations([
+      fn -> verify_kind(declaration, constant) end,
+      fn -> verify_type(env, declaration, constant) end,
+      fn -> verify_universe_params(declaration, constant) end,
+      fn -> verify_reduction(declaration, constant) end
+    ])
+  end
+
+  defp verify_kind(%Declaration{kind: kind}, %Constant{kind: kind}), do: :ok
+  defp verify_kind(%Declaration{name: name}, _constant), do: env_mismatch(name, :kind)
+
+  defp verify_type(env, %Declaration{name: name, type: type}, %Constant{type: actual_type}) do
+    if Normalize.defeq?(env, actual_type, type) do
+      :ok
+    else
+      env_mismatch(name, :type)
+    end
+  end
+
+  defp verify_universe_params(%Declaration{universe_params: params}, %Constant{
+         universe_params: params
+       }),
+       do: :ok
+
+  defp verify_universe_params(%Declaration{name: name}, _constant) do
+    env_mismatch(name, :universe_params)
+  end
+
+  defp verify_reduction(%Declaration{reduction: reduction}, %Constant{reduction: reduction}),
+    do: :ok
+
+  defp verify_reduction(%Declaration{name: name}, _constant), do: env_mismatch(name, :reduction)
+
   defp build_declarations(%Spec{} = spec) do
     [inductive_declaration(spec)] ++
       Enum.map(spec.constructors, &constructor_declaration(&1, spec)) ++
       Enum.map(spec.recursors, &recursor_declaration(&1, spec))
   end
 
-  defp inductive_declaration(%Spec{name: name, type: type, universe_params: universe_params}) do
-    %Declaration{name: name, type: type, kind: :constant, universe_params: universe_params}
-  end
-
-  defp constructor_declaration(%Constructor{name: name, type: type}, %Spec{
-         universe_params: universe_params
-       }) do
-    %Declaration{name: name, type: type, kind: :constant, universe_params: universe_params}
-  end
-
-  defp recursor_declaration(%Recursor{name: name, type: type, reduction: reduction}, %Spec{
-         universe_params: universe_params
-       }) do
+  defp inductive_declaration(%Spec{name: name, type: type} = spec) do
     %Declaration{
       name: name,
       type: type,
       kind: :constant,
-      universe_params: universe_params,
+      universe_params: declaration_params(spec, type)
+    }
+  end
+
+  defp constructor_declaration(%Constructor{name: name, type: type}, %Spec{} = spec) do
+    %Declaration{
+      name: name,
+      type: type,
+      kind: :constant,
+      universe_params: declaration_params(spec, type)
+    }
+  end
+
+  defp recursor_declaration(
+         %Recursor{name: name, type: type, reduction: reduction},
+         %Spec{} = spec
+       ) do
+    %Declaration{
+      name: name,
+      type: type,
+      kind: :constant,
+      universe_params: declaration_params(spec, type),
       reduction: reduction
     }
+  end
+
+  defp declaration_params(%Spec{universe_params: universe_params}, type) do
+    params = Term.level_params(type)
+    Enum.filter(universe_params, &MapSet.member?(params, &1))
   end
 
   defp run_validations(validations) do
@@ -208,6 +279,10 @@ defmodule Theoria.Inductive do
 
   defp application_head(%App{fun: fun}), do: application_head(fun)
   defp application_head(term), do: term
+
+  defp env_mismatch(name, problem) do
+    {:error, %Error{reason: :inductive_env_mismatch, details: [name: name, problem: problem]}}
+  end
 
   defp invalid(reason, details \\ []) do
     {:error, %Error{reason: :invalid_inductive, details: Keyword.put(details, :problem, reason)}}

@@ -12,7 +12,7 @@ defmodule Theoria.Inductive.DeclarationTest do
     assert {:ok, declarations} = Inductive.declarations(Bool.inductive_spec())
 
     assert Enum.map(declarations, & &1.name) == [:Bool, true, false, :bool_rec, :bool_ind]
-    assert %Declaration{kind: :constant, universe_params: [:u]} = hd(declarations)
+    assert %Declaration{kind: :constant, universe_params: []} = hd(declarations)
 
     assert %Declaration{reduction: %Reduction.BoolRec{}} =
              Enum.find(declarations, &(&1.name == :bool_rec))
@@ -44,7 +44,10 @@ defmodule Theoria.Inductive.DeclarationTest do
              :list_ind
            ]
 
-    assert Enum.all?(declarations, &(&1.universe_params == [:u, :v]))
+    assert %Declaration{universe_params: [:u]} = Enum.find(declarations, &(&1.name == :List))
+
+    assert %Declaration{universe_params: [:u, :v]} =
+             Enum.find(declarations, &(&1.name == :list_rec))
 
     assert %Declaration{reduction: %Reduction.ListRec{}} =
              Enum.find(declarations, &(&1.name == :list_rec))

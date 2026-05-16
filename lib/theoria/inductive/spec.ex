@@ -1,7 +1,7 @@
 defmodule Theoria.Inductive.Spec do
   @moduledoc "Structured description of an inductive family."
 
-  alias Theoria.Inductive.{Constructor, Parameter, Recursor}
+  alias Theoria.Inductive.{Constructor, Index, Parameter, Recursor}
   alias Theoria.Term
 
   @enforce_keys [:name, :type, :constructors]
@@ -21,7 +21,7 @@ defmodule Theoria.Inductive.Spec do
           constructors: [Constructor.t()],
           universe_params: [atom()],
           parameters: [Parameter.t()],
-          indices: [Term.t()],
+          indices: [Index.t()],
           recursors: [Recursor.t()]
         }
 
@@ -33,7 +33,7 @@ defmodule Theoria.Inductive.Spec do
       constructors: Keyword.get(opts, :constructors, []),
       universe_params: Keyword.get(opts, :universe_params, Keyword.get(opts, :universes, [])),
       parameters: Enum.map(Keyword.get(opts, :parameters, []), &cast_parameter/1),
-      indices: Keyword.get(opts, :indices, []),
+      indices: Enum.map(Keyword.get(opts, :indices, []), &cast_index/1),
       recursors: Keyword.get(opts, :recursors, [])
     }
   end
@@ -41,6 +41,11 @@ defmodule Theoria.Inductive.Spec do
   @spec parameter(t(), atom(), Term.t()) :: t()
   def parameter(%__MODULE__{parameters: parameters} = spec, name, type) when is_atom(name) do
     %__MODULE__{spec | parameters: parameters ++ [%Parameter{name: name, type: type}]}
+  end
+
+  @spec index(t(), atom(), Term.t()) :: t()
+  def index(%__MODULE__{indices: indices} = spec, name, type) when is_atom(name) do
+    %__MODULE__{spec | indices: indices ++ [%Index{name: name, type: type}]}
   end
 
   @spec constructor(t(), atom(), Term.t()) :: t()
@@ -61,4 +66,8 @@ defmodule Theoria.Inductive.Spec do
   defp cast_parameter(%Parameter{} = parameter), do: parameter
   defp cast_parameter({name, type}) when is_atom(name), do: %Parameter{name: name, type: type}
   defp cast_parameter(other), do: other
+
+  defp cast_index(%Index{} = index), do: index
+  defp cast_index({name, type}) when is_atom(name), do: %Index{name: name, type: type}
+  defp cast_index(other), do: other
 end

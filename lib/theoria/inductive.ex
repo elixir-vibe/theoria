@@ -5,7 +5,19 @@ defmodule Theoria.Inductive do
   alias Theoria.Env.Constant
   alias Theoria.Env.Reduction
   alias Theoria.Error
-  alias Theoria.Inductive.{Constructor, Declaration, Generate, Parameter, Recursor, Report, Spec}
+
+  alias Theoria.Inductive.{
+    Constructor,
+    Declaration,
+    Generate,
+    Index,
+    Parameter,
+    Recursor,
+    Report,
+    Shape,
+    Spec
+  }
+
   alias Theoria.Kernel
   alias Theoria.Normalize
   alias Theoria.Term
@@ -19,6 +31,7 @@ defmodule Theoria.Inductive do
       fn -> validate_name(spec.name) end,
       fn -> validate_universe_params(spec.universe_params) end,
       fn -> validate_parameters(spec) end,
+      fn -> validate_indices(spec) end,
       fn -> validate_terms(spec) end,
       fn -> validate_constructors(spec) end,
       fn -> validate_recursors(spec) end
@@ -51,25 +64,28 @@ defmodule Theoria.Inductive do
 
   def report(_spec), do: invalid(:invalid_spec)
 
-  @spec shape(Spec.t()) :: :bool_like | :nat_like | :list_like | :unknown
-  def shape(%Spec{constructors: constructors} = spec) do
-    cond do
-      bool_like?(constructors, spec.name) -> :bool_like
-      nat_like?(constructors, spec.name) -> :nat_like
-      list_like?(constructors, spec.name) -> :list_like
-      true -> :unknown
-    end
-  end
+  @spec classify(Spec.t()) :: Shape.t()
+  def classify(%Spec{} = spec), do: Shape.classify(spec)
+  def classify(_spec), do: %Shape{kind: :unknown, constructors: %{}, parameters: []}
 
+  @spec shape(Spec.t()) :: Shape.kind()
+  def shape(%Spec{} = spec), do: classify(spec).kind
   def shape(_spec), do: :unknown
 
   @spec complete(Spec.t()) :: {:ok, Spec.t()} | {:error, Error.t()}
   def complete(%Spec{recursors: []} = spec) do
-    case shape(spec) do
-      :bool_like -> {:ok, %Spec{spec | recursors: Generate.bool_eliminators(spec)}}
-      :nat_like -> {:ok, %Spec{spec | recursors: Generate.nat_eliminators(spec)}}
-      :list_like -> {:ok, %Spec{spec | recursors: Generate.list_eliminators(spec)}}
-      :unknown -> invalid(:unknown_inductive_shape)
+    case classify(spec) do
+      %Shape{kind: :bool_like} = shape ->
+        {:ok, %Spec{spec | recursors: Generate.bool_eliminators(spec, shape)}}
+
+      %Shape{kind: :nat_like} = shape ->
+        {:ok, %Spec{spec | recursors: Generate.nat_eliminators(spec, shape)}}
+
+      %Shape{kind: :list_like} = shape ->
+        {:ok, %Spec{spec | recursors: Generate.list_eliminators(spec, shape)}}
+
+      %Shape{kind: :unknown} ->
+        invalid(:unknown_inductive_shape)
     end
   end
 
@@ -257,11 +273,13 @@ defmodule Theoria.Inductive do
   defp all_terms(%Spec{
          type: type,
          parameters: parameters,
+         indices: indices,
          constructors: constructors,
          recursors: recursors
        }) do
     [type] ++
       Enum.map(parameters, & &1.type) ++
+      Enum.map(indices, & &1.type) ++
       Enum.map(constructors, & &1.type) ++ Enum.map(recursors, & &1.type)
   end
 
@@ -279,6 +297,21 @@ defmodule Theoria.Inductive do
   end
 
   defp validate_parameters(_spec), do: invalid(:invalid_parameters)
+
+  defp validate_indices(%Spec{indices: indices}) when is_list(indices) do
+    cond do
+      not Enum.all?(indices, &match?(%Index{name: name} when is_atom(name), &1)) ->
+        invalid(:invalid_indices)
+
+      duplicate_name = duplicate_name(indices) ->
+        invalid(:duplicate_declaration, name: duplicate_name)
+
+      true ->
+        :ok
+    end
+  end
+
+  defp validate_indices(_spec), do: invalid(:invalid_indices)
 
   defp validate_constructors(%Spec{constructors: constructors} = spec)
        when is_list(constructors) do
@@ -313,8 +346,7 @@ defmodule Theoria.Inductive do
     end)
   end
 
-  defp validate_constructor_parameters(%Spec{parameters: []}), do: :ok
-  defp validate_constructor_parameters(%Spec{indices: [_index | _rest]}), do: :ok
+  defp validate_constructor_parameters(%Spec{parameters: [], indices: []}), do: :ok
 
   defp validate_constructor_parameters(%Spec{} = spec) do
     Enum.reduce_while(spec.constructors, :ok, fn constructor, :ok ->
@@ -329,9 +361,11 @@ defmodule Theoria.Inductive do
     {binders, result} = collect_constructor_binders(type, name, [])
     {_head, args} = Theoria.Term.Application.collect(result)
 
+    expected_arity = length(spec.parameters) + length(spec.indices)
+
     cond do
-      length(args) < length(spec.parameters) ->
-        :constructor_parameter_mismatch
+      length(args) != expected_arity ->
+        :constructor_result_arity_mismatch
 
       not parameter_binders_match?(spec.parameters, binders) ->
         :constructor_parameter_mismatch
@@ -398,11 +432,11 @@ defmodule Theoria.Inductive do
   end
 
   defp expected_eliminators(%Spec{} = spec) do
-    case shape(%Spec{spec | recursors: []}) do
-      :bool_like -> {:ok, Generate.bool_eliminators(spec)}
-      :nat_like -> {:ok, Generate.nat_eliminators(spec)}
-      :list_like -> {:ok, Generate.list_eliminators(spec)}
-      :unknown -> :unknown
+    case classify(%Spec{spec | recursors: []}) do
+      %Shape{kind: :bool_like} = shape -> {:ok, Generate.bool_eliminators(spec, shape)}
+      %Shape{kind: :nat_like} = shape -> {:ok, Generate.nat_eliminators(spec, shape)}
+      %Shape{kind: :list_like} = shape -> {:ok, Generate.list_eliminators(spec, shape)}
+      %Shape{kind: :unknown} -> :unknown
     end
   end
 
@@ -504,43 +538,6 @@ defmodule Theoria.Inductive do
 
   defp flip_polarity(:positive), do: :negative
   defp flip_polarity(:negative), do: :positive
-
-  defp bool_like?([first, second], name) do
-    nullary_constructor?(first.type, name) and nullary_constructor?(second.type, name)
-  end
-
-  defp bool_like?(_constructors, _name), do: false
-
-  defp nat_like?([zero, succ], name) do
-    nullary_constructor?(zero.type, name) and unary_recursive_constructor?(succ.type, name)
-  end
-
-  defp nat_like?(_constructors, _name), do: false
-
-  defp list_like?([nil_constructor, cons], name) do
-    constructor_targets_inductive?(nil_constructor.type, name) and
-      list_cons_constructor?(cons.type, name)
-  end
-
-  defp list_like?(_constructors, _name), do: false
-
-  defp nullary_constructor?(%Forall{}, _name), do: false
-
-  defp nullary_constructor?(type, name) do
-    constructor_targets_inductive?(type, name) and constructor_argument_types(type, name) == []
-  end
-
-  defp unary_recursive_constructor?(%Forall{name: :_, domain: domain, body: body}, name) do
-    application_head(domain) == %Const{name: name} and constructor_targets_inductive?(body, name)
-  end
-
-  defp unary_recursive_constructor?(_type, _name), do: false
-
-  defp list_cons_constructor?(%Forall{} = type, name) do
-    constructor_targets_inductive?(type, name) and MapSet.member?(Term.constants(type), name)
-  end
-
-  defp list_cons_constructor?(_type, _name), do: false
 
   defp validate_named_declarations(declarations, module, field) do
     cond do

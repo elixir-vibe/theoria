@@ -26,12 +26,16 @@ You can inspect the shape and declaration plan before admission:
 Inductive.shape(spec)
 #=> :bool_like
 
+shape = Inductive.classify(spec)
+shape.constructors.first.name
+#=> :on
+
 {:ok, report} = Inductive.report(spec)
 report.declarations
 #=> [:Switch, :on, :off, :switch_rec, :switch_ind]
 ```
 
-For parameterized families, declare named parameters explicitly. The validator checks that constructor result arguments preserve those parameters for non-indexed families:
+For parameterized families, declare named parameters explicitly. The validator checks that constructor result arguments preserve those parameters:
 
 ```elixir
 u = Theoria.Level.param(:u)
@@ -50,4 +54,24 @@ spec =
   |> Spec.parameter(:a, term(do: sort(^u)) |> elab!())
 ```
 
-The built-in `Bool`, `Nat`, and `List` libraries use this same path. Their recursors and inductors are generated from recognized constructor shapes and checked against the kernel before entering the environment.
+Indexed families can declare named indices. The current checker validates result arity and parameter preservation; it does not synthesize indexed eliminators yet.
+
+```elixir
+u = Theoria.Level.param(:u)
+
+vec_type =
+  term do
+    forall :a, sort(^u) do
+      nat() ~> sort(^u)
+    end
+  end
+  |> elab!()
+
+spec =
+  :Vec
+  |> Spec.new(vec_type, universe_params: [:u])
+  |> Spec.parameter(:a, term(do: sort(^u)) |> elab!())
+  |> Spec.index(:n, term(do: nat()) |> elab!())
+```
+
+The built-in `Bool`, `Nat`, and `List` libraries use this same path. Their recursors and inductors are generated from structured classifications of recognized constructor shapes and checked against the kernel before entering the environment.

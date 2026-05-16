@@ -14,6 +14,25 @@ defmodule Theoria.Inductive.ShapeTest do
     assert Inductive.shape(without_recursors(List.inductive_spec())) == :list_like
   end
 
+  test "returns structured shape data" do
+    shape = Inductive.classify(without_recursors(List.inductive_spec()))
+
+    assert shape.kind == :list_like
+    assert shape.constructors.nil.name == :list_nil
+    assert shape.constructors.cons.name == :list_cons
+    assert Enum.map(shape.parameters, & &1.name) == [:a]
+    assert inspect(shape) == "#Theoria<shape list_like: cons, nil>"
+  end
+
+  test "classification does not depend on Nat constructor order" do
+    spec = without_recursors(Nat.inductive_spec())
+    reversed = %Spec{spec | constructors: Enum.reverse(spec.constructors)}
+
+    assert Inductive.shape(reversed) == :nat_like
+    assert Inductive.classify(reversed).constructors.zero.name == :zero
+    assert Inductive.classify(reversed).constructors.succ.name == :succ
+  end
+
   test "classifies unsupported specs as unknown" do
     spec = %Spec{
       name: :Unit,

@@ -72,3 +72,19 @@ defimpl Inspect, for: Theoria.Inductive.Parameter do
     |> Theoria.Inspect.doc()
   end
 end
+
+defimpl Inspect, for: Theoria.Inductive.Index do
+  def inspect(index, _opts) do
+    index
+    |> Theoria.Pretty.inductive_index()
+    |> Theoria.Inspect.doc()
+  end
+end
+
+defimpl Inspect, for: Theoria.Inductive.Shape do
+  def inspect(shape, _opts) do
+    shape
+    |> Theoria.Pretty.inductive_shape()
+    |> Theoria.Inspect.doc()
+  end
+end

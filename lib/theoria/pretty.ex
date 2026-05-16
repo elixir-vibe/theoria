@@ -2,7 +2,7 @@ defmodule Theoria.Pretty do
   @moduledoc "Human-readable rendering for Theoria values."
 
   alias Theoria.Error
-  alias Theoria.Inductive.{Parameter, Report}
+  alias Theoria.Inductive.{Index, Parameter, Report, Shape}
   alias Theoria.Kernel.TrustReport
   alias Theoria.Term
   alias Theoria.Term.{App, BVar, Const, Eq, Forall, Lam, Let, Refl, Sort}
@@ -39,6 +39,16 @@ defmodule Theoria.Pretty do
   @spec inductive_parameter(Parameter.t()) :: String.t()
   def inductive_parameter(%Parameter{name: name, type: type}) do
     "parameter #{name} : #{term(type)}"
+  end
+
+  @spec inductive_index(Index.t()) :: String.t()
+  def inductive_index(%Index{name: name, type: type}) do
+    "index #{name} : #{term(type)}"
+  end
+
+  @spec inductive_shape(Shape.t()) :: String.t()
+  def inductive_shape(%Shape{kind: kind, constructors: constructors}) do
+    "shape #{kind}: #{constructors |> Map.keys() |> render_names()}"
   end
 
   @spec level(Theoria.Level.t()) :: String.t()

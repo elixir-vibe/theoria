@@ -2,15 +2,16 @@ defmodule Theoria.Inductive.Generate do
   @moduledoc "Generators for declarations derived from inductive specs."
 
   alias Theoria.Env.Reduction
-  alias Theoria.Inductive.{Recursor, Spec}
+  alias Theoria.Inductive.{Recursor, Shape, Spec}
   alias Theoria.Level
   alias Theoria.Syntax, as: S
 
   import Theoria.DSL, only: [elab!: 1, term: 1]
 
   @doc "Generates non-dependent and dependent eliminators for a Bool-like inductive."
-  @spec bool_eliminators(Spec.t()) :: [Recursor.t()]
-  def bool_eliminators(%Spec{constructors: [on_true, on_false]} = spec) do
+  @spec bool_eliminators(Spec.t(), Shape.t() | nil) :: [Recursor.t()]
+  def bool_eliminators(%Spec{} = spec, shape \\ nil) do
+    %{first: on_true, second: on_false} = constructors(shape || Shape.classify(spec), :bool_like)
     base = base_name(spec.name)
 
     [
@@ -28,8 +29,9 @@ defmodule Theoria.Inductive.Generate do
   end
 
   @doc "Generates non-dependent and dependent eliminators for a Nat-like inductive."
-  @spec nat_eliminators(Spec.t()) :: [Recursor.t()]
-  def nat_eliminators(%Spec{constructors: [zero, succ]} = spec) do
+  @spec nat_eliminators(Spec.t(), Shape.t() | nil) :: [Recursor.t()]
+  def nat_eliminators(%Spec{} = spec, shape \\ nil) do
+    %{zero: zero, succ: succ} = constructors(shape || Shape.classify(spec), :nat_like)
     base = base_name(spec.name)
 
     [
@@ -47,8 +49,9 @@ defmodule Theoria.Inductive.Generate do
   end
 
   @doc "Generates non-dependent and dependent eliminators for Theoria's List-like shape."
-  @spec list_eliminators(Spec.t()) :: [Recursor.t()]
-  def list_eliminators(%Spec{constructors: [nil_constructor, cons]} = spec) do
+  @spec list_eliminators(Spec.t(), Shape.t() | nil) :: [Recursor.t()]
+  def list_eliminators(%Spec{} = spec, shape \\ nil) do
+    %{nil: nil_constructor, cons: cons} = constructors(shape || Shape.classify(spec), :list_like)
     base = base_name(spec.name)
 
     [
@@ -64,6 +67,8 @@ defmodule Theoria.Inductive.Generate do
       }
     ]
   end
+
+  defp constructors(%Shape{kind: kind, constructors: constructors}, kind), do: constructors
 
   defp bool_rec_type(%Spec{name: name}) do
     u = Level.param(:u)

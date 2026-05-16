@@ -50,6 +50,38 @@ defmodule Theoria.Normalize.HardeningTest do
     end
   end
 
+  test "normalization leaves stuck nat_rec applications intact" do
+    {:ok, env} = Prelude.env()
+
+    term =
+      const(:nat_rec)
+      |> app(const(:Nat))
+      |> app(const(:zero))
+      |> app(succ_step())
+      |> app(const(:unknown_nat))
+
+    assert {:ok, normalized} = Normalize.normalize(env, term)
+    assert normalized == term
+  end
+
+  test "definitional equality distinguishes different constructors" do
+    {:ok, env} = Prelude.env()
+
+    refute Normalize.defeq?(env, const(:zero), app(const(:succ), const(:zero)))
+    refute Normalize.defeq?(env, const(true), const(false))
+  end
+
+  test "definition unfolding composes with primitive reductions" do
+    {:ok, env} = Prelude.env()
+
+    term =
+      const(:nat_add)
+      |> app(nat(2))
+      |> app(nat(1))
+
+    assert Normalize.defeq?(env, term, nat(3))
+  end
+
   defp nat(0), do: const(:zero)
   defp nat(n) when n > 0, do: app(const(:succ), nat(n - 1))
 

@@ -23,6 +23,12 @@ defmodule Theoria.DSL.TermQuoteTest do
   end
 
   test "supports explicit const, var, eq, refl, prop, type, and arrow forms" do
+    nat_type = S.const(:Nat)
+    u = Theoria.Level.param(:u)
+
+    assert term(do: ^nat_type) == S.const(:Nat)
+    assert term(do: sort(^u)) == S.sort(u)
+    assert term(do: const(:List, [^u])) == S.const(:List, [u])
     assert term(do: eq(type(0), x, x)) == eq(type(0), var(:x), var(:x))
     assert term(do: refl(x)) == refl(var(:x))
     assert term(do: const(:True)) == const(:True)

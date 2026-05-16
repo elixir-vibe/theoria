@@ -1,11 +1,12 @@
 defmodule Theoria.Inductive.Generate do
   @moduledoc "Generators for declarations derived from inductive specs."
 
-  alias Theoria.Elaborator
   alias Theoria.Env.Reduction
   alias Theoria.Inductive.{Recursor, Spec}
   alias Theoria.Level
   alias Theoria.Syntax, as: S
+
+  import Theoria.DSL, only: [elab!: 1, term: 1]
 
   @doc "Generates non-dependent and dependent eliminators for a Bool-like inductive."
   @spec bool_eliminators(Spec.t()) :: [Recursor.t()]
@@ -28,7 +29,7 @@ defmodule Theoria.Inductive.Generate do
 
   @doc "Generates non-dependent and dependent eliminators for a Nat-like inductive."
   @spec nat_eliminators(Spec.t()) :: [Recursor.t()]
-  def nat_eliminators(%Spec{} = spec) do
+  def nat_eliminators(%Spec{constructors: [zero, succ]} = spec) do
     base = base_name(spec.name)
 
     [
@@ -39,7 +40,7 @@ defmodule Theoria.Inductive.Generate do
       },
       %Recursor{
         name: String.to_atom("#{base}_ind"),
-        type: nat_ind_type(spec),
+        type: nat_ind_type(spec, zero.name, succ.name),
         reduction: %Reduction.NatInd{}
       }
     ]
@@ -47,7 +48,7 @@ defmodule Theoria.Inductive.Generate do
 
   @doc "Generates non-dependent and dependent eliminators for Theoria's List-like shape."
   @spec list_eliminators(Spec.t()) :: [Recursor.t()]
-  def list_eliminators(%Spec{} = spec) do
+  def list_eliminators(%Spec{constructors: [nil_constructor, cons]} = spec) do
     base = base_name(spec.name)
 
     [
@@ -58,7 +59,7 @@ defmodule Theoria.Inductive.Generate do
       },
       %Recursor{
         name: String.to_atom("#{base}_ind"),
-        type: list_ind_type(spec),
+        type: list_ind_type(spec, nil_constructor.name, cons.name),
         reduction: %Reduction.ListInd{}
       }
     ]
@@ -66,138 +67,106 @@ defmodule Theoria.Inductive.Generate do
 
   defp bool_rec_type(%Spec{name: name}) do
     u = Level.param(:u)
+    bool = S.const(name)
 
-    S.forall(
-      :a,
-      S.sort(u),
-      S.arrow(
-        S.var(:a),
-        S.arrow(S.var(:a), S.arrow(S.const(name), S.var(:a)))
-      )
-    )
-    |> Elaborator.elaborate!()
+    term do
+      forall :a, sort(^u) do
+        a ~> (a ~> (^bool ~> a))
+      end
+    end
+    |> elab!()
   end
 
   defp bool_ind_type(%Spec{name: name}, true_name, false_name) do
     u = Level.param(:u)
+    bool = S.const(name)
+    on_true = S.const(true_name)
+    on_false = S.const(false_name)
 
-    S.forall(
-      :motive,
-      S.arrow(S.const(name), S.sort(u)),
-      S.arrow(
-        S.app(S.var(:motive), S.const(true_name)),
-        S.arrow(
-          S.app(S.var(:motive), S.const(false_name)),
-          S.forall(:b, S.const(name), S.app(S.var(:motive), S.var(:b)))
-        )
-      )
-    )
-    |> Elaborator.elaborate!()
+    term do
+      forall :motive, ^bool ~> sort(^u) do
+        app(motive, ^on_true)
+        ~> (app(motive, ^on_false)
+            ~> forall :b, ^bool do
+              app(motive, b)
+            end)
+      end
+    end
+    |> elab!()
   end
 
   defp nat_rec_type(%Spec{name: name}) do
     u = Level.param(:u)
+    nat = S.const(name)
 
-    S.forall(
-      :a,
-      S.sort(u),
-      S.arrow(
-        S.var(:a),
-        S.arrow(
-          S.arrow(S.const(name), S.arrow(S.var(:a), S.var(:a))),
-          S.arrow(S.const(name), S.var(:a))
-        )
-      )
-    )
-    |> Elaborator.elaborate!()
+    term do
+      forall :a, sort(^u) do
+        a ~> (^nat ~> (a ~> a) ~> (^nat ~> a))
+      end
+    end
+    |> elab!()
   end
 
-  defp nat_ind_type(%Spec{name: name}) do
+  defp nat_ind_type(%Spec{name: name}, zero_name, succ_name) do
     u = Level.param(:u)
+    nat = S.const(name)
+    zero = S.const(zero_name)
+    succ = S.const(succ_name)
 
-    S.forall(
-      :motive,
-      S.arrow(S.const(name), S.sort(u)),
-      S.arrow(
-        S.app(S.var(:motive), S.const(:zero)),
-        S.arrow(
-          S.forall(
-            :n,
-            S.const(name),
-            S.arrow(
-              S.app(S.var(:motive), S.var(:n)),
-              S.app(S.var(:motive), S.app(S.const(:succ), S.var(:n)))
-            )
-          ),
-          S.forall(:n, S.const(name), S.app(S.var(:motive), S.var(:n)))
-        )
-      )
-    )
-    |> Elaborator.elaborate!()
+    term do
+      forall :motive, ^nat ~> sort(^u) do
+        app(motive, ^zero)
+        ~> (forall :n, ^nat do
+              app(motive, n) ~> app(motive, app(^succ, n))
+            end
+            ~> forall :n, ^nat do
+              app(motive, n)
+            end)
+      end
+    end
+    |> elab!()
   end
 
   defp list_rec_type(%Spec{name: name}) do
     u = Level.param(:u)
     v = Level.param(:v)
+    list_a = list_type(name, u, S.var(:a))
 
-    S.forall(
-      :a,
-      S.sort(u),
-      S.forall(
-        :b,
-        S.sort(v),
-        S.arrow(
-          S.var(:b),
-          S.arrow(
-            S.arrow(
-              S.var(:a),
-              S.arrow(list_type(name, u, S.var(:a)), S.arrow(S.var(:b), S.var(:b)))
-            ),
-            S.arrow(list_type(name, u, S.var(:a)), S.var(:b))
-          )
-        )
-      )
-    )
-    |> Elaborator.elaborate!()
+    term do
+      forall :a, sort(^u) do
+        forall :b, sort(^v) do
+          b ~> (a ~> (^list_a ~> (b ~> b)) ~> (^list_a ~> b))
+        end
+      end
+    end
+    |> elab!()
   end
 
-  defp list_ind_type(%Spec{name: name}) do
+  defp list_ind_type(%Spec{name: name}, nil_name, cons_name) do
     u = Level.param(:u)
     v = Level.param(:v)
+    list_a = list_type(name, u, S.var(:a))
+    nil_a = S.app(S.const(nil_name, [u]), S.var(:a))
 
-    S.forall(
-      :a,
-      S.sort(u),
-      S.forall(
-        :motive,
-        S.arrow(list_type(name, u, S.var(:a)), S.sort(v)),
-        S.arrow(
-          S.app(S.var(:motive), S.app(S.const(:list_nil, [u]), S.var(:a))),
-          S.arrow(
-            S.forall(
-              :x,
-              S.var(:a),
-              S.forall(
-                :xs,
-                list_type(name, u, S.var(:a)),
-                S.arrow(
-                  S.app(S.var(:motive), S.var(:xs)),
-                  S.app(
-                    S.var(:motive),
-                    S.const(:list_cons, [u])
-                    |> S.app(S.var(:a))
-                    |> S.app(S.var(:x))
-                    |> S.app(S.var(:xs))
-                  )
-                )
-              )
-            ),
-            S.forall(:xs, list_type(name, u, S.var(:a)), S.app(S.var(:motive), S.var(:xs)))
-          )
-        )
-      )
-    )
-    |> Elaborator.elaborate!()
+    cons_a_x_xs =
+      S.const(cons_name, [u]) |> S.app(S.var(:a)) |> S.app(S.var(:x)) |> S.app(S.var(:xs))
+
+    term do
+      forall :a, sort(^u) do
+        forall :motive, ^list_a ~> sort(^v) do
+          app(motive, ^nil_a)
+          ~> (forall :x, a do
+                forall :xs, ^list_a do
+                  app(motive, xs) ~> app(motive, ^cons_a_x_xs)
+                end
+              end
+              ~> forall :xs, ^list_a do
+                app(motive, xs)
+              end)
+        end
+      end
+    end
+    |> elab!()
   end
 
   defp list_type(name, level, element) do

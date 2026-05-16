@@ -201,6 +201,10 @@ defmodule Theoria.DSL do
           "term blocks must contain exactly one expression, got #{length(exprs)}"
   end
 
+  defp quote_term({:^, _meta, [expr]}) do
+    expr
+  end
+
   defp quote_term({:var, _meta, [name]}) do
     quote do
       Theoria.Syntax.var(unquote(name_literal!(name)))
@@ -517,6 +521,7 @@ defmodule Theoria.DSL do
     raise ArgumentError, "expected a list of universe levels, got: #{Macro.to_string(other)}"
   end
 
+  defp quote_level({:^, _meta, [expr]}), do: expr
   defp quote_level(level) when is_integer(level) and level >= 0, do: level
   defp quote_level(level) when is_atom(level), do: quote(do: Theoria.Level.param(unquote(level)))
 

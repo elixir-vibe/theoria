@@ -110,6 +110,19 @@ term do
 end
 ```
 
+Generator code can splice pre-built syntax and universe levels with `^`:
+
+```elixir
+u = Theoria.Level.param(:u)
+nat = Theoria.Syntax.const(:Nat)
+
+term do
+  forall :a, sort(^u) do
+    ^nat ~> a
+  end
+end
+```
+
 Because `and`, `or`, and `not` are reserved Elixir words, theorem code should use the readable aliases `conj(p, q)` and `neg(p)` for the object-language constants `:and` and `:not`.
 
 The quote DSL also provides aliases for constants that are awkward or ambiguous in Elixir syntax:

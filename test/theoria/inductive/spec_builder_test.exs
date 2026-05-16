@@ -11,10 +11,12 @@ defmodule Theoria.Inductive.SpecBuilderTest do
     spec =
       :Box
       |> Spec.new(sort(1), universe_params: [:u])
-      |> Spec.constructor(:box, const(:Box))
+      |> Spec.parameter(:a, sort(1))
+      |> Spec.constructor(:box, forall(:a, sort(1), app(const(:Box), bvar(0))))
       |> Spec.recursor(:box_rec, const(:Box), %Reduction.NatRec{})
 
     assert spec.name == :Box
+    assert Enum.map(spec.parameters, & &1.name) == [:a]
     assert Enum.map(spec.constructors, & &1.name) == [:box]
     assert Enum.map(spec.recursors, & &1.name) == [:box_rec]
     assert Inductive.validate(spec) == :ok

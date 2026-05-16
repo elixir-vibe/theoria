@@ -31,6 +31,7 @@ defmodule Theoria.Library.List do
     spec =
       :List
       |> Spec.new(list_type(), universe_params: [:u, :v])
+      |> Spec.parameter(:a, term(do: sort(u)) |> elab!())
       |> Spec.constructor(:list_nil, list_nil_type())
       |> Spec.constructor(:list_cons, list_cons_type())
 

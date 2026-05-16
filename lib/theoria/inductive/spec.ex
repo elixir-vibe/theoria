@@ -1,7 +1,7 @@
 defmodule Theoria.Inductive.Spec do
   @moduledoc "Structured description of an inductive family."
 
-  alias Theoria.Inductive.{Constructor, Recursor}
+  alias Theoria.Inductive.{Constructor, Parameter, Recursor}
   alias Theoria.Term
 
   @enforce_keys [:name, :type, :constructors]
@@ -20,7 +20,7 @@ defmodule Theoria.Inductive.Spec do
           type: Term.t(),
           constructors: [Constructor.t()],
           universe_params: [atom()],
-          parameters: [Term.t()],
+          parameters: [Parameter.t()],
           indices: [Term.t()],
           recursors: [Recursor.t()]
         }
@@ -32,10 +32,15 @@ defmodule Theoria.Inductive.Spec do
       type: type,
       constructors: Keyword.get(opts, :constructors, []),
       universe_params: Keyword.get(opts, :universe_params, Keyword.get(opts, :universes, [])),
-      parameters: Keyword.get(opts, :parameters, []),
+      parameters: Enum.map(Keyword.get(opts, :parameters, []), &cast_parameter/1),
       indices: Keyword.get(opts, :indices, []),
       recursors: Keyword.get(opts, :recursors, [])
     }
+  end
+
+  @spec parameter(t(), atom(), Term.t()) :: t()
+  def parameter(%__MODULE__{parameters: parameters} = spec, name, type) when is_atom(name) do
+    %__MODULE__{spec | parameters: parameters ++ [%Parameter{name: name, type: type}]}
   end
 
   @spec constructor(t(), atom(), Term.t()) :: t()
@@ -52,4 +57,8 @@ defmodule Theoria.Inductive.Spec do
       | recursors: recursors ++ [%Recursor{name: name, type: type, reduction: reduction}]
     }
   end
+
+  defp cast_parameter(%Parameter{} = parameter), do: parameter
+  defp cast_parameter({name, type}) when is_atom(name), do: %Parameter{name: name, type: type}
+  defp cast_parameter(other), do: other
 end

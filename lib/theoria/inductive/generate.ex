@@ -127,46 +127,67 @@ defmodule Theoria.Inductive.Generate do
     |> elab!()
   end
 
-  defp list_rec_type(%Spec{name: name}) do
+  defp list_rec_type(%Spec{name: name} = spec) do
     u = Level.param(:u)
     v = Level.param(:v)
-    list_a = list_type(name, u, S.var(:a))
+    {param_name, param_type, param} = list_parameter(spec)
+    list_param = list_type(name, u, param)
 
     term do
-      forall :a, sort(^u) do
+      forall ^param_name, ^param_type do
         forall :b, sort(^v) do
-          b ~> (a ~> (^list_a ~> (b ~> b)) ~> (^list_a ~> b))
+          b ~> (^param ~> (^list_param ~> (b ~> b)) ~> (^list_param ~> b))
         end
       end
     end
     |> elab!()
   end
 
-  defp list_ind_type(%Spec{name: name}, nil_name, cons_name) do
+  defp list_ind_type(%Spec{name: name} = spec, nil_name, cons_name) do
     u = Level.param(:u)
     v = Level.param(:v)
-    list_a = list_type(name, u, S.var(:a))
-    nil_a = S.app(S.const(nil_name, [u]), S.var(:a))
+    {param_name, param_type, param} = list_parameter(spec)
+    list_param = list_type(name, u, param)
+    nil_param = S.app(S.const(nil_name, [u]), param)
 
-    cons_a_x_xs =
-      S.const(cons_name, [u]) |> S.app(S.var(:a)) |> S.app(S.var(:x)) |> S.app(S.var(:xs))
+    cons_param_x_xs =
+      S.const(cons_name, [u]) |> S.app(param) |> S.app(S.var(:x)) |> S.app(S.var(:xs))
 
     term do
-      forall :a, sort(^u) do
-        forall :motive, ^list_a ~> sort(^v) do
-          app(motive, ^nil_a)
-          ~> (forall :x, a do
-                forall :xs, ^list_a do
-                  app(motive, xs) ~> app(motive, ^cons_a_x_xs)
+      forall ^param_name, ^param_type do
+        forall :motive, ^list_param ~> sort(^v) do
+          app(motive, ^nil_param)
+          ~> (forall :x, ^param do
+                forall :xs, ^list_param do
+                  app(motive, xs) ~> app(motive, ^cons_param_x_xs)
                 end
               end
-              ~> forall :xs, ^list_a do
+              ~> forall :xs, ^list_param do
                 app(motive, xs)
               end)
         end
       end
     end
     |> elab!()
+  end
+
+  defp list_parameter(%Spec{parameters: [%Theoria.Inductive.Parameter{name: name, type: type}]}) do
+    {name, syntax_from_core(type), S.var(name)}
+  end
+
+  defp list_parameter(%Spec{}) do
+    u = Level.param(:u)
+    {:a, S.sort(u), S.var(:a)}
+  end
+
+  defp syntax_from_core(%Theoria.Term.Sort{level: level}), do: S.sort(level)
+  defp syntax_from_core(%Theoria.Term.BVar{index: index}), do: S.var(String.to_atom("##{index}"))
+
+  defp syntax_from_core(%Theoria.Term.Const{name: name, levels: levels}),
+    do: S.const(name, levels)
+
+  defp syntax_from_core(%Theoria.Term.App{fun: fun, arg: arg}) do
+    S.app(syntax_from_core(fun), syntax_from_core(arg))
   end
 
   defp list_type(name, level, element) do

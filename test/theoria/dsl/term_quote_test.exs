@@ -26,9 +26,19 @@ defmodule Theoria.DSL.TermQuoteTest do
     nat_type = S.const(:Nat)
     u = Theoria.Level.param(:u)
 
+    name = :a
+
     assert term(do: ^nat_type) == S.const(:Nat)
     assert term(do: sort(^u)) == S.sort(u)
     assert term(do: const(:List, [^u])) == S.const(:List, [u])
+
+    assert term(
+             do:
+               forall ^name, sort(^u) do
+                 a
+               end
+           ) == S.forall(:a, S.sort(u), S.var(:a))
+
     assert term(do: eq(type(0), x, x)) == eq(type(0), var(:x), var(:x))
     assert term(do: refl(x)) == refl(var(:x))
     assert term(do: const(:True)) == const(:True)

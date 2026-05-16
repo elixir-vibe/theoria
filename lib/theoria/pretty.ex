@@ -2,6 +2,7 @@ defmodule Theoria.Pretty do
   @moduledoc "Human-readable rendering for Theoria values."
 
   alias Theoria.Error
+  alias Theoria.Inductive.{Parameter, Report}
   alias Theoria.Kernel.TrustReport
   alias Theoria.Term
   alias Theoria.Term.{App, BVar, Const, Eq, Forall, Lam, Let, Refl, Sort}
@@ -23,6 +24,21 @@ defmodule Theoria.Pretty do
       "deps: #{render_names(report.transitive_dependencies)}"
     ]
     |> Enum.join(", ")
+  end
+
+  @spec inductive_report(Report.t()) :: String.t()
+  def inductive_report(%Report{} = report) do
+    [
+      "inductive #{report.name} : #{report.shape}",
+      "params: #{render_names_in_order(report.universe_params)}",
+      "decls: #{render_names_in_order(report.declarations)}"
+    ]
+    |> Enum.join(", ")
+  end
+
+  @spec inductive_parameter(Parameter.t()) :: String.t()
+  def inductive_parameter(%Parameter{name: name, type: type}) do
+    "parameter #{name} : #{term(type)}"
   end
 
   @spec level(Theoria.Level.t()) :: String.t()
@@ -227,11 +243,11 @@ defmodule Theoria.Pretty do
   defp render_names(names) do
     names
     |> Enum.sort()
-    |> case do
-      [] -> "none"
-      names -> Enum.map_join(names, ", ", &Atom.to_string/1)
-    end
+    |> render_names_in_order()
   end
+
+  defp render_names_in_order([]), do: "none"
+  defp render_names_in_order(names), do: Enum.map_join(names, ", ", &Atom.to_string/1)
 
   defp binder_name(:_), do: "_"
   defp binder_name(name), do: Atom.to_string(name)

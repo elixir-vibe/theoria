@@ -5,7 +5,7 @@ defmodule Theoria.Inductive do
   alias Theoria.Env.Constant
   alias Theoria.Env.Reduction
   alias Theoria.Error
-  alias Theoria.Inductive.{Constructor, Declaration, Generate, Recursor, Spec}
+  alias Theoria.Inductive.{Constructor, Declaration, Generate, Parameter, Recursor, Report, Spec}
   alias Theoria.Kernel
   alias Theoria.Normalize
   alias Theoria.Term
@@ -18,6 +18,7 @@ defmodule Theoria.Inductive do
     run_validations([
       fn -> validate_name(spec.name) end,
       fn -> validate_universe_params(spec.universe_params) end,
+      fn -> validate_parameters(spec) end,
       fn -> validate_terms(spec) end,
       fn -> validate_constructors(spec) end,
       fn -> validate_recursors(spec) end
@@ -34,6 +35,21 @@ defmodule Theoria.Inductive do
   end
 
   def declarations(_spec), do: invalid(:invalid_spec)
+
+  @spec report(Spec.t()) :: {:ok, Report.t()} | {:error, Error.t()}
+  def report(%Spec{} = spec) do
+    with {:ok, declarations} <- declarations(spec) do
+      {:ok,
+       %Report{
+         name: spec.name,
+         shape: shape(spec),
+         universe_params: spec.universe_params,
+         declarations: Enum.map(declarations, & &1.name)
+       }}
+    end
+  end
+
+  def report(_spec), do: invalid(:invalid_spec)
 
   @spec shape(Spec.t()) :: :bool_like | :nat_like | :list_like | :unknown
   def shape(%Spec{constructors: constructors} = spec) do
@@ -238,9 +254,31 @@ defmodule Theoria.Inductive do
     end)
   end
 
-  defp all_terms(%Spec{type: type, constructors: constructors, recursors: recursors}) do
-    [type] ++ Enum.map(constructors, & &1.type) ++ Enum.map(recursors, & &1.type)
+  defp all_terms(%Spec{
+         type: type,
+         parameters: parameters,
+         constructors: constructors,
+         recursors: recursors
+       }) do
+    [type] ++
+      Enum.map(parameters, & &1.type) ++
+      Enum.map(constructors, & &1.type) ++ Enum.map(recursors, & &1.type)
   end
+
+  defp validate_parameters(%Spec{parameters: parameters}) when is_list(parameters) do
+    cond do
+      not Enum.all?(parameters, &match?(%Parameter{name: name} when is_atom(name), &1)) ->
+        invalid(:invalid_parameters)
+
+      duplicate_name = duplicate_name(parameters) ->
+        invalid(:duplicate_declaration, name: duplicate_name)
+
+      true ->
+        :ok
+    end
+  end
+
+  defp validate_parameters(_spec), do: invalid(:invalid_parameters)
 
   defp validate_constructors(%Spec{constructors: constructors} = spec)
        when is_list(constructors) do
@@ -248,6 +286,7 @@ defmodule Theoria.Inductive do
       fn -> validate_named_declarations(constructors, Constructor, :constructors) end,
       fn -> validate_disjoint_names(spec) end,
       fn -> validate_constructor_targets(spec) end,
+      fn -> validate_constructor_parameters(spec) end,
       fn -> validate_constructor_positivity(spec) end
     ])
   end
@@ -273,6 +312,71 @@ defmodule Theoria.Inductive do
       end
     end)
   end
+
+  defp validate_constructor_parameters(%Spec{parameters: []}), do: :ok
+  defp validate_constructor_parameters(%Spec{indices: [_index | _rest]}), do: :ok
+
+  defp validate_constructor_parameters(%Spec{} = spec) do
+    Enum.reduce_while(spec.constructors, :ok, fn constructor, :ok ->
+      case constructor_parameter_problem(constructor, spec) do
+        nil -> {:cont, :ok}
+        problem -> {:halt, invalid(problem, constructor: constructor.name)}
+      end
+    end)
+  end
+
+  defp constructor_parameter_problem(%Constructor{type: type}, %Spec{name: name} = spec) do
+    {binders, result} = collect_constructor_binders(type, name, [])
+    {_head, args} = Theoria.Term.Application.collect(result)
+
+    cond do
+      length(args) < length(spec.parameters) ->
+        :constructor_parameter_mismatch
+
+      not parameter_binders_match?(spec.parameters, binders) ->
+        :constructor_parameter_mismatch
+
+      not parameter_result_args_match?(spec.parameters, binders, args) ->
+        :constructor_parameter_mismatch
+
+      true ->
+        nil
+    end
+  end
+
+  defp parameter_binders_match?(parameters, binders) do
+    Enum.all?(parameters, fn %Parameter{name: name, type: type} ->
+      case Enum.find(binders, &(&1.name == name)) do
+        nil -> false
+        binder -> binder.domain == type
+      end
+    end)
+  end
+
+  defp parameter_result_args_match?(parameters, binders, args) do
+    Enum.zip(parameters, args)
+    |> Enum.all?(fn {%Parameter{name: name}, arg} ->
+      case Enum.find_index(binders, &(&1.name == name)) do
+        nil -> false
+        position -> arg == Term.bvar(length(binders) - position - 1)
+      end
+    end)
+  end
+
+  defp collect_constructor_binders(
+         %Forall{name: name, domain: domain, body: body},
+         inductive_name,
+         binders
+       ) do
+    if constructor_result?(body, inductive_name) do
+      {Enum.reverse([%{name: name, domain: domain} | binders]), body}
+    else
+      collect_constructor_binders(body, inductive_name, [%{name: name, domain: domain} | binders])
+    end
+  end
+
+  defp collect_constructor_binders(type, _inductive_name, binders),
+    do: {Enum.reverse(binders), type}
 
   defp validate_recursor_reductions(recursors) do
     Enum.reduce_while(recursors, :ok, fn recursor, :ok ->
@@ -346,12 +450,8 @@ defmodule Theoria.Inductive do
     collect_constructor_arguments(type, inductive_name, [])
   end
 
-  defp collect_constructor_arguments(
-         %Forall{name: :_, domain: domain, body: body},
-         inductive_name,
-         args
-       ) do
-    if constructor_targets_inductive?(body, inductive_name) do
+  defp collect_constructor_arguments(%Forall{domain: domain, body: body}, inductive_name, args) do
+    if constructor_result?(body, inductive_name) do
       Enum.reverse([domain | args])
     else
       collect_constructor_arguments(body, inductive_name, [domain | args])
@@ -499,6 +599,11 @@ defmodule Theoria.Inductive do
       _other -> false
     end
   end
+
+  defp constructor_result?(%Forall{}, _inductive_name), do: false
+
+  defp constructor_result?(type, inductive_name),
+    do: constructor_targets_inductive?(type, inductive_name)
 
   defp peel_foralls(%Forall{body: body}), do: peel_foralls(body)
   defp peel_foralls(type), do: type

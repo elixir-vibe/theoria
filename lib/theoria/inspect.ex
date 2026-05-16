@@ -56,3 +56,19 @@ defimpl Inspect, for: Theoria.Kernel.TrustReport do
     |> Theoria.Inspect.doc()
   end
 end
+
+defimpl Inspect, for: Theoria.Inductive.Report do
+  def inspect(report, _opts) do
+    report
+    |> Theoria.Pretty.inductive_report()
+    |> Theoria.Inspect.doc()
+  end
+end
+
+defimpl Inspect, for: Theoria.Inductive.Parameter do
+  def inspect(parameter, _opts) do
+    parameter
+    |> Theoria.Pretty.inductive_parameter()
+    |> Theoria.Inspect.doc()
+  end
+end

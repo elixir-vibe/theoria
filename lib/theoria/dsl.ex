@@ -362,7 +362,7 @@ defmodule Theoria.DSL do
     body = quote_term(body)
 
     quote do
-      Theoria.Syntax.forall(unquote(name_literal!(name)), unquote(domain), unquote(body))
+      Theoria.Syntax.forall(unquote(quote_binder(name)), unquote(domain), unquote(body))
     end
   end
 
@@ -376,7 +376,7 @@ defmodule Theoria.DSL do
     body = quote_term(body)
 
     quote do
-      Theoria.Syntax.lam(unquote(name_literal!(name)), unquote(domain), unquote(body))
+      Theoria.Syntax.lam(unquote(quote_binder(name)), unquote(domain), unquote(body))
     end
   end
 
@@ -392,7 +392,7 @@ defmodule Theoria.DSL do
 
     quote do
       Theoria.Syntax.let(
-        unquote(name_literal!(name)),
+        unquote(quote_binder(name)),
         unquote(type),
         unquote(value),
         unquote(body)
@@ -551,6 +551,9 @@ defmodule Theoria.DSL do
   defp quote_level(other) do
     raise ArgumentError, "unsupported universe level syntax: #{Macro.to_string(other)}"
   end
+
+  defp quote_binder({:^, _meta, [expr]}), do: expr
+  defp quote_binder(name), do: name_literal!(name)
 
   defp name_literal!(atom) when is_atom(atom), do: atom
   defp name_literal!({name, _meta, context}) when is_atom(name) and is_atom(context), do: name

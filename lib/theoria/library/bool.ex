@@ -8,6 +8,7 @@ defmodule Theoria.Library.Bool do
 
   alias Theoria.Env
   alias Theoria.Env.Reduction
+  alias Theoria.Inductive.{Constructor, Recursor, Spec}
   alias Theoria.Kernel
   alias Theoria.Level
 
@@ -38,6 +39,23 @@ defmodule Theoria.Library.Bool do
   @doc "Returns a new environment extended with boolean declarations."
   def env do
     extend(Env.new())
+  end
+
+  @doc "Returns the inductive specification described by this library."
+  def inductive_spec do
+    %Spec{
+      name: :Bool,
+      type: type(),
+      universe_params: [:u],
+      constructors: [
+        %Constructor{name: true, type: Theoria.Term.const(:Bool)},
+        %Constructor{name: false, type: Theoria.Term.const(:Bool)}
+      ],
+      recursors: [
+        %Recursor{name: :bool_rec, type: bool_rec_type(), reduction: %Reduction.BoolRec{}},
+        %Recursor{name: :bool_ind, type: bool_ind_type(), reduction: %Reduction.BoolInd{}}
+      ]
+    }
   end
 
   defp bool_rec_type do

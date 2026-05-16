@@ -122,6 +122,11 @@ defmodule Theoria.Pretty do
     "invalid primitive reduction metadata: #{inspect(Keyword.fetch!(details, :reduction))}"
   end
 
+  def error(%Error{reason: :invalid_inductive, details: details}) do
+    problem = Keyword.fetch!(details, :problem)
+    "invalid inductive specification: #{problem}"
+  end
+
   def error(%Error{reason: reason, details: details}) do
     "#{reason}: #{inspect(details)}"
   end

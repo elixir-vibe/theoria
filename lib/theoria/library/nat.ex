@@ -5,6 +5,7 @@ defmodule Theoria.Library.Nat do
 
   alias Theoria.Env
   alias Theoria.Env.Reduction
+  alias Theoria.Inductive.{Constructor, Recursor, Spec}
   alias Theoria.Kernel
   alias Theoria.Level
 
@@ -33,6 +34,23 @@ defmodule Theoria.Library.Nat do
   @doc "Returns a new environment extended with natural number declarations."
   def env do
     extend(Env.new())
+  end
+
+  @doc "Returns the inductive specification described by this library."
+  def inductive_spec do
+    %Spec{
+      name: :Nat,
+      type: type(),
+      universe_params: [:u],
+      constructors: [
+        %Constructor{name: :zero, type: Theoria.Term.const(:Nat)},
+        %Constructor{name: :succ, type: succ_type()}
+      ],
+      recursors: [
+        %Recursor{name: :nat_rec, type: nat_rec_type(), reduction: %Reduction.NatRec{}},
+        %Recursor{name: :nat_ind, type: nat_ind_type(), reduction: %Reduction.NatInd{}}
+      ]
+    }
   end
 
   defp succ_type do

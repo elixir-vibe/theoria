@@ -1,8 +1,11 @@
 defmodule Theoria.Library.Logic.Theorems do
   @moduledoc """
-  Small proof corpus for the initial logic library.
+  Theorem corpus for `Theoria.Library.Logic`.
 
-  These theorems exercise the public theorem DSL against `Theoria.Library.Logic.env/0`.
+  These proofs cover the initial logical declarations for implication-like
+  function types, false elimination, negation, and conjunction. They exercise
+  the public theorem DSL against both `Theoria.Library.Logic.env/0` and the
+  standard `Theoria.Prelude.env/0`.
   """
 
   use Theoria.DSL

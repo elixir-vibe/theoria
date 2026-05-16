@@ -126,9 +126,13 @@ defmodule Theoria.DSL do
     quote do
       @theoria_theorems unquote(name)
 
+      @doc "Returns the unelaborated type syntax for theorem `#{unquote(name)}`."
       def unquote(type_fun)(), do: unquote(type_ast)
+
+      @doc "Returns the unelaborated proof syntax for theorem `#{unquote(name)}`."
       def unquote(proof_fun)(), do: unquote(proof_ast)
 
+      @doc "Elaborates and checks theorem `#{unquote(name)}` against the given environment."
       def unquote(theorem_fun)(env \\ Theoria.new_env()) do
         with {:ok, type} <- Theoria.Elaborator.elaborate(unquote(type_fun)()),
              {:ok, proof} <- Theoria.Elaborator.elaborate(unquote(proof_fun)()),

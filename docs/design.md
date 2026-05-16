@@ -117,7 +117,7 @@ This is a pragmatic bootstrap point. Once the calculus grows inductive families 
 
 ## List library
 
-`Theoria.Library.List` introduces polymorphic lists with `List`, `list_nil`, `list_cons`, `list_rec`, and `list_length`. `List.env/0` composes with `Theoria.Library.Nat.env/0` because length computes into `Nat`. The normalizer reduces `list_rec _ _ n c (list_nil _)` to `n` and `list_rec _ _ n c (list_cons _ x xs)` to `c x xs (list_rec _ _ n c xs)`.
+`Theoria.Library.List` introduces polymorphic lists with `List`, `list_nil`, `list_cons`, `list_rec`, and `list_length`. `Theoria.Library.List.env/0` composes with `Theoria.Library.Nat.env/0` because length computes into `Nat`. The normalizer reduces `list_rec _ _ n c (list_nil _)` to `n` and `list_rec _ _ n c (list_cons _ x xs)` to `c x xs (list_rec _ _ n c xs)`.
 
 ## Near-term roadmap
 

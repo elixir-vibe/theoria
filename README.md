@@ -31,7 +31,8 @@ end
   Elixir's gradual set-theoretic type direction.
 - Grow through tests and proof corpora before adding convenience layers.
 
-See [`docs/design.md`](docs/design.md) for the current design notes.
+See [`docs/design.md`](docs/design.md) for the current design notes and
+[`docs/theorem_modules.md`](docs/theorem_modules.md) for theorem module usage.
 
 ## Current status
 
@@ -80,6 +81,9 @@ identity_proof =
 ```
 
 ## Theorem modules
+
+Theorem modules are ordinary ExDoc-documented Elixir modules. The `theorem`
+macro generates documented type, proof, and checked theorem functions.
 
 ```elixir
 defmodule MyProofs do

@@ -1,5 +1,10 @@
 defmodule Theoria.Library.List.Theorems do
-  @moduledoc "Small proof corpus for the initial List library."
+  @moduledoc """
+  Theorem corpus for `Theoria.Library.List`.
+
+  These proofs document polymorphic list constructors and the first length
+  computation over the standard Nat-backed list environment.
+  """
 
   use Theoria.DSL
 

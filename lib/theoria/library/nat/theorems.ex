@@ -1,5 +1,10 @@
 defmodule Theoria.Library.Nat.Theorems do
-  @moduledoc "Small proof corpus for the initial Nat library."
+  @moduledoc """
+  Theorem corpus for `Theoria.Library.Nat`.
+
+  These proofs document the initial natural number declarations, primitive
+  recursion, and addition computations that reduce by reflexivity.
+  """
 
   use Theoria.DSL
 

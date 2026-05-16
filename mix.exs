@@ -63,7 +63,14 @@ defmodule Theoria.MixProject do
     [
       main: "readme",
       source_url: @source_url,
-      extras: ["README.md", "docs/design.md", "LICENSE"]
+      extras: ["README.md", "docs/design.md", "docs/theorem_modules.md", "LICENSE"],
+      groups_for_extras: [Guides: ~r/docs\//],
+      groups_for_modules: [
+        Kernel: [Theoria.Kernel, Theoria.Env, Theoria.Context, Theoria.Error],
+        Syntax: [Theoria.Syntax, Theoria.Elaborator, Theoria.DSL, Theoria.Pretty],
+        Libraries: ~r/^Theoria\.Library\./,
+        Tooling: [Theoria.Prelude, Theoria.Theorem]
+      ]
     ]
   end
 

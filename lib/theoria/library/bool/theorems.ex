@@ -1,5 +1,10 @@
 defmodule Theoria.Library.Bool.Theorems do
-  @moduledoc "Small proof corpus for the initial Bool library."
+  @moduledoc """
+  Theorem corpus for `Theoria.Library.Bool`.
+
+  These proofs document the initial boolean declarations and computation rules
+  accepted by definitional equality.
+  """
 
   use Theoria.DSL
 

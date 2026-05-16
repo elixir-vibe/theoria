@@ -103,14 +103,44 @@ defmodule Theoria.Kernel do
   end
 
   def validate_env(%Env{} = env) do
+    with :ok <- validate_declaration_index(env) do
+      replay_declarations(env)
+    end
+  end
+
+  defp replay_declarations(env) do
     env
     |> Env.declarations()
-    |> Enum.reduce_while({:ok, Env.new()}, fn name, {:ok, checked_env} ->
-      case validate_declaration(env, checked_env, name) do
-        {:ok, checked_env} -> {:cont, {:ok, checked_env}}
-        {:error, error} -> {:halt, {:error, error}}
-      end
-    end)
+    |> Enum.reduce_while({:ok, Env.new()}, &replay_declaration(env, &1, &2))
+  end
+
+  defp replay_declaration(env, name, {:ok, checked_env}) do
+    case validate_declaration(env, checked_env, name) do
+      {:ok, checked_env} -> {:cont, {:ok, checked_env}}
+      {:error, error} -> {:halt, {:error, error}}
+    end
+  end
+
+  defp validate_declaration_index(%Env{constants: constants} = env) do
+    declarations = Env.declarations(env)
+    declaration_set = MapSet.new(declarations)
+    constant_set = constants |> Map.keys() |> MapSet.new()
+
+    cond do
+      length(declarations) != MapSet.size(declaration_set) ->
+        error(:duplicate_declaration_index, declarations: declarations)
+
+      missing =
+          MapSet.difference(declaration_set, constant_set) |> MapSet.to_list() |> List.first() ->
+        error(:missing_declaration, name: missing)
+
+      untracked =
+          MapSet.difference(constant_set, declaration_set) |> MapSet.to_list() |> List.first() ->
+        error(:untracked_declaration, name: untracked)
+
+      true ->
+        :ok
+    end
   end
 
   defp validate_declaration(env, checked_env, name) do

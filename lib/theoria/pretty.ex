@@ -71,6 +71,15 @@ defmodule Theoria.Pretty do
     "missing declaration: #{name}"
   end
 
+  def error(%Error{reason: :untracked_declaration, details: details}) do
+    name = Keyword.fetch!(details, :name)
+    "untracked declaration: #{name}"
+  end
+
+  def error(%Error{reason: :duplicate_declaration_index}) do
+    "environment declaration index contains duplicates"
+  end
+
   def error(%Error{reason: reason, details: details}) do
     "#{reason}: #{inspect(details)}"
   end

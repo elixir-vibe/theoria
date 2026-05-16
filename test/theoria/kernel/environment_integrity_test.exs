@@ -67,4 +67,28 @@ defmodule Theoria.Kernel.EnvironmentIntegrityTest do
     assert {:error, error} = Kernel.validate_env(env)
     assert error.reason == :unknown_constant
   end
+
+  test "validation rejects duplicate declaration indexes" do
+    env = %Env{constants: %{A: %Theoria.Env.Constant{type: sort(0)}}, declarations: [:A, :A]}
+
+    assert {:error, error} = Kernel.validate_env(env)
+    assert error.reason == :duplicate_declaration_index
+    assert Exception.message(error) == "environment declaration index contains duplicates"
+  end
+
+  test "validation rejects declaration indexes missing a constant entry" do
+    env = %Env{constants: %{}, declarations: [:Missing]}
+
+    assert {:error, error} = Kernel.validate_env(env)
+    assert error.reason == :missing_declaration
+    assert Exception.message(error) == "missing declaration: Missing"
+  end
+
+  test "validation rejects constants missing from declaration order" do
+    env = %Env{constants: %{Extra: %Theoria.Env.Constant{type: sort(0)}}, declarations: []}
+
+    assert {:error, error} = Kernel.validate_env(env)
+    assert error.reason == :untracked_declaration
+    assert Exception.message(error) == "untracked declaration: Extra"
+  end
 end

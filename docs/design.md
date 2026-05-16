@@ -61,7 +61,7 @@ The `theorem` macro creates a small function trio: `<name>_type/0`, `<name>_proo
 
 ## Environments
 
-`Theoria.Env` stores checked constants, axioms, definitions, and theorem declarations while preserving declaration insertion order. Constants have no value and represent primitive uninterpreted declarations. Axioms have no value and represent trusted assumptions. Definitions are reducible and unfold during normalization. Theorems store checked proofs but are opaque by default, so normalization does not unfold them. A declaration enters the environment safely through kernel functions that verify its type and, for definitions/theorems, its value. Raw environment constructors remain available for tests and tooling, but malformed environments can be rechecked with `Theoria.Kernel.validate_env/1`. Declaration dependencies can be inspected with `Theoria.Kernel.dependencies/2`, which collects constants referenced by a declaration's type and value. Use `Theoria.Kernel.transitive_dependencies/2` to walk those dependencies recursively and `Theoria.Kernel.axioms/2` to report trusted axiom assumptions used by a declaration.
+`Theoria.Env` stores checked constants, axioms, definitions, and theorem declarations while preserving declaration insertion order. Constants have no value and represent primitive uninterpreted declarations. Axioms have no value and represent trusted assumptions. Definitions are reducible and unfold during normalization. Theorems store checked proofs but are opaque by default, so normalization does not unfold them. A declaration enters the environment safely through kernel functions that verify its type and, for definitions/theorems, its value. Raw environment constructors remain available for tests and tooling, but malformed environments can be rechecked with `Theoria.Kernel.validate_env/1`. Declaration dependencies can be inspected with `Theoria.Kernel.dependencies/2`, which collects constants referenced by a declaration's type and value. Use `Theoria.Kernel.transitive_dependencies/2` to walk those dependencies recursively, `Theoria.Kernel.axioms/2` to report trusted axiom assumptions used by a declaration, and `Theoria.Kernel.trust_report/2` for a combined declaration-kind/dependency summary.
 
 `Theoria.Prelude.env/0` is the standard environment for users and downstream tooling. It composes the built-in libraries in dependency order: Logic, Bool, Nat, then List.
 
@@ -97,7 +97,7 @@ type(0) = Sort 1
 type(n) = Sort (n + 1)
 ```
 
-Equality currently infers `Sort 0` as a proposition-like type. This is intentionally provisional and should be revisited when the logic layer grows.
+The kernel follows Lean's Prop-valued dependent-function rule in the small: if a `forall` body is a proposition, the whole `forall` lives in `Prop`; otherwise it lives in the maximum relevant type universe. Equality currently infers `Sort 0` as a proposition-like type. This is intentionally provisional and should be revisited when the logic layer grows.
 
 ## Inspect and pretty-printing
 

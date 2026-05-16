@@ -80,6 +80,11 @@ defmodule Theoria.Pretty do
     "environment declaration index contains duplicates"
   end
 
+  def error(%Error{reason: :invalid_declaration, details: details}) do
+    name = Keyword.fetch!(details, :name)
+    "invalid declaration: #{name}"
+  end
+
   def error(%Error{reason: reason, details: details}) do
     "#{reason}: #{inspect(details)}"
   end

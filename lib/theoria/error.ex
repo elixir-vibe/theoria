@@ -6,7 +6,7 @@ defmodule Theoria.Error do
   @type t :: %__MODULE__{reason: atom(), details: term()}
 
   @impl true
-  def message(%__MODULE__{reason: reason, details: details}) do
-    "#{reason}: #{inspect(details)}"
+  def message(%__MODULE__{} = error) do
+    Theoria.Pretty.error(error)
   end
 end

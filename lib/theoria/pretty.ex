@@ -1,6 +1,7 @@
 defmodule Theoria.Pretty do
   @moduledoc "Human-readable rendering for Theoria values."
 
+  alias Theoria.Error
   alias Theoria.Term
   alias Theoria.Term.{App, BVar, Const, Eq, Forall, Lam, Refl, Sort}
   alias Theoria.Theorem
@@ -11,6 +12,52 @@ defmodule Theoria.Pretty do
   @spec theorem(Theorem.t()) :: String.t()
   def theorem(%Theorem{name: name, type: type}) do
     "theorem #{name} : #{term(type)}"
+  end
+
+  @spec error(Error.t()) :: String.t()
+  def error(%Error{reason: :type_mismatch, details: details}) do
+    actual = Keyword.fetch!(details, :left)
+    expected = Keyword.fetch!(details, :right)
+
+    "type mismatch\n\nactual:\n  #{term(actual)}\n\nexpected:\n  #{term(expected)}"
+  end
+
+  def error(%Error{reason: :lambda_domain_mismatch, details: details}) do
+    actual = Keyword.fetch!(details, :left)
+    expected = Keyword.fetch!(details, :right)
+
+    "lambda domain mismatch\n\nactual domain:\n  #{term(actual)}\n\nexpected domain:\n  #{term(expected)}"
+  end
+
+  def error(%Error{reason: :unbound_variable, details: details}) do
+    index = Keyword.fetch!(details, :index)
+    context_size = Keyword.fetch!(details, :context_size)
+    "unbound de Bruijn variable ##{index} in context of size #{context_size}"
+  end
+
+  def error(%Error{reason: :unknown_constant, details: details}) do
+    name = Keyword.fetch!(details, :name)
+    "unknown constant: #{name}"
+  end
+
+  def error(%Error{reason: :not_a_function, details: details}) do
+    type = Keyword.fetch!(details, :type)
+    "expected a function type, got:\n  #{term(type)}"
+  end
+
+  def error(%Error{reason: :expected_sort, details: details}) do
+    type = Keyword.fetch!(details, :type)
+    "expected a type/sort, got:\n  #{term(type)}"
+  end
+
+  def error(%Error{reason: :unbound_name, details: details}) do
+    name = Keyword.fetch!(details, :name)
+    context = Keyword.get(details, :context, [])
+    "unbound name: #{name} (context: #{inspect(context)})"
+  end
+
+  def error(%Error{reason: reason, details: details}) do
+    "#{reason}: #{inspect(details)}"
   end
 
   defp render_term(%Sort{level: 0}, _context), do: "Prop"

@@ -123,6 +123,18 @@ inspect(theorem)
 
 `Inspect` delegates to `Theoria.Pretty`, keeping rendering pure and reusable.
 
+Kernel and elaboration errors also use pretty rendering:
+
+```text
+type mismatch
+
+actual:
+  Type 1
+
+expected:
+  Type 2
+```
+
 ## Quality checks
 
 The repository includes a Reach-style CI alias:

@@ -8,8 +8,10 @@ defmodule Theoria.Library.Logic do
   definition on top of the core calculus.
   """
 
+  alias Theoria.Elaborator
   alias Theoria.Env
   alias Theoria.Kernel
+  alias Theoria.Syntax, as: S
 
   import Theoria.Term
 
@@ -34,40 +36,46 @@ defmodule Theoria.Library.Logic do
   end
 
   defp false_elim_type do
-    forall(:a, prop(), arrow(const(:False), bvar(0)))
+    elaborate!(S.forall(:a, sprop(), S.arrow(S.const(:False), S.var(:a))))
   end
 
   defp not_type do
-    forall(:p, prop(), prop())
+    elaborate!(S.forall(:p, sprop(), sprop()))
   end
 
   defp not_value do
-    lam(:p, prop(), arrow(bvar(0), const(:False)))
+    elaborate!(S.lam(:p, sprop(), S.arrow(S.var(:p), S.const(:False))))
   end
 
   defp and_type do
-    forall(:p, prop(), forall(:q, prop(), prop()))
+    elaborate!(S.forall(:p, sprop(), S.forall(:q, sprop(), sprop())))
   end
 
   defp and_intro_type do
-    forall(
-      :p,
-      prop(),
-      forall(
-        :q,
-        prop(),
-        forall(
-          :hp,
-          bvar(1),
-          forall(
-            :hq,
-            bvar(1),
-            const(:and)
-            |> app(bvar(3))
-            |> app(bvar(2))
+    elaborate!(
+      S.forall(
+        :p,
+        sprop(),
+        S.forall(
+          :q,
+          sprop(),
+          S.forall(
+            :hp,
+            S.var(:p),
+            S.forall(
+              :hq,
+              S.var(:q),
+              S.const(:and)
+              |> S.app(S.var(:p))
+              |> S.app(S.var(:q))
+            )
           )
         )
       )
     )
   end
+
+  defp sprop, do: S.sort(0)
+
+  defp elaborate!(term), do: Elaborator.elaborate!(term)
 end

@@ -26,7 +26,9 @@ The intended flow is:
 
 ```text
 Elixir DSL / tactic / domain-specific prover
-  -> core Theoria terms
+  -> named Theoria.Syntax terms
+  -> Theoria.Elaborator
+  -> core Theoria.Term terms
   -> Theoria.Kernel.check/4
   -> checked theorem or error
 ```
@@ -46,7 +48,11 @@ The initial core calculus contains:
 - propositional equality;
 - reflexivity proofs.
 
-Names stored on binders are diagnostic metadata. Binding correctness is determined by de Bruijn indices.
+Names stored on core binders are diagnostic metadata. Binding correctness is determined by de Bruijn indices.
+
+## Named syntax
+
+`Theoria.Syntax` provides named surface terms and `Theoria.Elaborator` converts them to de Bruijn-indexed core terms. This layer is untrusted and exists to make library definitions auditable without hand-maintaining indices.
 
 ## Environments
 
@@ -86,5 +92,5 @@ This is a pragmatic bootstrap point. Once the calculus grows inductive families 
 1. Harden substitution, shifting, normalization, and type-checking tests.
 2. Add elimination/projection helpers for logical connectives.
 3. Add primitive Bool/Nat/List theories.
-4. Add an Elixir DSL that elaborates to checked core terms.
+4. Add an Elixir macro DSL on top of named syntax.
 5. Add finite graph/spec libraries for tools such as Reach.

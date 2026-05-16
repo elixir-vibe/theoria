@@ -70,7 +70,7 @@ The `theorem` macro creates a small function trio: `<name>_type/0`, `<name>_proo
 
 The initial normalizer supports beta reduction, unfolding checked definitions, and primitive recursor reductions. Definitional equality currently normalizes both sides and compares the resulting terms structurally.
 
-Normalization is bounded by a named fuel option, defaulting to 10,000 steps:
+Normalization is bounded by `Theoria.Normalize.Fuel`, a shared fuel budget defaulting to 10,000 steps:
 
 ```elixir
 Theoria.Normalize.normalize(env, term, max_steps: 10_000)

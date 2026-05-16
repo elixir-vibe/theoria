@@ -2,17 +2,15 @@ defmodule Theoria.Normalize do
   @moduledoc "Normalization and definitional equality for core terms."
 
   alias Theoria.Env
-  alias Theoria.Error
+  alias Theoria.Normalize.Fuel
   alias Theoria.Normalize.Primitive
   alias Theoria.Term
   alias Theoria.Term.{App, Const, Eq, Forall, Lam, Refl}
 
-  @type result :: {:ok, Term.t()} | {:error, Error.t()}
-
-  @default_max_steps 10_000
+  @type result :: {:ok, Term.t()} | {:error, Theoria.Error.t()}
 
   def normalize(env, term, opts \\ []) do
-    fuel = fuel(opts)
+    fuel = Fuel.new(opts)
 
     with {:ok, term, fuel} <- do_whnf(env, term, fuel),
          {:ok, term, _fuel} <- normalize_children(env, term, fuel) do
@@ -21,13 +19,13 @@ defmodule Theoria.Normalize do
   end
 
   def whnf(env, term, opts \\ []) do
-    with {:ok, term, _fuel} <- do_whnf(env, term, fuel(opts)) do
+    with {:ok, term, _fuel} <- do_whnf(env, term, Fuel.new(opts)) do
       {:ok, term}
     end
   end
 
   def defeq?(env, left, right, opts \\ []) do
-    fuel = fuel(opts)
+    fuel = Fuel.new(opts)
 
     with {:ok, left, fuel} <- do_normalize(env, left, fuel),
          {:ok, right, _fuel} <- do_normalize(env, right, fuel) do
@@ -44,7 +42,7 @@ defmodule Theoria.Normalize do
   end
 
   defp do_whnf(env, term, fuel) do
-    with {:ok, fuel} <- spend(fuel) do
+    with {:ok, fuel} <- Fuel.spend(fuel) do
       do_whnf_step(env, term, fuel)
     end
   end
@@ -112,20 +110,4 @@ defmodule Theoria.Normalize do
   end
 
   defp normalize_children(_env, term, fuel), do: {:ok, term, fuel}
-
-  defp fuel(opts) do
-    max_steps = Keyword.get(opts, :max_steps, @default_max_steps)
-    %{remaining_steps: max_steps, max_steps: max_steps}
-  end
-
-  defp spend(%{remaining_steps: remaining_steps, max_steps: max_steps})
-       when remaining_steps <= 0 do
-    error(:normalization_limit, max_steps: max_steps)
-  end
-
-  defp spend(%{remaining_steps: remaining_steps} = fuel) do
-    {:ok, %{fuel | remaining_steps: remaining_steps - 1}}
-  end
-
-  defp error(reason, details), do: {:error, %Error{reason: reason, details: details}}
 end

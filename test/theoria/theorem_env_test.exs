@@ -2,6 +2,7 @@ defmodule Theoria.TheoremEnvTest do
   use ExUnit.Case, async: true
 
   alias Theoria.Env
+  alias Theoria.Env.Constant
   alias Theoria.Kernel
   alias Theoria.Library.Logic
   alias Theoria.Theorem
@@ -45,7 +46,7 @@ defmodule Theoria.TheoremEnvTest do
     assert {:ok, theorem} = Proofs.truth_theorem(env)
 
     assert {:ok, env} = Theorem.add_to_env(env, theorem)
-    assert {:ok, %{kind: :theorem, reducible?: false}} = Env.fetch(env, :truth)
+    assert {:ok, %Constant{kind: :theorem, reducible?: false}} = Env.fetch(env, :truth)
   end
 
   test "checks and installs theorem modules in order" do
@@ -56,7 +57,7 @@ defmodule Theoria.TheoremEnvTest do
 
     assert {:ok, env, theorems} = Theorem.add_all_to_env(Proofs, env)
     assert Enum.map(theorems, & &1.name) == [:truth, :truth_again]
-    assert {:ok, %{kind: :theorem, reducible?: false}} = Env.fetch(env, :truth_again)
+    assert {:ok, %Constant{kind: :theorem, reducible?: false}} = Env.fetch(env, :truth_again)
   end
 
   test "reports axioms used by a checked theorem" do

@@ -2,6 +2,7 @@ defmodule Theoria.Kernel.AxiomTest do
   use ExUnit.Case, async: true
 
   alias Theoria.Env
+  alias Theoria.Env.Constant
   alias Theoria.Kernel
   alias Theoria.Library.Logic
 
@@ -10,7 +11,8 @@ defmodule Theoria.Kernel.AxiomTest do
   test "adds axiom declarations" do
     {:ok, env} = Kernel.add_axiom(Env.new(), :assumption, sort(0))
 
-    assert {:ok, %{kind: :axiom, reducible?: false, value: nil}} = Env.fetch(env, :assumption)
+    assert {:ok, %Constant{kind: :axiom, reducible?: false, value: nil}} =
+             Env.fetch(env, :assumption)
   end
 
   test "axiom type must be a sort" do
@@ -48,6 +50,6 @@ defmodule Theoria.Kernel.AxiomTest do
     {:ok, env} = Kernel.add_axiom(Env.new(), :assumption, sort(0))
 
     assert {:ok, checked_env} = Kernel.validate_env(env)
-    assert {:ok, %{kind: :axiom, reducible?: false}} = Env.fetch(checked_env, :assumption)
+    assert {:ok, %Constant{kind: :axiom, reducible?: false}} = Env.fetch(checked_env, :assumption)
   end
 end

@@ -2,6 +2,7 @@ defmodule Theoria.Kernel.DeclarationKindTest do
   use ExUnit.Case, async: true
 
   alias Theoria.Env
+  alias Theoria.Env.Constant
   alias Theoria.Kernel
   alias Theoria.Library.Logic
   alias Theoria.Normalize
@@ -11,7 +12,7 @@ defmodule Theoria.Kernel.DeclarationKindTest do
   test "definitions are reducible" do
     {:ok, env} = Kernel.add_definition(Env.new(), :P, sort(1), sort(0))
 
-    assert {:ok, %{kind: :definition, reducible?: true}} = Env.fetch(env, :P)
+    assert {:ok, %Constant{kind: :definition, reducible?: true}} = Env.fetch(env, :P)
     assert Normalize.normalize(env, const(:P)) == {:ok, sort(0)}
   end
 
@@ -19,7 +20,7 @@ defmodule Theoria.Kernel.DeclarationKindTest do
     {:ok, env} = Logic.env()
     {:ok, env} = Kernel.add_theorem(env, :truth, const(:True), const(:true_intro))
 
-    assert {:ok, %{kind: :theorem, reducible?: false}} = Env.fetch(env, :truth)
+    assert {:ok, %Constant{kind: :theorem, reducible?: false}} = Env.fetch(env, :truth)
     assert Normalize.normalize(env, const(:truth)) == {:ok, const(:truth)}
   end
 
@@ -35,6 +36,6 @@ defmodule Theoria.Kernel.DeclarationKindTest do
     {:ok, env} = Kernel.add_theorem(env, :truth, const(:True), const(:true_intro))
 
     assert {:ok, checked_env} = Kernel.validate_env(env)
-    assert {:ok, %{kind: :theorem, reducible?: false}} = Env.fetch(checked_env, :truth)
+    assert {:ok, %Constant{kind: :theorem, reducible?: false}} = Env.fetch(checked_env, :truth)
   end
 end

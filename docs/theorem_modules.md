@@ -75,7 +75,13 @@ The quote DSL also provides aliases for constants that are awkward or ambiguous 
 
 ```elixir
 term do
-  eq(const(:Bool), bool_not(bool_true()), bool_false())
+  eq(bool(), bool_not(bool_true()), bool_false())
+end
+
+term do
+  forall :n, nat() do
+    eq(nat(), nat_add(zero, n), n)
+  end
 end
 
 term do
@@ -83,4 +89,4 @@ term do
 end
 ```
 
-`bool_true()` and `bool_false()` refer to computational Bool constructors. `true_prop()` and `false_prop()` refer to logical propositions `True` and `False`.
+`bool()` and `nat()` refer to computational types. `bool_true()` and `bool_false()` refer to computational Bool constructors. `true_prop()` and `false_prop()` refer to logical propositions `True` and `False`.

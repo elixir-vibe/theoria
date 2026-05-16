@@ -142,7 +142,7 @@ The quoted term DSL includes readable aliases for Elixir-hostile names:
 
 ```elixir
 term do
-  eq(const(:Bool), bool_not(bool_true()), bool_false())
+  eq(bool(), bool_not(bool_true()), bool_false())
 end
 ```
 

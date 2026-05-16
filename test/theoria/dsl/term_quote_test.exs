@@ -28,6 +28,8 @@ defmodule Theoria.DSL.TermQuoteTest do
     assert term(do: const(:True)) == const(:True)
     assert term(do: var(x)) == var(:x)
     assert term(do: prop()) == prop()
+    assert term(do: bool()) == const(:Bool)
+    assert term(do: nat()) == const(:Nat)
     assert term(do: bool_true()) == const(true)
     assert term(do: bool_false()) == const(false)
     assert term(do: true_prop()) == const(:True)

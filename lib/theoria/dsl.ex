@@ -206,6 +206,18 @@ defmodule Theoria.DSL do
     end
   end
 
+  defp quote_term({:bool, _meta, []}) do
+    quote do
+      Theoria.Syntax.const(:Bool)
+    end
+  end
+
+  defp quote_term({:nat, _meta, []}) do
+    quote do
+      Theoria.Syntax.const(:Nat)
+    end
+  end
+
   defp quote_term({:true_prop, _meta, []}) do
     quote do
       Theoria.Syntax.const(:True)

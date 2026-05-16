@@ -77,4 +77,44 @@ defmodule Theoria.Library.Bool.Theorems do
       refl(const(false))
     end
   end
+
+  theorem :bool_and_true_false do
+    type do
+      eq(const(:Bool), call(const(:bool_and), const(true), const(false)), const(false))
+    end
+
+    proof do
+      refl(const(false))
+    end
+  end
+
+  theorem :bool_and_false_false do
+    type do
+      eq(const(:Bool), call(const(:bool_and), const(false), const(false)), const(false))
+    end
+
+    proof do
+      refl(const(false))
+    end
+  end
+
+  theorem :bool_or_true_false do
+    type do
+      eq(const(:Bool), call(const(:bool_or), const(true), const(false)), const(true))
+    end
+
+    proof do
+      refl(const(true))
+    end
+  end
+
+  theorem :bool_or_false_false do
+    type do
+      eq(const(:Bool), call(const(:bool_or), const(false), const(false)), const(false))
+    end
+
+    proof do
+      refl(const(false))
+    end
+  end
 end

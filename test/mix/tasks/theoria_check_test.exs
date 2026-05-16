@@ -32,7 +32,7 @@ defmodule Mix.Tasks.Theoria.CheckTest do
     assert output =~ "Theoria.Library.Bool.Theorems"
     assert output =~ "Theoria.Library.Nat.Theorems"
     assert output =~ "Theoria.Library.List.Theorems"
-    assert output =~ "Checked 22 theorem(s)."
+    assert output =~ "Checked 30 theorem(s)."
   end
 
   test "checks explicit theorem modules" do

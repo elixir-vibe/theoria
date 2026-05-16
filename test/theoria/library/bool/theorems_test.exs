@@ -13,7 +13,11 @@ defmodule Theoria.Library.Bool.TheoremsTest do
              :bool_not_true,
              :bool_not_false,
              :bool_and_true_true,
-             :bool_and_false_true
+             :bool_and_false_true,
+             :bool_and_true_false,
+             :bool_and_false_false,
+             :bool_or_true_false,
+             :bool_or_false_false
            ]
   end
 

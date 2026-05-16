@@ -10,7 +10,9 @@ defmodule Theoria.Library.Nat.TheoremsTest do
              :zero_is_nat,
              :succ_is_function,
              :nat_add_zero_left,
-             :nat_add_one_zero
+             :nat_add_one_left,
+             :nat_add_one_zero,
+             :nat_add_two_zero
            ]
   end
 

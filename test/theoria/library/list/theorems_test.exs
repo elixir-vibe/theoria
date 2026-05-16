@@ -9,7 +9,9 @@ defmodule Theoria.Library.List.TheoremsTest do
     assert Theorems.__theoria_theorems__() == [
              :list_nil_is_list,
              :list_cons_is_function,
-             :list_length_nil
+             :list_length_nil,
+             :list_length_singleton,
+             :list_length_cons_nil
            ]
   end
 

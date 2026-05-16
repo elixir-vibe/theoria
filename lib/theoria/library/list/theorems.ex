@@ -52,4 +52,74 @@ defmodule Theoria.Library.List.Theorems do
       end
     end
   end
+
+  theorem :list_length_singleton do
+    type do
+      forall :a, type(0) do
+        forall :x, var(:a) do
+          eq(
+            const(:Nat),
+            call(
+              const(:list_length),
+              var(:a),
+              call(
+                const(:list_cons),
+                var(:a),
+                var(:x),
+                call(const(:list_nil), var(:a))
+              )
+            ),
+            call(const(:succ), const(:zero))
+          )
+        end
+      end
+    end
+
+    proof do
+      lam :a, type(0) do
+        lam :x, var(:a) do
+          refl(call(const(:succ), const(:zero)))
+        end
+      end
+    end
+  end
+
+  theorem :list_length_cons_nil do
+    type do
+      forall :a, type(0) do
+        forall :x, var(:a) do
+          eq(
+            const(:Nat),
+            call(const(:list_rec), [
+              var(:a),
+              const(:Nat),
+              const(:zero),
+              lam :_head, var(:a) do
+                lam :_tail, call(const(:List), var(:a)) do
+                  lam :acc, const(:Nat) do
+                    call(const(:succ), var(:acc))
+                  end
+                end
+              end,
+              call(
+                const(:list_cons),
+                var(:a),
+                var(:x),
+                call(const(:list_nil), var(:a))
+              )
+            ]),
+            call(const(:succ), const(:zero))
+          )
+        end
+      end
+    end
+
+    proof do
+      lam :a, type(0) do
+        lam :x, var(:a) do
+          refl(call(const(:succ), const(:zero)))
+        end
+      end
+    end
+  end
 end

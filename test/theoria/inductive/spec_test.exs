@@ -44,6 +44,55 @@ defmodule Theoria.Inductive.SpecTest do
     assert Keyword.fetch!(error.details, :problem) == :constructor_target_mismatch
   end
 
+  test "accepts positive recursive constructor occurrences" do
+    spec = %Spec{
+      name: :Nat,
+      type: sort(1),
+      constructors: [
+        %Constructor{name: :zero, type: const(:Nat)},
+        %Constructor{name: :succ, type: arrow(const(:Nat), const(:Nat))}
+      ]
+    }
+
+    assert Inductive.validate(spec) == :ok
+  end
+
+  test "accepts constructors without recursive occurrences" do
+    spec = %Spec{
+      name: :Box,
+      type: sort(1),
+      constructors: [%Constructor{name: :box, type: arrow(const(:Nat), const(:Box))}]
+    }
+
+    assert Inductive.validate(spec) == :ok
+  end
+
+  test "rejects negative recursive constructor occurrences" do
+    spec = %Spec{
+      name: :Bad,
+      type: sort(1),
+      constructors: [
+        %Constructor{name: :bad, type: arrow(arrow(const(:Bad), const(:Nat)), const(:Bad))}
+      ]
+    }
+
+    assert {:error, error} = Inductive.validate(spec)
+    assert Keyword.fetch!(error.details, :problem) == :non_positive_constructor
+    assert Keyword.fetch!(error.details, :constructor) == :bad
+  end
+
+  test "accepts recursive occurrences in nested positive result positions" do
+    spec = %Spec{
+      name: :Bad,
+      type: sort(1),
+      constructors: [
+        %Constructor{name: :bad, type: arrow(arrow(const(:Nat), const(:Bad)), const(:Bad))}
+      ]
+    }
+
+    assert Inductive.validate(spec) == :ok
+  end
+
   test "rejects unknown universe parameters" do
     spec = %Spec{
       name: :Box,

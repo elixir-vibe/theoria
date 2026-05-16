@@ -212,7 +212,8 @@ defmodule Theoria.Inductive do
     run_validations([
       fn -> validate_named_declarations(constructors, Constructor, :constructors) end,
       fn -> validate_disjoint_names(spec) end,
-      fn -> validate_constructor_targets(spec) end
+      fn -> validate_constructor_targets(spec) end,
+      fn -> validate_constructor_positivity(spec) end
     ])
   end
 
@@ -246,6 +247,85 @@ defmodule Theoria.Inductive do
       end
     end)
   end
+
+  defp validate_constructor_positivity(%Spec{name: name, constructors: constructors}) do
+    Enum.reduce_while(constructors, :ok, fn constructor, :ok ->
+      if positive_constructor?(constructor.type, name) do
+        {:cont, :ok}
+      else
+        {:halt, invalid(:non_positive_constructor, constructor: constructor.name)}
+      end
+    end)
+  end
+
+  defp positive_constructor?(type, inductive_name) do
+    type
+    |> constructor_argument_types(inductive_name)
+    |> Enum.all?(&positive_occurrences?(&1, inductive_name, :positive))
+  end
+
+  defp constructor_argument_types(type, inductive_name) do
+    collect_constructor_arguments(type, inductive_name, [])
+  end
+
+  defp collect_constructor_arguments(
+         %Forall{name: :_, domain: domain, body: body},
+         inductive_name,
+         args
+       ) do
+    if constructor_targets_inductive?(body, inductive_name) do
+      Enum.reverse([domain | args])
+    else
+      collect_constructor_arguments(body, inductive_name, [domain | args])
+    end
+  end
+
+  defp collect_constructor_arguments(_type, _inductive_name, args), do: Enum.reverse(args)
+
+  defp positive_occurrences?(%Const{name: name}, name, :negative), do: false
+  defp positive_occurrences?(%Const{}, _name, _polarity), do: true
+  defp positive_occurrences?(%Theoria.Term.Sort{}, _name, _polarity), do: true
+  defp positive_occurrences?(%Theoria.Term.BVar{}, _name, _polarity), do: true
+
+  defp positive_occurrences?(%App{fun: fun, arg: arg}, name, polarity) do
+    positive_occurrences?(fun, name, polarity) and positive_occurrences?(arg, name, polarity)
+  end
+
+  defp positive_occurrences?(%Forall{domain: domain, body: body}, name, polarity) do
+    positive_occurrences?(domain, name, flip_polarity(polarity)) and
+      positive_occurrences?(body, name, polarity)
+  end
+
+  defp positive_occurrences?(%Theoria.Term.Lam{domain: domain, body: body}, name, polarity) do
+    positive_occurrences?(domain, name, polarity) and positive_occurrences?(body, name, polarity)
+  end
+
+  defp positive_occurrences?(
+         %Theoria.Term.Let{type: type, value: value, body: body},
+         name,
+         polarity
+       ) do
+    positive_occurrences?(type, name, polarity) and
+      positive_occurrences?(value, name, polarity) and
+      positive_occurrences?(body, name, polarity)
+  end
+
+  defp positive_occurrences?(
+         %Theoria.Term.Eq{type: type, left: left, right: right},
+         name,
+         polarity
+       ) do
+    positive_occurrences?(type, name, polarity) and
+      positive_occurrences?(left, name, polarity) and
+      positive_occurrences?(right, name, polarity)
+  end
+
+  defp positive_occurrences?(%Theoria.Term.Refl{value: value}, name, polarity) do
+    positive_occurrences?(value, name, polarity)
+  end
+
+  defp flip_polarity(:positive), do: :negative
+  defp flip_polarity(:negative), do: :positive
 
   defp validate_named_declarations(declarations, module, field) do
     cond do

@@ -25,7 +25,7 @@ defmodule Theoria.PreludeTest do
       assert {:ok, _type} = Kernel.infer(env, const(name))
     end
 
-    for name <- [:bool_rec, :nat_rec, :nat_ind] do
+    for name <- [:bool_rec, :bool_ind, :nat_rec, :nat_ind] do
       assert {:ok, _type} = Kernel.infer(env, const(name, [1]))
     end
 
@@ -34,6 +34,7 @@ defmodule Theoria.PreludeTest do
     end
 
     assert {:ok, _type} = Kernel.infer(env, const(:list_rec, [1, 1]))
+    assert {:ok, _type} = Kernel.infer(env, const(:list_ind, [1, 1]))
   end
 
   test "top-level convenience returns the prelude environment" do

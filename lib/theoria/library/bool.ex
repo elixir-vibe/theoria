@@ -21,6 +21,7 @@ defmodule Theoria.Library.Bool do
          {:ok, env} <- Kernel.add_constant(env, true, Theoria.Term.const(:Bool)),
          {:ok, env} <- Kernel.add_constant(env, false, Theoria.Term.const(:Bool)),
          {:ok, env} <- Kernel.add_constant(env, :bool_rec, bool_rec_type(), [:u]),
+         {:ok, env} <- Kernel.add_constant(env, :bool_ind, bool_ind_type(), [:u]),
          {:ok, env} <- Kernel.add_definition(env, :bool_not, bool_not_type(), bool_not_value()),
          {:ok, env} <- Kernel.add_definition(env, :bool_and, bool_binary_type(), bool_and_value()) do
       Kernel.add_definition(env, :bool_or, bool_binary_type(), bool_or_value())
@@ -42,6 +43,24 @@ defmodule Theoria.Library.Bool do
           arrow(
             var(:a),
             arrow(const(:Bool), var(:a))
+          )
+        )
+      end
+    )
+  end
+
+  defp bool_ind_type do
+    u = Level.param(:u)
+
+    elab!(
+      forall :motive, arrow(const(:Bool), Theoria.Syntax.sort(u)) do
+        arrow(
+          call(var(:motive), const(true)),
+          arrow(
+            call(var(:motive), const(false)),
+            forall :b, const(:Bool) do
+              call(var(:motive), var(:b))
+            end
           )
         )
       end

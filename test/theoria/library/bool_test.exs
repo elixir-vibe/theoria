@@ -14,6 +14,7 @@ defmodule Theoria.Library.BoolTest do
     end
 
     assert {:ok, _type} = Kernel.infer(env, const(:bool_rec, [1]))
+    assert {:ok, _type} = Kernel.infer(env, const(:bool_ind, [1]))
   end
 
   test "Bool lives in Type 0, distinct from Prop" do

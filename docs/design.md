@@ -135,7 +135,17 @@ This is a pragmatic bootstrap point. Once the calculus grows inductive families 
 
 ## Bool library
 
-`Theoria.Library.Bool` introduces the first computational data declarations: `Bool`, `true`, `false`, `bool_rec.{u}`, `bool_not`, `bool_and`, and `bool_or`. These are distinct from logical `True` and `False` propositions. The recursor is universe-polymorphic in its result type, and the normalizer has primitive reductions for `bool_rec _ t f true` and `bool_rec _ t f false`, so boolean definitions can compute during definitional equality.
+`Theoria.Library.Bool` introduces the first computational data declarations: `Bool`, `true`, `false`, `bool_rec.{u}`, `bool_ind.{u}`, `bool_not`, `bool_and`, and `bool_or`. These are distinct from logical `True` and `False` propositions. The recursor is universe-polymorphic in its result type, while `bool_ind` is the dependent induction principle:
+
+```text
+bool_ind.{u} :
+  ∀ motive : Bool → Sort u,
+  motive true →
+  motive false →
+  ∀ b : Bool, motive b
+```
+
+The normalizer has primitive reductions for `bool_rec _ t f true`, `bool_rec _ t f false`, `bool_ind motive t f true`, and `bool_ind motive t f false`, so boolean definitions and dependent case analysis can compute during definitional equality.
 
 ## Nat library
 
@@ -153,7 +163,19 @@ The normalizer reduces `nat_rec _ z s zero` to `z`, `nat_rec _ z s (succ n)` to 
 
 ## List library
 
-`Theoria.Library.List` introduces universe-polymorphic lists with `List.{u}`, `list_nil.{u}`, `list_cons.{u}`, `list_rec.{u,v}`, and `list_length.{u}`. `Theoria.Library.List.env/0` composes with `Theoria.Library.Nat.env/0` because length computes into `Nat`. Until Theoria has implicit arguments or level inference, the quoted DSL defaults `list(a)`, `list_nil`, `list_cons`, and `list_length(...)` to universe level `1`, and `list_rec(...)` to levels `{1, 1}`, matching current Bool/Nat examples. The normalizer reduces `list_rec _ _ n c (list_nil _)` to `n` and `list_rec _ _ n c (list_cons _ x xs)` to `c x xs (list_rec _ _ n c xs)`.
+`Theoria.Library.List` introduces universe-polymorphic lists with `List.{u}`, `list_nil.{u}`, `list_cons.{u}`, `list_rec.{u,v}`, `list_ind.{u,v}`, and `list_length.{u}`. `Theoria.Library.List.env/0` composes with `Theoria.Library.Nat.env/0` because length computes into `Nat`. Until Theoria has implicit arguments or level inference, the quoted DSL defaults `list(a)`, `list_nil`, `list_cons`, and `list_length(...)` to universe level `1`, and `list_rec(...)`/`list_ind(...)` to levels `{1, 1}`, matching current Bool/Nat examples. The dependent induction principle is:
+
+```text
+list_ind.{u,v} :
+  ∀ A : Sort u,
+  ∀ motive : List.{u} A → Sort v,
+  motive (list_nil.{u} A) →
+  (∀ x : A, ∀ xs : List.{u} A,
+    motive xs → motive (list_cons.{u} A x xs)) →
+  ∀ xs : List.{u} A, motive xs
+```
+
+The normalizer reduces `list_rec _ _ n c (list_nil _)` to `n`, `list_rec _ _ n c (list_cons _ x xs)` to `c x xs (list_rec _ _ n c xs)`, and the corresponding `list_ind` nil/cons cases analogously.
 
 ## Near-term roadmap
 

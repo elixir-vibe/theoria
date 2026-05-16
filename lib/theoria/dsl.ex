@@ -266,7 +266,7 @@ defmodule Theoria.DSL do
   end
 
   defp quote_term({name, _meta, args})
-       when name in [:bool_rec, :nat_rec, :nat_ind] and is_list(args) do
+       when name in [:bool_rec, :bool_ind, :nat_rec, :nat_ind] and is_list(args) do
     quote_level_application(name, [1], args)
   end
 
@@ -275,8 +275,8 @@ defmodule Theoria.DSL do
     quote_level_application(name, [1], args)
   end
 
-  defp quote_term({:list_rec, _meta, args}) when is_list(args) do
-    quote_level_application(:list_rec, [1, 1], args)
+  defp quote_term({name, _meta, args}) when name in [:list_rec, :list_ind] and is_list(args) do
+    quote_level_application(name, [1, 1], args)
   end
 
   defp quote_term({:type, _meta, [level]}) when is_integer(level) and level >= 0 do

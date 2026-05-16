@@ -15,6 +15,7 @@ defmodule Theoria.Library.ListTest do
     end
 
     assert {:ok, _type} = Kernel.infer(env, const(:list_rec, [1, 1]))
+    assert {:ok, _type} = Kernel.infer(env, const(:list_ind, [1, 1]))
   end
 
   test "List maps Type 0 to Type 0" do

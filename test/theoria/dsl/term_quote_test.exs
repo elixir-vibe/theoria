@@ -45,6 +45,9 @@ defmodule Theoria.DSL.TermQuoteTest do
     assert term(do: bool_rec(bool(), bool_true(), bool_false(), bool_true())) ==
              call(const(:bool_rec, [1]), [const(:Bool), const(true), const(false), const(true)])
 
+    assert term(do: bool_ind(f, t, f_case, b)) ==
+             call(const(:bool_ind, [1]), [var(:f), var(:t), var(:f_case), var(:b)])
+
     assert term(do: nat_rec(nat(), zero, succ, zero)) ==
              call(const(:nat_rec, [1]), [const(:Nat), const(:zero), const(:succ), const(:zero)])
 
@@ -58,6 +61,15 @@ defmodule Theoria.DSL.TermQuoteTest do
                const(:zero),
                const(:succ),
                call(const(:list_nil, [1]), const(:Nat))
+             ])
+
+    assert term(do: list_ind(nat(), motive, nil_case, cons_case, xs)) ==
+             call(const(:list_ind, [1, 1]), [
+               const(:Nat),
+               var(:motive),
+               var(:nil_case),
+               var(:cons_case),
+               var(:xs)
              ])
 
     assert term(do: arrow(p, q)) == arrow(var(:p), var(:q))

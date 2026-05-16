@@ -152,7 +152,7 @@ defmodule Theoria.Kernel do
   end
 
   def add_inductive(%Env{} = env, %Spec{} = spec) do
-    with :ok <- Inductive.check_declarations(env, spec) do
+    with :ok <- Inductive.check_spec(env, spec) do
       Inductive.install(env, spec)
     end
   end

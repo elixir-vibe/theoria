@@ -1,9 +1,11 @@
 defmodule Theoria.Inductive.IndexTest do
   use ExUnit.Case, async: true
 
+  alias Theoria.Env
   alias Theoria.Inductive
   alias Theoria.Inductive.{Index, Spec}
   alias Theoria.Library.Nat
+  alias Theoria.Term
 
   import Theoria.DSL
 
@@ -26,15 +28,51 @@ defmodule Theoria.Inductive.IndexTest do
   end
 
   test "rejects indexed constructor results with missing index arguments" do
-    spec = %Spec{
-      vec_spec()
-      | constructors: [%{hd(vec_spec().constructors) | type: bad_vec_nil_type()}]
-    }
+    spec = replace_first_constructor_type(bad_vec_nil_type())
 
     assert {:error, error} = Inductive.validate(spec)
     assert error.reason == :invalid_inductive
     assert Keyword.fetch!(error.details, :problem) == :constructor_result_arity_mismatch
     assert Keyword.fetch!(error.details, :constructor) == :vec_nil
+  end
+
+  test "rejects out-of-scope result index arguments" do
+    spec = replace_first_constructor_type(out_of_scope_index_type())
+
+    assert {:error, error} = Inductive.validate(spec)
+    assert error.reason == :invalid_inductive
+    assert Keyword.fetch!(error.details, :problem) == :constructor_index_scope_mismatch
+    assert Keyword.fetch!(error.details, :constructor) == :vec_nil
+  end
+
+  test "rejects out-of-scope constructor argument types" do
+    spec = replace_first_constructor_type(out_of_scope_argument_type())
+
+    assert {:error, error} = Inductive.validate(spec)
+    assert error.reason == :invalid_inductive
+    assert Keyword.fetch!(error.details, :problem) == :constructor_argument_scope_mismatch
+    assert Keyword.fetch!(error.details, :constructor) == :vec_nil
+  end
+
+  test "environment-backed checks reject missing dependencies" do
+    assert Inductive.validate(vec_spec()) == :ok
+    assert {:error, error} = Inductive.check_spec(Env.new(), vec_spec())
+    assert error.reason == :invalid_inductive
+    assert Keyword.fetch!(error.details, :problem) == :invalid_inductive_type
+  end
+
+  test "indexed specs install only when dependencies are present" do
+    assert {:error, error} = Theoria.Kernel.add_inductive(Env.new(), vec_spec())
+    assert error.reason == :invalid_inductive
+
+    {:ok, env} = Nat.env()
+    assert {:ok, _env} = Theoria.Kernel.add_inductive(env, vec_spec())
+  end
+
+  defp replace_first_constructor_type(type) do
+    spec = vec_spec()
+    [first | rest] = spec.constructors
+    %Spec{spec | constructors: [%{first | type: type} | rest]}
   end
 
   defp vec_spec do
@@ -88,5 +126,29 @@ defmodule Theoria.Inductive.IndexTest do
       end
     end
     |> elab!()
+  end
+
+  defp out_of_scope_index_type do
+    u = Theoria.Level.param(:u)
+
+    Term.forall(
+      :a,
+      Term.sort(u),
+      Term.app(Term.app(Term.const(:Vec, [u]), Term.bvar(0)), Term.bvar(99))
+    )
+  end
+
+  defp out_of_scope_argument_type do
+    u = Theoria.Level.param(:u)
+
+    Term.forall(
+      :a,
+      Term.sort(u),
+      Term.forall(
+        :bad,
+        Term.bvar(99),
+        Term.app(Term.app(Term.const(:Vec, [u]), Term.bvar(1)), Term.const(:zero))
+      )
+    )
   end
 end

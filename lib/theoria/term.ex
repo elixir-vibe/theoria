@@ -141,6 +141,12 @@ defmodule Theoria.Term do
   @spec level_params(t()) :: MapSet.t(atom())
   def level_params(term), do: collect_level_params(term, MapSet.new())
 
+  @doc "Returns true when every bound variable index is in scope at the given depth."
+  @spec well_scoped?(t(), non_neg_integer()) :: boolean()
+  def well_scoped?(term, depth \\ 0) when is_integer(depth) and depth >= 0 do
+    scoped?(term, depth)
+  end
+
   defp collect_constants(%Sort{}, constants), do: constants
   defp collect_constants(%BVar{}, constants), do: constants
   defp collect_constants(%Const{name: name}, constants), do: MapSet.put(constants, name)
@@ -180,6 +186,32 @@ defmodule Theoria.Term do
     |> collect_constants(constants)
     |> then(&collect_constants(body, &1))
   end
+
+  defp scoped?(%Sort{}, _depth), do: true
+  defp scoped?(%Const{}, _depth), do: true
+  defp scoped?(%BVar{index: index}, depth), do: index < depth
+
+  defp scoped?(%App{fun: fun, arg: arg}, depth) do
+    scoped?(fun, depth) and scoped?(arg, depth)
+  end
+
+  defp scoped?(%Lam{domain: domain, body: body}, depth) do
+    scoped?(domain, depth) and scoped?(body, depth + 1)
+  end
+
+  defp scoped?(%Forall{domain: domain, body: body}, depth) do
+    scoped?(domain, depth) and scoped?(body, depth + 1)
+  end
+
+  defp scoped?(%Let{type: type, value: value, body: body}, depth) do
+    scoped?(type, depth) and scoped?(value, depth) and scoped?(body, depth + 1)
+  end
+
+  defp scoped?(%Eq{type: type, left: left, right: right}, depth) do
+    scoped?(type, depth) and scoped?(left, depth) and scoped?(right, depth)
+  end
+
+  defp scoped?(%Refl{value: value}, depth), do: scoped?(value, depth)
 
   defp collect_level_params(%Sort{level: level}, params),
     do: MapSet.union(params, Theoria.Level.params(level))

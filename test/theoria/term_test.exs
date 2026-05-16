@@ -24,4 +24,11 @@ defmodule Theoria.TermTest do
 
     assert subst(body, 0, bvar(2)) == eq(bvar(2), refl(bvar(2)), bvar(2))
   end
+
+  test "well scoped checks bound variable depth" do
+    assert well_scoped?(forall(:x, sort(0), bvar(0)))
+    refute well_scoped?(forall(:x, sort(0), bvar(1)))
+    assert well_scoped?(bvar(1), 2)
+    refute well_scoped?(bvar(2), 2)
+  end
 end

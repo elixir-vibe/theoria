@@ -54,7 +54,7 @@ spec =
   |> Spec.parameter(:a, term(do: sort(^u)) |> elab!())
 ```
 
-Indexed families can declare named indices. The current checker validates result arity and parameter preservation; it does not synthesize indexed eliminators yet.
+Indexed families can declare named indices. The current checker validates result arity, parameter preservation, and scopedness of constructor argument/index terms; it does not synthesize indexed eliminators yet. Environment-backed admission also requires dependencies to be present. For example, this Vec-like spec must be checked in an environment that already contains `Nat`, `zero`, and `succ`.
 
 ```elixir
 u = Theoria.Level.param(:u)

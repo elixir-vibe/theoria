@@ -111,6 +111,16 @@ defmodule Theoria.Inductive do
 
   def check_declarations(_env, _spec), do: invalid(:invalid_spec)
 
+  @spec check_spec(Env.t(), Spec.t()) :: validation_result()
+  def check_spec(%Env{} = env, %Spec{} = spec) do
+    with :ok <- validate(spec),
+         :ok <- check_family_signature(env, spec) do
+      check_declarations(env, spec)
+    end
+  end
+
+  def check_spec(_env, _spec), do: invalid(:invalid_spec)
+
   @spec install(Env.t(), Spec.t()) :: {:ok, Env.t()} | {:error, Error.t()}
   def install(%Env{} = env, %Spec{} = spec) do
     with {:ok, declarations} <- declarations(spec),
@@ -121,6 +131,39 @@ defmodule Theoria.Inductive do
   end
 
   def install(_env, _spec), do: invalid(:invalid_spec)
+
+  defp check_family_signature(env, %Spec{} = spec) do
+    run_validations([
+      fn -> check_type(env, spec.type, :invalid_inductive_type) end,
+      fn -> check_named_types(env, spec.parameters, :invalid_parameter_type) end,
+      fn -> check_named_types(env, spec.indices, :invalid_index_type) end
+    ])
+  end
+
+  defp check_named_types(env, named_types, problem) do
+    Enum.reduce_while(named_types, :ok, fn named, :ok ->
+      case check_type(env, named.type, problem) do
+        :ok ->
+          {:cont, :ok}
+
+        {:error, error} ->
+          {:halt, {:error, %{error | details: Keyword.put(error.details, :name, named.name)}}}
+      end
+    end)
+  end
+
+  defp check_type(env, type, problem) do
+    case Kernel.infer(env, type) do
+      {:ok, %Theoria.Term.Sort{}} ->
+        :ok
+
+      {:ok, _other} ->
+        invalid(problem)
+
+      {:error, error} ->
+        {:error, %Error{reason: :invalid_inductive, details: [problem: problem, cause: error]}}
+    end
+  end
 
   defp install_declarations(env, declarations) do
     Enum.reduce_while(declarations, {:ok, env}, fn declaration, {:ok, env} ->
@@ -318,6 +361,7 @@ defmodule Theoria.Inductive do
     run_validations([
       fn -> validate_named_declarations(constructors, Constructor, :constructors) end,
       fn -> validate_disjoint_names(spec) end,
+      fn -> validate_constructor_scope(spec) end,
       fn -> validate_constructor_targets(spec) end,
       fn -> validate_constructor_parameters(spec) end,
       fn -> validate_constructor_positivity(spec) end
@@ -335,6 +379,35 @@ defmodule Theoria.Inductive do
   end
 
   defp validate_recursors(_spec), do: invalid(:invalid_recursors)
+
+  defp validate_constructor_scope(%Spec{} = spec) do
+    Enum.reduce_while(spec.constructors, :ok, fn constructor, :ok ->
+      case constructor_scope_problem(constructor, spec) do
+        nil -> {:cont, :ok}
+        problem -> {:halt, invalid(problem, constructor: constructor.name)}
+      end
+    end)
+  end
+
+  defp constructor_scope_problem(%Constructor{type: type}, %Spec{
+         name: name,
+         parameters: parameters
+       }) do
+    {binders, result} = collect_constructor_binders(type, name, [])
+    {_head, args} = Theoria.Term.Application.collect(result)
+    index_args = Enum.drop(args, length(parameters))
+
+    cond do
+      Enum.any?(binders, &(not Term.well_scoped?(&1.domain, &1.depth))) ->
+        :constructor_argument_scope_mismatch
+
+      Enum.any?(index_args, &(not Term.well_scoped?(&1, length(binders)))) ->
+        :constructor_index_scope_mismatch
+
+      true ->
+        nil
+    end
+  end
 
   defp validate_constructor_targets(%Spec{name: name, constructors: constructors}) do
     Enum.reduce_while(constructors, :ok, fn constructor, :ok ->
@@ -402,10 +475,12 @@ defmodule Theoria.Inductive do
          inductive_name,
          binders
        ) do
+    binder = %{name: name, domain: domain, depth: length(binders)}
+
     if constructor_result?(body, inductive_name) do
-      {Enum.reverse([%{name: name, domain: domain} | binders]), body}
+      {Enum.reverse([binder | binders]), body}
     else
-      collect_constructor_binders(body, inductive_name, [%{name: name, domain: domain} | binders])
+      collect_constructor_binders(body, inductive_name, [binder | binders])
     end
   end
 

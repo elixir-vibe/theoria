@@ -108,6 +108,13 @@ defmodule Theoria.Kernel do
     end
   end
 
+  def add_axiom(%Env{} = env, name, type) when is_atom(name) do
+    with :ok <- ensure_fresh_declaration(env, name),
+         {:ok, %Sort{}} <- infer_sort(env, Context.new(), type) do
+      {:ok, Env.put_axiom(env, name, type)}
+    end
+  end
+
   def add_definition(%Env{} = env, name, type, value) when is_atom(name) do
     with :ok <- ensure_fresh_declaration(env, name),
          {:ok, %Sort{}} <- infer_sort(env, Context.new(), type),
@@ -137,6 +144,17 @@ defmodule Theoria.Kernel do
     end
   end
 
+  def axioms(%Env{} = env, name) when is_atom(name) do
+    with {:ok, dependencies} <- transitive_dependencies(env, name) do
+      axioms =
+        dependencies
+        |> Enum.filter(&axiom?(env, &1))
+        |> MapSet.new()
+
+      {:ok, axioms}
+    end
+  end
+
   defp collect_transitive_dependencies(_env, [], seen), do: seen
 
   defp collect_transitive_dependencies(env, [name | rest], seen) do
@@ -148,6 +166,13 @@ defmodule Theoria.Kernel do
 
       :error ->
         collect_transitive_dependencies(env, rest, seen)
+    end
+  end
+
+  defp axiom?(env, name) do
+    case Env.fetch(env, name) do
+      {:ok, %{kind: :axiom}} -> true
+      _other -> false
     end
   end
 
@@ -209,6 +234,9 @@ defmodule Theoria.Kernel do
     case Env.fetch(env, name) do
       {:ok, %{kind: :constant, type: type}} ->
         add_constant(checked_env, name, type)
+
+      {:ok, %{kind: :axiom, type: type}} ->
+        add_axiom(checked_env, name, type)
 
       {:ok, %{kind: :definition, type: type, value: value}} ->
         add_definition(checked_env, name, type, value)

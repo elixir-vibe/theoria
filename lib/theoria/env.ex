@@ -27,6 +27,16 @@ defmodule Theoria.Env do
     }
   end
 
+  @spec put_axiom(t(), atom(), Term.t()) :: t()
+  def put_axiom(%__MODULE__{constants: constants} = env, name, type) when is_atom(name) do
+    %{
+      env
+      | constants:
+          Map.put(constants, name, %Constant{type: type, kind: :axiom, reducible?: false}),
+        declarations: put_order(env, name)
+    }
+  end
+
   @spec put_definition(t(), atom(), Term.t(), Term.t()) :: t()
   def put_definition(%__MODULE__{constants: constants} = env, name, type, value)
       when is_atom(name) do

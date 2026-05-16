@@ -6,7 +6,7 @@ defmodule Theoria.Env.Constant do
   @enforce_keys [:type]
   defstruct [:type, :value, kind: :constant, reducible?: false]
 
-  @type kind :: :constant | :definition | :theorem
+  @type kind :: :constant | :axiom | :definition | :theorem
   @type t :: %__MODULE__{
           type: Term.t(),
           value: Term.t() | nil,

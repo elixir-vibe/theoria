@@ -12,6 +12,7 @@ defmodule Theoria.Library.Nat.TheoremsTest do
              :nat_add_zero_left,
              :nat_add_one_left,
              :nat_add_one_zero,
+             :nat_add_two_left,
              :nat_add_two_zero
            ]
   end

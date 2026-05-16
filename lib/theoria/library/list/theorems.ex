@@ -122,4 +122,74 @@ defmodule Theoria.Library.List.Theorems do
       end
     end
   end
+
+  theorem :list_length_cons do
+    type do
+      forall :a, type(0) do
+        forall :x, var(:a) do
+          forall :xs, call(const(:List), var(:a)) do
+            eq(
+              const(:Nat),
+              call(
+                const(:list_length),
+                var(:a),
+                call(const(:list_cons), var(:a), var(:x), var(:xs))
+              ),
+              call(const(:succ), call(const(:list_length), var(:a), var(:xs)))
+            )
+          end
+        end
+      end
+    end
+
+    proof do
+      lam :a, type(0) do
+        lam :x, var(:a) do
+          lam :xs, call(const(:List), var(:a)) do
+            refl(call(const(:succ), call(const(:list_length), var(:a), var(:xs))))
+          end
+        end
+      end
+    end
+  end
+
+  theorem :list_length_two do
+    type do
+      forall :a, type(0) do
+        forall :x, var(:a) do
+          forall :y, var(:a) do
+            eq(
+              const(:Nat),
+              call(
+                const(:list_length),
+                var(:a),
+                call(
+                  const(:list_cons),
+                  var(:a),
+                  var(:x),
+                  call(
+                    const(:list_cons),
+                    var(:a),
+                    var(:y),
+                    call(const(:list_nil), var(:a))
+                  )
+                )
+              ),
+              call(const(:succ), call(const(:succ), const(:zero)))
+            )
+          end
+        end
+      end
+    end
+
+    proof do
+      lam :a, type(0) do
+        lam :x, var(:a) do
+          lam :y, var(:a) do
+            refl(call(const(:succ), call(const(:succ), const(:zero))))
+          end
+        end
+      end
+    end
+  end
 end

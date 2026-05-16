@@ -74,6 +74,28 @@ defmodule Theoria.Library.Nat.Theorems do
     end
   end
 
+  theorem :nat_add_two_left do
+    type do
+      forall :n, const(:Nat) do
+        eq(
+          const(:Nat),
+          call(
+            const(:nat_add),
+            call(const(:succ), call(const(:succ), const(:zero))),
+            var(:n)
+          ),
+          call(const(:succ), call(const(:succ), var(:n)))
+        )
+      end
+    end
+
+    proof do
+      lam :n, const(:Nat) do
+        refl(call(const(:succ), call(const(:succ), var(:n))))
+      end
+    end
+  end
+
   theorem :nat_add_two_zero do
     type do
       eq(

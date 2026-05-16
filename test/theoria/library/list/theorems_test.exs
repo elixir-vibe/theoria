@@ -11,7 +11,9 @@ defmodule Theoria.Library.List.TheoremsTest do
              :list_cons_is_function,
              :list_length_nil,
              :list_length_singleton,
-             :list_length_cons_nil
+             :list_length_cons_nil,
+             :list_length_cons,
+             :list_length_two
            ]
   end
 

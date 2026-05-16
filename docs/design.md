@@ -107,9 +107,13 @@ This is a pragmatic bootstrap point. Once the calculus grows inductive families 
 
 `Theoria.Library.Bool` introduces the first computational data declarations: `Bool`, `true`, `false`, `bool_rec`, `bool_not`, `bool_and`, and `bool_or`. These are distinct from logical `True` and `False` propositions. The normalizer has primitive reductions for `bool_rec _ t f true` and `bool_rec _ t f false`, so boolean definitions can compute during definitional equality.
 
+## Nat library
+
+`Theoria.Library.Nat` introduces natural numbers with `Nat`, `zero`, `succ`, `nat_rec`, and `nat_add`. The normalizer reduces `nat_rec _ z s zero` to `z` and `nat_rec _ z s (succ n)` to `s n (nat_rec _ z s n)`, enabling simple arithmetic facts to check by reflexivity.
+
 ## Near-term roadmap
 
-1. Add Nat/List theories and recursor support.
+1. Add List theory and recursor support.
 2. Improve theorem/error pretty-printing.
 3. Add proof modules for larger theorem corpora.
 4. Add finite graph/spec libraries for tools such as Reach.

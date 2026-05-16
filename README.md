@@ -46,6 +46,7 @@ The initial kernel supports:
 - propositional equality and reflexivity proofs
 - initial logic library (`False`, `True`, `not`, `and`, `and_intro`, `and_left`, `and_right`)
 - initial Bool library (`Bool`, `true`, `false`, `bool_rec`, `bool_not`, `bool_and`, `bool_or`)
+- initial Nat library (`Nat`, `zero`, `succ`, `nat_rec`, `nat_add`)
 - beta reduction
 - definitional equality by normalization
 - checked constants and definitions in an environment

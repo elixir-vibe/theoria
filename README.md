@@ -120,6 +120,12 @@ Built-in theorem corpora can be checked against the standard prelude:
 {:ok, theorems} = Theoria.Theorem.check_all(Theoria.Library.List.Theorems, env)
 ```
 
+Or from Mix:
+
+```bash
+mix theoria.check
+```
+
 ## Inspect output
 
 Core terms and checked theorems implement Elixir's `Inspect` protocol:
@@ -155,11 +161,11 @@ mix ci
 ```
 
 It runs compilation with warnings as errors, formatting, Credo, ExDNA, Reach
-architecture/smell checks, Dialyzer, and tests.
+architecture/smell checks, Dialyzer, theorem checks, and tests.
 
 ## Roadmap
 
 1. Continue hardening the kernel with more normalization, substitution, and negative tests.
 2. Add richer Bool/Nat/List theorem corpora.
-3. Add theorem-checking Mix tasks and documentation generation.
+3. Add theorem documentation generation.
 4. Add finite graph/spec libraries for tools such as Reach.

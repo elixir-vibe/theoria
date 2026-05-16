@@ -64,6 +64,8 @@ The `theorem` macro creates a small function trio: `<name>_type/0`, `<name>_proo
 
 `Theoria.Prelude.env/0` is the standard environment for users and downstream tooling. It composes the built-in libraries in dependency order: Logic, Bool, Nat, then List.
 
+`mix theoria.check` checks the built-in theorem corpora against the prelude and is part of CI.
+
 ## Normalization and definitional equality
 
 The initial normalizer supports beta reduction and unfolding checked definitions. Definitional equality currently normalizes both sides and compares the resulting terms structurally.
@@ -120,5 +122,5 @@ This is a pragmatic bootstrap point. Once the calculus grows inductive families 
 ## Near-term roadmap
 
 1. Add richer Bool/Nat/List theorem corpora.
-2. Add theorem-checking Mix tasks and documentation generation.
+2. Add theorem documentation generation.
 3. Add finite graph/spec libraries for tools such as Reach.

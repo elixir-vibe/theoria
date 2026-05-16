@@ -42,6 +42,7 @@ defmodule Theoria.MixProject do
         "ex_dna",
         "reach.check --arch --smells",
         "dialyzer",
+        "theoria.check",
         "test"
       ]
     ]

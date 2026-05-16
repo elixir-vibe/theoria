@@ -38,15 +38,7 @@ defmodule Theoria.Kernel do
   def infer(%Env{} = env, %Context{} = context, %App{fun: fun, arg: arg}) do
     with {:ok, fun_type} <- infer(env, context, fun),
          {:ok, fun_type} <- Normalize.whnf(env, fun_type) do
-      case fun_type do
-        %Forall{domain: domain, body: body} ->
-          with :ok <- check(env, context, arg, domain) do
-            {:ok, Term.subst_top(body, arg)}
-          end
-
-        other ->
-          error(:not_a_function, type: other)
-      end
+      infer_application_type(env, context, fun_type, arg)
     end
   end
 
@@ -69,16 +61,16 @@ defmodule Theoria.Kernel do
   def check(env, term, expected), do: check(env, Context.new(), term, expected)
 
   def check(%Env{} = env, %Context{} = context, %Lam{} = lam, %Forall{} = expected) do
-    with :ok <- ensure_defeq(env, lam.domain, expected.domain, :lambda_domain_mismatch),
-         extended = Context.push(context, lam.name, expected.domain) do
+    with :ok <- ensure_defeq(env, lam.domain, expected.domain, :lambda_domain_mismatch) do
+      extended = Context.push(context, lam.name, expected.domain)
       check(env, extended, lam.body, expected.body)
     end
   end
 
   def check(%Env{} = env, %Context{} = context, term, expected) do
-    with {:ok, actual} <- infer(env, context, term),
-         :ok <- ensure_defeq(env, actual, expected, :type_mismatch) do
-      :ok
+    case infer(env, context, term) do
+      {:ok, actual} -> ensure_defeq(env, actual, expected, :type_mismatch)
+      {:error, error} -> {:error, error}
     end
   end
 
@@ -93,6 +85,16 @@ defmodule Theoria.Kernel do
          :ok <- check(env, Context.new(), value, type) do
       {:ok, Env.put_definition(env, name, type, value)}
     end
+  end
+
+  defp infer_application_type(env, context, %Forall{domain: domain, body: body}, arg) do
+    with :ok <- check(env, context, arg, domain) do
+      {:ok, Term.subst_top(body, arg)}
+    end
+  end
+
+  defp infer_application_type(_env, _context, other, _arg) do
+    error(:not_a_function, type: other)
   end
 
   defp infer_sort(env, context, term) do

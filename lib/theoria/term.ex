@@ -10,36 +10,48 @@ defmodule Theoria.Term do
     @moduledoc "A universe level, written `Type n` in the surface language."
     @enforce_keys [:level]
     defstruct [:level]
+
+    @type t :: %__MODULE__{level: non_neg_integer()}
   end
 
   defmodule BVar do
     @moduledoc "A bound variable represented by a de Bruijn index."
     @enforce_keys [:index]
     defstruct [:index]
+
+    @type t :: %__MODULE__{index: non_neg_integer()}
   end
 
   defmodule Const do
     @moduledoc "A named environment constant."
     @enforce_keys [:name]
     defstruct [:name]
+
+    @type t :: %__MODULE__{name: atom()}
   end
 
   defmodule App do
     @moduledoc "Function application."
     @enforce_keys [:fun, :arg]
     defstruct [:fun, :arg]
+
+    @type t :: %__MODULE__{fun: Theoria.Term.t(), arg: Theoria.Term.t()}
   end
 
   defmodule Lam do
     @moduledoc "Lambda abstraction."
     @enforce_keys [:name, :domain, :body]
     defstruct [:name, :domain, :body]
+
+    @type t :: %__MODULE__{name: atom(), domain: Theoria.Term.t(), body: Theoria.Term.t()}
   end
 
   defmodule Forall do
     @moduledoc "Dependent function type. Non-dependent functions are encoded as forall types."
     @enforce_keys [:name, :domain, :body]
     defstruct [:name, :domain, :body]
+
+    @type t :: %__MODULE__{name: atom(), domain: Theoria.Term.t(), body: Theoria.Term.t()}
   end
 
   @type t ::

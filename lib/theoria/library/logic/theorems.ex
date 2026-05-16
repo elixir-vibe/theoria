@@ -181,4 +181,144 @@ defmodule Theoria.Library.Logic.Theorems do
       end
     end
   end
+
+  theorem :not_false do
+    type do
+      call(const(:not), const(:False))
+    end
+
+    proof do
+      lam :hfalse, const(:False) do
+        var(:hfalse)
+      end
+    end
+  end
+
+  theorem :contradiction do
+    type do
+      forall :p, prop() do
+        forall :hp, var(:p) do
+          forall :hnp, call(const(:not), var(:p)) do
+            const(:False)
+          end
+        end
+      end
+    end
+
+    proof do
+      lam :p, prop() do
+        lam :hp, var(:p) do
+          lam :hnp, call(const(:not), var(:p)) do
+            call(var(:hnp), var(:hp))
+          end
+        end
+      end
+    end
+  end
+
+  theorem :and_assoc_left do
+    type do
+      forall :p, prop() do
+        forall :q, prop() do
+          forall :r, prop() do
+            forall :h, call(const(:and), call(const(:and), var(:p), var(:q)), var(:r)) do
+              call(const(:and), var(:p), call(const(:and), var(:q), var(:r)))
+            end
+          end
+        end
+      end
+    end
+
+    proof do
+      lam :p, prop() do
+        lam :q, prop() do
+          lam :r, prop() do
+            lam :h, call(const(:and), call(const(:and), var(:p), var(:q)), var(:r)) do
+              call(
+                const(:and_intro),
+                var(:p),
+                call(const(:and), var(:q), var(:r)),
+                call(
+                  const(:and_left),
+                  var(:p),
+                  var(:q),
+                  call(
+                    const(:and_left),
+                    call(const(:and), var(:p), var(:q)),
+                    var(:r),
+                    var(:h)
+                  )
+                ),
+                call(
+                  const(:and_intro),
+                  var(:q),
+                  var(:r),
+                  call(
+                    const(:and_right),
+                    var(:p),
+                    var(:q),
+                    call(
+                      const(:and_left),
+                      call(const(:and), var(:p), var(:q)),
+                      var(:r),
+                      var(:h)
+                    )
+                  ),
+                  call(const(:and_right), call(const(:and), var(:p), var(:q)), var(:r), var(:h))
+                )
+              )
+            end
+          end
+        end
+      end
+    end
+  end
+
+  theorem :and_assoc_right do
+    type do
+      forall :p, prop() do
+        forall :q, prop() do
+          forall :r, prop() do
+            forall :h, call(const(:and), var(:p), call(const(:and), var(:q), var(:r))) do
+              call(const(:and), call(const(:and), var(:p), var(:q)), var(:r))
+            end
+          end
+        end
+      end
+    end
+
+    proof do
+      lam :p, prop() do
+        lam :q, prop() do
+          lam :r, prop() do
+            lam :h, call(const(:and), var(:p), call(const(:and), var(:q), var(:r))) do
+              call(
+                const(:and_intro),
+                call(const(:and), var(:p), var(:q)),
+                var(:r),
+                call(
+                  const(:and_intro),
+                  var(:p),
+                  var(:q),
+                  call(const(:and_left), var(:p), call(const(:and), var(:q), var(:r)), var(:h)),
+                  call(
+                    const(:and_left),
+                    var(:q),
+                    var(:r),
+                    call(const(:and_right), var(:p), call(const(:and), var(:q), var(:r)), var(:h))
+                  )
+                ),
+                call(
+                  const(:and_right),
+                  var(:q),
+                  var(:r),
+                  call(const(:and_right), var(:p), call(const(:and), var(:q), var(:r)), var(:h))
+                )
+              )
+            end
+          end
+        end
+      end
+    end
+  end
 end

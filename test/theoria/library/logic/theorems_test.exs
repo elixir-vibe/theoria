@@ -14,7 +14,11 @@ defmodule Theoria.Library.Logic.TheoremsTest do
              :and_left_eta,
              :and_right_eta,
              :and_comm,
-             :and_intro_eta
+             :and_intro_eta,
+             :not_false,
+             :contradiction,
+             :and_assoc_left,
+             :and_assoc_right
            ]
   end
 

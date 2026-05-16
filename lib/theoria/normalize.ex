@@ -2,6 +2,7 @@ defmodule Theoria.Normalize do
   @moduledoc "Normalization and definitional equality for core terms."
 
   alias Theoria.Env
+  alias Theoria.Env.Constant
   alias Theoria.Normalize.Fuel
   alias Theoria.Normalize.Primitive
   alias Theoria.Term
@@ -59,7 +60,7 @@ defmodule Theoria.Normalize do
 
   defp do_whnf_step(%Env{} = env, %Const{name: name} = const, fuel) do
     case Env.fetch(env, name) do
-      {:ok, %{value: value, reducible?: true}} -> do_whnf(env, value, fuel)
+      {:ok, %Constant{value: value, reducible?: true}} -> do_whnf(env, value, fuel)
       {:ok, _constant} -> {:ok, const, fuel}
       :error -> {:ok, const, fuel}
     end

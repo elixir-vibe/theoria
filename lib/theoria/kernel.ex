@@ -8,7 +8,9 @@ defmodule Theoria.Kernel do
 
   alias Theoria.Context
   alias Theoria.Env
+  alias Theoria.Env.Constant
   alias Theoria.Error
+  alias Theoria.Kernel.TrustReport
   alias Theoria.Normalize
   alias Theoria.Term
   alias Theoria.Term.{App, BVar, Const, Eq, Forall, Lam, Let, Refl, Sort}
@@ -18,7 +20,7 @@ defmodule Theoria.Kernel do
   def infer(env, term), do: infer(env, Context.new(), term)
 
   def infer(%Env{} = _env, _context, %Sort{level: level}) do
-    {:ok, %Sort{level: level + 1}}
+    {:ok, %Sort{level: Theoria.Level.succ(level)}}
   end
 
   def infer(%Env{} = _env, %Context{} = context, %BVar{index: index}) do
@@ -76,7 +78,7 @@ defmodule Theoria.Kernel do
     with {:ok, %Sort{}} <- infer_sort(env, context, type),
          :ok <- check(env, context, left, type),
          :ok <- check(env, context, right, type) do
-      {:ok, %Sort{level: 0}}
+      {:ok, %Sort{level: Theoria.Level.zero()}}
     end
   end
 
@@ -156,7 +158,7 @@ defmodule Theoria.Kernel do
          {:ok, transitive_dependencies} <- transitive_dependencies(env, name),
          {:ok, axioms} <- axioms(env, name) do
       {:ok,
-       %{
+       %TrustReport{
          name: name,
          kind: constant.kind,
          direct_dependencies: direct_dependencies,
@@ -190,14 +192,14 @@ defmodule Theoria.Kernel do
 
   defp declaration_kind?(env, name, kind) do
     case Env.fetch(env, name) do
-      {:ok, %{kind: ^kind}} -> true
+      {:ok, %Constant{kind: ^kind}} -> true
       _other -> false
     end
   end
 
-  defp declaration_dependencies(%{type: type, value: nil}), do: Term.constants(type)
+  defp declaration_dependencies(%Constant{type: type, value: nil}), do: Term.constants(type)
 
-  defp declaration_dependencies(%{type: type, value: value}) do
+  defp declaration_dependencies(%Constant{type: type, value: value}) do
     MapSet.union(Term.constants(type), Term.constants(value))
   end
 
@@ -251,16 +253,16 @@ defmodule Theoria.Kernel do
 
   defp validate_declaration(env, checked_env, name) do
     case Env.fetch(env, name) do
-      {:ok, %{kind: :constant, type: type, value: nil}} ->
+      {:ok, %Constant{kind: :constant, type: type, value: nil}} ->
         add_constant(checked_env, name, type)
 
-      {:ok, %{kind: :axiom, type: type, value: nil}} ->
+      {:ok, %Constant{kind: :axiom, type: type, value: nil}} ->
         add_axiom(checked_env, name, type)
 
-      {:ok, %{kind: :definition, type: type, value: value}} when not is_nil(value) ->
+      {:ok, %Constant{kind: :definition, type: type, value: value}} when not is_nil(value) ->
         add_definition(checked_env, name, type, value)
 
-      {:ok, %{kind: :theorem, type: type, value: proof}} when not is_nil(proof) ->
+      {:ok, %Constant{kind: :theorem, type: type, value: proof}} when not is_nil(proof) ->
         add_theorem(checked_env, name, type, proof)
 
       {:ok, _constant} ->
@@ -292,8 +294,13 @@ defmodule Theoria.Kernel do
     end
   end
 
-  defp forall_sort(_domain_level, 0), do: %Sort{level: 0}
-  defp forall_sort(domain_level, body_level), do: %Sort{level: max(domain_level, body_level)}
+  defp forall_sort(domain_level, body_level) do
+    if Theoria.Level.zero?(body_level) do
+      %Sort{level: Theoria.Level.zero()}
+    else
+      %Sort{level: Theoria.Level.max(domain_level, body_level)}
+    end
+  end
 
   defp infer_application_type(env, context, %Forall{domain: domain, body: body}, arg) do
     with :ok <- check(env, context, arg, domain) do

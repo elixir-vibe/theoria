@@ -2,6 +2,7 @@ defmodule Theoria.Theorem do
   @moduledoc "A theorem accepted by the trusted kernel."
 
   alias Theoria.Env
+  alias Theoria.Env.Constant
   alias Theoria.Kernel
   alias Theoria.Term
 
@@ -60,7 +61,7 @@ defmodule Theoria.Theorem do
 
   defp dependency_axioms(env, dependency) do
     case {Env.fetch(env, dependency), Kernel.axioms(env, dependency)} do
-      {{:ok, %{kind: :axiom}}, {:ok, axioms}} -> MapSet.put(axioms, dependency)
+      {{:ok, %Constant{kind: :axiom}}, {:ok, axioms}} -> MapSet.put(axioms, dependency)
       {_constant, {:ok, axioms}} -> axioms
       _unknown -> MapSet.new()
     end

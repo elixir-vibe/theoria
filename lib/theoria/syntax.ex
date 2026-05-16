@@ -11,7 +11,7 @@ defmodule Theoria.Syntax do
     @enforce_keys [:level]
     defstruct [:level]
 
-    @type t :: %__MODULE__{level: non_neg_integer()}
+    @type t :: %__MODULE__{level: Theoria.Level.t()}
   end
 
   defmodule Var do
@@ -106,8 +106,8 @@ defmodule Theoria.Syntax do
           | Eq.t()
           | Refl.t()
 
-  @spec sort(non_neg_integer()) :: Sort.t()
-  def sort(level) when is_integer(level) and level >= 0, do: %Sort{level: level}
+  @spec sort(non_neg_integer() | Theoria.Level.t()) :: Sort.t()
+  def sort(level), do: %Sort{level: Theoria.Level.cast!(level)}
 
   @spec var(atom()) :: Var.t()
   def var(name) when is_atom(name), do: %Var{name: name}

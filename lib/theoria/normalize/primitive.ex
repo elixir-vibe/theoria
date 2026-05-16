@@ -5,7 +5,7 @@ defmodule Theoria.Normalize.Primitive do
   alias Theoria.Term
   alias Theoria.Term.{App, Const}
 
-  @type fuel :: %{remaining_steps: non_neg_integer(), max_steps: pos_integer()}
+  @type fuel :: Theoria.Normalize.Fuel.t()
   @type whnf_result :: {:ok, Term.t(), fuel()} | {:error, Theoria.Error.t()}
   @type whnf_fun :: (Env.t(), Term.t() -> whnf_result())
   @type result :: whnf_result() | {:stuck, App.t()}

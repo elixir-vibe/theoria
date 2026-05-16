@@ -89,8 +89,12 @@ defmodule Theoria.Pretty do
     "#{reason}: #{inspect(details)}"
   end
 
-  defp render_term(%Sort{level: 0}, _context), do: "Prop"
-  defp render_term(%Sort{level: level}, _context), do: "Type #{level}"
+  defp render_term(%Sort{level: level}, _context) do
+    case Theoria.Level.to_integer(level) do
+      {:ok, 0} -> "Prop"
+      {:ok, level} -> "Type #{level}"
+    end
+  end
 
   defp render_term(%BVar{index: index}, context) do
     Enum.at(context, index) || "##{index}"

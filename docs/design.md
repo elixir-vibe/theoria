@@ -76,7 +76,15 @@ The current prototype uses a simple cumulative-looking tower where:
 Sort n : Sort (n + 1)
 ```
 
-There is no separate `Prop` yet. Equality currently infers `Sort 0` as a proposition-like type. This is intentionally provisional and should be revisited when the logic layer grows.
+The DSL distinguishes propositions from computational types:
+
+```text
+prop()   = Sort 0
+type(0) = Sort 1
+type(n) = Sort (n + 1)
+```
+
+Equality currently infers `Sort 0` as a proposition-like type. This is intentionally provisional and should be revisited when the logic layer grows.
 
 ## Inspect and pretty-printing
 
@@ -95,9 +103,13 @@ Elixir's set-theoretic types describe sets of Elixir runtime values. Theoria che
 
 This is a pragmatic bootstrap point. Once the calculus grows inductive families and a clearer `Prop` story, some primitive logical constants can be revisited as library-defined encodings.
 
+## Bool library
+
+`Theoria.Library.Bool` introduces the first computational data declarations: `Bool`, `true`, `false`, `bool_not`, `bool_and`, and `bool_or`. These are distinct from logical `True` and `False` propositions.
+
 ## Near-term roadmap
 
-1. Add primitive Bool/Nat/List theories.
+1. Add Nat/List theories and recursor support.
 2. Improve theorem/error pretty-printing.
 3. Add proof modules for larger theorem corpora.
 4. Add finite graph/spec libraries for tools such as Reach.

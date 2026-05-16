@@ -16,7 +16,7 @@ defmodule Theoria.DSLTest do
       end
 
     assert term ==
-             S.forall(:a, S.sort(0), S.forall(:x, S.var(:a), S.var(:a)))
+             S.forall(:a, S.sort(1), S.forall(:x, S.var(:a), S.var(:a)))
   end
 
   test "supports variable-looking binder names" do
@@ -28,7 +28,7 @@ defmodule Theoria.DSLTest do
       end
 
     assert term ==
-             S.forall(:a, S.sort(0), S.lam(:x, S.var(:a), S.var(:x)))
+             S.forall(:a, S.sort(1), S.lam(:x, S.var(:a), S.var(:x)))
   end
 
   test "call applies arguments left-associatively" do

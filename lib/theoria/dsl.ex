@@ -35,8 +35,8 @@ defmodule Theoria.DSL do
   @doc "The current core proposition universe, for APIs that need a checked core term."
   def core_prop, do: Theoria.Term.sort(0)
 
-  @doc "A type universe. Currently aliases directly to `Sort n`."
-  def type(level) when is_integer(level) and level >= 0, do: Syntax.sort(level)
+  @doc "A type universe. `type(0)` corresponds to `Type 0`, whose core sort is `Sort 1`."
+  def type(level) when is_integer(level) and level >= 0, do: Syntax.sort(level + 1)
 
   @doc "A named bound variable."
   def var(name) when is_atom(name), do: Syntax.var(name)
@@ -192,7 +192,7 @@ defmodule Theoria.DSL do
 
   defp quote_term({:type, _meta, [level]}) when is_integer(level) and level >= 0 do
     quote do
-      Theoria.Syntax.sort(unquote(level))
+      Theoria.Syntax.sort(unquote(level + 1))
     end
   end
 

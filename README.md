@@ -45,6 +45,7 @@ The initial kernel supports:
 - application
 - propositional equality and reflexivity proofs
 - initial logic library (`False`, `True`, `not`, `and`, `and_intro`, `and_left`, `and_right`)
+- initial Bool library (`Bool`, `true`, `false`, `bool_not`, `bool_and`, `bool_or`)
 - beta reduction
 - definitional equality by normalization
 - checked constants and definitions in an environment
@@ -151,5 +152,5 @@ architecture/smell checks, Dialyzer, and tests.
 1. Continue hardening the kernel with more normalization, substitution, and negative tests.
 2. Add elimination/projection helpers for logical connectives.
 3. Add primitive Bool/Nat/List theories.
-4. Add proof modules for the built-in logic library.
+4. Add Nat/List theories and recursor support.
 5. Add finite graph/spec libraries for tools such as Reach.

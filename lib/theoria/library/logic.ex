@@ -23,8 +23,10 @@ defmodule Theoria.Library.Logic do
          {:ok, env} <- Kernel.add_constant(env, :true_intro, Theoria.Term.const(:True)),
          {:ok, env} <- Kernel.add_constant(env, :false_elim, false_elim_type()),
          {:ok, env} <- Kernel.add_definition(env, :not, not_type(), not_value()),
-         {:ok, env} <- Kernel.add_constant(env, :and, and_type()) do
-      Kernel.add_constant(env, :and_intro, and_intro_type())
+         {:ok, env} <- Kernel.add_constant(env, :and, and_type()),
+         {:ok, env} <- Kernel.add_constant(env, :and_intro, and_intro_type()),
+         {:ok, env} <- Kernel.add_constant(env, :and_left, and_left_type()) do
+      Kernel.add_constant(env, :and_right, and_right_type())
     end
   end
 
@@ -75,6 +77,30 @@ defmodule Theoria.Library.Logic do
             forall :hq, var(:q) do
               call(const(:and), var(:p), var(:q))
             end
+          end
+        end
+      end
+    )
+  end
+
+  defp and_left_type do
+    elab!(
+      forall :p, Theoria.DSL.prop() do
+        forall :q, Theoria.DSL.prop() do
+          forall :h, call(const(:and), var(:p), var(:q)) do
+            var(:p)
+          end
+        end
+      end
+    )
+  end
+
+  defp and_right_type do
+    elab!(
+      forall :p, Theoria.DSL.prop() do
+        forall :q, Theoria.DSL.prop() do
+          forall :h, call(const(:and), var(:p), var(:q)) do
+            var(:q)
           end
         end
       end

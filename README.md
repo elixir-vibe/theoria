@@ -44,7 +44,7 @@ The initial kernel supports:
 - dependent function types (`forall`)
 - application
 - propositional equality and reflexivity proofs
-- initial logic library (`False`, `True`, `not`, `and`, `and_intro`)
+- initial logic library (`False`, `True`, `not`, `and`, `and_intro`, `and_left`, `and_right`)
 - beta reduction
 - definitional equality by normalization
 - checked constants and definitions in an environment

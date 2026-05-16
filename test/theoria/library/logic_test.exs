@@ -10,7 +10,17 @@ defmodule Theoria.Library.LogicTest do
   test "extends an environment with checked logic declarations" do
     assert {:ok, env} = Logic.env()
 
-    for name <- [:False, :True, :true_intro, :false_elim, :not, :and, :and_intro] do
+    for name <- [
+          :False,
+          :True,
+          :true_intro,
+          :false_elim,
+          :not,
+          :and,
+          :and_intro,
+          :and_left,
+          :and_right
+        ] do
       assert {:ok, _type} = Kernel.infer(env, const(name))
     end
   end

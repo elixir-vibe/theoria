@@ -85,6 +85,78 @@ defmodule Theoria.Library.Logic.Theorems do
     end
   end
 
+  theorem :and_left_eta do
+    type do
+      forall :p, prop() do
+        forall :q, prop() do
+          forall :h, call(const(:and), var(:p), var(:q)) do
+            var(:p)
+          end
+        end
+      end
+    end
+
+    proof do
+      lam :p, prop() do
+        lam :q, prop() do
+          lam :h, call(const(:and), var(:p), var(:q)) do
+            call(const(:and_left), var(:p), var(:q), var(:h))
+          end
+        end
+      end
+    end
+  end
+
+  theorem :and_right_eta do
+    type do
+      forall :p, prop() do
+        forall :q, prop() do
+          forall :h, call(const(:and), var(:p), var(:q)) do
+            var(:q)
+          end
+        end
+      end
+    end
+
+    proof do
+      lam :p, prop() do
+        lam :q, prop() do
+          lam :h, call(const(:and), var(:p), var(:q)) do
+            call(const(:and_right), var(:p), var(:q), var(:h))
+          end
+        end
+      end
+    end
+  end
+
+  theorem :and_comm do
+    type do
+      forall :p, prop() do
+        forall :q, prop() do
+          forall :h, call(const(:and), var(:p), var(:q)) do
+            call(const(:and), var(:q), var(:p))
+          end
+        end
+      end
+    end
+
+    proof do
+      lam :p, prop() do
+        lam :q, prop() do
+          lam :h, call(const(:and), var(:p), var(:q)) do
+            call(
+              const(:and_intro),
+              var(:q),
+              var(:p),
+              call(const(:and_right), var(:p), var(:q), var(:h)),
+              call(const(:and_left), var(:p), var(:q), var(:h))
+            )
+          end
+        end
+      end
+    end
+  end
+
   theorem :and_intro_eta do
     type do
       forall :p, prop() do

@@ -97,7 +97,7 @@ This is a pragmatic bootstrap point. Once the calculus grows inductive families 
 
 ## Near-term roadmap
 
-1. Add elimination/projection helpers for logical connectives.
-2. Add primitive Bool/Nat/List theories.
+1. Add primitive Bool/Nat/List theories.
+2. Improve theorem/error pretty-printing.
 3. Add proof modules for larger theorem corpora.
 4. Add finite graph/spec libraries for tools such as Reach.

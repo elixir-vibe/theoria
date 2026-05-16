@@ -11,6 +11,9 @@ defmodule Theoria.Library.Logic.TheoremsTest do
              :const,
              :false_elim_eta,
              :double_negation_intro,
+             :and_left_eta,
+             :and_right_eta,
+             :and_comm,
              :and_intro_eta
            ]
   end

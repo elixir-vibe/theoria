@@ -42,7 +42,9 @@ The initial core calculus contains:
 - constants;
 - application;
 - lambda abstraction;
-- dependent function types (`forall`).
+- dependent function types (`forall`);
+- propositional equality;
+- reflexivity proofs.
 
 Names stored on binders are diagnostic metadata. Binding correctness is determined by de Bruijn indices.
 
@@ -64,7 +66,7 @@ The current prototype uses a simple cumulative-looking tower where:
 Sort n : Sort (n + 1)
 ```
 
-There is no separate `Prop` yet. Equality and propositions will be introduced deliberately once the kernel tests are stronger.
+There is no separate `Prop` yet. Equality currently infers `Sort 0` as a proposition-like type. This is intentionally provisional and should be revisited when the logic layer grows.
 
 ## Relationship to Elixir set-theoretic types
 
@@ -76,8 +78,7 @@ Elixir's set-theoretic types describe sets of Elixir runtime values. Theoria che
 ## Near-term roadmap
 
 1. Harden substitution, shifting, normalization, and type-checking tests.
-2. Add equality.
-3. Add basic logical connectives.
-4. Add primitive Bool/Nat/List theories.
-5. Add an Elixir DSL that elaborates to checked core terms.
-6. Add finite graph/spec libraries for tools such as Reach.
+2. Add basic logical connectives.
+3. Add primitive Bool/Nat/List theories.
+4. Add an Elixir DSL that elaborates to checked core terms.
+5. Add finite graph/spec libraries for tools such as Reach.

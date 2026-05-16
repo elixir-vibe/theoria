@@ -54,6 +54,26 @@ defmodule Theoria.Term do
     @type t :: %__MODULE__{name: atom(), domain: Theoria.Term.t(), body: Theoria.Term.t()}
   end
 
+  defmodule Eq do
+    @moduledoc "Propositional equality over a type."
+    @enforce_keys [:type, :left, :right]
+    defstruct [:type, :left, :right]
+
+    @type t :: %__MODULE__{
+            type: Theoria.Term.t(),
+            left: Theoria.Term.t(),
+            right: Theoria.Term.t()
+          }
+  end
+
+  defmodule Refl do
+    @moduledoc "Reflexivity proof for propositional equality."
+    @enforce_keys [:value]
+    defstruct [:value]
+
+    @type t :: %__MODULE__{value: Theoria.Term.t()}
+  end
+
   @type t ::
           Sort.t()
           | BVar.t()
@@ -61,6 +81,8 @@ defmodule Theoria.Term do
           | App.t()
           | Lam.t()
           | Forall.t()
+          | Eq.t()
+          | Refl.t()
 
   @spec sort(non_neg_integer()) :: Sort.t()
   def sort(level) when is_integer(level) and level >= 0, do: %Sort{level: level}
@@ -83,6 +105,12 @@ defmodule Theoria.Term do
 
   @spec arrow(t(), t()) :: Forall.t()
   def arrow(domain, codomain), do: forall(:_, domain, shift(codomain, 1))
+
+  @spec eq(t(), t(), t()) :: Eq.t()
+  def eq(type, left, right), do: %Eq{type: type, left: left, right: right}
+
+  @spec refl(t()) :: Refl.t()
+  def refl(value), do: %Refl{value: value}
 
   @doc """
   Shifts de Bruijn indices by `amount` at and above `cutoff`.
@@ -109,6 +137,18 @@ defmodule Theoria.Term do
 
   def shift(%App{fun: fun, arg: arg}, amount, cutoff) do
     %App{fun: shift(fun, amount, cutoff), arg: shift(arg, amount, cutoff)}
+  end
+
+  def shift(%Eq{type: type, left: left, right: right}, amount, cutoff) do
+    %Eq{
+      type: shift(type, amount, cutoff),
+      left: shift(left, amount, cutoff),
+      right: shift(right, amount, cutoff)
+    }
+  end
+
+  def shift(%Refl{value: value}, amount, cutoff) do
+    %Refl{value: shift(value, amount, cutoff)}
   end
 
   def shift(%Lam{name: name, domain: domain, body: body}, amount, cutoff) do
@@ -142,6 +182,18 @@ defmodule Theoria.Term do
 
   def subst(%App{fun: fun, arg: arg}, index, replacement, depth) do
     %App{fun: subst(fun, index, replacement, depth), arg: subst(arg, index, replacement, depth)}
+  end
+
+  def subst(%Eq{type: type, left: left, right: right}, index, replacement, depth) do
+    %Eq{
+      type: subst(type, index, replacement, depth),
+      left: subst(left, index, replacement, depth),
+      right: subst(right, index, replacement, depth)
+    }
+  end
+
+  def subst(%Refl{value: value}, index, replacement, depth) do
+    %Refl{value: subst(value, index, replacement, depth)}
   end
 
   def subst(%Lam{name: name, domain: domain, body: body}, index, replacement, depth) do

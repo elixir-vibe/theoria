@@ -12,4 +12,16 @@ defmodule Theoria.TermTest do
   test "arrow lifts the codomain under the binder" do
     assert arrow(bvar(0), bvar(0)) == forall(:_, bvar(0), bvar(1))
   end
+
+  test "shift respects binder cutoff" do
+    term = lam(:x, sort(0), app(bvar(1), bvar(0)))
+
+    assert shift(term, 1) == lam(:x, sort(0), app(bvar(2), bvar(0)))
+  end
+
+  test "substitution traverses equality and reflexivity" do
+    body = eq(bvar(0), refl(bvar(0)), bvar(0))
+
+    assert subst(body, 0, bvar(2)) == eq(bvar(2), refl(bvar(2)), bvar(2))
+  end
 end

@@ -11,7 +11,7 @@ defmodule Theoria.Kernel do
   alias Theoria.Error
   alias Theoria.Normalize
   alias Theoria.Term
-  alias Theoria.Term.{App, BVar, Const, Forall, Lam, Sort}
+  alias Theoria.Term.{App, BVar, Const, Eq, Forall, Lam, Refl, Sort}
 
   @type result :: {:ok, Term.t()} | {:error, Error.t()}
 
@@ -55,6 +55,20 @@ defmodule Theoria.Kernel do
          extended = Context.push(context, name, domain),
          {:ok, %Sort{level: body_level}} <- infer_sort(env, extended, body) do
       {:ok, %Sort{level: max(domain_level, body_level)}}
+    end
+  end
+
+  def infer(%Env{} = env, %Context{} = context, %Eq{type: type, left: left, right: right}) do
+    with {:ok, %Sort{}} <- infer_sort(env, context, type),
+         :ok <- check(env, context, left, type),
+         :ok <- check(env, context, right, type) do
+      {:ok, %Sort{level: 0}}
+    end
+  end
+
+  def infer(%Env{} = env, %Context{} = context, %Refl{value: value}) do
+    with {:ok, type} <- infer(env, context, value) do
+      {:ok, %Eq{type: type, left: value, right: value}}
     end
   end
 

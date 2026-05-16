@@ -43,6 +43,7 @@ The initial kernel supports:
 - lambda abstraction
 - dependent function types (`forall`)
 - application
+- propositional equality and reflexivity proofs
 - beta reduction
 - definitional equality by normalization
 - checked constants and definitions in an environment
@@ -82,8 +83,8 @@ architecture/smell checks, Dialyzer, and tests.
 
 ## Roadmap
 
-1. Harden the kernel with more normalization, substitution, and negative tests.
-2. Add equality and basic logical connectives.
+1. Continue hardening the kernel with more normalization, substitution, and negative tests.
+2. Add basic logical connectives.
 3. Add primitive Bool/Nat/List theories.
 4. Add a small Elixir DSL that elaborates to checked core terms.
 5. Add finite graph/spec libraries for tools such as Reach.

@@ -3,7 +3,7 @@ defmodule Theoria.Normalize do
 
   alias Theoria.Env
   alias Theoria.Term
-  alias Theoria.Term.{App, Const, Forall, Lam}
+  alias Theoria.Term.{App, Const, Eq, Forall, Lam, Refl}
 
   @type result :: {:ok, Term.t()} | {:error, Theoria.Error.t()}
 
@@ -48,6 +48,20 @@ defmodule Theoria.Normalize do
     with {:ok, fun} <- normalize(env, fun),
          {:ok, arg} <- normalize(env, arg) do
       {:ok, %App{fun: fun, arg: arg}}
+    end
+  end
+
+  defp normalize_children(env, %Eq{type: type, left: left, right: right}) do
+    with {:ok, type} <- normalize(env, type),
+         {:ok, left} <- normalize(env, left),
+         {:ok, right} <- normalize(env, right) do
+      {:ok, %Eq{type: type, left: left, right: right}}
+    end
+  end
+
+  defp normalize_children(env, %Refl{value: value}) do
+    with {:ok, value} <- normalize(env, value) do
+      {:ok, %Refl{value: value}}
     end
   end
 

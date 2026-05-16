@@ -26,7 +26,7 @@ defmodule Mix.Tasks.Theoria.Check do
     with {:ok, opts, module_args} <- parse_args(args),
          {:ok, modules} <- theorem_modules(module_args),
          {:ok, env} <- Theoria.Prelude.env() do
-      check_modules(env, modules, install?: Keyword.get(opts, :install, false))
+      check_modules(env, modules, opts)
     else
       {:error, %Theoria.Error{} = error} ->
         Mix.raise("failed to build Theoria prelude:\n\n#{Exception.message(error)}")
@@ -37,7 +37,7 @@ defmodule Mix.Tasks.Theoria.Check do
   end
 
   defp parse_args(args) do
-    case OptionParser.parse(args, strict: [install: :boolean]) do
+    case OptionParser.parse(args, strict: [install: :boolean, axioms: :boolean]) do
       {opts, module_args, []} ->
         {:ok, opts, module_args}
 
@@ -77,12 +77,20 @@ defmodule Mix.Tasks.Theoria.Check do
     end
   end
 
-  defp check_modules(env, modules, install?: false) do
+  defp check_modules(env, modules, opts) do
+    if Keyword.get(opts, :install, false) do
+      check_modules_installed(env, modules, opts)
+    else
+      check_modules_plain(env, modules, opts)
+    end
+  end
+
+  defp check_modules_plain(env, modules, opts) do
     modules
     |> Enum.reduce_while(0, fn module, count ->
       case Theorem.check_all(module, env) do
         {:ok, theorems} ->
-          Mix.shell().info("✓ #{inspect(module)} (#{length(theorems)} theorem(s))")
+          report_module(module, theorems, env, opts)
           {:cont, count + length(theorems)}
 
         {:error, {name, error}} ->
@@ -93,12 +101,12 @@ defmodule Mix.Tasks.Theoria.Check do
     |> report_total()
   end
 
-  defp check_modules(env, modules, install?: true) do
+  defp check_modules_installed(env, modules, opts) do
     modules
     |> Enum.reduce_while({env, 0}, fn module, {env, count} ->
       case Theorem.add_all_to_env(module, env) do
         {:ok, env, theorems} ->
-          Mix.shell().info("✓ #{inspect(module)} (#{length(theorems)} theorem(s), installed)")
+          report_module(module, theorems, env, opts, installed?: true)
           {:cont, {env, count + length(theorems)}}
 
         {:error, {name, error}} ->
@@ -108,6 +116,50 @@ defmodule Mix.Tasks.Theoria.Check do
     end)
     |> then(fn {_env, count} -> count end)
     |> report_total()
+  end
+
+  defp report_module(module, theorems, env, opts, extra \\ []) do
+    installed? = Keyword.get(extra, :installed?, false)
+    suffixes = module_suffixes(theorems, env, opts, installed?)
+    Mix.shell().info("✓ #{inspect(module)} (#{length(theorems)} theorem(s)#{suffixes})")
+  end
+
+  defp module_suffixes(theorems, env, opts, installed?) do
+    [installed_suffix(installed?), axiom_suffix(theorems, env, opts)]
+    |> Enum.reject(&(&1 == ""))
+    |> case do
+      [] -> ""
+      suffixes -> ", " <> Enum.join(suffixes, ", ")
+    end
+  end
+
+  defp installed_suffix(true), do: "installed"
+  defp installed_suffix(false), do: ""
+
+  defp axiom_suffix(theorems, env, opts) do
+    if Keyword.get(opts, :axioms, false) do
+      "axioms: #{format_axioms(module_axioms(theorems, env))}"
+    else
+      ""
+    end
+  end
+
+  defp module_axioms(theorems, env) do
+    Enum.reduce(theorems, MapSet.new(), fn theorem, axioms ->
+      case Theorem.axioms(env, theorem) do
+        {:ok, theorem_axioms} -> MapSet.union(axioms, theorem_axioms)
+      end
+    end)
+  end
+
+  defp format_axioms(axioms) do
+    if MapSet.size(axioms) == 0 do
+      "none"
+    else
+      axioms
+      |> Enum.sort()
+      |> Enum.map_join(", ", &Atom.to_string/1)
+    end
   end
 
   defp report_total(count) do

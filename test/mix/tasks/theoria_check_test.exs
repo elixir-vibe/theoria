@@ -92,6 +92,30 @@ defmodule Mix.Tasks.Theoria.CheckTest do
     assert output =~ "Checked 2 theorem(s)."
   end
 
+  test "reports axiom summaries" do
+    Mix.Task.clear()
+
+    output =
+      capture_io(fn ->
+        Check.run(["--axioms"])
+      end)
+
+    assert output =~ "axioms: none"
+    assert output =~ "Checked 41 theorem(s)."
+  end
+
+  test "reports axiom summaries in install mode" do
+    Mix.Task.clear()
+
+    output =
+      capture_io(fn ->
+        Check.run(["--install", "--axioms"])
+      end)
+
+    assert output =~ "installed, axioms: none"
+    assert output =~ "Checked 41 theorem(s)."
+  end
+
   test "dependent theorem modules fail without installation" do
     Mix.Task.clear()
 

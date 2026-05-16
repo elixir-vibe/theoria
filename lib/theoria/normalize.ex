@@ -2,6 +2,7 @@ defmodule Theoria.Normalize do
   @moduledoc "Normalization and definitional equality for core terms."
 
   alias Theoria.Env
+  alias Theoria.Normalize.Primitive
   alias Theoria.Term
   alias Theoria.Term.{App, Const, Eq, Forall, Lam, Refl}
 
@@ -19,7 +20,7 @@ defmodule Theoria.Normalize do
 
       case fun do
         %Lam{body: body} -> whnf(env, Term.subst_top(body, app.arg))
-        _ -> reduce_primitive_app(env, app)
+        _ -> Primitive.reduce(env, app, &whnf/2)
       end
     end
   end
@@ -40,45 +41,6 @@ defmodule Theoria.Normalize do
       left == right
     else
       _ -> false
-    end
-  end
-
-  defp reduce_primitive_app(env, app) do
-    case Term.Application.collect(app) do
-      {%Const{name: :bool_rec}, [_type, on_true, _on_false, %Const{name: true}]} ->
-        whnf(env, on_true)
-
-      {%Const{name: :bool_rec}, [_type, _on_true, on_false, %Const{name: false}]} ->
-        whnf(env, on_false)
-
-      {%Const{name: :nat_rec}, [_type, on_zero, _on_succ, %Const{name: :zero}]} ->
-        whnf(env, on_zero)
-
-      {%Const{name: :nat_rec}, [type, on_zero, on_succ, %App{} = nat]} ->
-        reduce_nat_succ(env, type, on_zero, on_succ, nat, app)
-
-      _ ->
-        {:ok, app}
-    end
-  end
-
-  defp reduce_nat_succ(env, type, on_zero, on_succ, nat, fallback) do
-    case Term.Application.collect(nat) do
-      {%Const{name: :succ}, [pred]} ->
-        recursive =
-          %App{
-            fun: %App{fun: %App{fun: %Const{name: :nat_rec}, arg: type}, arg: on_zero},
-            arg: on_succ
-          }
-          |> then(&%App{fun: &1, arg: pred})
-
-        on_succ
-        |> then(&%App{fun: &1, arg: pred})
-        |> then(&%App{fun: &1, arg: recursive})
-        |> then(&whnf(env, &1))
-
-      _ ->
-        {:ok, fallback}
     end
   end
 

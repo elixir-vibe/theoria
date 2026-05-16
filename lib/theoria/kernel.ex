@@ -104,14 +104,41 @@ defmodule Theoria.Kernel do
 
   def dependencies(%Env{} = env, name) when is_atom(name) do
     case Env.fetch(env, name) do
-      {:ok, %{type: type, value: nil}} ->
-        {:ok, Term.constants(type)}
+      {:ok, constant} -> {:ok, declaration_dependencies(constant)}
+      :error -> error(:unknown_constant, name: name)
+    end
+  end
 
-      {:ok, %{type: type, value: value}} ->
-        {:ok, MapSet.union(Term.constants(type), Term.constants(value))}
+  def transitive_dependencies(%Env{} = env, name) when is_atom(name) do
+    with {:ok, _constant} <- fetch_constant(env, name) do
+      {:ok, collect_transitive_dependencies(env, [name], MapSet.new())}
+    end
+  end
+
+  defp collect_transitive_dependencies(_env, [], seen), do: seen
+
+  defp collect_transitive_dependencies(env, [name | rest], seen) do
+    case Env.fetch(env, name) do
+      {:ok, constant} ->
+        direct = declaration_dependencies(constant)
+        new_dependencies = Enum.reject(direct, &MapSet.member?(seen, &1))
+        collect_transitive_dependencies(env, new_dependencies ++ rest, MapSet.union(seen, direct))
 
       :error ->
-        error(:unknown_constant, name: name)
+        collect_transitive_dependencies(env, rest, seen)
+    end
+  end
+
+  defp declaration_dependencies(%{type: type, value: nil}), do: Term.constants(type)
+
+  defp declaration_dependencies(%{type: type, value: value}) do
+    MapSet.union(Term.constants(type), Term.constants(value))
+  end
+
+  defp fetch_constant(env, name) do
+    case Env.fetch(env, name) do
+      {:ok, constant} -> {:ok, constant}
+      :error -> error(:unknown_constant, name: name)
     end
   end
 

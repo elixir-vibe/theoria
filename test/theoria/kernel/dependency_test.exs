@@ -26,10 +26,35 @@ defmodule Theoria.Kernel.DependencyTest do
            )
   end
 
+  test "collects transitive declaration dependencies" do
+    {:ok, env} = Prelude.env()
+
+    assert {:ok, dependencies} = Kernel.transitive_dependencies(env, :list_length)
+
+    assert MapSet.subset?(
+             MapSet.new([:List, :Nat, :list_rec, :zero, :succ]),
+             dependencies
+           )
+  end
+
+  test "transitive dependencies tolerate unknown references in malformed environments" do
+    env = Theoria.Env.new() |> Theoria.Env.put_constant(:bad, Theoria.Term.const(:Missing))
+
+    assert {:ok, dependencies} = Kernel.transitive_dependencies(env, :bad)
+    assert dependencies == MapSet.new([:Missing])
+  end
+
   test "unknown declaration dependency lookup fails" do
     {:ok, env} = Prelude.env()
 
     assert {:error, error} = Kernel.dependencies(env, :missing)
+    assert error.reason == :unknown_constant
+  end
+
+  test "unknown transitive dependency lookup fails" do
+    {:ok, env} = Prelude.env()
+
+    assert {:error, error} = Kernel.transitive_dependencies(env, :missing)
     assert error.reason == :unknown_constant
   end
 end

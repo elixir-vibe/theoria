@@ -2,6 +2,7 @@ defmodule Theoria.Theorem do
   @moduledoc "A theorem accepted by the trusted kernel."
 
   alias Theoria.Env
+  alias Theoria.Kernel
   alias Theoria.Term
 
   @enforce_keys [:name, :type, :proof]
@@ -14,9 +15,7 @@ defmodule Theoria.Theorem do
   def check_all(module, %Env{} = env) when is_atom(module) do
     module.__theoria_theorems__()
     |> Enum.reduce_while({:ok, []}, fn name, {:ok, checked} ->
-      theorem_fun = String.to_existing_atom("#{name}_theorem")
-
-      case apply(module, theorem_fun, [env]) do
+      case check_one(module, name, env) do
         {:ok, %__MODULE__{} = theorem} -> {:cont, {:ok, [theorem | checked]}}
         {:error, error} -> {:halt, {:error, {name, error}}}
       end
@@ -24,6 +23,36 @@ defmodule Theoria.Theorem do
     |> reverse_checked()
   end
 
+  @doc "Adds a checked theorem to an environment as an opaque theorem declaration."
+  @spec add_to_env(Env.t(), t()) :: {:ok, Env.t()} | {:error, Theoria.Error.t()}
+  def add_to_env(%Env{} = env, %__MODULE__{name: name, type: type, proof: proof}) do
+    Kernel.add_theorem(env, name, type, proof)
+  end
+
+  @doc "Checks and installs every theorem registered by a theorem module in order."
+  @spec add_all_to_env(module(), Env.t()) ::
+          {:ok, Env.t(), [t()]} | {:error, {atom(), Theoria.Error.t()}}
+  def add_all_to_env(module, %Env{} = env) when is_atom(module) do
+    module.__theoria_theorems__()
+    |> Enum.reduce_while({:ok, env, []}, fn name, {:ok, env, checked} ->
+      with {:ok, %__MODULE__{} = theorem} <- check_one(module, name, env),
+           {:ok, env} <- add_to_env(env, theorem) do
+        {:cont, {:ok, env, [theorem | checked]}}
+      else
+        {:error, error} -> {:halt, {:error, {name, error}}}
+      end
+    end)
+    |> reverse_installed()
+  end
+
+  defp check_one(module, name, env) do
+    theorem_fun = String.to_existing_atom("#{name}_theorem")
+    apply(module, theorem_fun, [env])
+  end
+
   defp reverse_checked({:ok, checked}), do: {:ok, Enum.reverse(checked)}
   defp reverse_checked({:error, {_name, _error}} = error), do: error
+
+  defp reverse_installed({:ok, env, checked}), do: {:ok, env, Enum.reverse(checked)}
+  defp reverse_installed({:error, {_name, _error}} = error), do: error
 end

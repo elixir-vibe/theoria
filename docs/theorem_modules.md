@@ -31,6 +31,13 @@ The macro also registers theorem names through `__theoria_theorems__/0`, which l
 {:ok, theorems} = Theoria.Theorem.check_all(MyApp.Proofs, env)
 ```
 
+Checked theorems can also be installed into an environment as opaque theorem declarations. This lets later theorems refer to earlier theorem constants without making proofs unfold during normalization:
+
+```elixir
+{:ok, env} = Theoria.Prelude.env()
+{:ok, env, theorems} = Theoria.Theorem.add_all_to_env(MyApp.Proofs, env)
+```
+
 From Mix, use:
 
 ```bash

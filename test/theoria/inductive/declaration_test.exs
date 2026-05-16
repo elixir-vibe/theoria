@@ -12,7 +12,19 @@ defmodule Theoria.Inductive.DeclarationTest do
     assert {:ok, declarations} = Inductive.declarations(Bool.inductive_spec())
 
     assert Enum.map(declarations, & &1.name) == [:Bool, true, false, :bool_rec, :bool_ind]
-    assert %Declaration{kind: :constant, universe_params: []} = hd(declarations)
+
+    assert %Declaration{
+             kind: :constant,
+             universe_params: [],
+             metadata: %Theoria.Env.Inductive{
+               name: :Bool,
+               num_params: 0,
+               num_indices: 0,
+               constructors: [true, false],
+               recursive?: false,
+               reflexive?: false
+             }
+           } = hd(declarations)
 
     assert %Declaration{reduction: %Reduction.Recursor{inductive: :Bool}} =
              Enum.find(declarations, &(&1.name == :bool_rec))
@@ -26,8 +38,20 @@ defmodule Theoria.Inductive.DeclarationTest do
 
     assert Enum.map(declarations, & &1.name) == [:Nat, :zero, :succ, :nat_rec, :nat_ind]
 
-    assert %Declaration{reduction: %Reduction.Recursor{inductive: :Nat}} =
-             Enum.find(declarations, &(&1.name == :nat_rec))
+    assert %Declaration{
+             reduction: %Reduction.Recursor{inductive: :Nat},
+             metadata: %Theoria.Env.Recursor{
+               inductives: [:Nat],
+               num_params: 0,
+               num_indices: 0,
+               num_motives: 1,
+               num_minors: 2,
+               rules: [
+                 %Theoria.Env.RecursorRule{constructor: :zero, field_count: 0},
+                 %Theoria.Env.RecursorRule{constructor: :succ, field_count: 1}
+               ]
+             }
+           } = Enum.find(declarations, &(&1.name == :nat_rec))
 
     assert %Declaration{reduction: %Reduction.Recursor{inductive: :Nat}} =
              Enum.find(declarations, &(&1.name == :nat_ind))
@@ -44,7 +68,25 @@ defmodule Theoria.Inductive.DeclarationTest do
              :list_ind
            ]
 
-    assert %Declaration{universe_params: [:u]} = Enum.find(declarations, &(&1.name == :List))
+    assert %Declaration{
+             universe_params: [:u],
+             metadata: %Theoria.Env.Inductive{
+               name: :List,
+               num_params: 1,
+               num_indices: 0,
+               constructors: [:list_nil, :list_cons],
+               recursive?: true
+             }
+           } = Enum.find(declarations, &(&1.name == :List))
+
+    assert %Declaration{
+             metadata: %Theoria.Env.Constructor{
+               inductive: :List,
+               constructor_index: 1,
+               num_params: 1,
+               num_fields: 2
+             }
+           } = Enum.find(declarations, &(&1.name == :list_cons))
 
     assert %Declaration{universe_params: [:u, :v]} =
              Enum.find(declarations, &(&1.name == :list_rec))

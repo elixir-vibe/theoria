@@ -67,6 +67,11 @@ defmodule Theoria.Normalize.ReductionMetadataTest do
             }} = Env.fetch(checked_env, :nat_ind)
 
     assert Enum.map(constructors, & &1.name) == [:zero, :succ]
+
+    assert %Theoria.Env.Recursor{rules: rules, num_motives: 1, num_minors: 2} =
+             checked_env.constants.nat_ind.metadata
+
+    assert Enum.map(rules, &{&1.constructor, &1.field_count}) == [zero: 0, succ: 1]
   end
 
   test "environment validation rejects malformed reduction metadata" do

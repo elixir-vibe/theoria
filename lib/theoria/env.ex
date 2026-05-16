@@ -33,7 +33,8 @@ defmodule Theoria.Env do
           Map.put(constants, name, %Constant{
             type: type,
             universe_params: universe_params,
-            reduction: Keyword.get(opts, :reduction)
+            reduction: Keyword.get(opts, :reduction),
+            metadata: Keyword.get(opts, :metadata)
           }),
         declarations: put_order(env, name)
     }

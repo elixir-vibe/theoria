@@ -3,6 +3,10 @@ defmodule Theoria.Inductive do
 
   alias Theoria.Env
   alias Theoria.Env.Constant
+  alias Theoria.Env.Constructor, as: EnvConstructor
+  alias Theoria.Env.Inductive, as: EnvInductive
+  alias Theoria.Env.Recursor, as: EnvRecursor
+  alias Theoria.Env.RecursorRule
   alias Theoria.Env.Reduction
   alias Theoria.Error
 
@@ -12,12 +16,12 @@ defmodule Theoria.Inductive do
     Generate,
     Index,
     Parameter,
-    Recursor,
     Report,
     Shape,
     Spec
   }
 
+  alias Theoria.Inductive.Recursor, as: SpecRecursor
   alias Theoria.Kernel
   alias Theoria.Normalize
   alias Theoria.Term
@@ -171,9 +175,13 @@ defmodule Theoria.Inductive do
          name: name,
          type: type,
          universe_params: universe_params,
-         reduction: reduction
+         reduction: reduction,
+         metadata: metadata
        }) do
-    Kernel.add_constant(env, name, type, universe_params, reduction: reduction)
+    Kernel.add_constant(env, name, type, universe_params,
+      reduction: reduction,
+      metadata: metadata
+    )
   end
 
   defp verify_declaration(env, %Declaration{} = declaration, :ok) do
@@ -192,7 +200,8 @@ defmodule Theoria.Inductive do
       fn -> verify_kind(declaration, constant) end,
       fn -> verify_type(env, declaration, constant) end,
       fn -> verify_universe_params(declaration, constant) end,
-      fn -> verify_reduction(declaration, constant) end
+      fn -> verify_reduction(declaration, constant) end,
+      fn -> verify_metadata(declaration, constant) end
     ])
   end
 
@@ -221,6 +230,9 @@ defmodule Theoria.Inductive do
 
   defp verify_reduction(%Declaration{name: name}, _constant), do: env_mismatch(name, :reduction)
 
+  defp verify_metadata(%Declaration{metadata: metadata}, %Constant{metadata: metadata}), do: :ok
+  defp verify_metadata(%Declaration{name: name}, _constant), do: env_mismatch(name, :metadata)
+
   defp build_declarations(%Spec{} = spec) do
     [inductive_declaration(spec)] ++
       Enum.map(spec.constructors, &constructor_declaration(&1, spec)) ++
@@ -232,21 +244,23 @@ defmodule Theoria.Inductive do
       name: name,
       type: type,
       kind: :constant,
-      universe_params: declaration_params(spec, type)
+      universe_params: declaration_params(spec, type),
+      metadata: inductive_metadata(spec)
     }
   end
 
-  defp constructor_declaration(%Constructor{name: name, type: type}, %Spec{} = spec) do
+  defp constructor_declaration(%Constructor{name: name, type: type} = constructor, %Spec{} = spec) do
     %Declaration{
       name: name,
       type: type,
       kind: :constant,
-      universe_params: declaration_params(spec, type)
+      universe_params: declaration_params(spec, type),
+      metadata: constructor_metadata(spec, constructor)
     }
   end
 
   defp recursor_declaration(
-         %Recursor{name: name, type: type, reduction: reduction},
+         %SpecRecursor{name: name, type: type, reduction: reduction},
          %Spec{} = spec
        ) do
     %Declaration{
@@ -254,9 +268,86 @@ defmodule Theoria.Inductive do
       type: type,
       kind: :constant,
       universe_params: declaration_params(spec, type),
-      reduction: reduction
+      reduction: reduction,
+      metadata: recursor_metadata(spec, name, type, reduction)
     }
   end
+
+  defp inductive_metadata(%Spec{} = spec) do
+    %EnvInductive{
+      name: spec.name,
+      type: spec.type,
+      universe_params: declaration_params(spec, spec.type),
+      num_params: length(spec.parameters),
+      num_indices: length(spec.indices),
+      constructors: Enum.map(spec.constructors, & &1.name),
+      inductives: [spec.name],
+      recursive?: recursive_spec?(spec),
+      reflexive?: reflexive_spec?(spec)
+    }
+  end
+
+  defp constructor_metadata(%Spec{} = spec, %Constructor{} = constructor) do
+    {:ok, result} = Constructor.result(constructor, spec)
+
+    %EnvConstructor{
+      name: constructor.name,
+      type: constructor.type,
+      universe_params: declaration_params(spec, constructor.type),
+      inductive: spec.name,
+      constructor_index: Enum.find_index(spec.constructors, &(&1.name == constructor.name)),
+      num_params: length(spec.parameters),
+      num_fields: length(result.binders) - length(spec.parameters)
+    }
+  end
+
+  defp recursor_metadata(%Spec{} = spec, name, type, %Reduction.Recursor{} = reduction) do
+    %EnvRecursor{
+      name: name,
+      type: type,
+      universe_params: declaration_params(spec, type),
+      inductives: [spec.name],
+      num_params: length(spec.parameters),
+      num_indices: length(spec.indices),
+      num_motives: 1,
+      num_minors: length(spec.constructors),
+      rules: recursor_rules(spec, reduction)
+    }
+  end
+
+  defp recursor_metadata(_spec, _name, _type, _reduction), do: nil
+
+  defp recursor_rules(%Spec{} = spec, %Reduction.Recursor{} = reduction) do
+    Enum.map(reduction.constructors, fn constructor_rule ->
+      constructor = Enum.find(spec.constructors, &(&1.name == constructor_rule.name))
+      {:ok, result} = Constructor.result(constructor, spec)
+
+      %RecursorRule{
+        constructor: constructor_rule.name,
+        field_count: length(result.binders) - length(spec.parameters),
+        rhs: nil
+      }
+    end)
+  end
+
+  defp recursive_spec?(%Spec{} = spec) do
+    Enum.any?(spec.constructors, fn constructor ->
+      constructor.type
+      |> constructor_argument_types(spec.name)
+      |> Enum.any?(&(application_head(&1) |> const_named?(spec.name)))
+    end)
+  end
+
+  defp reflexive_spec?(%Spec{} = spec) do
+    Enum.any?(spec.constructors, fn constructor ->
+      constructor.type
+      |> constructor_argument_types(spec.name)
+      |> Enum.any?(&match?(%Forall{}, &1))
+    end)
+  end
+
+  defp const_named?(%Const{name: name}, name), do: true
+  defp const_named?(_term, _name), do: false
 
   defp declaration_params(%Spec{universe_params: universe_params}, type) do
     params = Term.level_params(type)
@@ -364,7 +455,7 @@ defmodule Theoria.Inductive do
 
   defp validate_recursors(%Spec{recursors: recursors} = spec) when is_list(recursors) do
     run_validations([
-      fn -> validate_named_declarations(recursors, Recursor, :recursors) end,
+      fn -> validate_named_declarations(recursors, SpecRecursor, :recursors) end,
       fn -> validate_recursor_reductions(recursors) end,
       fn -> validate_eliminator_shapes(spec) end
     ])

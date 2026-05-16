@@ -10,8 +10,15 @@ defmodule Theoria.Env.Constant do
     kind: :constant,
     reducible?: false,
     universe_params: [],
-    reduction: nil
+    reduction: nil,
+    metadata: nil
   ]
+
+  @type metadata ::
+          Theoria.Env.Inductive.t()
+          | Theoria.Env.Constructor.t()
+          | Theoria.Env.Recursor.t()
+          | nil
 
   @type kind :: :constant | :axiom | :definition | :theorem
   @type t :: %__MODULE__{
@@ -20,6 +27,7 @@ defmodule Theoria.Env.Constant do
           kind: kind(),
           reducible?: boolean(),
           universe_params: [atom()],
-          reduction: Theoria.Env.Reduction.t() | nil
+          reduction: Theoria.Env.Reduction.t() | nil,
+          metadata: metadata()
         }
 end

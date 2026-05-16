@@ -334,9 +334,10 @@ defmodule Theoria.Kernel do
          type: type,
          value: nil,
          universe_params: params,
-         reduction: reduction
+         reduction: reduction,
+         metadata: metadata
        }} ->
-        add_constant(checked_env, name, type, params, reduction: reduction)
+        add_constant(checked_env, name, type, params, reduction: reduction, metadata: metadata)
 
       {:ok,
        %Constant{kind: :axiom, type: type, value: nil, universe_params: params, reduction: nil}} ->

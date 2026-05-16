@@ -9,15 +9,14 @@ defmodule Theoria.Inductive.SpecBuilderTest do
 
   test "builds specs with fluent helpers" do
     spec =
-      :Nat
+      :Box
       |> Spec.new(sort(1), universe_params: [:u])
-      |> Spec.constructor(:zero, const(:Nat))
-      |> Spec.constructor(:succ, arrow(const(:Nat), const(:Nat)))
-      |> Spec.recursor(:nat_rec, const(:Nat), %Reduction.NatRec{})
+      |> Spec.constructor(:box, const(:Box))
+      |> Spec.recursor(:box_rec, const(:Box), %Reduction.NatRec{})
 
-    assert spec.name == :Nat
-    assert Enum.map(spec.constructors, & &1.name) == [:zero, :succ]
-    assert Enum.map(spec.recursors, & &1.name) == [:nat_rec]
+    assert spec.name == :Box
+    assert Enum.map(spec.constructors, & &1.name) == [:box]
+    assert Enum.map(spec.recursors, & &1.name) == [:box_rec]
     assert Inductive.validate(spec) == :ok
   end
 end

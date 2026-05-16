@@ -4,7 +4,7 @@ defmodule Theoria.Library.List do
   """
 
   alias Theoria.Env
-  alias Theoria.Env.Reduction
+  alias Theoria.Inductive.Generate
   alias Theoria.Inductive.Spec
   alias Theoria.Kernel
   alias Theoria.Level
@@ -28,12 +28,13 @@ defmodule Theoria.Library.List do
 
   @doc "Returns the inductive specification described by this library."
   def inductive_spec do
-    :List
-    |> Spec.new(list_type(), universe_params: [:u, :v])
-    |> Spec.constructor(:list_nil, list_nil_type())
-    |> Spec.constructor(:list_cons, list_cons_type())
-    |> Spec.recursor(:list_rec, list_rec_type(), %Reduction.ListRec{})
-    |> Spec.recursor(:list_ind, list_ind_type(), %Reduction.ListInd{})
+    spec =
+      :List
+      |> Spec.new(list_type(), universe_params: [:u, :v])
+      |> Spec.constructor(:list_nil, list_nil_type())
+      |> Spec.constructor(:list_cons, list_cons_type())
+
+    %Spec{spec | recursors: Generate.list_eliminators(spec)}
   end
 
   defp list_type do
@@ -65,56 +66,6 @@ defmodule Theoria.Library.List do
           var(:a),
           arrow(call(const(:List, [u]), var(:a)), call(const(:List, [u]), var(:a)))
         )
-      end
-    )
-  end
-
-  defp list_rec_type do
-    u = Level.param(:u)
-    v = Level.param(:v)
-
-    elab!(
-      forall :a, Theoria.Syntax.sort(u) do
-        forall :b, Theoria.Syntax.sort(v) do
-          arrow(
-            var(:b),
-            arrow(
-              arrow(var(:a), arrow(call(const(:List, [u]), var(:a)), arrow(var(:b), var(:b)))),
-              arrow(call(const(:List, [u]), var(:a)), var(:b))
-            )
-          )
-        end
-      end
-    )
-  end
-
-  defp list_ind_type do
-    u = Level.param(:u)
-    v = Level.param(:v)
-
-    elab!(
-      forall :a, Theoria.Syntax.sort(u) do
-        forall :motive, arrow(call(const(:List, [u]), var(:a)), Theoria.Syntax.sort(v)) do
-          arrow(
-            call(var(:motive), call(const(:list_nil, [u]), var(:a))),
-            arrow(
-              forall :x, var(:a) do
-                forall :xs, call(const(:List, [u]), var(:a)) do
-                  arrow(
-                    call(var(:motive), var(:xs)),
-                    call(
-                      var(:motive),
-                      call(const(:list_cons, [u]), [var(:a), var(:x), var(:xs)])
-                    )
-                  )
-                end
-              end,
-              forall :xs, call(const(:List, [u]), var(:a)) do
-                call(var(:motive), var(:xs))
-              end
-            )
-          )
-        end
       end
     )
   end

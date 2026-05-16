@@ -4,10 +4,9 @@ defmodule Theoria.Library.Nat do
   """
 
   alias Theoria.Env
-  alias Theoria.Env.Reduction
+  alias Theoria.Inductive.Generate
   alias Theoria.Inductive.Spec
   alias Theoria.Kernel
-  alias Theoria.Level
 
   import Theoria.DSL, except: [type: 1]
 
@@ -28,55 +27,17 @@ defmodule Theoria.Library.Nat do
 
   @doc "Returns the inductive specification described by this library."
   def inductive_spec do
-    :Nat
-    |> Spec.new(type(), universe_params: [:u])
-    |> Spec.constructor(:zero, Theoria.Term.const(:Nat))
-    |> Spec.constructor(:succ, succ_type())
-    |> Spec.recursor(:nat_rec, nat_rec_type(), %Reduction.NatRec{})
-    |> Spec.recursor(:nat_ind, nat_ind_type(), %Reduction.NatInd{})
+    spec =
+      :Nat
+      |> Spec.new(type(), universe_params: [:u])
+      |> Spec.constructor(:zero, Theoria.Term.const(:Nat))
+      |> Spec.constructor(:succ, succ_type())
+
+    %Spec{spec | recursors: Generate.nat_eliminators(spec)}
   end
 
   defp succ_type do
     elab!(arrow(const(:Nat), const(:Nat)))
-  end
-
-  defp nat_rec_type do
-    u = Level.param(:u)
-
-    elab!(
-      forall :a, Theoria.Syntax.sort(u) do
-        arrow(
-          var(:a),
-          arrow(
-            arrow(const(:Nat), arrow(var(:a), var(:a))),
-            arrow(const(:Nat), var(:a))
-          )
-        )
-      end
-    )
-  end
-
-  defp nat_ind_type do
-    u = Level.param(:u)
-
-    elab!(
-      forall :motive, arrow(const(:Nat), Theoria.Syntax.sort(u)) do
-        arrow(
-          call(var(:motive), const(:zero)),
-          arrow(
-            forall :n, const(:Nat) do
-              arrow(
-                call(var(:motive), var(:n)),
-                call(var(:motive), call(const(:succ), var(:n)))
-              )
-            end,
-            forall :n, const(:Nat) do
-              call(var(:motive), var(:n))
-            end
-          )
-        )
-      end
-    )
   end
 
   defp nat_add_type do

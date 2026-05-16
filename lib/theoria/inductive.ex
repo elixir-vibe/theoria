@@ -5,7 +5,7 @@ defmodule Theoria.Inductive do
   alias Theoria.Env.Constant
   alias Theoria.Env.Reduction
   alias Theoria.Error
-  alias Theoria.Inductive.{Constructor, Declaration, Recursor, Spec}
+  alias Theoria.Inductive.{Constructor, Declaration, Generate, Recursor, Spec}
   alias Theoria.Kernel
   alias Theoria.Normalize
   alias Theoria.Term
@@ -34,6 +34,31 @@ defmodule Theoria.Inductive do
   end
 
   def declarations(_spec), do: invalid(:invalid_spec)
+
+  @spec shape(Spec.t()) :: :bool_like | :nat_like | :list_like | :unknown
+  def shape(%Spec{constructors: constructors} = spec) do
+    cond do
+      bool_like?(constructors, spec.name) -> :bool_like
+      nat_like?(constructors, spec.name) -> :nat_like
+      list_like?(constructors, spec.name) -> :list_like
+      true -> :unknown
+    end
+  end
+
+  def shape(_spec), do: :unknown
+
+  @spec complete(Spec.t()) :: {:ok, Spec.t()} | {:error, Error.t()}
+  def complete(%Spec{recursors: []} = spec) do
+    case shape(spec) do
+      :bool_like -> {:ok, %Spec{spec | recursors: Generate.bool_eliminators(spec)}}
+      :nat_like -> {:ok, %Spec{spec | recursors: Generate.nat_eliminators(spec)}}
+      :list_like -> {:ok, %Spec{spec | recursors: Generate.list_eliminators(spec)}}
+      :unknown -> invalid(:unknown_inductive_shape)
+    end
+  end
+
+  def complete(%Spec{} = spec), do: {:ok, spec}
+  def complete(_spec), do: invalid(:invalid_spec)
 
   @spec verify_env(Env.t(), Spec.t()) :: validation_result()
   def verify_env(%Env{} = env, %Spec{} = spec) do
@@ -229,10 +254,11 @@ defmodule Theoria.Inductive do
 
   defp validate_constructors(_spec), do: invalid(:invalid_constructors)
 
-  defp validate_recursors(%Spec{recursors: recursors}) when is_list(recursors) do
+  defp validate_recursors(%Spec{recursors: recursors} = spec) when is_list(recursors) do
     run_validations([
       fn -> validate_named_declarations(recursors, Recursor, :recursors) end,
-      fn -> validate_recursor_reductions(recursors) end
+      fn -> validate_recursor_reductions(recursors) end,
+      fn -> validate_eliminator_shapes(spec) end
     ])
   end
 
@@ -256,6 +282,48 @@ defmodule Theoria.Inductive do
         {:halt, invalid(:invalid_reduction, recursor: recursor.name)}
       end
     end)
+  end
+
+  defp validate_eliminator_shapes(%Spec{recursors: []}), do: :ok
+
+  defp validate_eliminator_shapes(%Spec{} = spec) do
+    case expected_eliminators(spec) do
+      {:ok, expected} -> compare_eliminators(spec.recursors, expected)
+      :unknown -> :ok
+    end
+  end
+
+  defp expected_eliminators(%Spec{} = spec) do
+    case shape(%Spec{spec | recursors: []}) do
+      :bool_like -> {:ok, Generate.bool_eliminators(spec)}
+      :nat_like -> {:ok, Generate.nat_eliminators(spec)}
+      :list_like -> {:ok, Generate.list_eliminators(spec)}
+      :unknown -> :unknown
+    end
+  end
+
+  defp compare_eliminators(actual, expected) do
+    actual_by_name = Map.new(actual, &{&1.name, &1})
+
+    Enum.reduce_while(expected, :ok, fn expected, :ok ->
+      case Map.fetch(actual_by_name, expected.name) do
+        {:ok, actual} -> compare_eliminator(actual, expected)
+        :error -> {:halt, invalid(:missing_eliminator, recursor: expected.name)}
+      end
+    end)
+  end
+
+  defp compare_eliminator(actual, expected) do
+    cond do
+      actual.reduction != expected.reduction ->
+        {:halt, invalid(:eliminator_reduction_mismatch, recursor: actual.name)}
+
+      actual.type != expected.type ->
+        {:halt, invalid(:eliminator_type_mismatch, recursor: actual.name)}
+
+      true ->
+        {:cont, :ok}
+    end
   end
 
   defp validate_constructor_positivity(%Spec{name: name, constructors: constructors}) do
@@ -336,6 +404,43 @@ defmodule Theoria.Inductive do
 
   defp flip_polarity(:positive), do: :negative
   defp flip_polarity(:negative), do: :positive
+
+  defp bool_like?([first, second], name) do
+    nullary_constructor?(first.type, name) and nullary_constructor?(second.type, name)
+  end
+
+  defp bool_like?(_constructors, _name), do: false
+
+  defp nat_like?([zero, succ], name) do
+    nullary_constructor?(zero.type, name) and unary_recursive_constructor?(succ.type, name)
+  end
+
+  defp nat_like?(_constructors, _name), do: false
+
+  defp list_like?([nil_constructor, cons], name) do
+    constructor_targets_inductive?(nil_constructor.type, name) and
+      list_cons_constructor?(cons.type, name)
+  end
+
+  defp list_like?(_constructors, _name), do: false
+
+  defp nullary_constructor?(%Forall{}, _name), do: false
+
+  defp nullary_constructor?(type, name) do
+    constructor_targets_inductive?(type, name) and constructor_argument_types(type, name) == []
+  end
+
+  defp unary_recursive_constructor?(%Forall{name: :_, domain: domain, body: body}, name) do
+    application_head(domain) == %Const{name: name} and constructor_targets_inductive?(body, name)
+  end
+
+  defp unary_recursive_constructor?(_type, _name), do: false
+
+  defp list_cons_constructor?(%Forall{} = type, name) do
+    constructor_targets_inductive?(type, name) and MapSet.member?(Term.constants(type), name)
+  end
+
+  defp list_cons_constructor?(_type, _name), do: false
 
   defp validate_named_declarations(declarations, module, field) do
     cond do

@@ -22,19 +22,19 @@ defmodule Theoria.PreludeTest do
           :Nat,
           :zero,
           :succ,
-          :nat_rec,
-          :List,
-          :list_nil,
-          :list_cons,
-          :list_rec
+          :nat_rec
         ] do
       assert {:ok, _type} = Kernel.infer(env, const(name))
+    end
+
+    for name <- [:List, :list_nil, :list_cons, :list_rec] do
+      assert {:ok, _type} = Kernel.infer(env, const(name, [1]))
     end
   end
 
   test "top-level convenience returns the prelude environment" do
     assert {:ok, env} = Theoria.prelude_env()
-    assert {:ok, _type} = Kernel.infer(env, const(:list_length))
+    assert {:ok, _type} = Kernel.infer(env, const(:list_length, [1]))
   end
 
   test "checks all built-in theorem modules under the prelude" do

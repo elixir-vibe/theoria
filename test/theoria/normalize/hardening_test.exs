@@ -32,7 +32,7 @@ defmodule Theoria.Normalize.HardeningTest do
       )
 
     term =
-      const(:list_length)
+      const(:list_length, [1])
       |> app(const(:Nat))
       |> app(list)
 
@@ -115,11 +115,11 @@ defmodule Theoria.Normalize.HardeningTest do
   defp nat(n) when n > 0, do: app(const(:succ), nat(n - 1))
 
   defp list_nil(type) do
-    app(const(:list_nil), type)
+    app(const(:list_nil, [1]), type)
   end
 
   defp list_cons(type, head, tail) do
-    const(:list_cons)
+    const(:list_cons, [1])
     |> app(type)
     |> app(head)
     |> app(tail)

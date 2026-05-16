@@ -11,14 +11,14 @@ defmodule Theoria.Library.ListTest do
     assert {:ok, env} = List.env()
 
     for name <- [:List, :list_nil, :list_cons, :list_rec, :list_length] do
-      assert {:ok, _type} = Kernel.infer(env, const(name))
+      assert {:ok, _type} = Kernel.infer(env, const(name, [1]))
     end
   end
 
   test "List maps Type 0 to Type 0" do
     {:ok, env} = List.env()
 
-    assert {:ok, type} = Kernel.infer(env, app(const(:List), const(:Nat)))
+    assert {:ok, type} = Kernel.infer(env, app(const(:List, [1]), const(:Nat)))
     assert type == sort(1)
   end
 
@@ -26,7 +26,7 @@ defmodule Theoria.Library.ListTest do
     {:ok, env} = List.env()
 
     term =
-      const(:list_rec)
+      const(:list_rec, [1])
       |> app(const(:Nat))
       |> app(const(:Nat))
       |> app(const(:zero))
@@ -41,7 +41,7 @@ defmodule Theoria.Library.ListTest do
     one = app(const(:succ), const(:zero))
 
     term =
-      const(:list_rec)
+      const(:list_rec, [1])
       |> app(const(:Nat))
       |> app(const(:Nat))
       |> app(const(:zero))
@@ -55,7 +55,7 @@ defmodule Theoria.Library.ListTest do
     {:ok, env} = List.env()
 
     term =
-      const(:list_length)
+      const(:list_length, [1])
       |> app(const(:Nat))
       |> app(list_nil(const(:Nat)))
 
@@ -63,11 +63,11 @@ defmodule Theoria.Library.ListTest do
   end
 
   defp list_nil(type) do
-    app(const(:list_nil), type)
+    app(const(:list_nil, [1]), type)
   end
 
   defp list_cons(type, head, tail) do
-    const(:list_cons)
+    const(:list_cons, [1])
     |> app(type)
     |> app(head)
     |> app(tail)
@@ -79,7 +79,7 @@ defmodule Theoria.Library.ListTest do
       const(:Nat),
       lam(
         :_tail,
-        app(const(:List), const(:Nat)),
+        app(const(:List, [1]), const(:Nat)),
         lam(:acc, const(:Nat), app(const(:succ), bvar(0)))
       )
     )

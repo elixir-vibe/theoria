@@ -251,14 +251,23 @@ defmodule Theoria.DSL do
   end
 
   defp quote_term({:list, _meta, [element_type]}) do
-    quote_application(:List, [element_type])
+    quote_list_application(:List, 1, [element_type])
+  end
+
+  defp quote_term({:list, _meta, [element_type, level]}) do
+    quote_list_application(:List, level, [element_type])
   end
 
   defp quote_term({name, _meta, context})
        when name in [:list_nil, :list_cons] and is_atom(context) do
     quote do
-      Theoria.Syntax.const(unquote(name))
+      Theoria.Syntax.const(unquote(name), [1])
     end
+  end
+
+  defp quote_term({name, _meta, args})
+       when name in [:list_nil, :list_cons, :list_rec, :list_length] and is_list(args) do
+    quote_list_application(name, 1, args)
   end
 
   defp quote_term({:type, _meta, [level]}) when is_integer(level) and level >= 0 do
@@ -425,9 +434,25 @@ defmodule Theoria.DSL do
     end)
   end
 
+  defp quote_list_application(name, level, args) do
+    args
+    |> Enum.map(&quote_term/1)
+    |> Enum.reduce(quote_const(name, [level]), fn arg, fun ->
+      quote do
+        Theoria.Syntax.app(unquote(fun), unquote(arg))
+      end
+    end)
+  end
+
   defp quote_const(name) do
     quote do
       Theoria.Syntax.const(unquote(name))
+    end
+  end
+
+  defp quote_const(name, levels) do
+    quote do
+      Theoria.Syntax.const(unquote(name), unquote(levels))
     end
   end
 

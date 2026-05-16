@@ -47,6 +47,7 @@ The initial kernel supports:
 - initial logic library (`False`, `True`, `not`, `and`, `and_intro`, `and_left`, `and_right`)
 - initial Bool library (`Bool`, `true`, `false`, `bool_rec`, `bool_not`, `bool_and`, `bool_or`)
 - initial Nat library (`Nat`, `zero`, `succ`, `nat_rec`, `nat_add`)
+- initial List library (`List`, `list_nil`, `list_cons`, `list_rec`, `list_length`)
 - beta reduction
 - definitional equality by normalization
 - checked constants and definitions in an environment

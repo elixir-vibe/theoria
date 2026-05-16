@@ -22,6 +22,9 @@ defmodule Theoria.Normalize.Primitive do
       {%Const{name: :nat_rec}, [type, on_zero, on_succ, %App{} = nat]} ->
         reduce_nat_succ(env, type, on_zero, on_succ, nat, app, whnf)
 
+      {%Const{name: :list_rec}, [_element_type, _result_type, on_nil, _on_cons, %App{} = list]} ->
+        reduce_list(env, on_nil, list, app, whnf)
+
       _ ->
         {:ok, app}
     end
@@ -44,6 +47,34 @@ defmodule Theoria.Normalize.Primitive do
 
       _ ->
         {:ok, fallback}
+    end
+  end
+
+  defp reduce_list(env, on_nil, list, fallback, whnf) do
+    case Term.Application.collect(list) do
+      {%Const{name: :list_nil}, [_element_type]} ->
+        whnf.(env, on_nil)
+
+      {%Const{name: :list_cons}, [_element_type, head, tail]} ->
+        recursive = replace_last_arg(fallback, tail)
+
+        fallback
+        |> list_rec_on_cons()
+        |> app(head)
+        |> app(tail)
+        |> app(recursive)
+        |> then(&whnf.(env, &1))
+
+      _ ->
+        {:ok, fallback}
+    end
+  end
+
+  defp replace_last_arg(%App{} = app, arg), do: %App{app | arg: arg}
+
+  defp list_rec_on_cons(app) do
+    case Term.Application.collect(app) do
+      {%Const{name: :list_rec}, [_element_type, _result_type, _on_nil, on_cons, _list]} -> on_cons
     end
   end
 

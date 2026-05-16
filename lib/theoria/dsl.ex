@@ -218,6 +218,29 @@ defmodule Theoria.DSL do
     end
   end
 
+  defp quote_term({:zero, _meta, context}) when is_atom(context) do
+    quote do
+      Theoria.Syntax.const(:zero)
+    end
+  end
+
+  defp quote_term({:succ, _meta, context}) when is_atom(context) do
+    quote do
+      Theoria.Syntax.const(:succ)
+    end
+  end
+
+  defp quote_term({:list, _meta, [element_type]}) do
+    quote_application(:List, [element_type])
+  end
+
+  defp quote_term({name, _meta, context})
+       when name in [:list_nil, :list_cons] and is_atom(context) do
+    quote do
+      Theoria.Syntax.const(unquote(name))
+    end
+  end
+
   defp quote_term({:type, _meta, [level]}) when is_integer(level) and level >= 0 do
     quote do
       Theoria.Syntax.sort(unquote(level + 1))

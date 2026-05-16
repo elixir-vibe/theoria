@@ -5,8 +5,7 @@ defmodule Theoria.Library.List do
 
   alias Theoria.Env
   alias Theoria.Env.Reduction
-  alias Theoria.Inductive
-  alias Theoria.Inductive.{Constructor, Recursor, Spec}
+  alias Theoria.Inductive.Spec
   alias Theoria.Kernel
   alias Theoria.Level
   alias Theoria.Library.Nat
@@ -15,7 +14,7 @@ defmodule Theoria.Library.List do
 
   @doc "Extends an environment with list declarations. Requires Nat declarations."
   def extend(%Env{} = env) do
-    with {:ok, env} <- Inductive.install(env, inductive_spec()) do
+    with {:ok, env} <- Kernel.add_inductive(env, inductive_spec()) do
       Kernel.add_definition(env, :list_length, list_length_type(), list_length_value(), [:u])
     end
   end
@@ -29,19 +28,12 @@ defmodule Theoria.Library.List do
 
   @doc "Returns the inductive specification described by this library."
   def inductive_spec do
-    %Spec{
-      name: :List,
-      type: list_type(),
-      universe_params: [:u, :v],
-      constructors: [
-        %Constructor{name: :list_nil, type: list_nil_type()},
-        %Constructor{name: :list_cons, type: list_cons_type()}
-      ],
-      recursors: [
-        %Recursor{name: :list_rec, type: list_rec_type(), reduction: %Reduction.ListRec{}},
-        %Recursor{name: :list_ind, type: list_ind_type(), reduction: %Reduction.ListInd{}}
-      ]
-    }
+    :List
+    |> Spec.new(list_type(), universe_params: [:u, :v])
+    |> Spec.constructor(:list_nil, list_nil_type())
+    |> Spec.constructor(:list_cons, list_cons_type())
+    |> Spec.recursor(:list_rec, list_rec_type(), %Reduction.ListRec{})
+    |> Spec.recursor(:list_ind, list_ind_type(), %Reduction.ListInd{})
   end
 
   defp list_type do

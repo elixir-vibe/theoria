@@ -7,11 +7,9 @@ defmodule Theoria.Library.Bool do
   """
 
   alias Theoria.Env
-  alias Theoria.Env.Reduction
-  alias Theoria.Inductive
-  alias Theoria.Inductive.{Constructor, Recursor, Spec}
+  alias Theoria.Inductive.Generate
+  alias Theoria.Inductive.Spec
   alias Theoria.Kernel
-  alias Theoria.Level
 
   import Theoria.DSL, except: [type: 1]
 
@@ -20,7 +18,7 @@ defmodule Theoria.Library.Bool do
 
   @doc "Extends an environment with boolean declarations."
   def extend(%Env{} = env) do
-    with {:ok, env} <- Inductive.install(env, inductive_spec()),
+    with {:ok, env} <- Kernel.add_inductive(env, inductive_spec()),
          {:ok, env} <- Kernel.add_definition(env, :bool_not, bool_not_type(), bool_not_value()),
          {:ok, env} <- Kernel.add_definition(env, :bool_and, bool_binary_type(), bool_and_value()) do
       Kernel.add_definition(env, :bool_or, bool_binary_type(), bool_or_value())
@@ -34,53 +32,13 @@ defmodule Theoria.Library.Bool do
 
   @doc "Returns the inductive specification described by this library."
   def inductive_spec do
-    %Spec{
-      name: :Bool,
-      type: type(),
-      universe_params: [:u],
-      constructors: [
-        %Constructor{name: true, type: Theoria.Term.const(:Bool)},
-        %Constructor{name: false, type: Theoria.Term.const(:Bool)}
-      ],
-      recursors: [
-        %Recursor{name: :bool_rec, type: bool_rec_type(), reduction: %Reduction.BoolRec{}},
-        %Recursor{name: :bool_ind, type: bool_ind_type(), reduction: %Reduction.BoolInd{}}
-      ]
-    }
-  end
+    spec =
+      :Bool
+      |> Spec.new(type(), universe_params: [:u])
+      |> Spec.constructor(true, Theoria.Term.const(:Bool))
+      |> Spec.constructor(false, Theoria.Term.const(:Bool))
 
-  defp bool_rec_type do
-    u = Level.param(:u)
-
-    elab!(
-      forall :a, Theoria.Syntax.sort(u) do
-        arrow(
-          var(:a),
-          arrow(
-            var(:a),
-            arrow(const(:Bool), var(:a))
-          )
-        )
-      end
-    )
-  end
-
-  defp bool_ind_type do
-    u = Level.param(:u)
-
-    elab!(
-      forall :motive, arrow(const(:Bool), Theoria.Syntax.sort(u)) do
-        arrow(
-          call(var(:motive), const(true)),
-          arrow(
-            call(var(:motive), const(false)),
-            forall :b, const(:Bool) do
-              call(var(:motive), var(:b))
-            end
-          )
-        )
-      end
-    )
+    %Spec{spec | recursors: Generate.bool_eliminators(spec)}
   end
 
   defp bool_not_type do

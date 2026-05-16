@@ -5,8 +5,7 @@ defmodule Theoria.Library.Nat do
 
   alias Theoria.Env
   alias Theoria.Env.Reduction
-  alias Theoria.Inductive
-  alias Theoria.Inductive.{Constructor, Recursor, Spec}
+  alias Theoria.Inductive.Spec
   alias Theoria.Kernel
   alias Theoria.Level
 
@@ -17,7 +16,7 @@ defmodule Theoria.Library.Nat do
 
   @doc "Extends an environment with natural number declarations."
   def extend(%Env{} = env) do
-    with {:ok, env} <- Inductive.install(env, inductive_spec()) do
+    with {:ok, env} <- Kernel.add_inductive(env, inductive_spec()) do
       Kernel.add_definition(env, :nat_add, nat_add_type(), nat_add_value())
     end
   end
@@ -29,19 +28,12 @@ defmodule Theoria.Library.Nat do
 
   @doc "Returns the inductive specification described by this library."
   def inductive_spec do
-    %Spec{
-      name: :Nat,
-      type: type(),
-      universe_params: [:u],
-      constructors: [
-        %Constructor{name: :zero, type: Theoria.Term.const(:Nat)},
-        %Constructor{name: :succ, type: succ_type()}
-      ],
-      recursors: [
-        %Recursor{name: :nat_rec, type: nat_rec_type(), reduction: %Reduction.NatRec{}},
-        %Recursor{name: :nat_ind, type: nat_ind_type(), reduction: %Reduction.NatInd{}}
-      ]
-    }
+    :Nat
+    |> Spec.new(type(), universe_params: [:u])
+    |> Spec.constructor(:zero, Theoria.Term.const(:Nat))
+    |> Spec.constructor(:succ, succ_type())
+    |> Spec.recursor(:nat_rec, nat_rec_type(), %Reduction.NatRec{})
+    |> Spec.recursor(:nat_ind, nat_ind_type(), %Reduction.NatInd{})
   end
 
   defp succ_type do

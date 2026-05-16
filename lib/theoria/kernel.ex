@@ -11,6 +11,8 @@ defmodule Theoria.Kernel do
   alias Theoria.Env.Constant
   alias Theoria.Env.Reduction
   alias Theoria.Error
+  alias Theoria.Inductive
+  alias Theoria.Inductive.Spec
   alias Theoria.Kernel.TrustReport
   alias Theoria.Normalize
   alias Theoria.Term
@@ -146,6 +148,12 @@ defmodule Theoria.Kernel do
          {:ok, %Sort{}} <- infer_sort(env, Context.new(), type),
          :ok <- check(env, Context.new(), proof, type) do
       {:ok, Env.put_theorem(env, name, type, proof, universe_params)}
+    end
+  end
+
+  def add_inductive(%Env{} = env, %Spec{} = spec) do
+    with :ok <- Inductive.check_declarations(env, spec) do
+      Inductive.install(env, spec)
     end
   end
 

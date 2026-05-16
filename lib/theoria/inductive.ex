@@ -44,6 +44,16 @@ defmodule Theoria.Inductive do
 
   def verify_env(_env, _spec), do: invalid(:invalid_spec)
 
+  @spec check_declarations(Env.t(), Spec.t()) :: validation_result()
+  def check_declarations(%Env{} = env, %Spec{} = spec) do
+    with {:ok, declarations} <- declarations(spec),
+         {:ok, _env} <- install_declarations(env, declarations) do
+      :ok
+    end
+  end
+
+  def check_declarations(_env, _spec), do: invalid(:invalid_spec)
+
   @spec install(Env.t(), Spec.t()) :: {:ok, Env.t()} | {:error, Error.t()}
   def install(%Env{} = env, %Spec{} = spec) do
     with {:ok, declarations} <- declarations(spec),

@@ -18,13 +18,23 @@ defmodule Theoria.Env do
     Map.fetch(constants, name)
   end
 
-  @spec put_constant(t(), atom(), Term.t(), [atom()]) :: t()
-  def put_constant(%__MODULE__{constants: constants} = env, name, type, universe_params \\ [])
-      when is_atom(name) and is_list(universe_params) do
+  @spec put_constant(t(), atom(), Term.t(), [atom()], keyword()) :: t()
+  def put_constant(
+        %__MODULE__{constants: constants} = env,
+        name,
+        type,
+        universe_params \\ [],
+        opts \\ []
+      )
+      when is_atom(name) and is_list(universe_params) and is_list(opts) do
     %{
       env
       | constants:
-          Map.put(constants, name, %Constant{type: type, universe_params: universe_params}),
+          Map.put(constants, name, %Constant{
+            type: type,
+            universe_params: universe_params,
+            reduction: Keyword.get(opts, :reduction)
+          }),
         declarations: put_order(env, name)
     }
   end

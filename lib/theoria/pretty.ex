@@ -118,6 +118,10 @@ defmodule Theoria.Pretty do
     "duplicate universe parameter in: #{inspect(Keyword.fetch!(details, :params))}"
   end
 
+  def error(%Error{reason: :invalid_reduction, details: details}) do
+    "invalid primitive reduction metadata: #{inspect(Keyword.fetch!(details, :reduction))}"
+  end
+
   def error(%Error{reason: reason, details: details}) do
     "#{reason}: #{inspect(details)}"
   end

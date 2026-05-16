@@ -9,6 +9,7 @@ defmodule Theoria.Kernel do
   alias Theoria.Context
   alias Theoria.Env
   alias Theoria.Env.Constant
+  alias Theoria.Env.Reduction
   alias Theoria.Error
   alias Theoria.Kernel.TrustReport
   alias Theoria.Normalize
@@ -103,13 +104,14 @@ defmodule Theoria.Kernel do
     end
   end
 
-  def add_constant(%Env{} = env, name, type, universe_params \\ [])
-      when is_atom(name) and is_list(universe_params) do
+  def add_constant(%Env{} = env, name, type, universe_params \\ [], opts \\ [])
+      when is_atom(name) and is_list(universe_params) and is_list(opts) do
     with :ok <- ensure_fresh_declaration(env, name),
          :ok <- ensure_universe_params(universe_params),
+         :ok <- ensure_reduction(Keyword.get(opts, :reduction)),
          :ok <- ensure_level_params(type, universe_params),
          {:ok, %Sort{}} <- infer_sort(env, Context.new(), type) do
-      {:ok, Env.put_constant(env, name, type, universe_params)}
+      {:ok, Env.put_constant(env, name, type, universe_params, opts)}
     end
   end
 
@@ -255,6 +257,16 @@ defmodule Theoria.Kernel do
     end
   end
 
+  defp ensure_reduction(nil), do: :ok
+
+  defp ensure_reduction(reduction) do
+    if Reduction.known?(reduction) do
+      :ok
+    else
+      error(:invalid_reduction, reduction: reduction)
+    end
+  end
+
   defp ensure_level_params(term, allowed_params) do
     params = Term.level_params(term)
     allowed_params = MapSet.new(allowed_params)
@@ -308,17 +320,39 @@ defmodule Theoria.Kernel do
 
   defp validate_declaration(env, checked_env, name) do
     case Env.fetch(env, name) do
-      {:ok, %Constant{kind: :constant, type: type, value: nil, universe_params: params}} ->
-        add_constant(checked_env, name, type, params)
+      {:ok,
+       %Constant{
+         kind: :constant,
+         type: type,
+         value: nil,
+         universe_params: params,
+         reduction: reduction
+       }} ->
+        add_constant(checked_env, name, type, params, reduction: reduction)
 
-      {:ok, %Constant{kind: :axiom, type: type, value: nil, universe_params: params}} ->
+      {:ok,
+       %Constant{kind: :axiom, type: type, value: nil, universe_params: params, reduction: nil}} ->
         add_axiom(checked_env, name, type, params)
 
-      {:ok, %Constant{kind: :definition, type: type, value: value, universe_params: params}}
+      {:ok,
+       %Constant{
+         kind: :definition,
+         type: type,
+         value: value,
+         universe_params: params,
+         reduction: nil
+       }}
       when not is_nil(value) ->
         add_definition(checked_env, name, type, value, params)
 
-      {:ok, %Constant{kind: :theorem, type: type, value: proof, universe_params: params}}
+      {:ok,
+       %Constant{
+         kind: :theorem,
+         type: type,
+         value: proof,
+         universe_params: params,
+         reduction: nil
+       }}
       when not is_nil(proof) ->
         add_theorem(checked_env, name, type, proof, params)
 

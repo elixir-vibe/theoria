@@ -50,28 +50,27 @@ The initial kernel supports:
 - checked constants and definitions in an environment
 - named surface terms elaborated to de Bruijn core terms
 
-## Example named term
+## Example DSL term
 
 ```elixir
-alias Theoria.Elaborator
-alias Theoria.Syntax, as: S
+import Theoria.DSL
 
 identity_type =
-  S.forall(:a, S.sort(0),
-    S.forall(:x, S.var(:a),
-      S.var(:a)
-    )
-  )
+  forall :a, type(0) do
+    forall :x, var(:a) do
+      var(:a)
+    end
+  end
 
 identity_proof =
-  S.lam(:a, S.sort(0),
-    S.lam(:x, S.var(:a),
-      S.var(:x)
-    )
-  )
+  lam :a, type(0) do
+    lam :x, var(:a) do
+      var(:x)
+    end
+  end
 
-{:ok, type} = Elaborator.elaborate(identity_type)
-{:ok, proof} = Elaborator.elaborate(identity_proof)
+{:ok, type} = elab(identity_type)
+{:ok, proof} = elab(identity_proof)
 
 :ok = Theoria.Kernel.check(Theoria.new_env(), proof, type)
 ```
@@ -92,5 +91,5 @@ architecture/smell checks, Dialyzer, and tests.
 1. Continue hardening the kernel with more normalization, substitution, and negative tests.
 2. Add elimination/projection helpers for logical connectives.
 3. Add primitive Bool/Nat/List theories.
-4. Add a small macro DSL on top of named syntax.
+4. Add theorem/module-level macros on top of the term DSL.
 5. Add finite graph/spec libraries for tools such as Reach.

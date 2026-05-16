@@ -8,21 +8,19 @@ defmodule Theoria.Library.Logic do
   definition on top of the core calculus.
   """
 
-  alias Theoria.Elaborator
   alias Theoria.Env
   alias Theoria.Kernel
-  alias Theoria.Syntax, as: S
 
-  import Theoria.Term
+  import Theoria.DSL, except: [prop: 0]
 
   @doc "The proposition universe used by the initial logic library."
-  def prop, do: sort(0)
+  def prop, do: core_prop()
 
   @doc "Extends an environment with the initial logical constants and definitions."
   def extend(%Env{} = env) do
     with {:ok, env} <- Kernel.add_constant(env, :False, prop()),
          {:ok, env} <- Kernel.add_constant(env, :True, prop()),
-         {:ok, env} <- Kernel.add_constant(env, :true_intro, const(:True)),
+         {:ok, env} <- Kernel.add_constant(env, :true_intro, Theoria.Term.const(:True)),
          {:ok, env} <- Kernel.add_constant(env, :false_elim, false_elim_type()),
          {:ok, env} <- Kernel.add_definition(env, :not, not_type(), not_value()),
          {:ok, env} <- Kernel.add_constant(env, :and, and_type()) do
@@ -36,46 +34,50 @@ defmodule Theoria.Library.Logic do
   end
 
   defp false_elim_type do
-    elaborate!(S.forall(:a, sprop(), S.arrow(S.const(:False), S.var(:a))))
-  end
-
-  defp not_type do
-    elaborate!(S.forall(:p, sprop(), sprop()))
-  end
-
-  defp not_value do
-    elaborate!(S.lam(:p, sprop(), S.arrow(S.var(:p), S.const(:False))))
-  end
-
-  defp and_type do
-    elaborate!(S.forall(:p, sprop(), S.forall(:q, sprop(), sprop())))
-  end
-
-  defp and_intro_type do
-    elaborate!(
-      S.forall(
-        :p,
-        sprop(),
-        S.forall(
-          :q,
-          sprop(),
-          S.forall(
-            :hp,
-            S.var(:p),
-            S.forall(
-              :hq,
-              S.var(:q),
-              S.const(:and)
-              |> S.app(S.var(:p))
-              |> S.app(S.var(:q))
-            )
-          )
-        )
-      )
+    elab!(
+      forall :a, Theoria.DSL.prop() do
+        arrow(const(:False), var(:a))
+      end
     )
   end
 
-  defp sprop, do: S.sort(0)
+  defp not_type do
+    elab!(
+      forall :p, Theoria.DSL.prop() do
+        Theoria.DSL.prop()
+      end
+    )
+  end
 
-  defp elaborate!(term), do: Elaborator.elaborate!(term)
+  defp not_value do
+    elab!(
+      lam :p, Theoria.DSL.prop() do
+        arrow(var(:p), const(:False))
+      end
+    )
+  end
+
+  defp and_type do
+    elab!(
+      forall :p, Theoria.DSL.prop() do
+        forall :q, Theoria.DSL.prop() do
+          Theoria.DSL.prop()
+        end
+      end
+    )
+  end
+
+  defp and_intro_type do
+    elab!(
+      forall :p, Theoria.DSL.prop() do
+        forall :q, Theoria.DSL.prop() do
+          forall :hp, var(:p) do
+            forall :hq, var(:q) do
+              call(const(:and), var(:p), var(:q))
+            end
+          end
+        end
+      end
+    )
+  end
 end

@@ -54,6 +54,8 @@ Names stored on core binders are diagnostic metadata. Binding correctness is det
 
 `Theoria.Syntax` provides named surface terms and `Theoria.Elaborator` converts them to de Bruijn-indexed core terms. This layer is untrusted and exists to make library definitions auditable without hand-maintaining indices.
 
+`Theoria.DSL` adds Elixir-friendly `do` block constructors on top of named syntax. It also remains untrusted: it only builds syntax terms.
+
 ## Environments
 
 `Theoria.Env` stores checked constants and definitions. A declaration enters the environment only through kernel functions that verify its type and, for definitions, its value.
@@ -92,5 +94,5 @@ This is a pragmatic bootstrap point. Once the calculus grows inductive families 
 1. Harden substitution, shifting, normalization, and type-checking tests.
 2. Add elimination/projection helpers for logical connectives.
 3. Add primitive Bool/Nat/List theories.
-4. Add an Elixir macro DSL on top of named syntax.
+4. Add theorem/module-level macros on top of the term DSL.
 5. Add finite graph/spec libraries for tools such as Reach.

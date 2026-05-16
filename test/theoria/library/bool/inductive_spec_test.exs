@@ -7,4 +7,10 @@ defmodule Theoria.Library.Bool.InductiveSpecTest do
   test "built-in Bool inductive spec validates" do
     assert Inductive.validate(Bool.inductive_spec()) == :ok
   end
+
+  test "Bool environment matches its inductive spec" do
+    {:ok, env} = Bool.env()
+
+    assert Inductive.verify_env(env, Bool.inductive_spec()) == :ok
+  end
 end

@@ -5,6 +5,7 @@ defmodule Theoria.Library.Nat do
 
   alias Theoria.Env
   alias Theoria.Env.Reduction
+  alias Theoria.Inductive
   alias Theoria.Inductive.{Constructor, Recursor, Spec}
   alias Theoria.Kernel
   alias Theoria.Level
@@ -16,17 +17,7 @@ defmodule Theoria.Library.Nat do
 
   @doc "Extends an environment with natural number declarations."
   def extend(%Env{} = env) do
-    with {:ok, env} <- Kernel.add_constant(env, :Nat, type()),
-         {:ok, env} <- Kernel.add_constant(env, :zero, Theoria.Term.const(:Nat)),
-         {:ok, env} <- Kernel.add_constant(env, :succ, succ_type()),
-         {:ok, env} <-
-           Kernel.add_constant(env, :nat_rec, nat_rec_type(), [:u],
-             reduction: %Reduction.NatRec{}
-           ),
-         {:ok, env} <-
-           Kernel.add_constant(env, :nat_ind, nat_ind_type(), [:u],
-             reduction: %Reduction.NatInd{}
-           ) do
+    with {:ok, env} <- Inductive.install(env, inductive_spec()) do
       Kernel.add_definition(env, :nat_add, nat_add_type(), nat_add_value())
     end
   end

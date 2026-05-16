@@ -5,6 +5,7 @@ defmodule Theoria.Library.List do
 
   alias Theoria.Env
   alias Theoria.Env.Reduction
+  alias Theoria.Inductive
   alias Theoria.Inductive.{Constructor, Recursor, Spec}
   alias Theoria.Kernel
   alias Theoria.Level
@@ -14,17 +15,7 @@ defmodule Theoria.Library.List do
 
   @doc "Extends an environment with list declarations. Requires Nat declarations."
   def extend(%Env{} = env) do
-    with {:ok, env} <- Kernel.add_constant(env, :List, list_type(), [:u]),
-         {:ok, env} <- Kernel.add_constant(env, :list_nil, list_nil_type(), [:u]),
-         {:ok, env} <- Kernel.add_constant(env, :list_cons, list_cons_type(), [:u]),
-         {:ok, env} <-
-           Kernel.add_constant(env, :list_rec, list_rec_type(), [:u, :v],
-             reduction: %Reduction.ListRec{}
-           ),
-         {:ok, env} <-
-           Kernel.add_constant(env, :list_ind, list_ind_type(), [:u, :v],
-             reduction: %Reduction.ListInd{}
-           ) do
+    with {:ok, env} <- Inductive.install(env, inductive_spec()) do
       Kernel.add_definition(env, :list_length, list_length_type(), list_length_value(), [:u])
     end
   end

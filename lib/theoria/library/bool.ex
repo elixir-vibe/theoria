@@ -8,6 +8,7 @@ defmodule Theoria.Library.Bool do
 
   alias Theoria.Env
   alias Theoria.Env.Reduction
+  alias Theoria.Inductive
   alias Theoria.Inductive.{Constructor, Recursor, Spec}
   alias Theoria.Kernel
   alias Theoria.Level
@@ -19,17 +20,7 @@ defmodule Theoria.Library.Bool do
 
   @doc "Extends an environment with boolean declarations."
   def extend(%Env{} = env) do
-    with {:ok, env} <- Kernel.add_constant(env, :Bool, type()),
-         {:ok, env} <- Kernel.add_constant(env, true, Theoria.Term.const(:Bool)),
-         {:ok, env} <- Kernel.add_constant(env, false, Theoria.Term.const(:Bool)),
-         {:ok, env} <-
-           Kernel.add_constant(env, :bool_rec, bool_rec_type(), [:u],
-             reduction: %Reduction.BoolRec{}
-           ),
-         {:ok, env} <-
-           Kernel.add_constant(env, :bool_ind, bool_ind_type(), [:u],
-             reduction: %Reduction.BoolInd{}
-           ),
+    with {:ok, env} <- Inductive.install(env, inductive_spec()),
          {:ok, env} <- Kernel.add_definition(env, :bool_not, bool_not_type(), bool_not_value()),
          {:ok, env} <- Kernel.add_definition(env, :bool_and, bool_binary_type(), bool_and_value()) do
       Kernel.add_definition(env, :bool_or, bool_binary_type(), bool_or_value())

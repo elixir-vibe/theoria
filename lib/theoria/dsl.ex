@@ -13,6 +13,19 @@ defmodule Theoria.DSL do
   defmacro __using__(_opts) do
     quote do
       import Theoria.DSL
+      Module.register_attribute(__MODULE__, :theoria_theorems, accumulate: true)
+      @before_compile Theoria.DSL
+    end
+  end
+
+  defmacro __before_compile__(env) do
+    theorems =
+      env.module
+      |> Module.get_attribute(:theoria_theorems)
+      |> Enum.reverse()
+
+    quote do
+      def __theoria_theorems__, do: unquote(theorems)
     end
   end
 
@@ -93,4 +106,53 @@ defmodule Theoria.DSL do
       Syntax.forall(unquote(name), unquote(domain), unquote(body))
     end
   end
+
+  @doc "Declares a checked theorem function trio from `type` and `proof` blocks."
+  defmacro theorem(name, do: block) when is_atom(name) do
+    {type_ast, proof_ast} = theorem_parts(block)
+    type_fun = String.to_atom("#{name}_type")
+    proof_fun = String.to_atom("#{name}_proof")
+    theorem_fun = String.to_atom("#{name}_theorem")
+
+    quote do
+      @theoria_theorems unquote(name)
+
+      def unquote(type_fun)(), do: unquote(type_ast)
+      def unquote(proof_fun)(), do: unquote(proof_ast)
+
+      def unquote(theorem_fun)(env \\ Theoria.new_env()) do
+        with {:ok, type} <- Theoria.Elaborator.elaborate(unquote(type_fun)()),
+             {:ok, proof} <- Theoria.Elaborator.elaborate(unquote(proof_fun)()),
+             :ok <- Theoria.Kernel.check(env, proof, type) do
+          {:ok, %Theoria.Theorem{name: unquote(name), type: type, proof: proof}}
+        end
+      end
+    end
+  end
+
+  defp theorem_parts({:__block__, _meta, expressions}) do
+    Enum.reduce(expressions, {nil, nil}, &theorem_part/2)
+    |> validate_theorem_parts!()
+  end
+
+  defp theorem_parts(expression) do
+    theorem_part(expression, {nil, nil})
+    |> validate_theorem_parts!()
+  end
+
+  defp theorem_part({:type, _meta, [[do: body]]}, {_type, proof}), do: {body, proof}
+  defp theorem_part({:proof, _meta, [[do: body]]}, {type, _proof}), do: {type, body}
+
+  defp theorem_part(other, _acc) do
+    raise ArgumentError,
+          "expected theorem blocks named type/proof, got: #{Macro.to_string(other)}"
+  end
+
+  defp validate_theorem_parts!({nil, _proof}),
+    do: raise(ArgumentError, "theorem is missing a type block")
+
+  defp validate_theorem_parts!({_type, nil}),
+    do: raise(ArgumentError, "theorem is missing a proof block")
+
+  defp validate_theorem_parts!({type, proof}), do: {type, proof}
 end

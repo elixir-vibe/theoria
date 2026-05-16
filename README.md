@@ -75,6 +75,40 @@ identity_proof =
 :ok = Theoria.Kernel.check(Theoria.new_env(), proof, type)
 ```
 
+## Theorem modules
+
+```elixir
+defmodule MyProofs do
+  use Theoria.DSL
+
+  theorem :identity do
+    type do
+      forall :a, type(0) do
+        forall :x, var(:a) do
+          var(:a)
+        end
+      end
+    end
+
+    proof do
+      lam :a, type(0) do
+        lam :x, var(:a) do
+          var(:x)
+        end
+      end
+    end
+  end
+end
+
+{:ok, theorem} = MyProofs.identity_theorem()
+MyProofs.__theoria_theorems__()
+#=> [:identity]
+```
+
+The macro only generates syntax/proof-checking functions. The theorem is not
+accepted unless `Theoria.Kernel` checks the elaborated proof against the
+elaborated type.
+
 ## Quality checks
 
 The repository includes a Reach-style CI alias:
@@ -91,5 +125,5 @@ architecture/smell checks, Dialyzer, and tests.
 1. Continue hardening the kernel with more normalization, substitution, and negative tests.
 2. Add elimination/projection helpers for logical connectives.
 3. Add primitive Bool/Nat/List theories.
-4. Add theorem/module-level macros on top of the term DSL.
+4. Add proof modules for the built-in logic library.
 5. Add finite graph/spec libraries for tools such as Reach.

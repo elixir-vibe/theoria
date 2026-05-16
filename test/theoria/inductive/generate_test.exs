@@ -20,6 +20,7 @@ defmodule Theoria.Inductive.GenerateTest do
     assert rec.type == bool_rec_type()
     assert rec.reduction == bool_reduction()
     assert ind.name == :bool_ind
+    assert ind.type == bool_ind_type()
     assert ind.reduction == bool_reduction()
   end
 
@@ -31,6 +32,7 @@ defmodule Theoria.Inductive.GenerateTest do
     assert rec.type == nat_rec_type()
     assert rec.reduction == nat_reduction()
     assert ind.name == :nat_ind
+    assert ind.type == nat_ind_type()
     assert ind.reduction == nat_reduction()
   end
 
@@ -43,6 +45,7 @@ defmodule Theoria.Inductive.GenerateTest do
     assert rec.reduction == list_reduction()
     assert rec.reduction.constructors |> :lists.last() |> Map.fetch!(:recursive_positions) == [2]
     assert ind.name == :list_ind
+    assert ind.type == list_ind_type()
     assert ind.reduction == list_reduction()
   end
 
@@ -65,10 +68,38 @@ defmodule Theoria.Inductive.GenerateTest do
     |> elab!()
   end
 
+  defp bool_ind_type do
+    term do
+      forall :motive, bool() ~> sort(u) do
+        app(motive, bool_true())
+        ~> (app(motive, bool_false())
+            ~> forall :b, bool() do
+              app(motive, b)
+            end)
+      end
+    end
+    |> elab!()
+  end
+
   defp nat_rec_type do
     term do
       forall :a, sort(u) do
         a ~> (nat() ~> (a ~> a) ~> (nat() ~> a))
+      end
+    end
+    |> elab!()
+  end
+
+  defp nat_ind_type do
+    term do
+      forall :motive, nat() ~> sort(u) do
+        app(motive, zero)
+        ~> (forall :arg0, nat() do
+              app(motive, arg0) ~> app(motive, app(succ, arg0))
+            end
+            ~> forall :n, nat() do
+              app(motive, n)
+            end)
       end
     end
     |> elab!()
@@ -83,6 +114,36 @@ defmodule Theoria.Inductive.GenerateTest do
       forall :a, sort(^u) do
         forall :b, sort(^v) do
           b ~> (a ~> (^list_a ~> (b ~> b)) ~> (^list_a ~> b))
+        end
+      end
+    end
+    |> elab!()
+  end
+
+  defp list_ind_type do
+    u = Theoria.Level.param(:u)
+    v = Theoria.Level.param(:v)
+    list_a = Theoria.Syntax.app(Theoria.Syntax.const(:List, [u]), Theoria.Syntax.var(:a))
+    nil_a = Theoria.Syntax.app(Theoria.Syntax.const(:list_nil, [u]), Theoria.Syntax.var(:a))
+
+    cons_a_arg0_arg1 =
+      Theoria.Syntax.const(:list_cons, [u])
+      |> Theoria.Syntax.app(Theoria.Syntax.var(:a))
+      |> Theoria.Syntax.app(Theoria.Syntax.var(:arg0))
+      |> Theoria.Syntax.app(Theoria.Syntax.var(:arg1))
+
+    term do
+      forall :a, sort(^u) do
+        forall :motive, ^list_a ~> sort(^v) do
+          app(motive, ^nil_a)
+          ~> (forall :arg0, a do
+                forall :arg1, ^list_a do
+                  app(motive, arg1) ~> app(motive, ^cons_a_arg0_arg1)
+                end
+              end
+              ~> forall :xs, ^list_a do
+                app(motive, xs)
+              end)
         end
       end
     end

@@ -7,7 +7,7 @@ defmodule Theoria.Inductive.Generate do
   alias Theoria.Syntax, as: S
   alias Theoria.Term.{App, Const}
 
-  import Theoria.DSL, only: [elab!: 1, term: 1]
+  import Theoria.DSL, only: [elab!: 1]
 
   @doc "Generates non-dependent and dependent eliminators for a Bool-like inductive."
   @spec bool_eliminators(Spec.t(), Shape.t() | nil) :: [Recursor.t()]
@@ -23,7 +23,7 @@ defmodule Theoria.Inductive.Generate do
       },
       %Recursor{
         name: String.to_atom("#{base}_ind"),
-        type: bool_ind_type(spec, on_true.name, on_false.name),
+        type: dependent_ind_type(spec, [on_true, on_false]),
         reduction: recursor_reduction(spec, [on_true, on_false])
       }
     ]
@@ -43,7 +43,7 @@ defmodule Theoria.Inductive.Generate do
       },
       %Recursor{
         name: String.to_atom("#{base}_ind"),
-        type: nat_ind_type(spec, zero.name, succ.name),
+        type: dependent_ind_type(spec, [zero, succ]),
         reduction: recursor_reduction(spec, [zero, succ])
       }
     ]
@@ -63,7 +63,7 @@ defmodule Theoria.Inductive.Generate do
       },
       %Recursor{
         name: String.to_atom("#{base}_ind"),
-        type: list_ind_type(spec, nil_constructor.name, cons.name),
+        type: dependent_ind_type(spec, [nil_constructor, cons]),
         reduction: recursor_reduction(spec, [nil_constructor, cons])
       }
     ]
@@ -180,79 +180,81 @@ defmodule Theoria.Inductive.Generate do
     |> Enum.reverse()
   end
 
-  defp bool_ind_type(%Spec{name: name}, true_name, false_name) do
-    u = Level.param(:u)
-    bool = S.const(name)
-    on_true = S.const(true_name)
-    on_false = S.const(false_name)
+  defp dependent_ind_type(%Spec{} = spec, constructors) do
+    v = recursor_level(spec)
+    target = target_type(spec, hd(constructors))
 
-    term do
-      forall :motive, ^bool ~> sort(^u) do
-        app(motive, ^on_true)
-        ~> (app(motive, ^on_false)
-            ~> forall :b, ^bool do
-              app(motive, b)
-            end)
-      end
-    end
+    major_name = major_name(spec)
+
+    constructors
+    |> Enum.reverse()
+    |> Enum.reduce(major_type(target, major_name), fn constructor, body ->
+      S.arrow(dependent_branch_type(spec, constructor), body)
+    end)
+    |> then(&S.forall(:motive, S.arrow(target, S.sort(v)), &1))
+    |> wrap_parameters(spec)
     |> elab!()
   end
 
-  defp nat_ind_type(%Spec{name: name}, zero_name, succ_name) do
-    u = Level.param(:u)
-    nat = S.const(name)
-    zero = S.const(zero_name)
-    succ = S.const(succ_name)
+  defp major_type(target, name) do
+    S.forall(name, target, S.app(S.var(:motive), S.var(name)))
+  end
 
-    term do
-      forall :motive, ^nat ~> sort(^u) do
-        app(motive, ^zero)
-        ~> (forall :n, ^nat do
-              app(motive, n) ~> app(motive, app(^succ, n))
-            end
-            ~> forall :n, ^nat do
-              app(motive, n)
-            end)
+  defp major_name(%Spec{name: :Bool}), do: :b
+  defp major_name(%Spec{name: :Nat}), do: :n
+  defp major_name(%Spec{name: :List}), do: :xs
+  defp major_name(%Spec{}), do: :major
+
+  defp dependent_branch_type(%Spec{} = spec, %Constructor{} = constructor) do
+    {:ok, result} = Constructor.result(constructor, spec)
+    parameter_count = length(spec.parameters)
+    argument_binders = argument_binders(result, parameter_count)
+
+    constructor_app =
+      constructor_application(constructor, result, spec.parameters, argument_binders)
+
+    argument_binders
+    |> Enum.reverse()
+    |> Enum.reduce(S.app(S.var(:motive), constructor_app), fn binder, body ->
+      body =
+        if recursive_binder?(result, binder.position, spec.name),
+          do: S.arrow(S.app(S.var(:motive), S.var(binder.name)), body),
+          else: body
+
+      S.forall(binder.name, syntax_from_core(binder.domain, binder.context), body)
+    end)
+  end
+
+  defp argument_binders(result, parameter_count) do
+    result.binders
+    |> Enum.drop(parameter_count)
+    |> Enum.with_index()
+    |> Enum.map(fn {binder, index} ->
+      name = argument_name(binder.name, index)
+      previous_arguments = result.binders |> Enum.drop(parameter_count) |> Enum.take(index)
+
+      context =
+        Enum.map(previous_arguments, &argument_name(&1.name, &1.depth - parameter_count)) ++
+          Enum.map(result.binders |> Enum.take(parameter_count), & &1.name)
+
+      Map.merge(binder, %{name: name, position: binder.depth, context: context})
+    end)
+  end
+
+  defp argument_name(:_, index), do: String.to_atom("arg#{index}")
+  defp argument_name(name, _index), do: name
+
+  defp constructor_application(constructor, result, parameters, argument_binders) do
+    parameter_args = Enum.map(parameters, &S.var(&1.name))
+    constructor_args = Enum.map(argument_binders, &S.var(&1.name))
+
+    Enum.reduce(
+      parameter_args ++ constructor_args,
+      S.const(constructor.name, result.head.levels),
+      fn arg, fun ->
+        S.app(fun, arg)
       end
-    end
-    |> elab!()
-  end
-
-  defp list_ind_type(%Spec{name: name} = spec, nil_name, cons_name) do
-    u = Level.param(:u)
-    v = Level.param(:v)
-    {param_name, param_type, param} = list_parameter(spec)
-    list_param = list_type(name, u, param)
-    nil_param = S.app(S.const(nil_name, [u]), param)
-
-    cons_param_x_xs =
-      S.const(cons_name, [u]) |> S.app(param) |> S.app(S.var(:x)) |> S.app(S.var(:xs))
-
-    term do
-      forall ^param_name, ^param_type do
-        forall :motive, ^list_param ~> sort(^v) do
-          app(motive, ^nil_param)
-          ~> (forall :x, ^param do
-                forall :xs, ^list_param do
-                  app(motive, xs) ~> app(motive, ^cons_param_x_xs)
-                end
-              end
-              ~> forall :xs, ^list_param do
-                app(motive, xs)
-              end)
-        end
-      end
-    end
-    |> elab!()
-  end
-
-  defp list_parameter(%Spec{parameters: [%Theoria.Inductive.Parameter{name: name, type: type}]}) do
-    {name, syntax_from_core(type), S.var(name)}
-  end
-
-  defp list_parameter(%Spec{}) do
-    u = Level.param(:u)
-    {:a, S.sort(u), S.var(:a)}
+    )
   end
 
   defp syntax_from_core(term, context \\ [])
@@ -269,10 +271,6 @@ defmodule Theoria.Inductive.Generate do
 
   defp syntax_from_core(%Theoria.Term.App{fun: fun, arg: arg}, context) do
     S.app(syntax_from_core(fun, context), syntax_from_core(arg, context))
-  end
-
-  defp list_type(name, level, element) do
-    S.app(S.const(name, [level]), element)
   end
 
   defp base_name(name) do

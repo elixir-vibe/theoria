@@ -2,9 +2,10 @@ defmodule Theoria.Inductive.Generate do
   @moduledoc "Generators for declarations derived from inductive specs."
 
   alias Theoria.Env.Reduction
-  alias Theoria.Inductive.{Recursor, Shape, Spec}
+  alias Theoria.Inductive.{Constructor, Recursor, Shape, Spec}
   alias Theoria.Level
   alias Theoria.Syntax, as: S
+  alias Theoria.Term.{App, Const}
 
   import Theoria.DSL, only: [elab!: 1, term: 1]
 
@@ -17,13 +18,13 @@ defmodule Theoria.Inductive.Generate do
     [
       %Recursor{
         name: String.to_atom("#{base}_rec"),
-        type: bool_rec_type(spec),
-        reduction: bool_reduction(spec.name)
+        type: simple_rec_type(spec, [on_true, on_false]),
+        reduction: recursor_reduction(spec, [on_true, on_false])
       },
       %Recursor{
         name: String.to_atom("#{base}_ind"),
         type: bool_ind_type(spec, on_true.name, on_false.name),
-        reduction: bool_reduction(spec.name)
+        reduction: recursor_reduction(spec, [on_true, on_false])
       }
     ]
   end
@@ -37,13 +38,13 @@ defmodule Theoria.Inductive.Generate do
     [
       %Recursor{
         name: String.to_atom("#{base}_rec"),
-        type: nat_rec_type(spec),
-        reduction: nat_reduction(spec.name, zero.name, succ.name)
+        type: simple_rec_type(spec, [zero, succ]),
+        reduction: recursor_reduction(spec, [zero, succ])
       },
       %Recursor{
         name: String.to_atom("#{base}_ind"),
         type: nat_ind_type(spec, zero.name, succ.name),
-        reduction: nat_reduction(spec.name, zero.name, succ.name)
+        reduction: recursor_reduction(spec, [zero, succ])
       }
     ]
   end
@@ -57,67 +58,126 @@ defmodule Theoria.Inductive.Generate do
     [
       %Recursor{
         name: String.to_atom("#{base}_rec"),
-        type: list_rec_type(spec),
-        reduction: list_reduction(spec.name, nil_constructor.name, cons.name)
+        type: simple_rec_type(spec, [nil_constructor, cons]),
+        reduction: recursor_reduction(spec, [nil_constructor, cons])
       },
       %Recursor{
         name: String.to_atom("#{base}_ind"),
         type: list_ind_type(spec, nil_constructor.name, cons.name),
-        reduction: list_reduction(spec.name, nil_constructor.name, cons.name)
+        reduction: recursor_reduction(spec, [nil_constructor, cons])
       }
     ]
   end
 
   defp constructors(%Shape{kind: kind, constructors: constructors}, kind), do: constructors
 
-  defp bool_reduction(inductive) do
+  defp recursor_reduction(%Spec{} = spec, constructors) do
+    parameter_count = length(spec.parameters)
+    branch_start = parameter_count + 1
+
     %Reduction.Recursor{
-      inductive: inductive,
-      major_position: 3,
-      constructors: [
-        %{name: true, branch_position: 1, argument_positions: [], recursive_positions: []},
-        %{name: false, branch_position: 2, argument_positions: [], recursive_positions: []}
-      ]
+      inductive: spec.name,
+      major_position: branch_start + length(constructors),
+      constructors:
+        constructors
+        |> Enum.with_index()
+        |> Enum.map(fn {constructor, index} ->
+          constructor_reduction(spec, constructor, branch_start + index)
+        end)
     }
   end
 
-  defp nat_reduction(inductive, zero_name, succ_name) do
-    %Reduction.Recursor{
-      inductive: inductive,
-      major_position: 3,
-      constructors: [
-        %{name: zero_name, branch_position: 1, argument_positions: [], recursive_positions: []},
-        %{name: succ_name, branch_position: 2, argument_positions: [0], recursive_positions: [0]}
-      ]
+  defp constructor_reduction(%Spec{} = spec, %Constructor{} = constructor, branch_position) do
+    {:ok, result} = Constructor.result(constructor, spec)
+    parameter_count = length(spec.parameters)
+    argument_positions = Enum.to_list(parameter_count..(length(result.binders) - 1)//1)
+
+    %{
+      name: constructor.name,
+      branch_position: branch_position,
+      argument_positions: argument_positions,
+      recursive_positions:
+        Enum.filter(argument_positions, &recursive_binder?(result, &1, spec.name))
     }
   end
 
-  defp list_reduction(inductive, nil_name, cons_name) do
-    %Reduction.Recursor{
-      inductive: inductive,
-      major_position: 4,
-      constructors: [
-        %{name: nil_name, branch_position: 2, argument_positions: [], recursive_positions: []},
-        %{
-          name: cons_name,
-          branch_position: 3,
-          argument_positions: [1, 2],
-          recursive_positions: [2]
-        }
-      ]
-    }
-  end
-
-  defp bool_rec_type(%Spec{name: name}) do
-    u = Level.param(:u)
-    bool = S.const(name)
-
-    term do
-      forall :a, sort(^u) do
-        a ~> (a ~> (^bool ~> a))
-      end
+  defp recursive_binder?(result, position, inductive) do
+    result.binders
+    |> Enum.at(position)
+    |> case do
+      %{domain: domain} -> const_named?(application_head(domain), inductive)
+      nil -> false
     end
+  end
+
+  defp application_head(%App{fun: fun}), do: application_head(fun)
+  defp application_head(term), do: term
+
+  defp const_named?(%Const{name: name}, name), do: true
+  defp const_named?(_term, _name), do: false
+
+  defp recursor_level(%Spec{universe_params: params}) do
+    if :v in params, do: Level.param(:v), else: Level.param(:u)
+  end
+
+  defp simple_rec_type(%Spec{} = spec, constructors) do
+    v = recursor_level(spec)
+    result_name = result_name(spec)
+    target = target_type(spec, hd(constructors))
+
+    constructors
+    |> Enum.reverse()
+    |> Enum.reduce(S.arrow(target, S.var(result_name)), fn constructor, body ->
+      S.arrow(branch_type(spec, constructor, result_name), body)
+    end)
+    |> then(&S.forall(result_name, S.sort(v), &1))
+    |> wrap_parameters(spec)
     |> elab!()
+  end
+
+  defp target_type(%Spec{} = spec, %Constructor{} = constructor) do
+    {:ok, result} = Constructor.result(constructor, spec)
+
+    Enum.reduce(spec.parameters, S.const(spec.name, result.head.levels), fn parameter, target ->
+      S.app(target, S.var(parameter.name))
+    end)
+  end
+
+  defp result_name(%Spec{parameters: []}), do: :a
+  defp result_name(%Spec{}), do: :b
+
+  defp branch_type(%Spec{} = spec, %Constructor{} = constructor, result_name) do
+    {:ok, result} = Constructor.result(constructor, spec)
+    parameter_count = length(spec.parameters)
+
+    result.binders
+    |> Enum.drop(parameter_count)
+    |> Enum.reverse()
+    |> Enum.reduce(S.var(result_name), fn binder, body ->
+      domain = syntax_from_core(binder.domain, binder_context(result.binders, binder.depth))
+
+      body =
+        if recursive_binder?(result, binder.depth, spec.name),
+          do: S.arrow(S.var(result_name), body),
+          else: body
+
+      S.arrow(domain, body)
+    end)
+  end
+
+  defp wrap_parameters(type, %Spec{} = spec) do
+    spec.parameters
+    |> Enum.reverse()
+    |> Enum.reduce(type, fn parameter, body ->
+      S.forall(parameter.name, syntax_from_core(parameter.type), body)
+    end)
+  end
+
+  defp binder_context(binders, depth) do
+    binders
+    |> Enum.take(depth)
+    |> Enum.map(& &1.name)
+    |> Enum.reverse()
   end
 
   defp bool_ind_type(%Spec{name: name}, true_name, false_name) do
@@ -138,18 +198,6 @@ defmodule Theoria.Inductive.Generate do
     |> elab!()
   end
 
-  defp nat_rec_type(%Spec{name: name}) do
-    u = Level.param(:u)
-    nat = S.const(name)
-
-    term do
-      forall :a, sort(^u) do
-        a ~> (^nat ~> (a ~> a) ~> (^nat ~> a))
-      end
-    end
-    |> elab!()
-  end
-
   defp nat_ind_type(%Spec{name: name}, zero_name, succ_name) do
     u = Level.param(:u)
     nat = S.const(name)
@@ -165,22 +213,6 @@ defmodule Theoria.Inductive.Generate do
             ~> forall :n, ^nat do
               app(motive, n)
             end)
-      end
-    end
-    |> elab!()
-  end
-
-  defp list_rec_type(%Spec{name: name} = spec) do
-    u = Level.param(:u)
-    v = Level.param(:v)
-    {param_name, param_type, param} = list_parameter(spec)
-    list_param = list_type(name, u, param)
-
-    term do
-      forall ^param_name, ^param_type do
-        forall :b, sort(^v) do
-          b ~> (^param ~> (^list_param ~> (b ~> b)) ~> (^list_param ~> b))
-        end
       end
     end
     |> elab!()
@@ -223,14 +255,20 @@ defmodule Theoria.Inductive.Generate do
     {:a, S.sort(u), S.var(:a)}
   end
 
-  defp syntax_from_core(%Theoria.Term.Sort{level: level}), do: S.sort(level)
-  defp syntax_from_core(%Theoria.Term.BVar{index: index}), do: S.var(String.to_atom("##{index}"))
+  defp syntax_from_core(term, context \\ [])
+  defp syntax_from_core(%Theoria.Term.Sort{level: level}, _context), do: S.sort(level)
 
-  defp syntax_from_core(%Theoria.Term.Const{name: name, levels: levels}),
+  defp syntax_from_core(%Theoria.Term.BVar{index: index}, context) do
+    context
+    |> Enum.fetch!(index)
+    |> S.var()
+  end
+
+  defp syntax_from_core(%Theoria.Term.Const{name: name, levels: levels}, _context),
     do: S.const(name, levels)
 
-  defp syntax_from_core(%Theoria.Term.App{fun: fun, arg: arg}) do
-    S.app(syntax_from_core(fun), syntax_from_core(arg))
+  defp syntax_from_core(%Theoria.Term.App{fun: fun, arg: arg}, context) do
+    S.app(syntax_from_core(fun, context), syntax_from_core(arg, context))
   end
 
   defp list_type(name, level, element) do

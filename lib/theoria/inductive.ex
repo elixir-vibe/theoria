@@ -389,32 +389,33 @@ defmodule Theoria.Inductive do
     end)
   end
 
-  defp constructor_scope_problem(%Constructor{type: type}, %Spec{
-         name: name,
-         parameters: parameters
-       }) do
-    {binders, result} = collect_constructor_binders(type, name, [])
-    {_head, args} = Theoria.Term.Application.collect(result)
-    index_args = Enum.drop(args, length(parameters))
+  defp constructor_scope_problem(%Constructor{} = constructor, %Spec{} = spec) do
+    case Constructor.result(constructor, spec) do
+      {:ok, result} ->
+        cond do
+          Enum.any?(result.binders, &(not Term.well_scoped?(&1.domain, &1.depth))) ->
+            :constructor_argument_scope_mismatch
 
-    cond do
-      Enum.any?(binders, &(not Term.well_scoped?(&1.domain, &1.depth))) ->
-        :constructor_argument_scope_mismatch
+          Enum.any?(result.indices, &(not Term.well_scoped?(&1, length(result.binders)))) ->
+            :constructor_index_scope_mismatch
 
-      Enum.any?(index_args, &(not Term.well_scoped?(&1, length(binders)))) ->
-        :constructor_index_scope_mismatch
+          true ->
+            nil
+        end
 
-      true ->
-        nil
+      {:error, _error} ->
+        :constructor_target_mismatch
     end
   end
 
-  defp validate_constructor_targets(%Spec{name: name, constructors: constructors}) do
+  defp validate_constructor_targets(%Spec{constructors: constructors} = spec) do
     Enum.reduce_while(constructors, :ok, fn constructor, :ok ->
-      if constructor_targets_inductive?(constructor.type, name) do
-        {:cont, :ok}
-      else
-        {:halt, invalid(:constructor_target_mismatch, constructor: constructor.name)}
+      case Constructor.result(constructor, spec) do
+        {:ok, _result} ->
+          {:cont, :ok}
+
+        {:error, _error} ->
+          {:halt, invalid(:constructor_target_mismatch, constructor: constructor.name)}
       end
     end)
   end
@@ -430,24 +431,27 @@ defmodule Theoria.Inductive do
     end)
   end
 
-  defp constructor_parameter_problem(%Constructor{type: type}, %Spec{name: name} = spec) do
-    {binders, result} = collect_constructor_binders(type, name, [])
-    {_head, args} = Theoria.Term.Application.collect(result)
+  defp constructor_parameter_problem(%Constructor{} = constructor, %Spec{} = spec) do
+    case Constructor.result(constructor, spec) do
+      {:ok, result} ->
+        expected_arity = length(spec.parameters) + length(spec.indices)
 
-    expected_arity = length(spec.parameters) + length(spec.indices)
+        cond do
+          length(result.arguments) != expected_arity ->
+            :constructor_result_arity_mismatch
 
-    cond do
-      length(args) != expected_arity ->
-        :constructor_result_arity_mismatch
+          not parameter_binders_match?(spec.parameters, result.binders) ->
+            :constructor_parameter_mismatch
 
-      not parameter_binders_match?(spec.parameters, binders) ->
-        :constructor_parameter_mismatch
+          not parameter_result_args_match?(spec.parameters, result.binders, result.arguments) ->
+            :constructor_parameter_mismatch
 
-      not parameter_result_args_match?(spec.parameters, binders, args) ->
-        :constructor_parameter_mismatch
+          true ->
+            nil
+        end
 
-      true ->
-        nil
+      {:error, _error} ->
+        :constructor_target_mismatch
     end
   end
 
@@ -469,23 +473,6 @@ defmodule Theoria.Inductive do
       end
     end)
   end
-
-  defp collect_constructor_binders(
-         %Forall{name: name, domain: domain, body: body},
-         inductive_name,
-         binders
-       ) do
-    binder = %{name: name, domain: domain, depth: length(binders)}
-
-    if constructor_result?(body, inductive_name) do
-      {Enum.reverse([binder | binders]), body}
-    else
-      collect_constructor_binders(body, inductive_name, [binder | binders])
-    end
-  end
-
-  defp collect_constructor_binders(type, _inductive_name, binders),
-    do: {Enum.reverse(binders), type}
 
   defp validate_recursor_reductions(recursors) do
     Enum.reduce_while(recursors, :ok, fn recursor, :ok ->

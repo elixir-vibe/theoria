@@ -11,7 +11,7 @@ defmodule Theoria.Library.Bool.Theorems do
   theorem :true_is_bool do
     type do
       term do
-        const(:Bool)
+        bool()
       end
     end
 
@@ -25,7 +25,7 @@ defmodule Theoria.Library.Bool.Theorems do
   theorem :false_is_bool do
     type do
       term do
-        const(:Bool)
+        bool()
       end
     end
 
@@ -39,7 +39,7 @@ defmodule Theoria.Library.Bool.Theorems do
   theorem :bool_not_is_function do
     type do
       term do
-        arrow(const(:Bool), const(:Bool))
+        arrow(bool(), bool())
       end
     end
 
@@ -53,7 +53,7 @@ defmodule Theoria.Library.Bool.Theorems do
   theorem :bool_not_true do
     type do
       term do
-        eq(const(:Bool), bool_not(bool_true()), bool_false())
+        eq(bool(), bool_not(bool_true()), bool_false())
       end
     end
 
@@ -67,7 +67,7 @@ defmodule Theoria.Library.Bool.Theorems do
   theorem :bool_not_false do
     type do
       term do
-        eq(const(:Bool), bool_not(bool_false()), bool_true())
+        eq(bool(), bool_not(bool_false()), bool_true())
       end
     end
 
@@ -81,7 +81,7 @@ defmodule Theoria.Library.Bool.Theorems do
   theorem :bool_and_true_true do
     type do
       term do
-        eq(const(:Bool), bool_and(bool_true(), bool_true()), bool_true())
+        eq(bool(), bool_and(bool_true(), bool_true()), bool_true())
       end
     end
 
@@ -95,7 +95,7 @@ defmodule Theoria.Library.Bool.Theorems do
   theorem :bool_and_false_true do
     type do
       term do
-        eq(const(:Bool), bool_and(bool_false(), bool_true()), bool_false())
+        eq(bool(), bool_and(bool_false(), bool_true()), bool_false())
       end
     end
 
@@ -109,7 +109,7 @@ defmodule Theoria.Library.Bool.Theorems do
   theorem :bool_and_true_false do
     type do
       term do
-        eq(const(:Bool), bool_and(bool_true(), bool_false()), bool_false())
+        eq(bool(), bool_and(bool_true(), bool_false()), bool_false())
       end
     end
 
@@ -123,7 +123,7 @@ defmodule Theoria.Library.Bool.Theorems do
   theorem :bool_and_false_false do
     type do
       term do
-        eq(const(:Bool), bool_and(bool_false(), bool_false()), bool_false())
+        eq(bool(), bool_and(bool_false(), bool_false()), bool_false())
       end
     end
 
@@ -137,7 +137,7 @@ defmodule Theoria.Library.Bool.Theorems do
   theorem :bool_or_true_false do
     type do
       term do
-        eq(const(:Bool), bool_or(bool_true(), bool_false()), bool_true())
+        eq(bool(), bool_or(bool_true(), bool_false()), bool_true())
       end
     end
 
@@ -151,7 +151,7 @@ defmodule Theoria.Library.Bool.Theorems do
   theorem :bool_or_false_false do
     type do
       term do
-        eq(const(:Bool), bool_or(bool_false(), bool_false()), bool_false())
+        eq(bool(), bool_or(bool_false(), bool_false()), bool_false())
       end
     end
 
@@ -165,7 +165,7 @@ defmodule Theoria.Library.Bool.Theorems do
   theorem :bool_or_false_true do
     type do
       term do
-        eq(const(:Bool), bool_or(bool_false(), bool_true()), bool_true())
+        eq(bool(), bool_or(bool_false(), bool_true()), bool_true())
       end
     end
 
@@ -179,7 +179,7 @@ defmodule Theoria.Library.Bool.Theorems do
   theorem :bool_or_true_true do
     type do
       term do
-        eq(const(:Bool), bool_or(bool_true(), bool_true()), bool_true())
+        eq(bool(), bool_or(bool_true(), bool_true()), bool_true())
       end
     end
 
@@ -193,15 +193,15 @@ defmodule Theoria.Library.Bool.Theorems do
   theorem :bool_and_true_left do
     type do
       term do
-        forall :b, const(:Bool) do
-          eq(const(:Bool), bool_and(bool_true(), b), b)
+        forall :b, bool() do
+          eq(bool(), bool_and(bool_true(), b), b)
         end
       end
     end
 
     proof do
       term do
-        lam :b, const(:Bool) do
+        lam :b, bool() do
           refl(b)
         end
       end
@@ -211,15 +211,15 @@ defmodule Theoria.Library.Bool.Theorems do
   theorem :bool_or_false_left do
     type do
       term do
-        forall :b, const(:Bool) do
-          eq(const(:Bool), bool_or(bool_false(), b), b)
+        forall :b, bool() do
+          eq(bool(), bool_or(bool_false(), b), b)
         end
       end
     end
 
     proof do
       term do
-        lam :b, const(:Bool) do
+        lam :b, bool() do
           refl(b)
         end
       end

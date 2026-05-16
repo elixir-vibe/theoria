@@ -11,7 +11,7 @@ defmodule Theoria.Library.Nat.Theorems do
   theorem :zero_is_nat do
     type do
       term do
-        const(:Nat)
+        nat()
       end
     end
 
@@ -25,7 +25,7 @@ defmodule Theoria.Library.Nat.Theorems do
   theorem :succ_is_function do
     type do
       term do
-        arrow(const(:Nat), const(:Nat))
+        arrow(nat(), nat())
       end
     end
 
@@ -39,15 +39,15 @@ defmodule Theoria.Library.Nat.Theorems do
   theorem :nat_add_zero_left do
     type do
       term do
-        forall :n, const(:Nat) do
-          eq(const(:Nat), nat_add(zero, n), n)
+        forall :n, nat() do
+          eq(nat(), nat_add(zero, n), n)
         end
       end
     end
 
     proof do
       term do
-        lam :n, const(:Nat) do
+        lam :n, nat() do
           refl(n)
         end
       end
@@ -57,15 +57,15 @@ defmodule Theoria.Library.Nat.Theorems do
   theorem :nat_add_one_left do
     type do
       term do
-        forall :n, const(:Nat) do
-          eq(const(:Nat), nat_add(succ(zero), n), succ(n))
+        forall :n, nat() do
+          eq(nat(), nat_add(succ(zero), n), succ(n))
         end
       end
     end
 
     proof do
       term do
-        lam :n, const(:Nat) do
+        lam :n, nat() do
           refl(succ(n))
         end
       end
@@ -75,7 +75,7 @@ defmodule Theoria.Library.Nat.Theorems do
   theorem :nat_add_one_zero do
     type do
       term do
-        eq(const(:Nat), nat_add(succ(zero), zero), succ(zero))
+        eq(nat(), nat_add(succ(zero), zero), succ(zero))
       end
     end
 
@@ -89,15 +89,15 @@ defmodule Theoria.Library.Nat.Theorems do
   theorem :nat_add_two_left do
     type do
       term do
-        forall :n, const(:Nat) do
-          eq(const(:Nat), nat_add(succ(succ(zero)), n), succ(succ(n)))
+        forall :n, nat() do
+          eq(nat(), nat_add(succ(succ(zero)), n), succ(succ(n)))
         end
       end
     end
 
     proof do
       term do
-        lam :n, const(:Nat) do
+        lam :n, nat() do
           refl(succ(succ(n)))
         end
       end
@@ -107,7 +107,7 @@ defmodule Theoria.Library.Nat.Theorems do
   theorem :nat_add_two_zero do
     type do
       term do
-        eq(const(:Nat), nat_add(succ(succ(zero)), zero), succ(succ(zero)))
+        eq(nat(), nat_add(succ(succ(zero)), zero), succ(succ(zero)))
       end
     end
 

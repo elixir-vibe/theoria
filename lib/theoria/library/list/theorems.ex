@@ -44,7 +44,7 @@ defmodule Theoria.Library.List.Theorems do
     type do
       term do
         forall :a, type(0) do
-          eq(const(:Nat), list_length(a, list_nil(a)), zero)
+          eq(nat(), list_length(a, list_nil(a)), zero)
         end
       end
     end
@@ -63,7 +63,7 @@ defmodule Theoria.Library.List.Theorems do
       term do
         forall :a, type(0) do
           forall :x, a do
-            eq(const(:Nat), list_length(a, list_cons(a, x, list_nil(a))), succ(zero))
+            eq(nat(), list_length(a, list_cons(a, x, list_nil(a))), succ(zero))
           end
         end
       end
@@ -86,14 +86,14 @@ defmodule Theoria.Library.List.Theorems do
         forall :a, type(0) do
           forall :x, a do
             eq(
-              const(:Nat),
+              nat(),
               list_rec(
                 a,
-                const(:Nat),
+                nat(),
                 zero,
                 lam :_head, a do
                   lam :_tail, list(a) do
-                    lam :acc, const(:Nat) do
+                    lam :acc, nat() do
                       succ(acc)
                     end
                   end
@@ -124,7 +124,7 @@ defmodule Theoria.Library.List.Theorems do
         forall :a, type(0) do
           forall :x, a do
             forall :xs, list(a) do
-              eq(const(:Nat), list_length(a, list_cons(a, x, xs)), succ(list_length(a, xs)))
+              eq(nat(), list_length(a, list_cons(a, x, xs)), succ(list_length(a, xs)))
             end
           end
         end
@@ -151,7 +151,7 @@ defmodule Theoria.Library.List.Theorems do
           forall :x, a do
             forall :y, a do
               eq(
-                const(:Nat),
+                nat(),
                 list_length(a, list_cons(a, x, list_cons(a, y, list_nil(a)))),
                 succ(succ(zero))
               )

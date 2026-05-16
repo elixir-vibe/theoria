@@ -12,15 +12,19 @@ defmodule Theoria.Library.Logic.Theorems do
 
   theorem :identity do
     type do
-      forall :p, prop() do
-        arrow(var(:p), var(:p))
+      term do
+        forall :p, prop() do
+          arrow(p, p)
+        end
       end
     end
 
     proof do
-      lam :p, prop() do
-        lam :hp, var(:p) do
-          var(:hp)
+      term do
+        lam :p, prop() do
+          lam :hp, p do
+            hp
+          end
         end
       end
     end
@@ -28,11 +32,13 @@ defmodule Theoria.Library.Logic.Theorems do
 
   theorem :const do
     type do
-      forall :p, prop() do
-        forall :q, prop() do
-          forall :hp, var(:p) do
-            forall :_hq, var(:q) do
-              var(:p)
+      term do
+        forall :p, prop() do
+          forall :q, prop() do
+            forall :hp, p do
+              forall :_hq, q do
+                p
+              end
             end
           end
         end
@@ -40,11 +46,13 @@ defmodule Theoria.Library.Logic.Theorems do
     end
 
     proof do
-      lam :p, prop() do
-        lam :q, prop() do
-          lam :hp, var(:p) do
-            lam :_hq, var(:q) do
-              var(:hp)
+      term do
+        lam :p, prop() do
+          lam :q, prop() do
+            lam :hp, p do
+              lam :_hq, q do
+                hp
+              end
             end
           end
         end
@@ -54,15 +62,19 @@ defmodule Theoria.Library.Logic.Theorems do
 
   theorem :false_elim_eta do
     type do
-      forall :p, prop() do
-        arrow(const(:False), var(:p))
+      term do
+        forall :p, prop() do
+          arrow(const(:False), p)
+        end
       end
     end
 
     proof do
-      lam :p, prop() do
-        lam :hfalse, const(:False) do
-          call(const(:false_elim), var(:p), var(:hfalse))
+      term do
+        lam :p, prop() do
+          lam :hfalse, const(:False) do
+            false_elim(p, hfalse)
+          end
         end
       end
     end
@@ -70,18 +82,22 @@ defmodule Theoria.Library.Logic.Theorems do
 
   theorem :double_negation_intro do
     type do
-      forall :p, prop() do
-        forall :hp, var(:p) do
-          call(const(:not), call(const(:not), var(:p)))
+      term do
+        forall :p, prop() do
+          forall :hp, p do
+            neg(neg(p))
+          end
         end
       end
     end
 
     proof do
-      lam :p, prop() do
-        lam :hp, var(:p) do
-          lam :hnp, call(const(:not), var(:p)) do
-            call(var(:hnp), var(:hp))
+      term do
+        lam :p, prop() do
+          lam :hp, p do
+            lam :hnp, neg(p) do
+              app(hnp, hp)
+            end
           end
         end
       end
@@ -90,20 +106,24 @@ defmodule Theoria.Library.Logic.Theorems do
 
   theorem :and_left_eta do
     type do
-      forall :p, prop() do
-        forall :q, prop() do
-          forall :h, call(const(:and), var(:p), var(:q)) do
-            var(:p)
+      term do
+        forall :p, prop() do
+          forall :q, prop() do
+            forall :h, conj(p, q) do
+              p
+            end
           end
         end
       end
     end
 
     proof do
-      lam :p, prop() do
-        lam :q, prop() do
-          lam :h, call(const(:and), var(:p), var(:q)) do
-            call(const(:and_left), var(:p), var(:q), var(:h))
+      term do
+        lam :p, prop() do
+          lam :q, prop() do
+            lam :h, conj(p, q) do
+              and_left(p, q, h)
+            end
           end
         end
       end
@@ -112,20 +132,24 @@ defmodule Theoria.Library.Logic.Theorems do
 
   theorem :and_right_eta do
     type do
-      forall :p, prop() do
-        forall :q, prop() do
-          forall :h, call(const(:and), var(:p), var(:q)) do
-            var(:q)
+      term do
+        forall :p, prop() do
+          forall :q, prop() do
+            forall :h, conj(p, q) do
+              q
+            end
           end
         end
       end
     end
 
     proof do
-      lam :p, prop() do
-        lam :q, prop() do
-          lam :h, call(const(:and), var(:p), var(:q)) do
-            call(const(:and_right), var(:p), var(:q), var(:h))
+      term do
+        lam :p, prop() do
+          lam :q, prop() do
+            lam :h, conj(p, q) do
+              and_right(p, q, h)
+            end
           end
         end
       end
@@ -134,20 +158,22 @@ defmodule Theoria.Library.Logic.Theorems do
 
   theorem :and_comm do
     type do
-      forall :p, prop() do
-        forall :q, prop() do
-          forall :h, call(const(:and), var(:p), var(:q)) do
-            call(const(:and), var(:q), var(:p))
+      term do
+        forall :p, prop() do
+          forall :q, prop() do
+            forall :h, conj(p, q) do
+              conj(q, p)
+            end
           end
         end
       end
     end
 
     proof do
-      lam :p, prop() do
-        lam :q, prop() do
-          lam :h, call(const(:and), var(:p), var(:q)) do
-            term do
+      term do
+        lam :p, prop() do
+          lam :q, prop() do
+            lam :h, conj(p, q) do
               and_intro(q, p, and_right(p, q, h), and_left(p, q, h))
             end
           end
@@ -158,11 +184,13 @@ defmodule Theoria.Library.Logic.Theorems do
 
   theorem :and_intro_eta do
     type do
-      forall :p, prop() do
-        forall :q, prop() do
-          forall :hp, var(:p) do
-            forall :hq, var(:q) do
-              call(const(:and), var(:p), var(:q))
+      term do
+        forall :p, prop() do
+          forall :q, prop() do
+            forall :hp, p do
+              forall :hq, q do
+                conj(p, q)
+              end
             end
           end
         end
@@ -170,11 +198,13 @@ defmodule Theoria.Library.Logic.Theorems do
     end
 
     proof do
-      lam :p, prop() do
-        lam :q, prop() do
-          lam :hp, var(:p) do
-            lam :hq, var(:q) do
-              call(const(:and_intro), var(:p), var(:q), var(:hp), var(:hq))
+      term do
+        lam :p, prop() do
+          lam :q, prop() do
+            lam :hp, p do
+              lam :hq, q do
+                and_intro(p, q, hp, hq)
+              end
             end
           end
         end
@@ -184,32 +214,40 @@ defmodule Theoria.Library.Logic.Theorems do
 
   theorem :not_false do
     type do
-      call(const(:not), const(:False))
+      term do
+        neg(const(:False))
+      end
     end
 
     proof do
-      lam :hfalse, const(:False) do
-        var(:hfalse)
+      term do
+        lam :hfalse, const(:False) do
+          hfalse
+        end
       end
     end
   end
 
   theorem :contradiction do
     type do
-      forall :p, prop() do
-        forall :hp, var(:p) do
-          forall :hnp, call(const(:not), var(:p)) do
-            const(:False)
+      term do
+        forall :p, prop() do
+          forall :hp, p do
+            forall :hnp, neg(p) do
+              const(:False)
+            end
           end
         end
       end
     end
 
     proof do
-      lam :p, prop() do
-        lam :hp, var(:p) do
-          lam :hnp, call(const(:not), var(:p)) do
-            call(var(:hnp), var(:hp))
+      term do
+        lam :p, prop() do
+          lam :hp, p do
+            lam :hnp, neg(p) do
+              app(hnp, hp)
+            end
           end
         end
       end
@@ -218,11 +256,13 @@ defmodule Theoria.Library.Logic.Theorems do
 
   theorem :and_assoc_left do
     type do
-      forall :p, prop() do
-        forall :q, prop() do
-          forall :r, prop() do
-            forall :h, call(const(:and), call(const(:and), var(:p), var(:q)), var(:r)) do
-              call(const(:and), var(:p), call(const(:and), var(:q), var(:r)))
+      term do
+        forall :p, prop() do
+          forall :q, prop() do
+            forall :r, prop() do
+              forall :h, conj(conj(p, q), r) do
+                conj(p, conj(q, r))
+              end
             end
           end
         end
@@ -230,43 +270,23 @@ defmodule Theoria.Library.Logic.Theorems do
     end
 
     proof do
-      lam :p, prop() do
-        lam :q, prop() do
-          lam :r, prop() do
-            lam :h, call(const(:and), call(const(:and), var(:p), var(:q)), var(:r)) do
-              call(
-                const(:and_intro),
-                var(:p),
-                call(const(:and), var(:q), var(:r)),
-                call(
-                  const(:and_left),
-                  var(:p),
-                  var(:q),
-                  call(
-                    const(:and_left),
-                    call(const(:and), var(:p), var(:q)),
-                    var(:r),
-                    var(:h)
+      term do
+        lam :p, prop() do
+          lam :q, prop() do
+            lam :r, prop() do
+              lam :h, conj(conj(p, q), r) do
+                and_intro(
+                  p,
+                  conj(q, r),
+                  and_left(p, q, and_left(conj(p, q), r, h)),
+                  and_intro(
+                    q,
+                    r,
+                    and_right(p, q, and_left(conj(p, q), r, h)),
+                    and_right(conj(p, q), r, h)
                   )
-                ),
-                call(
-                  const(:and_intro),
-                  var(:q),
-                  var(:r),
-                  call(
-                    const(:and_right),
-                    var(:p),
-                    var(:q),
-                    call(
-                      const(:and_left),
-                      call(const(:and), var(:p), var(:q)),
-                      var(:r),
-                      var(:h)
-                    )
-                  ),
-                  call(const(:and_right), call(const(:and), var(:p), var(:q)), var(:r), var(:h))
                 )
-              )
+              end
             end
           end
         end
@@ -276,11 +296,13 @@ defmodule Theoria.Library.Logic.Theorems do
 
   theorem :and_assoc_right do
     type do
-      forall :p, prop() do
-        forall :q, prop() do
-          forall :r, prop() do
-            forall :h, call(const(:and), var(:p), call(const(:and), var(:q), var(:r))) do
-              call(const(:and), call(const(:and), var(:p), var(:q)), var(:r))
+      term do
+        forall :p, prop() do
+          forall :q, prop() do
+            forall :r, prop() do
+              forall :h, conj(p, conj(q, r)) do
+                conj(conj(p, q), r)
+              end
             end
           end
         end
@@ -288,33 +310,23 @@ defmodule Theoria.Library.Logic.Theorems do
     end
 
     proof do
-      lam :p, prop() do
-        lam :q, prop() do
-          lam :r, prop() do
-            lam :h, call(const(:and), var(:p), call(const(:and), var(:q), var(:r))) do
-              call(
-                const(:and_intro),
-                call(const(:and), var(:p), var(:q)),
-                var(:r),
-                call(
-                  const(:and_intro),
-                  var(:p),
-                  var(:q),
-                  call(const(:and_left), var(:p), call(const(:and), var(:q), var(:r)), var(:h)),
-                  call(
-                    const(:and_left),
-                    var(:q),
-                    var(:r),
-                    call(const(:and_right), var(:p), call(const(:and), var(:q), var(:r)), var(:h))
-                  )
-                ),
-                call(
-                  const(:and_right),
-                  var(:q),
-                  var(:r),
-                  call(const(:and_right), var(:p), call(const(:and), var(:q), var(:r)), var(:h))
+      term do
+        lam :p, prop() do
+          lam :q, prop() do
+            lam :r, prop() do
+              lam :h, conj(p, conj(q, r)) do
+                and_intro(
+                  conj(p, q),
+                  r,
+                  and_intro(
+                    p,
+                    q,
+                    and_left(p, conj(q, r), h),
+                    and_left(q, r, and_right(p, conj(q, r), h))
+                  ),
+                  and_right(q, r, and_right(p, conj(q, r), h))
                 )
-              )
+              end
             end
           end
         end

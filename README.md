@@ -31,8 +31,9 @@ end
   Elixir's gradual set-theoretic type direction.
 - Grow through tests and proof corpora before adding convenience layers.
 
-See [`docs/design.md`](docs/design.md) for the current design notes and
-[`docs/theorem_modules.md`](docs/theorem_modules.md) for theorem module usage.
+See [`docs/design.md`](docs/design.md) for the current design notes,
+[`docs/lean_roadmap.md`](docs/lean_roadmap.md) for the Lean-inspired feature roadmap,
+and [`docs/theorem_modules.md`](docs/theorem_modules.md) for theorem module usage.
 
 ## Current status
 

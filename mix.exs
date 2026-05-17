@@ -67,6 +67,7 @@ defmodule Theoria.MixProject do
         "README.md",
         "docs/design.md",
         "docs/inductives.md",
+        "docs/lean_roadmap.md",
         "docs/theorem_modules.md",
         "LICENSE"
       ],

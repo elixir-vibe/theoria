@@ -1,6 +1,8 @@
 defmodule Theoria.Rewrite.Database do
   @moduledoc "A tiny untrusted rewrite-rule database."
 
+  alias Theoria.Env
+  alias Theoria.Equation.Info
   alias Theoria.Equation.Lemma
   alias Theoria.Rewrite
   alias Theoria.Rewrite.Rule
@@ -27,6 +29,15 @@ defmodule Theoria.Rewrite.Database do
     |> new()
   end
 
+  @doc "Builds a rewrite database from generated equation metadata stored in an environment."
+  @spec from_env_equations(Env.t(), keyword()) :: t()
+  def from_env_equations(%Env{} = env, opts \\ []) do
+    env
+    |> Info.all()
+    |> Enum.flat_map(&rules_for_equation(&1, opts))
+    |> new()
+  end
+
   @doc "Applies the first rule that rewrites the term."
   @spec once(t(), Term.t()) :: {:ok, Term.t(), Rule.t()} | :not_found
   def once(%__MODULE__{rules: rules}, term) do
@@ -36,5 +47,15 @@ defmodule Theoria.Rewrite.Database do
         :not_found -> false
       end
     end)
+  end
+
+  defp rules_for_equation(info, opts) do
+    equality_type = Lemma.equality_type_for!(info)
+
+    info
+    |> Lemma.generated_for(opts)
+    |> Enum.map(&Rule.from_lemma(&1, equality_type, opts))
+  rescue
+    FunctionClauseError -> []
   end
 end

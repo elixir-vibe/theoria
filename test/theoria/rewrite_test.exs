@@ -2,6 +2,7 @@ defmodule Theoria.RewriteTest do
   use ExUnit.Case, async: true
 
   alias Theoria.Equation.Lemma
+  alias Theoria.Prelude
   alias Theoria.Rewrite
   alias Theoria.Rewrite.{Database, Rule}
   alias Theoria.Term
@@ -37,4 +38,38 @@ defmodule Theoria.RewriteTest do
     assert Database.once(database, term) ==
              {:ok, Term.app(Term.const(:succ), Term.const(:one)), rule}
   end
+
+  test "database builds rules from generated environment equations" do
+    {:ok, env} = Prelude.env()
+    database = Database.from_env_equations(env)
+
+    bool_false = Term.const(false)
+
+    assert {:ok, ^bool_false, %Rule{name: :"bool_not.eq_true"}} =
+             Database.once(database, Term.app(Term.const(:bool_not), Term.const(true)))
+
+    singleton = list_cons(nat(), zero(), list_nil())
+
+    append_nil =
+      list_constant(:list_append)
+      |> Term.app(nat())
+      |> Term.app(list_nil())
+      |> Term.app(singleton)
+
+    assert {:ok, ^singleton, %Rule{name: :"list_append.eq_nil"}} =
+             Database.once(database, append_nil)
+  end
+
+  defp nat, do: Term.const(:Nat)
+  defp zero, do: Term.const(:zero)
+  defp list_nil, do: Term.app(list_constant(:list_nil), nat())
+
+  defp list_cons(type, head, tail) do
+    list_constant(:list_cons)
+    |> Term.app(type)
+    |> Term.app(head)
+    |> Term.app(tail)
+  end
+
+  defp list_constant(name), do: Term.const(name, [1])
 end

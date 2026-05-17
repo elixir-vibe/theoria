@@ -5,6 +5,7 @@ defmodule Mix.Tasks.Theoria.Validate do
 
   use Mix.Task
 
+  alias Theoria.Equation.{Info, Lemma}
   alias Theoria.Validation
   alias Theoria.Validation.{Corpus, Options, Report}
 
@@ -42,7 +43,9 @@ defmodule Mix.Tasks.Theoria.Validate do
 
   defp parse_args(args) do
     {opts, _argv, invalid} =
-      OptionParser.parse(args, strict: [only: :keep, axioms: :boolean, equations: :boolean])
+      OptionParser.parse(args,
+        strict: [only: :keep, axioms: :boolean, equations: :boolean, verbose: :boolean]
+      )
 
     if invalid != [] do
       Mix.raise(
@@ -61,19 +64,16 @@ defmodule Mix.Tasks.Theoria.Validate do
   defp print_equations(result, opts) do
     if Keyword.get(opts, :equations, false) do
       Mix.shell().info("\nequations:")
-      Enum.each(result.equations, &Mix.shell().info("  #{format_equation(&1)}"))
+      Enum.each(result.equations, &print_equation(&1, opts))
     end
   end
 
-  defp format_equation(equation) do
-    suffix =
-      if equation.level_params == [] do
-        ""
-      else
-        " levels=#{inspect(equation.level_params)}"
-      end
+  defp print_equation(equation, opts) do
+    Mix.shell().info("  #{Info.summary(equation)}")
 
-    "#{equation.name} rec_arg=#{inspect(equation.rec_arg_pos)} fixed=#{inspect(equation.fixed_params.positions)}#{suffix}"
+    if Keyword.get(opts, :verbose, false) do
+      Enum.each(Lemma.generated_for(equation), &Mix.shell().info("    #{&1.name}"))
+    end
   end
 
   defp axiom_suffix(result, opts) do

@@ -6,6 +6,7 @@ defmodule Theoria.EquationTest do
   alias Theoria.Equation.{Branch, Clause, Context, FixedParams, Info, Lemma, MatcherInfo, Pattern}
   alias Theoria.Equation.MatcherInfo.Alternative
   alias Theoria.Library.Nat
+  alias Theoria.Prelude
   alias Theoria.Term
 
   test "equation info records Lean-like definition metadata" do
@@ -60,6 +61,37 @@ defmodule Theoria.EquationTest do
     assert {:ok, env, [installed]} = Lemma.add_all_to_env(env, [other], nat())
     assert installed.name == :"nat_add.eq_zero_again"
     assert {:ok, _constant} = Theoria.Env.fetch(env, :"nat_add.eq_zero_again")
+  end
+
+  test "generated equation lemmas come from stored definition metadata" do
+    {:ok, env} = Prelude.env()
+    {:ok, info} = Info.fetch(env, :nat_add)
+
+    assert Enum.map(Lemma.generated_for(info), & &1.name) == [
+             :"nat_add.eq_zero_zero",
+             :"nat_add.eq_one_zero",
+             :"nat_add.eq_two_zero"
+           ]
+
+    assert {:ok, env, theorems} = Lemma.add_generated_to_env(env, :nat_add)
+    assert Enum.map(theorems, & &1.name) == Enum.map(Lemma.generated_for(info), & &1.name)
+    assert {:ok, _constant} = Theoria.Env.fetch(env, :"nat_add.eq_one_zero")
+  end
+
+  test "generated equation lemmas cover supported compiled definitions" do
+    {:ok, env} = Prelude.env()
+
+    generated =
+      env
+      |> Info.all()
+      |> Map.new(&{&1.name, Enum.map(Lemma.generated_for(&1), fn lemma -> lemma.name end)})
+
+    assert generated.bool_not == [:"bool_not.eq_true", :"bool_not.eq_false"]
+    assert :"bool_and.eq_true_false" in generated.bool_and
+    assert :"bool_or.eq_false_true" in generated.bool_or
+    assert :"nat_add.eq_two_zero" in generated.nat_add
+    assert generated.list_length == [:"list_length.eq_nil", :"list_length.eq_singleton"]
+    assert generated.list_append == [:"list_append.eq_nil", :"list_append.eq_singleton"]
   end
 
   test "context exposes branch and outer values" do

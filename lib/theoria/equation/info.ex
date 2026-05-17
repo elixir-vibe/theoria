@@ -51,6 +51,19 @@ defmodule Theoria.Equation.Info do
     end
   end
 
+  @doc "Formats a compact metadata summary."
+  @spec summary(t()) :: String.t()
+  def summary(%__MODULE__{} = equation) do
+    suffix =
+      if equation.level_params == [] do
+        ""
+      else
+        " levels=#{inspect(equation.level_params)}"
+      end
+
+    "#{equation.name} rec_arg=#{inspect(equation.rec_arg_pos)} fixed=#{inspect(equation.fixed_params.positions)}#{suffix}"
+  end
+
   @doc "Returns whether an environment declaration has stored equation metadata."
   @spec equation?(Env.t(), atom()) :: boolean()
   def equation?(%Env{} = env, name), do: match?({:ok, %__MODULE__{}}, fetch(env, name))

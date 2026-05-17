@@ -45,6 +45,19 @@ defmodule Mix.Tasks.Theoria.ValidateTest do
     assert output =~ "list_append rec_arg=1 fixed=[0] levels=[:u]"
   end
 
+  test "reports generated equation lemmas when requested" do
+    Mix.Task.clear()
+
+    output =
+      capture_io(fn ->
+        Validate.run(["--equations", "--verbose"])
+      end)
+
+    assert output =~ "bool_not.eq_true"
+    assert output =~ "nat_add.eq_one_zero"
+    assert output =~ "list_append.eq_nil"
+  end
+
   test "validates filtered corpus" do
     Mix.Task.clear()
 

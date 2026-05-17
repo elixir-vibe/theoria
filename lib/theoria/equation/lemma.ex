@@ -28,7 +28,7 @@ defmodule Theoria.Equation.Lemma do
   @doc "Returns the Lean-style theorem name for a definition equation."
   @spec theorem_name(atom(), atom()) :: atom()
   def theorem_name(definition_name, suffix) when is_atom(definition_name) and is_atom(suffix) do
-    :"#{definition_name}.eq_#{suffix}"
+    :"#{definition_name}.eq_#{suffix_name(suffix)}"
   end
 
   @doc "Builds equation-lemma metadata named after a compiled definition."
@@ -37,6 +37,103 @@ defmodule Theoria.Equation.Lemma do
       when is_atom(suffix) do
     new(theorem_name(definition_name, suffix), left, right, opts)
   end
+
+  @doc "Generates known equation lemmas for a supported compiled definition."
+  @spec generated_for(Info.t(), keyword()) :: [t()]
+  def generated_for(info, opts \\ [])
+
+  def generated_for(%Info{name: :bool_not} = info, _opts) do
+    [
+      for_definition(info, true, app(:bool_not, bool_true()), bool_false()),
+      for_definition(info, false, app(:bool_not, bool_false()), bool_true())
+    ]
+  end
+
+  def generated_for(%Info{name: :bool_and} = info, _opts) do
+    [
+      for_definition(info, :true_true, app(:bool_and, bool_true(), bool_true()), bool_true()),
+      for_definition(info, :true_false, app(:bool_and, bool_true(), bool_false()), bool_false()),
+      for_definition(info, :false_true, app(:bool_and, bool_false(), bool_true()), bool_false()),
+      for_definition(info, :false_false, app(:bool_and, bool_false(), bool_false()), bool_false())
+    ]
+  end
+
+  def generated_for(%Info{name: :bool_or} = info, _opts) do
+    [
+      for_definition(info, :true_true, app(:bool_or, bool_true(), bool_true()), bool_true()),
+      for_definition(info, :true_false, app(:bool_or, bool_true(), bool_false()), bool_true()),
+      for_definition(info, :false_true, app(:bool_or, bool_false(), bool_true()), bool_true()),
+      for_definition(info, :false_false, app(:bool_or, bool_false(), bool_false()), bool_false())
+    ]
+  end
+
+  def generated_for(%Info{name: :nat_add} = info, _opts) do
+    [
+      for_definition(info, :zero_zero, app(:nat_add, zero(), zero()), zero()),
+      for_definition(info, :one_zero, app(:nat_add, one(), zero()), one()),
+      for_definition(info, :two_zero, app(:nat_add, two(), zero()), two())
+    ]
+  end
+
+  def generated_for(%Info{name: :list_length} = info, _opts) do
+    list_length = list_constant(:list_length)
+
+    [
+      for_definition(info, nil, app_term(list_length, nat(), list_nil()), zero()),
+      for_definition(info, :singleton, app_term(list_length, nat(), singleton()), one())
+    ]
+  end
+
+  def generated_for(%Info{name: :list_append} = info, _opts) do
+    list_append = list_constant(:list_append)
+
+    [
+      for_definition(
+        info,
+        nil,
+        app_term(list_append, nat(), list_nil(), singleton()),
+        singleton()
+      ),
+      for_definition(
+        info,
+        :singleton,
+        app_term(list_append, nat(), singleton(), singleton()),
+        pair()
+      )
+    ]
+  end
+
+  def generated_for(%Info{}, _opts), do: []
+
+  @doc "Kernel-checks and installs generated equation lemmas for a supported definition."
+  @spec add_generated_to_env(Env.t(), atom() | Info.t(), keyword()) ::
+          {:ok, Env.t(), [Theorem.t()]} | {:error, term()}
+  def add_generated_to_env(env, equation, opts \\ [])
+
+  def add_generated_to_env(%Env{} = env, name, opts) when is_atom(name) do
+    with {:ok, info} <- Info.fetch(env, name) do
+      add_generated_to_env(env, info, opts)
+    end
+  end
+
+  def add_generated_to_env(%Env{} = env, %Info{} = info, opts) do
+    lemmas = generated_for(info, opts)
+
+    if lemmas == [] do
+      {:error, {:unsupported_equation_definition, info.name}}
+    else
+      add_all_to_env(env, lemmas, equality_type_for!(info), opts)
+    end
+  end
+
+  @doc "Returns the equality type used by generated closed equation lemmas."
+  @spec equality_type_for!(Info.t()) :: Term.t()
+  def equality_type_for!(%Info{name: name}) when name in [:bool_not, :bool_and, :bool_or],
+    do: bool()
+
+  def equality_type_for!(%Info{name: :nat_add}), do: nat()
+  def equality_type_for!(%Info{name: :list_length}), do: nat()
+  def equality_type_for!(%Info{name: :list_append}), do: list_nat()
 
   @doc "Turns equation-lemma metadata into a native definitional-equality validation check."
   @spec defeq_check(t(), atom()) :: DefeqCheck.t()
@@ -93,4 +190,42 @@ defmodule Theoria.Equation.Lemma do
       {:error, _error} = error -> error
     end
   end
+
+  defp suffix_name(nil), do: "nil"
+  defp suffix_name(suffix), do: Atom.to_string(suffix)
+
+  defp app(name, arg), do: Term.app(Term.const(name), arg)
+  defp app(name, arg1, arg2), do: Term.const(name) |> Term.app(arg1) |> Term.app(arg2)
+
+  defp app_term(fun, arg1, arg2), do: fun |> Term.app(arg1) |> Term.app(arg2)
+
+  defp app_term(fun, arg1, arg2, arg3),
+    do: fun |> Term.app(arg1) |> Term.app(arg2) |> Term.app(arg3)
+
+  defp bool, do: Term.const(:Bool)
+  defp bool_true, do: Term.const(true)
+  defp bool_false, do: Term.const(false)
+  defp nat, do: Term.const(:Nat)
+  defp zero, do: Term.const(:zero)
+  defp one, do: Term.app(Term.const(:succ), zero())
+  defp two, do: Term.app(Term.const(:succ), one())
+  defp list_nat, do: Term.app(list_constant(:List), nat())
+  defp list_nil, do: Term.app(list_constant(:list_nil), nat())
+
+  defp singleton do
+    list_cons(nat(), zero(), list_nil())
+  end
+
+  defp pair do
+    list_cons(nat(), zero(), singleton())
+  end
+
+  defp list_cons(type, head, tail) do
+    list_constant(:list_cons)
+    |> Term.app(type)
+    |> Term.app(head)
+    |> Term.app(tail)
+  end
+
+  defp list_constant(name), do: Term.const(name, [1])
 end

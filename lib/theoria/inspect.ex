@@ -144,6 +144,28 @@ defimpl Inspect, for: Theoria.Equation.Lemma do
   end
 end
 
+defimpl Inspect, for: Theoria.Equation.MatcherDescriptor do
+  import Inspect.Algebra
+
+  def inspect(descriptor, _opts) do
+    concat([
+      "#Theoria.MatcherDescriptor<",
+      Atom.to_string(descriptor.family),
+      ", discrs: #{length(descriptor.discriminants)}, alts: #{length(descriptor.alternatives)}, recursor: ",
+      Atom.to_string(descriptor.recursor),
+      ">"
+    ])
+  end
+end
+
+defimpl Inspect, for: Theoria.Equation.MatcherDescriptor.Alternative do
+  import Inspect.Algebra
+
+  def inspect(alternative, _opts) do
+    concat(["#Theoria.MatcherDescriptorAlt<", inspect(alternative.name), ">"])
+  end
+end
+
 defimpl Inspect, for: Theoria.Equation.MatcherEquation do
   import Inspect.Algebra
 

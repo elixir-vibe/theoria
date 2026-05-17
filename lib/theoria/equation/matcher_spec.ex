@@ -3,6 +3,7 @@ defmodule Theoria.Equation.MatcherSpec do
 
   alias Theoria.Env.Matcher, as: EnvMatcher
   alias Theoria.Equation.Info
+  alias Theoria.Equation.MatcherDescriptor
   alias Theoria.Equation.MatcherEqns
   alias Theoria.Equation.MatcherInfo
   alias Theoria.Equation.MatcherType
@@ -42,7 +43,8 @@ defmodule Theoria.Equation.MatcherSpec do
   def from_info(%Info{} = info, opts) do
     mode = Keyword.get(opts, :mode, default_mode(info))
 
-    with {:ok, type} <- type_for(info.matcher, info.schema, info.type, mode),
+    with :ok <- validate_descriptor(info, mode),
+         {:ok, type} <- type_for(info.matcher, info.schema, info.type, mode),
          {:ok, value} <- value_for(info.matcher, info.schema, info.value, mode) do
       {:ok,
        %__MODULE__{
@@ -83,6 +85,14 @@ defmodule Theoria.Equation.MatcherSpec do
       level_params: spec.level_params,
       equation_names: spec.equation_names
     )
+  end
+
+  defp validate_descriptor(_info, :source_aligned), do: :ok
+
+  defp validate_descriptor(%Info{} = info, :matcher) do
+    with {:ok, descriptor} <- MatcherDescriptor.from_schema(info.schema, info.matcher) do
+      MatcherDescriptor.validate(descriptor, info.matcher)
+    end
   end
 
   defp default_mode(%Info{schema: %Schema{family: :bool}}), do: :matcher

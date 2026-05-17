@@ -13,6 +13,7 @@ defmodule Theoria.EquationTest do
     FixedParams,
     Info,
     Lemma,
+    MatcherDescriptor,
     MatcherEqns,
     MatcherInfo,
     MatcherType,
@@ -87,6 +88,23 @@ defmodule Theoria.EquationTest do
     info = MatcherInfo.new(:match_nat, 0, 1, [alt])
 
     assert MatcherInfo.arity(info) == 3
+  end
+
+  test "matcher descriptors drive real matcher types and bodies" do
+    {:ok, env} = Prelude.env()
+
+    for definition <- [:bool_not, :bool_and, :nat_add, :list_append] do
+      {:ok, info} = Info.fetch(env, definition)
+      {:ok, descriptor} = MatcherDescriptor.from_schema(info.schema, info.matcher)
+      {:ok, matcher} = Theoria.Env.fetch_matcher(env, info.matcher.name)
+
+      assert descriptor.family == info.schema.family
+      assert length(descriptor.alternatives) == length(info.matcher.alternatives)
+      assert {:ok, type} = MatcherType.from_descriptor(descriptor)
+      assert {:ok, value} = MatcherType.value_from_descriptor(descriptor)
+      assert type == matcher.type
+      assert value == matcher.value
+    end
   end
 
   test "matcher type builds real Bool, Nat, and List matcher shapes" do

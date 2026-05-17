@@ -1,6 +1,7 @@
 defmodule Theoria.Equation.MatcherType do
   @moduledoc "Builds checked matcher declaration types and bodies for supported fragments."
 
+  alias Theoria.Equation.MatcherDescriptor
   alias Theoria.Equation.MatcherInfo
   alias Theoria.Equation.Recursors
   alias Theoria.Equation.Schema
@@ -23,63 +24,60 @@ defmodule Theoria.Equation.MatcherType do
 
   @doc "Returns branch descriptors for the matcher alternatives in a schema."
   @spec alternatives(Schema.t(), MatcherInfo.t()) :: [Alternative.t()]
-  def alternatives(%Schema{family: :bool}, %MatcherInfo{} = info) do
-    Enum.map(info.alternatives, fn alternative ->
-      %Alternative{constructor: alternative.constructor, fields: [], result_type: Term.bvar(1)}
-    end)
-  end
-
-  def alternatives(%Schema{family: :nat}, %MatcherInfo{} = info) do
-    Enum.map(info.alternatives, fn
-      %{constructor: :zero} ->
-        %Alternative{constructor: :zero, fields: [], result_type: Term.bvar(1)}
-
-      %{constructor: :succ} ->
-        %Alternative{
-          constructor: :succ,
-          fields: [{:pred, Term.const(:Nat)}],
-          result_type: Term.bvar(2)
-        }
-    end)
-  end
-
-  def alternatives(%Schema{family: :list}, %MatcherInfo{} = info) do
-    Enum.map(info.alternatives, fn
-      %{constructor: :list_nil} ->
-        %Alternative{constructor: :list_nil, fields: [], result_type: Term.bvar(1)}
-
-      %{constructor: :list_cons} ->
-        %Alternative{
-          constructor: :list_cons,
-          fields: [{:head, Term.bvar(0)}, {:tail, list_of(Term.bvar(0))}],
-          result_type: Term.bvar(2)
-        }
-    end)
+  def alternatives(%Schema{} = schema, %MatcherInfo{} = info) do
+    case MatcherDescriptor.from_schema(schema, info) do
+      {:ok, descriptor} -> Enum.map(descriptor.alternatives, &alternative_from_descriptor/1)
+      {:error, _reason} -> []
+    end
   end
 
   @doc "Builds a matcher type for supported schemas."
   @spec build(Schema.t(), MatcherInfo.t()) :: {:ok, Term.t()} | {:error, term()}
-  def build(%Schema{family: :bool}, %MatcherInfo{num_discriminants: 2}),
+  def build(%Schema{} = schema, %MatcherInfo{} = info) do
+    with {:ok, descriptor} <- MatcherDescriptor.from_schema(schema, info) do
+      from_descriptor(descriptor)
+    end
+  end
+
+  @doc "Builds a matcher type from a descriptor."
+  @spec from_descriptor(MatcherDescriptor.t()) :: {:ok, Term.t()} | {:error, term()}
+  def from_descriptor(%MatcherDescriptor{family: :bool, discriminants: [_, _]}),
     do: {:ok, bool_binary_type()}
 
-  def build(%Schema{family: :bool}, %MatcherInfo{}), do: {:ok, bool_type()}
-  def build(%Schema{family: :nat}, %MatcherInfo{}), do: {:ok, nat_type()}
-  def build(%Schema{family: :list}, %MatcherInfo{}), do: {:ok, list_type()}
+  def from_descriptor(%MatcherDescriptor{family: :bool}), do: {:ok, bool_type()}
+  def from_descriptor(%MatcherDescriptor{family: :nat}), do: {:ok, nat_type()}
+  def from_descriptor(%MatcherDescriptor{family: :list}), do: {:ok, list_type()}
 
-  def build(%Schema{family: family}, %MatcherInfo{}),
+  def from_descriptor(%MatcherDescriptor{family: family}),
     do: {:error, {:unsupported_matcher_type, family}}
 
   @doc "Builds a matcher value for supported schemas."
   @spec value(Schema.t(), MatcherInfo.t()) :: {:ok, Term.t()} | {:error, term()}
-  def value(%Schema{family: :bool}, %MatcherInfo{num_discriminants: 2}),
+  def value(%Schema{} = schema, %MatcherInfo{} = info) do
+    with {:ok, descriptor} <- MatcherDescriptor.from_schema(schema, info) do
+      value_from_descriptor(descriptor)
+    end
+  end
+
+  @doc "Builds a matcher body from a descriptor."
+  @spec value_from_descriptor(MatcherDescriptor.t()) :: {:ok, Term.t()} | {:error, term()}
+  def value_from_descriptor(%MatcherDescriptor{family: :bool, discriminants: [_, _]}),
     do: {:ok, bool_binary_value()}
 
-  def value(%Schema{family: :bool}, %MatcherInfo{}), do: {:ok, bool_value()}
-  def value(%Schema{family: :nat}, %MatcherInfo{}), do: {:ok, nat_value()}
-  def value(%Schema{family: :list}, %MatcherInfo{}), do: {:ok, list_value()}
+  def value_from_descriptor(%MatcherDescriptor{family: :bool}), do: {:ok, bool_value()}
+  def value_from_descriptor(%MatcherDescriptor{family: :nat}), do: {:ok, nat_value()}
+  def value_from_descriptor(%MatcherDescriptor{family: :list}), do: {:ok, list_value()}
 
-  def value(%Schema{family: family}, %MatcherInfo{}),
+  def value_from_descriptor(%MatcherDescriptor{family: family}),
     do: {:error, {:unsupported_matcher_value, family}}
+
+  defp alternative_from_descriptor(%MatcherDescriptor.Alternative{} = alternative) do
+    %Alternative{
+      constructor: alternative.name,
+      fields: alternative.fields,
+      result_type: alternative.result
+    }
+  end
 
   defp bool_type do
     Term.forall(

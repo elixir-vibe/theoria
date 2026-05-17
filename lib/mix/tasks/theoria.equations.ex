@@ -6,7 +6,17 @@ defmodule Mix.Tasks.Theoria.Equations do
   use Mix.Task
 
   alias Theoria.Env
-  alias Theoria.Equation.{Eqns, Extension, Info, Lemma, MatcherEqns, MatcherInfo}
+
+  alias Theoria.Equation.{
+    Eqns,
+    Extension,
+    Info,
+    Lemma,
+    MatcherDescriptor,
+    MatcherEqns,
+    MatcherInfo
+  }
+
   alias Theoria.Prelude
 
   @shortdoc "Lists and optionally installs generated equation lemmas"
@@ -101,6 +111,7 @@ defmodule Mix.Tasks.Theoria.Equations do
 
   defp print_matcher(env, %Info{} = info) do
     Mix.shell().info("    matcher: #{info.matcher.name} #{matcher_details(env, info)}")
+    print_descriptor(info)
 
     if info.matcher.discriminants != [] do
       Mix.shell().info("    discriminants:")
@@ -122,6 +133,20 @@ defmodule Mix.Tasks.Theoria.Equations do
     Enum.each(info.matcher.alternatives, fn alternative ->
       Mix.shell().info("      #{alternative.constructor} fields=#{alternative.num_fields}")
     end)
+  end
+
+  defp print_descriptor(%Info{schema: nil}), do: :ok
+
+  defp print_descriptor(%Info{} = info) do
+    case MatcherDescriptor.from_schema(info.schema, info.matcher) do
+      {:ok, descriptor} ->
+        Mix.shell().info(
+          "    descriptor: family=#{descriptor.family} discrs=#{length(descriptor.discriminants)} alts=#{length(descriptor.alternatives)} recursor=#{descriptor.recursor}"
+        )
+
+      {:error, _reason} ->
+        :ok
+    end
   end
 
   defp matcher_details(env, %Info{} = info) do

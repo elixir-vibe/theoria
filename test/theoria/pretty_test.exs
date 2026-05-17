@@ -8,6 +8,7 @@ defmodule Theoria.PrettyTest do
     FixedParams,
     Info,
     Lemma,
+    MatcherDescriptor,
     MatcherEquation,
     MatcherInfo,
     Schema,
@@ -68,6 +69,15 @@ defmodule Theoria.PrettyTest do
     matcher = MatcherInfo.new(:match_list, 1, 1, [alternative])
     matcher_equation = MatcherEquation.from_lemma(:match_list, :list_nil, lemma)
 
+    descriptor = %MatcherDescriptor{
+      family: :nat,
+      parameters: [],
+      discriminants: [],
+      alternatives: [],
+      result: const(:Nat),
+      recursor: :nat_rec
+    }
+
     env_matcher =
       EnvMatcher.new(:match_list, :list_append, const(:Nat), matcher,
         value: const(:zero),
@@ -94,6 +104,9 @@ defmodule Theoria.PrettyTest do
 
     assert inspect(matcher_equation) ==
              "#Theoria.MatcherEquation<match_list.eq_list_nil, matcher: match_list, constructor: :list_nil>"
+
+    assert inspect(descriptor) ==
+             "#Theoria.MatcherDescriptor<nat, discrs: 0, alts: 0, recursor: nat_rec>"
 
     assert inspect(env_matcher) ==
              "#Theoria.EnvMatcher<match_list, source: list_append, mode: source_aligned, checked, equations: 1>"

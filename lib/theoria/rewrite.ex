@@ -15,8 +15,8 @@ defmodule Theoria.Rewrite do
   end
 
   @doc "Returns a rewrite direction atom after validation."
-  @spec direction(direction()) :: direction()
-  def direction(direction) when direction in [:forward, :backward], do: direction
+  @spec direction!(direction()) :: direction()
+  def direction!(direction) when direction in [:forward, :backward], do: direction
 
   defp replace_once(term, from, to) when term == from, do: {:ok, to}
   defp replace_once(%Term.App{} = term, from, to), do: rewrite_app(term, from, to)

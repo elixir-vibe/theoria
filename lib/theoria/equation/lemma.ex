@@ -79,9 +79,9 @@ defmodule Theoria.Equation.Lemma do
   end
 
   @doc "Kernel-checks and installs many equation lemmas as opaque theorem declarations."
-  @spec install_many(Env.t(), [t()], Term.t(), keyword()) ::
+  @spec add_all_to_env(Env.t(), [t()], Term.t(), keyword()) ::
           {:ok, Env.t(), [Theorem.t()]} | {:error, Theoria.Error.t()}
-  def install_many(%Env{} = env, lemmas, equality_type, opts \\ []) when is_list(lemmas) do
+  def add_all_to_env(%Env{} = env, lemmas, equality_type, opts \\ []) when is_list(lemmas) do
     Enum.reduce_while(lemmas, {:ok, env, []}, fn lemma, {:ok, env, theorems} ->
       case add_to_env(env, lemma, equality_type, opts) do
         {:ok, env, theorem} -> {:cont, {:ok, env, [theorem | theorems]}}

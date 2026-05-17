@@ -22,11 +22,11 @@ defmodule Theoria.Library.ListTest do
   test "compiled list definitions store equation metadata" do
     {:ok, env} = List.env()
 
-    assert {:ok, %Info{} = length_info} = Info.get(env, :list_length)
+    assert {:ok, %Info{} = length_info} = Info.fetch(env, :list_length)
     assert length_info.rec_arg_pos == 1
     assert length_info.level_params == [:u]
 
-    assert {:ok, %Info{} = append_info} = Info.get(env, :list_append)
+    assert {:ok, %Info{} = append_info} = Info.fetch(env, :list_append)
     assert append_info.rec_arg_pos == 1
     assert append_info.level_params == [:u]
   end

@@ -34,7 +34,7 @@ defmodule Theoria.Equation.Compiler do
     with :ok <- Validator.validate_clauses(clauses, expected),
          {:ok, on_true} <- constructor_body(clauses, true, context),
          {:ok, on_false} <- constructor_body(clauses, false, context) do
-      {:ok, Recursors.bool(motive, on_true, on_false, major)}
+      {:ok, Recursors.bool_rec(motive, on_true, on_false, major)}
     end
   end
 
@@ -46,7 +46,7 @@ defmodule Theoria.Equation.Compiler do
     with :ok <- Validator.validate_clauses(clauses, expected),
          {:ok, zero_case} <- constructor_body(clauses, :zero, Context.new()),
          {:ok, succ_clause} <- constructor_clause(clauses, :succ) do
-      {:ok, Recursors.nat(motive, zero_case, nat_succ_case(succ_clause), major)}
+      {:ok, Recursors.nat_rec(motive, zero_case, nat_succ_case(succ_clause), major)}
     end
   end
 
@@ -60,7 +60,7 @@ defmodule Theoria.Equation.Compiler do
          {:ok, nil_case} <- constructor_body(clauses, :list_nil, Context.new()),
          {:ok, cons_clause} <- constructor_clause(clauses, :list_cons) do
       {:ok,
-       Recursors.list(
+       Recursors.list_rec(
          element_type,
          motive,
          nil_case,

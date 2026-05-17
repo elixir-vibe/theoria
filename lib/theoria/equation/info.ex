@@ -42,8 +42,8 @@ defmodule Theoria.Equation.Info do
   end
 
   @doc "Fetches stored equation metadata for an environment declaration."
-  @spec get(Env.t(), atom()) :: {:ok, t()} | {:error, term()}
-  def get(%Env{} = env, name) when is_atom(name) do
+  @spec fetch(Env.t(), atom()) :: {:ok, t()} | {:error, term()}
+  def fetch(%Env{} = env, name) when is_atom(name) do
     case Env.fetch(env, name) do
       {:ok, %Constant{metadata: %__MODULE__{} = metadata}} -> {:ok, metadata}
       {:ok, %Constant{}} -> {:error, :not_equation_definition}
@@ -53,12 +53,12 @@ defmodule Theoria.Equation.Info do
 
   @doc "Returns whether an environment declaration has stored equation metadata."
   @spec equation?(Env.t(), atom()) :: boolean()
-  def equation?(%Env{} = env, name), do: match?({:ok, %__MODULE__{}}, get(env, name))
+  def equation?(%Env{} = env, name), do: match?({:ok, %__MODULE__{}}, fetch(env, name))
 
   @doc "Fetches stored equation metadata or builds it from a valued declaration."
   @spec fetch_or_build(Env.t(), atom(), keyword()) :: {:ok, t()} | {:error, term()}
   def fetch_or_build(%Env{} = env, name, opts \\ []) when is_atom(name) do
-    case get(env, name) do
+    case fetch(env, name) do
       {:ok, %__MODULE__{} = metadata} -> {:ok, metadata}
       {:error, :not_equation_definition} -> from_env(env, name, opts)
       {:error, _reason} = error -> error
@@ -71,7 +71,7 @@ defmodule Theoria.Equation.Info do
     env
     |> Env.declarations()
     |> Enum.flat_map(fn name ->
-      case get(env, name) do
+      case fetch(env, name) do
         {:ok, metadata} -> [metadata]
         {:error, _reason} -> []
       end

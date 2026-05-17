@@ -11,10 +11,10 @@ defmodule Theoria.Equation do
   alias Theoria.Equation.Compiler
   alias Theoria.Equation.Recursors
 
-  defdelegate bool(motive, on_true, on_false, major), to: Recursors
-  defdelegate nat(motive, zero_case, succ_case, major), to: Recursors
-  defdelegate list(element_type, motive, nil_case, cons_case, major), to: Recursors
-  defdelegate list(element_type, motive, nil_case, cons_case, major, levels), to: Recursors
+  defdelegate bool_rec(motive, on_true, on_false, major), to: Recursors
+  defdelegate nat_rec(motive, zero_case, succ_case, major), to: Recursors
+  defdelegate list_rec(element_type, motive, nil_case, cons_case, major), to: Recursors
+  defdelegate list_rec(element_type, motive, nil_case, cons_case, major, levels), to: Recursors
 
   defdelegate compile(kind, motive, clauses, major), to: Compiler
   defdelegate compile_bool(motive, clauses, major), to: Compiler

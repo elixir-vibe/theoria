@@ -22,7 +22,7 @@ defmodule Theoria.Library.NatTest do
   test "nat_add stores equation metadata" do
     {:ok, env} = Nat.env()
 
-    assert {:ok, %Info{} = info} = Info.get(env, :nat_add)
+    assert {:ok, %Info{} = info} = Info.fetch(env, :nat_add)
     assert info.name == :nat_add
     assert info.rec_arg_pos == 0
     assert info.level_params == []

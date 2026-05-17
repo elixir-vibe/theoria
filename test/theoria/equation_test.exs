@@ -21,7 +21,7 @@ defmodule Theoria.EquationTest do
     assert info.name == :nat_add
     assert info.rec_arg_pos == 0
     assert info.level_params == []
-    assert {:ok, ^info} = Info.get(env, :nat_add)
+    assert {:ok, ^info} = Info.fetch(env, :nat_add)
     assert {:ok, ^info} = Info.fetch_or_build(env, :nat_add)
     assert Info.equation?(env, :nat_add)
     refute Info.equation?(env, :Nat)
@@ -57,7 +57,7 @@ defmodule Theoria.EquationTest do
     assert {:ok, _constant} = Theoria.Env.fetch(env, :"nat_add.eq_zero")
 
     other = Lemma.for_definition(info, :zero_again, zero(), zero())
-    assert {:ok, env, [installed]} = Lemma.install_many(env, [other], nat())
+    assert {:ok, env, [installed]} = Lemma.add_all_to_env(env, [other], nat())
     assert installed.name == :"nat_add.eq_zero_again"
     assert {:ok, _constant} = Theoria.Env.fetch(env, :"nat_add.eq_zero_again")
   end
@@ -121,7 +121,8 @@ defmodule Theoria.EquationTest do
   end
 
   test "builds Bool recursor applications" do
-    term = Equation.bool(Term.const(:Bool), Term.const(false), Term.const(true), Term.const(true))
+    term =
+      Equation.bool_rec(Term.const(:Bool), Term.const(false), Term.const(true), Term.const(true))
 
     assert {%Term.Const{name: :bool_rec}, args} = Term.Application.collect(term)
     assert args == [Term.const(:Bool), Term.const(false), Term.const(true), Term.const(true)]
@@ -214,7 +215,7 @@ defmodule Theoria.EquationTest do
 
   test "builds Nat recursor applications" do
     succ_case = nat_lam(:n, Term.bvar(0))
-    term = Equation.nat(nat(), zero(), succ_case, zero())
+    term = Equation.nat_rec(nat(), zero(), succ_case, zero())
 
     assert {%Term.Const{name: :nat_rec}, args} = Term.Application.collect(term)
     assert args == [nat(), zero(), succ_case, zero()]
@@ -292,7 +293,7 @@ defmodule Theoria.EquationTest do
     cons_case = nat_lam(:x, Term.bvar(0))
 
     term =
-      Equation.list(nat(), list, Term.const(:list_nil), cons_case, Term.const(:xs))
+      Equation.list_rec(nat(), list, Term.const(:list_nil), cons_case, Term.const(:xs))
 
     assert {%Term.Const{name: :list_rec}, args} = Term.Application.collect(term)
     assert args == [nat(), list, Term.const(:list_nil), cons_case, Term.const(:xs)]

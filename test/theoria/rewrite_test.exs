@@ -18,7 +18,7 @@ defmodule Theoria.RewriteTest do
     equality = Term.eq(Term.const(:Nat), Term.const(:zero), Term.const(:one))
     term = Term.app(Term.const(:succ), Term.const(:one))
 
-    assert Rewrite.once(term, equality, direction: Rewrite.direction(:backward)) ==
+    assert Rewrite.once(term, equality, direction: Rewrite.direction!(:backward)) ==
              {:ok, Term.app(Term.const(:succ), Term.const(:zero))}
   end
 

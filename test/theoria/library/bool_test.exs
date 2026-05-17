@@ -22,7 +22,7 @@ defmodule Theoria.Library.BoolTest do
     {:ok, env} = Bool.env()
 
     for name <- [:bool_not, :bool_and, :bool_or] do
-      assert {:ok, %Info{} = info} = Info.get(env, name)
+      assert {:ok, %Info{} = info} = Info.fetch(env, name)
       assert info.name == name
       assert info.rec_arg_pos == 0
     end

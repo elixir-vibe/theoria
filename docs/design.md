@@ -144,7 +144,7 @@ type(0) = Sort 1
 type(n) = Sort (n + 1)
 ```
 
-The kernel follows Lean's Prop-valued dependent-function rule in the small: if a `forall` body is a proposition, the whole `forall` lives in `Prop`; otherwise it lives in the maximum relevant type universe. Equality currently infers `Sort 0` as a proposition-like type. The primitive equality recursor transports a motive across an equality proof and reduces on reflexivity, which is enough to derive symmetry, transitivity, and congruence in the theorem corpus. This is intentionally provisional and should be revisited when the logic layer grows.
+The kernel follows Lean's Prop-valued dependent-function rule in the small: if a `forall` body is a proposition, the whole `forall` lives in `Prop`; otherwise it lives in the maximum relevant type universe. Equality currently infers `Sort 0` as a proposition-like type. The primitive equality recursor transports a motive across an equality proof and reduces on reflexivity, which is enough to derive symmetry, transitivity, substitution, nondependent transport, and congruence in the theorem corpus. `Theoria.Equality` provides untrusted helpers that build these transport terms; the kernel still checks the resulting core terms. This is intentionally provisional and should be revisited when the logic layer grows.
 
 ## Inspect and pretty-printing
 

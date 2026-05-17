@@ -101,6 +101,74 @@ defmodule Theoria.Library.Equality.Theorems do
     end
   end
 
+  theorem :eq_subst do
+    type do
+      term do
+        forall :a, type(0) do
+          forall :p, a ~> prop() do
+            forall :x, a do
+              forall :y, a do
+                eq(a, x, y) ~> (app(p, x) ~> app(p, y))
+              end
+            end
+          end
+        end
+      end
+    end
+
+    proof do
+      term do
+        lam :a, type(0) do
+          lam :p, a ~> prop() do
+            lam :x, a do
+              lam :y, a do
+                lam :h, eq(a, x, y) do
+                  lam :px, app(p, x) do
+                    eq_rec(a, p, px, h)
+                  end
+                end
+              end
+            end
+          end
+        end
+      end
+    end
+  end
+
+  theorem :eq_ndrec do
+    type do
+      term do
+        forall :a, type(0) do
+          forall :b, type(0) do
+            forall :x, a do
+              forall :y, a do
+                eq(a, x, y) ~> (b ~> b)
+              end
+            end
+          end
+        end
+      end
+    end
+
+    proof do
+      term do
+        lam :a, type(0) do
+          lam :b, type(0) do
+            lam :x, a do
+              lam :y, a do
+                lam :_h, eq(a, x, y) do
+                  lam :value, b do
+                    value
+                  end
+                end
+              end
+            end
+          end
+        end
+      end
+    end
+  end
+
   theorem :eq_congr do
     type do
       term do

@@ -3,6 +3,7 @@ defmodule Theoria.Library.VecTest do
 
   alias Theoria.Env
   alias Theoria.Inductive
+  alias Theoria.Kernel
   alias Theoria.Library.Vec
   alias Theoria.Normalize
   alias Theoria.Term
@@ -67,6 +68,30 @@ defmodule Theoria.Library.VecTest do
            )
   end
 
+  test "Vec induction checks an equality-valued motive" do
+    {:ok, env} = Vec.env()
+    nil_vec = term(do: app(const(:vec_nil, [0]), nat())) |> elab!()
+
+    cons =
+      app_all(
+        [Term.const(:Nat), Term.const(:zero), Term.const(:zero), nil_vec],
+        Term.const(:vec_cons, [0])
+      )
+
+    term =
+      vec_equality_ind_term(index: Term.app(Term.const(:succ), Term.const(:zero)), major: cons)
+
+    expected =
+      Term.eq(
+        Term.const(:Nat),
+        Term.app(Term.const(:succ), Term.const(:zero)),
+        Term.app(Term.const(:succ), Term.const(:zero))
+      )
+
+    assert Normalize.defeq?(env, term, Term.refl(Term.app(Term.const(:succ), Term.const(:zero))))
+    assert Kernel.check(env, expected, Term.sort(0)) == :ok
+  end
+
   test "Vec requires Nat dependencies" do
     assert {:error, error} = Vec.extend(Env.new())
     assert error.reason == :invalid_inductive
@@ -99,6 +124,40 @@ defmodule Theoria.Library.VecTest do
           lam :tail, app(app(const(:Vec, [1]), nat()), n) do
             lam :ih, nat() do
               app(succ, ih)
+            end
+          end
+        end
+      end
+    end
+  end
+
+  defp vec_equality_ind_term(opts) do
+    index = Keyword.fetch!(opts, :index)
+    major = Keyword.fetch!(opts, :major)
+    motive = vec_equality_motive() |> elab!()
+    cons_case = vec_equality_cons_case() |> elab!()
+
+    [Term.const(:Nat), motive, Term.refl(Term.const(:zero)), cons_case, index, major]
+    |> app_all(Term.const(:vec_ind, [0]))
+  end
+
+  defp vec_equality_motive do
+    term do
+      lam :n, nat() do
+        lam :xs, app(app(const(:Vec, [0]), nat()), n) do
+          eq(nat(), n, n)
+        end
+      end
+    end
+  end
+
+  defp vec_equality_cons_case do
+    term do
+      lam :_head, nat() do
+        lam :n, nat() do
+          lam :_tail, app(app(const(:Vec, [0]), nat()), n) do
+            lam :_ih, eq(nat(), n, n) do
+              refl(app(succ, n))
             end
           end
         end

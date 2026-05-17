@@ -132,8 +132,8 @@ Legend:
 | `Eq` | Propositional equality | ✅ / 🟡 | Primitive `%Term.Eq{}` | Decide long-term primitive vs inductive | P0 |
 | `Eq.refl` | Reflexivity proof | ✅ | Primitive `%Term.Refl{}` | Stable for now | P0 |
 | `Eq.rec` / equality eliminator | Rewrite/substitution principle | 🟡 | Primitive equality recursor with reflexivity reduction | Harden and revisit inductive encoding later | P0 |
-| `Eq.ndrec` | Nondependent equality recursor | 🔴 | Missing | Derive or add after Eq.rec hardening | P1 |
-| Rewrite theorem support | Rewrite by equality | 🔴 | Missing | Needed for tactics/simp | P1 |
+| `Eq.ndrec` | Nondependent equality recursor | ✅ / 🟡 | Derived theorem/helper | Expand transport library | P1 |
+| Rewrite theorem support | Rewrite by equality | 🟡 | Low-level `Theoria.Equality` transport helpers | Build tactic/simp layer later | P1 |
 | Congruence lemmas | Function/application congruence | ✅ / 🟡 | `eq_congr` theorem for unary functions | Expand congruence library | P2 |
 | UIP / proof irrelevance decisions | Equality proof behavior | ⚪ | Not decided | Decide theory later | P4 |
 | Eq as indexed inductive | Lean-like equality encoding | ⚪ | Not yet | Revisit after indexed iota | P2 |
@@ -178,7 +178,7 @@ Legend:
 | Theorem module registry | Check all theorems | ✅ | `__theoria_theorems__/0` | Stable | P0 |
 | Axiom tracking | Trust boundary | ✅ | `axioms/2`, trust report | Stable | P0 |
 | Theorem checking Mix task | CI checker | ✅ | `mix theoria.check` | Stable | P0 |
-| Theorem corpus | Regression proofs | ✅ | 49 theorem(s) | Expand libraries | P1 |
+| Theorem corpus | Regression proofs | ✅ | 51 theorem(s) | Expand libraries | P1 |
 | Proof irrelevance for theorem proofs | Lean Prop behavior | ❌ | None | Decide theory later | P4 |
 | Proof artifact serialization | Cache/share proofs | 🔴 | Missing | Add before larger corpora | P3 |
 | Incremental proof checking | Avoid checking everything | 🔴 | Missing | After env hashing | P3 |
@@ -195,7 +195,7 @@ Legend:
 | `constructor` | Use constructor/introduction rule | 🔴 | Missing | After inductive APIs mature | P2 |
 | `cases` | Case split | 🔴 | Missing | Needs eliminator usage | P2 |
 | `induction` | Induction tactic | 🔴 | Missing | Needs robust recursors | P2 |
-| `rewrite` / `rw` | Rewrite by equality | 🔴 | Missing | Needs Eq recursor | P2 |
+| `rewrite` / `rw` | Rewrite by equality | 🟡 | Low-level equality transport helpers | Add tactic ergonomics | P2 |
 | `simp` | Simplifier | 🔴 | Missing | Needs rewrite database | P3 |
 | `omega` / arithmetic solvers | Automation | ❌ | Missing | Much later / maybe not | P5 |
 | Metaprogramming framework | Lean tactic language | ❌ | Missing | Do not port Lean meta system directly | P5 |
@@ -249,7 +249,7 @@ Legend:
 | Lean feature / concept | Lean role | Theoria status | Current Theoria state | Needed roadmap | Priority |
 |---|---|---:|---|---|---:|
 | Kernel corruption tests | Catch invalid envs | ✅ / 🟡 | Leanchecker-inspired tests | Keep expanding | P0 |
-| Theorem corpus tests | Prove library facts | ✅ | 49 theorem(s) | Expand corpus | P1 |
+| Theorem corpus tests | Prove library facts | ✅ | 51 theorem(s) | Expand corpus | P1 |
 | Property tests for terms | Subst/shift/scope laws | 🟡 | Some properties | Add well-typed generator | P1 |
 | Normalization preservation | Reduction preserves type | 🔴 | Missing broadly | Add property tests | P1 |
 | Defeq laws | Equivalence properties | 🔴 | Missing broadly | Add generated well-typed tests | P1 |

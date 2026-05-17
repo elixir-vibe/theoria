@@ -5,6 +5,7 @@ defmodule Theoria.EqualityTest do
   alias Theoria.Kernel
   alias Theoria.Library.Nat
   alias Theoria.Normalize
+  alias Theoria.Prelude
 
   import Theoria.Term
 
@@ -88,6 +89,46 @@ defmodule Theoria.EqualityTest do
 
       assert {:error, error} = Kernel.infer(env, term)
       assert error.reason == :type_mismatch
+    end
+
+    test "equality recursor rejects non-equality proofs" do
+      {:ok, env} = Nat.env()
+
+      term = eq_rec(const(:Nat), lam(:n, const(:Nat), const(:Nat)), const(:zero), const(:zero))
+
+      assert {:error, error} = Kernel.infer(env, term)
+      assert error.reason == :expected_equality
+    end
+
+    test "equality recursor rejects equality over a different type" do
+      {:ok, env} = Prelude.env()
+
+      term =
+        eq_rec(
+          const(:Bool),
+          lam(:b, const(:Bool), const(:Bool)),
+          const(true),
+          refl(const(:zero))
+        )
+
+      assert {:error, error} = Kernel.infer(env, term)
+      assert error.reason == :equality_type_mismatch
+    end
+
+    test "equality recursor rejects motives whose left side is not a sort" do
+      {:ok, env} = Nat.env()
+
+      term =
+        eq_rec(const(:Nat), lam(:n, const(:Nat), const(:zero)), const(:zero), refl(const(:zero)))
+
+      assert {:error, error} = Kernel.infer(env, term)
+      assert error.reason == :expected_sort
+    end
+
+    test "equality recursor stays stuck when proof is not reflexivity" do
+      term = eq_rec(const(:Nat), lam(:n, const(:Nat), const(:Nat)), const(:zero), const(:h))
+
+      assert Normalize.normalize(Env.new(), term) == {:ok, term}
     end
   end
 end

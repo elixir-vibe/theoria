@@ -48,7 +48,7 @@ The initial kernel supports:
 - application
 - propositional equality, reflexivity proofs, and a primitive equality recursor
 - initial logic library (`False`, `True`, `not`, `and`, `and_intro`, `and_left`, `and_right`)
-- initial equality theorem corpus (`eq_refl`, `eq_symm`, `eq_trans`, `eq_congr`)
+- initial equality helpers/theorems (`eq_refl`, `eq_symm`, `eq_trans`, `eq_subst`, `eq_ndrec`, `eq_congr`)
 - initial Bool library (`Bool`, `true`, `false`, `bool_rec`, `bool_not`, `bool_and`, `bool_or`)
 - initial Nat library (`Nat`, `zero`, `succ`, `nat_rec`, `nat_add`)
 - initial List library (`List`, `list_nil`, `list_cons`, `list_rec`, `list_length`)

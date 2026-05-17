@@ -9,6 +9,8 @@ defmodule Theoria.Library.Equality.TheoremsTest do
              :eq_refl,
              :eq_symm,
              :eq_trans,
+             :eq_subst,
+             :eq_ndrec,
              :eq_congr
            ]
   end

@@ -1,4 +1,4 @@
-defmodule Theoria.Equation.MatchEqns do
+defmodule Theoria.Equation.MatcherEqns do
   @moduledoc "Lookup helpers for generated matcher equation metadata."
 
   alias Theoria.Env

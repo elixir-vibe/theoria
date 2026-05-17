@@ -13,7 +13,7 @@ Signature + CaseTemplate + Clause/Pattern
   → Theoria.Equation.Info metadata in the environment
   → generated Theoria.Equation.Lemma metadata
   → generated Theoria.Equation.MatcherEquation metadata
-  → Theoria.Equation.Eqns / MatchEqns lookup
+  → Theoria.Equation.Eqns / MatcherEqns lookup
   → optional opaque theorem declarations
   → rewrite rules/databases
 ```
@@ -73,13 +73,13 @@ Theoria.Equation.Eqns.source(env, :"nat_add.eq_succ")
 Theoria.Equation.Eqns.installed?(env, :nat_add)
 ```
 
-`Theoria.Equation.MatchEqns` is the matcher-equation side of the same groundwork:
+`Theoria.Equation.MatcherEqns` is the matcher-equation side of the same groundwork:
 
 ```elixir
-Theoria.Equation.MatchEqns.get(env, :"nat_add.match_1")
+Theoria.Equation.MatcherEqns.get(env, :"nat_add.match_1")
 #=> {:ok, [:"nat_add.match_1.eq_zero", :"nat_add.match_1.eq_succ"]}
 
-Theoria.Equation.MatchEqns.source(env, :"nat_add.match_1.eq_succ")
+Theoria.Equation.MatcherEqns.source(env, :"nat_add.match_1.eq_succ")
 #=> {:ok, :"nat_add.match_1"}
 ```
 

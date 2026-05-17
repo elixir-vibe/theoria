@@ -1,7 +1,7 @@
 defmodule Theoria.Validation do
   @moduledoc "Runs Theoria-owned validation corpora."
 
-  alias Theoria.Equation.{Eqns, Info, Lemma, MatchEqns, MatcherEquation}
+  alias Theoria.Equation.{Eqns, Info, Lemma, MatcherEqns, MatcherEquation}
   alias Theoria.Prelude
   alias Theoria.Theorem
   alias Theoria.Validation.{Checkable, Corpus, Report}
@@ -41,7 +41,7 @@ defmodule Theoria.Validation do
 
   defp check_matcher_equations(env) do
     env
-    |> MatchEqns.all()
+    |> MatcherEqns.all()
     |> Enum.reduce_while({:ok, 0}, fn %MatcherEquation{} = equation, {:ok, count} ->
       case Lemma.to_theorem(env, MatcherEquation.to_lemma(equation)) do
         {:ok, _theorem} -> {:cont, {:ok, count + 1}}

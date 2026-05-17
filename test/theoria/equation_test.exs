@@ -13,7 +13,7 @@ defmodule Theoria.EquationTest do
     FixedParams,
     Info,
     Lemma,
-    MatchEqns,
+    MatcherEqns,
     MatcherEquation,
     MatcherInfo,
     Pattern,
@@ -136,7 +136,7 @@ defmodule Theoria.EquationTest do
     assert {:ok, :nat_add} = Eqns.source(env, :"nat_add.eq_succ")
     assert {:ok, :nat_add} = Eqns.source(env, :"nat_add.eq_def")
     assert {:ok, :nat_add} = Eqns.source(env, :"nat_add.match_1.eq_succ")
-    assert {:ok, :"nat_add.match_1"} = MatchEqns.source(env, :"nat_add.match_1.eq_succ")
+    assert {:ok, :"nat_add.match_1"} = MatcherEqns.source(env, :"nat_add.match_1.eq_succ")
     assert {:ok, unfold} = Eqns.unfold(env, :nat_add)
     assert unfold.name == :"nat_add.eq_def"
     assert {:ok, _theorem} = Lemma.to_theorem(env, unfold)
@@ -169,12 +169,12 @@ defmodule Theoria.EquationTest do
 
   test "matcher equations are generated from matcher metadata" do
     {:ok, env} = Prelude.env()
-    {:ok, names} = MatchEqns.get(env, :"list_append.match_1")
+    {:ok, names} = MatcherEqns.get(env, :"list_append.match_1")
 
     assert names == [:"list_append.match_1.eq_list_nil", :"list_append.match_1.eq_list_cons"]
 
     [nil_equation | _rest] =
-      MatchEqns.all(env) |> Enum.filter(&(&1.matcher == :"list_append.match_1"))
+      MatcherEqns.all(env) |> Enum.filter(&(&1.matcher == :"list_append.match_1"))
 
     assert nil_equation.constructor == :list_nil
 

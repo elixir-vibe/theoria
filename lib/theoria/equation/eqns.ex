@@ -4,7 +4,7 @@ defmodule Theoria.Equation.Eqns do
   alias Theoria.Env
   alias Theoria.Equation.Info
   alias Theoria.Equation.Lemma
-  alias Theoria.Equation.MatchEqns
+  alias Theoria.Equation.MatcherEqns
   alias Theoria.Rewrite.Database
   alias Theoria.Rewrite.Rule
 
@@ -40,7 +40,7 @@ defmodule Theoria.Equation.Eqns do
     |> Enum.find_value(:error, fn info ->
       names =
         [Lemma.unfold_for(info).name | Enum.map(Lemma.generated_for(info), & &1.name)] ++
-          Enum.map(MatchEqns.generated(info), & &1.name)
+          Enum.map(MatcherEqns.generated(info), & &1.name)
 
       if theorem_name in names do
         {:ok, info.name}

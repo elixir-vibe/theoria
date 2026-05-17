@@ -129,6 +129,82 @@ defimpl Inspect, for: Theoria.Equation.Lemma do
   end
 end
 
+defimpl Inspect, for: Theoria.Equation.MatcherEquation do
+  import Inspect.Algebra
+
+  def inspect(equation, _opts) do
+    concat([
+      "#Theoria.MatcherEquation<",
+      Atom.to_string(equation.name),
+      ", matcher: ",
+      Atom.to_string(equation.matcher),
+      ", constructor: ",
+      inspect(equation.constructor),
+      ">"
+    ])
+  end
+end
+
+defimpl Inspect, for: Theoria.Equation.Signature do
+  import Inspect.Algebra
+
+  def inspect(signature, _opts) do
+    concat([
+      "#Theoria.EquationSignature<",
+      Atom.to_string(signature.name),
+      ", family: #{signature.family}, rec_arg: #{signature.rec_arg_pos}",
+      ">"
+    ])
+  end
+end
+
+defimpl Inspect, for: Theoria.Equation.CaseTemplate do
+  import Inspect.Algebra
+
+  def inspect(template, _opts) do
+    suffix = template.suffix || :default
+
+    concat([
+      "#Theoria.CaseTemplate<",
+      inspect(suffix),
+      ", binders: #{length(template.binders)}",
+      ">"
+    ])
+  end
+end
+
+defimpl Inspect, for: Theoria.Equation.Compiled do
+  import Inspect.Algebra
+
+  def inspect(compiled, _opts) do
+    concat([
+      "#Theoria.CompiledEquation<",
+      "family: #{compiled.schema.family}, clauses: #{length(compiled.clauses)}, rec_arg: #{compiled.rec_arg_pos}",
+      ">"
+    ])
+  end
+end
+
+defimpl Inspect, for: Theoria.Equation.Schema do
+  import Inspect.Algebra
+
+  def inspect(schema, _opts) do
+    concat([
+      "#Theoria.EquationSchema<",
+      "family: #{schema.family}, equations: #{length(schema.equations)}",
+      ">"
+    ])
+  end
+end
+
+defimpl Inspect, for: Theoria.Equation.Schema.Equation do
+  import Inspect.Algebra
+
+  def inspect(equation, _opts) do
+    concat(["#Theoria.EquationSchema.Case<", inspect(equation.suffix), ">"])
+  end
+end
+
 defimpl Inspect, for: Theoria.Equation.MatcherInfo do
   import Inspect.Algebra
 
@@ -152,6 +228,44 @@ defimpl Inspect, for: Theoria.Equation.MatcherInfo.Alternative do
       ", fields: #{alternative.num_fields}",
       ">"
     ])
+  end
+end
+
+defimpl Inspect, for: Theoria.Equation.MatcherInfo.Discriminant do
+  import Inspect.Algebra
+
+  def inspect(discriminant, _opts) do
+    label = discriminant.name || :anonymous
+    concat(["#Theoria.MatcherDiscriminant<", inspect(label), ">"])
+  end
+end
+
+defimpl Inspect, for: Theoria.Simp.Rule do
+  import Inspect.Algebra
+
+  def inspect(rule, _opts) do
+    concat([
+      "#Theoria.SimpRule<",
+      Atom.to_string(rule.rewrite.name),
+      ", priority: #{rule.priority}, source: #{rule.source}",
+      ">"
+    ])
+  end
+end
+
+defimpl Inspect, for: Theoria.Simp.Database do
+  import Inspect.Algebra
+
+  def inspect(database, _opts) do
+    concat(["#Theoria.SimpDatabase<", "#{length(database.rules)} rule(s)", ">"])
+  end
+end
+
+defimpl Inspect, for: Theoria.Simp.Step do
+  import Inspect.Algebra
+
+  def inspect(step, _opts) do
+    concat(["#Theoria.SimpStep<", Atom.to_string(step.rule), ", source: #{step.source}", ">"])
   end
 end
 

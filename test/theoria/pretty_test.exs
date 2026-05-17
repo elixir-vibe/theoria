@@ -1,7 +1,17 @@
 defmodule Theoria.PrettyTest do
   use ExUnit.Case, async: true
 
-  alias Theoria.Equation.{FixedParams, Info, Lemma, MatcherInfo}
+  alias Theoria.Equation.{
+    CaseTemplate,
+    FixedParams,
+    Info,
+    Lemma,
+    MatcherEquation,
+    MatcherInfo,
+    Schema,
+    Signature
+  }
+
   alias Theoria.Equation.MatcherInfo.Alternative
   alias Theoria.Kernel
   alias Theoria.Level
@@ -54,6 +64,10 @@ defmodule Theoria.PrettyTest do
     lemma = Lemma.new(:"list_append.eq_nil", const(:zero), const(:zero))
     alternative = %Alternative{constructor: :list_nil, num_fields: 0}
     matcher = MatcherInfo.new(:match_list, 1, 1, [alternative])
+    matcher_equation = MatcherEquation.from_lemma(:match_list, :list_nil, lemma)
+    signature = Signature.new(:list_append, :list, [m: const(:Nat)], const(:Nat), rec_arg_pos: 0)
+    template = CaseTemplate.new(:list_nil, const(:zero), const(:zero))
+    schema = Schema.new(:list, [Schema.equation(nil, const(:zero), const(:zero), const(:Nat))])
     rule = Rule.from_lemma(lemma, const(:Nat))
     database = Database.new([rule])
 
@@ -63,7 +77,18 @@ defmodule Theoria.PrettyTest do
     assert inspect(info.fixed_params) == "#Theoria.FixedParams<[0]>"
     assert inspect(lemma) == "#Theoria.EquationLemma<list_append.eq_nil>"
     assert inspect(alternative) == "#Theoria.MatcherAlt<list_nil, fields: 0>"
+    assert inspect(matcher.discriminants) == "[#Theoria.MatcherDiscriminant<:anonymous>]"
     assert inspect(matcher) == "#Theoria.MatcherInfo<match_list, discrs: 1, alts: 1>"
+
+    assert inspect(matcher_equation) ==
+             "#Theoria.MatcherEquation<match_list.eq_list_nil, matcher: match_list, constructor: :list_nil>"
+
+    assert inspect(signature) ==
+             "#Theoria.EquationSignature<list_append, family: list, rec_arg: 0>"
+
+    assert inspect(template) == "#Theoria.CaseTemplate<:list_nil, binders: 0>"
+    assert inspect(schema) == "#Theoria.EquationSchema<family: list, equations: 1>"
+    assert inspect(hd(schema.equations)) == "#Theoria.EquationSchema.Case<nil>"
     assert inspect(rule) == "#Theoria.RewriteRule<list_append.eq_nil forward>"
     assert inspect(database) == "#Theoria.RewriteDatabase<1 rule(s)>"
   end

@@ -446,8 +446,11 @@ defmodule Theoria.Kernel do
          {:ok, actual_domains, result} <- take_forall_domains(rhs_type, domain_count),
          false <- match?(%Forall{}, result),
          {:ok, expected_domains} <-
-           expected_recursor_rule_domains(env, recursor, constructor, field_count, actual_domains) do
-      domain_lists_defeq?(env, actual_domains, expected_domains)
+           expected_recursor_rule_domains(env, recursor, constructor, field_count, actual_domains),
+         {:ok, expected_result} <-
+           expected_recursor_rule_result(env, recursor, constructor, field_count) do
+      domain_lists_defeq?(env, actual_domains, expected_domains) and
+        Normalize.defeq?(env, result, expected_result)
     else
       _other -> false
     end
@@ -490,6 +493,88 @@ defmodule Theoria.Kernel do
       {:ok, Enum.drop(constructor_domains, recursor.num_params)}
     end
   end
+
+  defp expected_recursor_rule_result(env, %EnvRecursor{} = recursor, constructor, field_count) do
+    with {:ok, prefix_domains, _suffix} <-
+           take_forall_domains(recursor.type, recursor_rule_prefix_count(recursor)),
+         {:ok, motive_type} <- Enum.fetch(prefix_domains, recursor.num_params),
+         {:ok, constructor_app} <-
+           constructor_application_in_rule_context(env, recursor, constructor, field_count),
+         {:ok, indices} <- constructor_result_indices(env, recursor, constructor, field_count) do
+      motive = motive_in_rule_context(recursor, field_count)
+
+      result =
+        if match?(%Sort{}, motive_type) do
+          motive
+        else
+          indices
+          |> Enum.map(&lift_constructor_context_term(&1, recursor, field_count))
+          |> Kernel.++([constructor_app])
+          |> Enum.reduce(motive, &%App{fun: &2, arg: &1})
+        end
+
+      {:ok, result}
+    end
+  end
+
+  defp constructor_application_in_rule_context(
+         env,
+         %EnvRecursor{} = recursor,
+         constructor,
+         field_count
+       ) do
+    with {:ok, %Constant{universe_params: universe_params}} <- Env.fetch(env, constructor) do
+      args =
+        parameter_vars_in_rule_context(recursor, field_count) ++
+          field_vars_in_rule_context(field_count)
+
+      levels = Enum.map(universe_params, &Theoria.Level.param/1)
+
+      constructor
+      |> Term.const(levels)
+      |> apply_arguments(args)
+      |> then(&{:ok, &1})
+    end
+  end
+
+  defp motive_in_rule_context(%EnvRecursor{} = recursor, field_count) do
+    Term.bvar(field_count + recursor.num_minors + recursor.num_motives - 1)
+  end
+
+  defp parameter_vars_in_rule_context(%EnvRecursor{} = recursor, field_count) do
+    for index <- 0..(recursor.num_params - 1)//1 do
+      Term.bvar(
+        field_count + recursor.num_minors + recursor.num_motives + recursor.num_params - 1 - index
+      )
+    end
+  end
+
+  defp field_vars_in_rule_context(0), do: []
+
+  defp field_vars_in_rule_context(field_count) do
+    for index <- 0..(field_count - 1)//1 do
+      Term.bvar(field_count - 1 - index)
+    end
+  end
+
+  defp lift_constructor_context_term(%BVar{index: index}, %EnvRecursor{} = recursor, field_count) do
+    if index < field_count do
+      Term.bvar(index)
+    else
+      Term.bvar(index + recursor.num_motives + recursor.num_minors)
+    end
+  end
+
+  defp lift_constructor_context_term(%App{fun: fun, arg: arg}, recursor, field_count) do
+    %App{
+      fun: lift_constructor_context_term(fun, recursor, field_count),
+      arg: lift_constructor_context_term(arg, recursor, field_count)
+    }
+  end
+
+  defp lift_constructor_context_term(term, _recursor, _field_count), do: term
+
+  defp apply_arguments(fun, args), do: Enum.reduce(args, fun, &%App{fun: &2, arg: &1})
 
   defp recursor_rule_prefix_count(%EnvRecursor{} = recursor) do
     recursor.num_params + recursor.num_motives + recursor.num_minors

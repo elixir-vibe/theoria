@@ -187,6 +187,56 @@ defmodule Theoria.Normalize.ReductionMetadataTest do
     assert error.reason == :invalid_reduction
   end
 
+  test "recursor rule rhs result must match constructor motive application" do
+    {:ok, env} = Nat.env()
+
+    env =
+      put_metadata(env, :nat_ind, fn %Theoria.Env.Recursor{} = recursor ->
+        %Theoria.Env.RecursorRule{} =
+          succ_rule = Enum.find(recursor.rules, &(&1.constructor == :succ))
+
+        u = Theoria.Level.param(:u)
+
+        bad_rule = %Theoria.Env.RecursorRule{
+          succ_rule
+          | rhs:
+              lam(
+                :motive,
+                arrow(const(:Nat), sort(u)),
+                lam(
+                  :minor0,
+                  app(bvar(0), const(:zero)),
+                  lam(
+                    :minor1,
+                    forall(
+                      :arg0,
+                      const(:Nat),
+                      arrow(app(bvar(1), bvar(0)), app(bvar(2), app(const(:succ), bvar(0))))
+                    ),
+                    lam(
+                      :field0,
+                      const(:Nat),
+                      const(:nat_ind, [u])
+                      |> app(bvar(3))
+                      |> app(bvar(2))
+                      |> app(bvar(1))
+                      |> app(bvar(0))
+                    )
+                  )
+                )
+              )
+        }
+
+        %Theoria.Env.Recursor{
+          recursor
+          | rules: [bad_rule | Enum.reject(recursor.rules, &(&1.constructor == :succ))]
+        }
+      end)
+
+    assert {:error, error} = Kernel.validate_env(env)
+    assert error.reason == :invalid_reduction
+  end
+
   test "recursor rule rhs must have expected field domains" do
     {:ok, env} = Nat.env()
 

@@ -204,7 +204,7 @@ Legend:
 
 | Lean feature / concept | Lean role | Theoria status | Current Theoria state | Needed roadmap | Priority |
 |---|---|---:|---|---|---:|
-| Pattern matching compiler | Compile equations to recursors | 🟡 | Internal `Theoria.Equation` compiler with pattern AST, clause validation, and Bool/Nat/List recursor generation | Add public syntax and dependent matching later | P1 |
+| Pattern matching compiler | Compile equations to recursors | 🟡 | Internal `Theoria.Equation` compiler with pattern AST, clause validation, named branch contexts, and Bool/Nat/List recursor generation | Add public syntax and dependent matching later | P1 |
 | Structural recursion | Termination by smaller argument | 🟡 | Library definitions use primitive Nat/List recursion; no general checker | Start conservative checker | P1 |
 | Termination checker | Ensure recursive definitions terminate | 🔴 | Missing | Start conservative | P2 |
 | Equation lemmas | Generated simplification theorems | 🔴 | Missing | Needed for `simp` | P2 |
@@ -249,10 +249,10 @@ Legend:
 | Lean feature / concept | Lean role | Theoria status | Current Theoria state | Needed roadmap | Priority |
 |---|---|---:|---|---|---:|
 | Kernel corruption tests | Catch invalid envs | ✅ / 🟡 | Leanchecker-inspired tests | Keep expanding | P0 |
-| Theorem corpus tests | Prove library facts | ✅ | 53 theorem(s), 52 defeq checks, 4 inductive checks | Expand corpus | P1 |
+| Theorem corpus tests | Prove library facts | ✅ | 53 theorem(s), 53 defeq checks, 4 inductive checks | Expand corpus | P1 |
 | Property tests for terms | Subst/shift/scope laws | 🟡 | Some properties | Add well-typed generator | P1 |
 | Normalization preservation | Reduction preserves type | 🔴 | Missing broadly | Add property tests | P1 |
-| Defeq laws | Equivalence properties | 🟡 | Native validation has 52 defeq checks mirrored to Lean, including equation-compiler checks | Add generated well-typed tests | P1 |
+| Defeq laws | Equivalence properties | 🟡 | Native validation has 53 defeq checks mirrored to Lean, including equation-compiler checks | Add generated well-typed tests | P1 |
 | Inductive admission fuzzing | Random invalid specs | 🔴 | Missing | Add after APIs stabilize | P2 |
 | Lean oracle validation | External contributor oracle | ✅ | Logic/Equality/Bool/Nat/List/Vec theorem corpus plus defeq checks; Vec mirror generated from `Inductive.Spec` | Continue as corpus grows | P1 |
 | Real-world spec tests | Consume by Reach/etc. | 🔴 | Missing | Later | P4 |
@@ -323,7 +323,7 @@ Legend:
 | Step | Deliverable | Priority |
 |---|---|---:|
 | Pattern AST | ✅ Constructors/vars/wildcards with recursive validation | P1 |
-| Bool/Nat/List equation compiler | 🟡 Internal `Theoria.Equation` compiler with recursor generation and branch materialization | P1 |
+| Bool/Nat/List equation compiler | 🟡 Internal `Theoria.Equation` compiler with recursor generation, branch materialization, and callback body contexts | P1 |
 | Generated equation theorems | Computation lemmas | P2 |
 | Termination checker v0 | Structural only | P2 |
 | Replace hand-written library defs | ✅ `bool_not`, `bool_and`, `bool_or`, `nat_add`, `list_length`, `list_append` use the equation compiler path | P2 |

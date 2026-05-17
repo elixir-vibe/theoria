@@ -51,7 +51,21 @@ defmodule Theoria.Library.List.Validation do
           Clause.new([Pattern.constructor(:list_nil)], zero),
           Clause.new(
             [Pattern.constructor(:list_cons, [Pattern.wildcard(), Pattern.var(:tail)])],
-            Term.app(Term.const(:succ), Term.bvar(0))
+            fn ctx -> Term.app(Term.const(:succ), ctx.ih) end
+          )
+        ],
+        singleton
+      )
+
+    {:ok, compiled_append_singleton} =
+      Equation.compile_list(
+        nat,
+        nat_list,
+        [
+          Clause.new([Pattern.constructor(:list_nil)], singleton),
+          Clause.new(
+            [Pattern.constructor(:list_cons, [Pattern.var(:head), Pattern.var(:tail)])],
+            fn ctx -> list_cons(ctx.a, ctx.head, ctx.ih) end
           )
         ],
         singleton
@@ -63,6 +77,12 @@ defmodule Theoria.Library.List.Validation do
         "equation_list_length_singleton",
         compiled_length_singleton,
         one
+      ),
+      DefeqCheck.new(
+        :list,
+        "equation_list_append_singleton",
+        compiled_append_singleton,
+        pair
       ),
       DefeqCheck.new(
         :list,
@@ -111,5 +131,12 @@ defmodule Theoria.Library.List.Validation do
         pair
       )
     ] ++ SmallTerms.defeq_checks(:list)
+  end
+
+  defp list_cons(type, head, tail) do
+    Term.const(:list_cons, [Level.param(:u)])
+    |> Term.app(type)
+    |> Term.app(head)
+    |> Term.app(tail)
   end
 end

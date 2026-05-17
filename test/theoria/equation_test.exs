@@ -117,7 +117,7 @@ defmodule Theoria.EquationTest do
                Term.const(:Nat),
                [
                  Clause.new([Pattern.constructor(:zero)], Term.const(:zero)),
-                 Clause.new([Pattern.constructor(:succ, [Pattern.var(:n)])], Term.bvar(0))
+                 Clause.new([Pattern.constructor(:succ, [Pattern.var(:n)])], fn ctx -> ctx.ih end)
                ],
                Term.const(:zero)
              )
@@ -125,7 +125,7 @@ defmodule Theoria.EquationTest do
     assert {%Term.Const{name: :nat_rec}, [_motive, _zero, succ_case, _major]} =
              Term.Application.collect(term)
 
-    assert_lams(succ_case, [:pred, :ih], Term.bvar(0))
+    assert_lams(succ_case, [:n, :ih], Term.bvar(0))
   end
 
   test "builds List recursor applications" do
@@ -172,7 +172,7 @@ defmodule Theoria.EquationTest do
                  Clause.new([Pattern.constructor(:list_nil)], Term.const(:list_nil)),
                  Clause.new(
                    [Pattern.constructor(:list_cons, [Pattern.var(:x), Pattern.var(:xs)])],
-                   Term.bvar(0)
+                   fn ctx -> ctx.ih end
                  )
                ],
                Term.const(:xs)
@@ -181,7 +181,7 @@ defmodule Theoria.EquationTest do
     assert {%Term.Const{name: :list_rec}, [_element_type, _motive, _nil, cons_case, _major]} =
              Term.Application.collect(term)
 
-    assert_lams(cons_case, [:head, :tail, :ih], Term.bvar(0))
+    assert_lams(cons_case, [:x, :xs, :ih], Term.bvar(0))
   end
 
   defp nat, do: Term.const(:Nat)

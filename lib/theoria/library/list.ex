@@ -111,7 +111,7 @@ defmodule Theoria.Library.List do
           Clause.new([Pattern.constructor(:list_nil)], Term.bvar(0)),
           Clause.new(
             [Pattern.constructor(:list_cons, [Pattern.var(:head), Pattern.var(:tail)])],
-            list_cons_branch()
+            fn ctx -> list_cons(ctx.a, ctx.head, ctx.ih) end
           )
         ],
         Term.bvar(1),
@@ -146,7 +146,7 @@ defmodule Theoria.Library.List do
           Clause.new([Pattern.constructor(:list_nil)], Term.const(:zero)),
           Clause.new(
             [Pattern.constructor(:list_cons, [Pattern.wildcard(), Pattern.var(:tail)])],
-            Term.app(Term.const(:succ), branch_ih())
+            fn ctx -> Term.app(Term.const(:succ), ctx.ih) end
           )
         ],
         xs,
@@ -163,13 +163,11 @@ defmodule Theoria.Library.List do
     )
   end
 
-  defp branch_ih, do: Term.bvar(0)
-
-  defp list_cons_branch do
+  defp list_cons(type, head, tail) do
     Term.const(:list_cons, [Level.param(:u)])
-    |> Term.app(Term.bvar(5))
-    |> Term.app(Term.bvar(2))
-    |> Term.app(Term.bvar(0))
+    |> Term.app(type)
+    |> Term.app(head)
+    |> Term.app(tail)
   end
 
   defp list_of(type) do

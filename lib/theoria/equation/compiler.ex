@@ -15,8 +15,8 @@ defmodule Theoria.Equation.Compiler do
     expected = %{true => 0, false => 0}
 
     with :ok <- validate_clauses(clauses, expected),
-         {:ok, on_true} <- constructor_body(clauses, true),
-         {:ok, on_false} <- constructor_body(clauses, false) do
+         {:ok, on_true} <- constructor_body(clauses, true, %{}),
+         {:ok, on_false} <- constructor_body(clauses, false, %{}) do
       {:ok, Recursors.bool(motive, on_true, on_false, major)}
     end
   end
@@ -27,9 +27,9 @@ defmodule Theoria.Equation.Compiler do
     expected = %{zero: 0, succ: 1}
 
     with :ok <- validate_clauses(clauses, expected),
-         {:ok, zero_case} <- constructor_body(clauses, :zero),
-         {:ok, succ_case} <- constructor_body(clauses, :succ) do
-      {:ok, Recursors.nat(motive, zero_case, materialize_nat_succ(succ_case), major)}
+         {:ok, zero_case} <- constructor_body(clauses, :zero, %{}),
+         {:ok, succ_clause} <- constructor_clause(clauses, :succ) do
+      {:ok, Recursors.nat(motive, zero_case, materialize_nat_succ(succ_clause), major)}
     end
   end
 
@@ -40,14 +40,14 @@ defmodule Theoria.Equation.Compiler do
     expected = %{list_nil: 0, list_cons: 2}
 
     with :ok <- validate_clauses(clauses, expected),
-         {:ok, nil_case} <- constructor_body(clauses, :list_nil),
-         {:ok, cons_case} <- constructor_body(clauses, :list_cons) do
+         {:ok, nil_case} <- constructor_body(clauses, :list_nil, %{}),
+         {:ok, cons_clause} <- constructor_clause(clauses, :list_cons) do
       {:ok,
        Recursors.list(
          element_type,
          motive,
          nil_case,
-         materialize_list_cons(cons_case, element_type, motive),
+         materialize_list_cons(cons_clause, element_type, motive),
          major,
          levels
        )}
@@ -132,11 +132,17 @@ defmodule Theoria.Equation.Compiler do
     end
   end
 
-  defp constructor_body(clauses, constructor) do
+  defp constructor_body(clauses, constructor, context) do
+    with {:ok, %Clause{} = clause} <- constructor_clause(clauses, constructor) do
+      {:ok, materialize_body(clause.body, context)}
+    end
+  end
+
+  defp constructor_clause(clauses, constructor) do
     clauses
     |> Enum.find(&constructor_clause?(&1, constructor))
     |> case do
-      %Clause{body: body} = clause -> {:ok, materialize_clause(clause, body)}
+      %Clause{} = clause -> {:ok, clause}
       nil -> {:error, {:missing_clause, constructor}}
     end
   end
@@ -144,24 +150,52 @@ defmodule Theoria.Equation.Compiler do
   defp constructor_clause?(%Clause{patterns: [%Constructor{name: name}]}, name), do: true
   defp constructor_clause?(_clause, _constructor), do: false
 
-  defp materialize_clause(%Clause{binders: []}, body), do: body
-  defp materialize_clause(%Clause{binders: binders}, body), do: wrap_lambdas(binders, body)
+  defp materialize_body(body, context) when is_function(body, 1), do: body.(context)
+  defp materialize_body(body, _context), do: body
 
-  defp materialize_nat_succ(%Term.Lam{} = body), do: body
+  defp materialize_nat_succ(%Clause{body: %Term.Lam{} = body}), do: body
 
-  defp materialize_nat_succ(body),
-    do: wrap_lambdas([pred: Term.const(:Nat), ih: Term.const(:Nat)], body)
+  defp materialize_nat_succ(%Clause{} = clause) do
+    pred_name = branch_name(clause, 0, :pred)
+    binders = [{pred_name, Term.const(:Nat)}, {:ih, Term.const(:Nat)}]
+    body = materialize_body(clause.body, branch_context(binders))
+    wrap_lambdas(binders, body)
+  end
 
-  defp materialize_list_cons(%Term.Lam{} = body, _element_type, _motive), do: body
+  defp materialize_list_cons(%Clause{body: %Term.Lam{} = body}, _element_type, _motive), do: body
 
-  defp materialize_list_cons(body, element_type, motive) do
+  defp materialize_list_cons(%Clause{} = clause, element_type, motive) do
+    head_name = branch_name(clause, 0, :head)
+    tail_name = branch_name(clause, 1, :tail)
     tail_type = Term.app(Term.const(:List, [Level.param(:u)]), Term.shift(element_type, 1))
     ih_type = Term.shift(motive, 2)
 
-    wrap_lambdas(
-      [head: element_type, tail: tail_type, ih: ih_type],
-      body
-    )
+    binders = [{head_name, element_type}, {tail_name, tail_type}, {:ih, ih_type}]
+
+    context =
+      Map.merge(branch_context(binders), %{
+        a: Term.shift(element_type, 3),
+        element_type: Term.shift(element_type, 3)
+      })
+
+    clause.body
+    |> materialize_body(context)
+    |> then(&wrap_lambdas(binders, &1))
+  end
+
+  defp branch_name(%Clause{patterns: [%Constructor{args: args}]}, index, fallback) do
+    case Enum.at(args, index) do
+      %Var{name: name} -> name
+      _pattern -> fallback
+    end
+  end
+
+  defp branch_context(binders) do
+    binders
+    |> Enum.map(&elem(&1, 0))
+    |> Enum.reverse()
+    |> Enum.with_index()
+    |> Map.new(fn {name, index} -> {name, Term.bvar(index)} end)
   end
 
   defp wrap_lambdas(binders, body) do

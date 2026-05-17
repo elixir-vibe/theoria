@@ -55,7 +55,9 @@ defmodule Theoria.Library.Nat do
         nat(),
         [
           Clause.new([Pattern.constructor(:zero)], n),
-          Clause.new([Pattern.constructor(:succ, [Pattern.var(:pred)])], succ(n))
+          Clause.new([Pattern.constructor(:succ, [Pattern.var(:pred)])], fn ctx ->
+            succ(ctx.ih)
+          end)
         ],
         Term.bvar(1)
       )

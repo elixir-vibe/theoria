@@ -15,6 +15,7 @@ mix theoria.validate --only bool
 mix theoria.validate --only nat,list
 mix theoria.validate --only defeq
 mix theoria.validate --only inductives
+mix theoria.validate --axioms
 ```
 
 ## What is validated
@@ -23,9 +24,9 @@ mix theoria.validate --only inductives
 
 | Check | Source | Native checker |
 |---|---|---|
-| Theorem modules | `Theoria.Library.*.Theorems` | `Theoria.Theorem.check_all/2` |
-| Definitional equality | `%Theoria.Validation.DefeqCheck{}` | `Theoria.Normalize.defeq?/3` |
-| Inductive specs | `%Theoria.Validation.InductiveCheck{}` | `Theoria.Inductive.check_spec/2` and `Theoria.Inductive.verify_env/2` |
+| Theorem modules | `Theoria.Library.*.Theorems` via `Theoria.Validation.TheoremModuleCheck` | `Theoria.Validation.Checkable` / `Theoria.Theorem.check_all/2` |
+| Definitional equality | `%Theoria.Validation.DefeqCheck{}` | `Theoria.Validation.Checkable` / `Theoria.Normalize.defeq?/3` |
+| Inductive specs | `%Theoria.Validation.InductiveCheck{}` | `Theoria.Validation.Checkable` / `Theoria.Inductive.check_spec/2` and `Theoria.Inductive.verify_env/2` |
 
 The default corpus covers Logic, Equality, Bool, Nat, List, and Vec theorem modules, built-in reduction checks, deterministic small normalized Bool/Nat/List/Vec terms, and the built-in inductive specs.
 
@@ -62,7 +63,9 @@ It translates the Theoria validation corpus into Lean source and asks Lean to ch
 
 ## Adding new checks
 
-Prefer adding validation data close to the Theoria feature it exercises:
+Prefer adding validation data close to the Theoria feature it exercises. Library validation metadata lives under modules such as `Theoria.Library.Bool.Validation`, `Theoria.Library.Nat.Validation`, `Theoria.Library.List.Validation`, and `Theoria.Library.Vec.Validation`.
+
+Guidelines:
 
 1. Add a theorem to the appropriate `Theoria.Library.*.Theorems` module when it is a reusable library fact.
 2. Add a `%Theoria.Validation.DefeqCheck{}` when the point is definitional equality or reduction behavior.

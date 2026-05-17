@@ -3,53 +3,59 @@ defmodule Theoria.Validation do
 
   alias Theoria.Prelude
   alias Theoria.Theorem
-  alias Theoria.Validation.{Corpus, DefeqCheck, InductiveCheck}
+  alias Theoria.Validation.{Checkable, Corpus}
 
   @type result :: %{
           theorem_count: non_neg_integer(),
           defeq_count: non_neg_integer(),
-          inductive_count: non_neg_integer()
+          inductive_count: non_neg_integer(),
+          axioms: MapSet.t(atom())
         }
 
   @doc "Checks theorem modules, definitional equalities, and inductive specs."
   @spec check(Corpus.t()) :: {:ok, result()} | {:error, term()}
   def check(%Corpus{} = corpus) do
     with {:ok, env} <- Prelude.env(),
-         {:ok, theorem_count} <- check_theorems(env, corpus.theorem_modules),
-         :ok <- check_defeqs(env, corpus.defeq_checks),
-         :ok <- check_inductives(env, corpus.inductive_checks) do
+         :ok <- check_all(env, corpus.theorem_checks),
+         :ok <- check_all(env, corpus.defeq_checks),
+         :ok <- check_all(env, corpus.inductive_checks),
+         {:ok, theorem_count, axioms} <- theorem_summary(env, corpus.theorem_modules) do
       {:ok,
        %{
          theorem_count: theorem_count,
          defeq_count: length(corpus.defeq_checks),
-         inductive_count: length(corpus.inductive_checks)
+         inductive_count: length(corpus.inductive_checks),
+         axioms: axioms
        }}
     end
   end
 
-  defp check_theorems(env, modules) do
-    Enum.reduce_while(modules, {:ok, 0}, fn module, {:ok, count} ->
+  defp check_all(env, checks) do
+    Enum.reduce_while(checks, :ok, fn check, :ok ->
+      case Checkable.check(check, env) do
+        :ok -> {:cont, :ok}
+        {:error, reason} -> {:halt, {:error, {check, reason}}}
+      end
+    end)
+  end
+
+  defp theorem_summary(env, modules) do
+    Enum.reduce_while(modules, {:ok, 0, MapSet.new()}, fn module, {:ok, count, axioms} ->
       case Theorem.check_all(module, env) do
-        {:ok, theorems} -> {:cont, {:ok, count + length(theorems)}}
-        {:error, error} -> {:halt, {:error, {:theorem, module, error}}}
+        {:ok, theorems} ->
+          {:cont,
+           {:ok, count + length(theorems), MapSet.union(axioms, module_axioms(theorems, env))}}
+
+        {:error, error} ->
+          {:halt, {:error, {:theorem, module, error}}}
       end
     end)
   end
 
-  defp check_defeqs(env, checks) do
-    Enum.reduce_while(checks, :ok, fn check, :ok ->
-      case DefeqCheck.check(env, check) do
-        :ok -> {:cont, :ok}
-        {:error, failed} -> {:halt, {:error, {:defeq, failed}}}
-      end
-    end)
-  end
-
-  defp check_inductives(env, checks) do
-    Enum.reduce_while(checks, :ok, fn check, :ok ->
-      case InductiveCheck.check(env, check) do
-        :ok -> {:cont, :ok}
-        {:error, reason} -> {:halt, {:error, {:inductive, check, reason}}}
+  defp module_axioms(theorems, env) do
+    Enum.reduce(theorems, MapSet.new(), fn theorem, axioms ->
+      case Theorem.axioms(env, theorem) do
+        {:ok, theorem_axioms} -> MapSet.union(axioms, theorem_axioms)
       end
     end)
   end

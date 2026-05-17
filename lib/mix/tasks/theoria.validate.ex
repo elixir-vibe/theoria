@@ -21,7 +21,10 @@ defmodule Mix.Tasks.Theoria.Validate do
 
     case Validation.check(corpus) do
       {:ok, result} ->
-        Mix.shell().info("✓ theorem modules: #{result.theorem_count} theorem(s)")
+        Mix.shell().info(
+          "✓ theorem modules: #{result.theorem_count} theorem(s)#{axiom_suffix(result, opts)}"
+        )
+
         Mix.shell().info("✓ defeq checks: #{result.defeq_count} check(s)")
         Mix.shell().info("✓ inductive specs: #{result.inductive_count} check(s)")
 
@@ -34,7 +37,7 @@ defmodule Mix.Tasks.Theoria.Validate do
   def __parse_args__(args), do: parse_args(args)
 
   defp parse_args(args) do
-    {opts, _argv, invalid} = OptionParser.parse(args, strict: [only: :keep])
+    {opts, _argv, invalid} = OptionParser.parse(args, strict: [only: :keep, axioms: :boolean])
 
     if invalid != [] do
       Mix.raise(
@@ -50,15 +53,31 @@ defmodule Mix.Tasks.Theoria.Validate do
     )
   end
 
-  defp format_error({:theorem, module, {name, error}}) do
+  defp axiom_suffix(result, opts) do
+    if Keyword.get(opts, :axioms, false) do
+      ", axioms: #{format_axioms(result.axioms)}"
+    else
+      ""
+    end
+  end
+
+  defp format_axioms(axioms) do
+    if MapSet.size(axioms) == 0 do
+      "none"
+    else
+      axioms |> Enum.sort() |> Enum.map_join(", ", &Atom.to_string/1)
+    end
+  end
+
+  defp format_error({%Theoria.Validation.TheoremModuleCheck{module: module}, {name, error}}) do
     "theorem validation failed at #{inspect(module)}.#{name}:\n\n#{Exception.message(error)}"
   end
 
-  defp format_error({:defeq, check}) do
+  defp format_error({%Theoria.Validation.DefeqCheck{} = check, _failed}) do
     "defeq validation failed at #{check.name}"
   end
 
-  defp format_error({:inductive, check, %Theoria.Error{} = error}) do
+  defp format_error({%Theoria.Validation.InductiveCheck{} = check, %Theoria.Error{} = error}) do
     "inductive validation failed at #{check.name}:\n\n#{Exception.message(error)}"
   end
 

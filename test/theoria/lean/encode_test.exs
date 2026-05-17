@@ -77,8 +77,9 @@ defmodule Theoria.Lean.EncodeTest do
     assert {:ok, lean_module, stats} = Corpus.build()
     source = LeanModule.render(lean_module)
 
-    assert stats == %{proof: 39, defeq: 41, total: 80}
+    assert stats == %{proof: 51, defeq: 41, total: 92}
     assert source =~ "def tEqRec"
+    assert source =~ "proof Theoria.Library.Logic.Theorems.and_comm"
     assert source =~ "proof Theoria.Library.Equality.Theorems.eq_symm"
     assert source =~ "proof Theoria.Library.Bool.Theorems.bool_not_true"
     assert source =~ "proof Theoria.Library.Nat.Theorems.nat_add_two_zero"

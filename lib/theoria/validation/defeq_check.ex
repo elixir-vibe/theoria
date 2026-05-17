@@ -27,3 +27,9 @@ defmodule Theoria.Validation.DefeqCheck do
     if Normalize.defeq?(env, left, right), do: :ok, else: {:error, check}
   end
 end
+
+defimpl Theoria.Validation.Checkable, for: Theoria.Validation.DefeqCheck do
+  alias Theoria.Validation.DefeqCheck
+
+  def check(%DefeqCheck{} = check, env), do: DefeqCheck.check(env, check)
+end

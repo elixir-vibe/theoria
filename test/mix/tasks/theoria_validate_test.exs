@@ -19,6 +19,17 @@ defmodule Mix.Tasks.Theoria.ValidateTest do
     assert output =~ "✓ inductive specs: 4 check(s)"
   end
 
+  test "reports axioms when requested" do
+    Mix.Task.clear()
+
+    output =
+      capture_io(fn ->
+        Validate.run(["--axioms"])
+      end)
+
+    assert output =~ "✓ theorem modules: 51 theorem(s), axioms: none"
+  end
+
   test "validates filtered corpus" do
     Mix.Task.clear()
 

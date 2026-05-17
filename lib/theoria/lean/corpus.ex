@@ -7,9 +7,10 @@ defmodule Theoria.Lean.Corpus do
   @doc "Returns theorem modules included in the default validation corpus."
   @spec builtin_theorem_modules() :: [module()]
   def builtin_theorem_modules,
-    do: ValidationCorpus.build(only: [:equality, :bool, :nat, :list, :vec]).theorem_modules
+    do:
+      ValidationCorpus.build(only: [:logic, :equality, :bool, :nat, :list, :vec]).theorem_modules
 
-  @lean_categories [:equality, :bool, :nat, :list, :vec, :defeq, :inductives]
+  @lean_categories [:logic, :equality, :bool, :nat, :list, :vec, :defeq, :inductives]
 
   @doc "Returns valid `--only` corpus categories supported by the Lean oracle."
   @spec valid_categories() :: [atom()]

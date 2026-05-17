@@ -53,13 +53,13 @@ Generated files are build artifacts and should not be committed.
 
 ## Scope
 
-The native Theoria validation corpus also includes Logic theorem modules. The current Lean-supported fragment validates the primitive equality, Bool, Nat, List, and Vec theorem corpora plus definitional-equality checks for beta, zeta, Bool computation, Nat recursor iota, Nat addition, List length, List recursor iota, Vec indexed iota, and deterministic small normalized Bool/Nat/List/Vec terms.
+The current Lean-supported fragment validates the primitive Logic, Equality, Bool, Nat, List, and Vec theorem corpora plus definitional-equality checks for beta, zeta, Bool computation, Nat recursor iota, Nat addition, List length, List recursor iota, Vec indexed iota, and deterministic small normalized Bool/Nat/List/Vec terms.
 
 The encoding boundary is intentionally narrow:
 
 1. Theoria theorem modules and `Theoria.Validation.DefeqCheck` values are selected before Lean is involved.
 2. Theoria checked core terms are rendered through `Theoria.Lean.Encodable`.
-3. The encoder reuses Lean-native constants where possible: `Bool`, `Nat`, `List`, their constructors, and Lean recursors.
+3. The encoder reuses Lean-native constants where possible: `True`, `False`, `Not`, `And`, `Bool`, `Nat`, `List`, their constructors, and Lean recursors.
 4. Lean-specific argument order, implicit arguments, and recursor spines are handled in `Theoria.Lean.Encode.Application`.
 5. Handwritten Lean is limited to tiny bridge definitions whose semantics differ from Lean's defaults, such as `tEqRec` and Theoria's first-argument `tNatAdd`.
 6. Custom inductives are generated from `Theoria.Inductive.Spec`; the current generated fallback covers Theoria's Vec shape because Lean's built-in `Vector` is array-backed and does not match Theoria's constructor-level indexed family.

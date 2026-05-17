@@ -18,6 +18,11 @@ defmodule Theoria.Lean.Encode do
   ))
 
   @constant_names %{
+    False: "False",
+    True: "True",
+    true_intro: "True.intro",
+    not: "Not",
+    and: "And",
     Bool: "Bool",
     Nat: "Nat",
     zero: "Nat.zero",

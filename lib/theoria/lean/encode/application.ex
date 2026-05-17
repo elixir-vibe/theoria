@@ -6,6 +6,22 @@ defmodule Theoria.Lean.Encode.Application do
 
   @doc "Encodes an application spine when it needs Lean-specific argument handling."
   @spec encode(term(), [term()], [String.t()]) :: {:ok, String.t()} | :error
+  def encode(%Const{name: :false_elim}, [_motive, proof], context) do
+    {:ok, Encode.apply_source("False.elim", encode_args([proof], context))}
+  end
+
+  def encode(%Const{name: :and_intro}, [_left, _right, left_proof, right_proof], context) do
+    {:ok, Encode.apply_source("And.intro", encode_args([left_proof, right_proof], context))}
+  end
+
+  def encode(%Const{name: :and_left}, [_left, _right, proof], context) do
+    {:ok, Encode.apply_source("And.left", encode_args([proof], context))}
+  end
+
+  def encode(%Const{name: :and_right}, [_left, _right, proof], context) do
+    {:ok, Encode.apply_source("And.right", encode_args([proof], context))}
+  end
+
   def encode(%Const{name: :bool_rec}, [motive, on_true, on_false, major], context) do
     {:ok, encode_bool_match(motive, on_true, on_false, major, context)}
   end

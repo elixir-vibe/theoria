@@ -30,3 +30,9 @@ defmodule Theoria.Validation.InductiveCheck do
     end
   end
 end
+
+defimpl Theoria.Validation.Checkable, for: Theoria.Validation.InductiveCheck do
+  alias Theoria.Validation.InductiveCheck
+
+  def check(%InductiveCheck{} = check, env), do: InductiveCheck.check(env, check)
+end

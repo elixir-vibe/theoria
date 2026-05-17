@@ -9,11 +9,12 @@ defmodule Theoria.Library.Nat do
   alias Theoria.Inductive.Generate
   alias Theoria.Inductive.Spec
   alias Theoria.Kernel
+  alias Theoria.Term
 
   import Theoria.DSL, except: [type: 1]
 
   @doc "The core universe for `Type 0`."
-  def type, do: Theoria.Term.sort(1)
+  def type, do: Term.sort(1)
 
   @doc "Extends an environment with natural number declarations."
   def extend(%Env{} = env) do
@@ -32,7 +33,7 @@ defmodule Theoria.Library.Nat do
     spec =
       :Nat
       |> Spec.new(type(), universe_params: [:u])
-      |> Spec.constructor(:zero, Theoria.Term.const(:Nat))
+      |> Spec.constructor(:zero, nat())
       |> Spec.constructor(:succ, succ_type())
 
     %Spec{spec | recursors: Generate.eliminators!(spec)}
@@ -47,25 +48,22 @@ defmodule Theoria.Library.Nat do
   end
 
   defp nat_add_value do
-    n = Theoria.Term.bvar(0)
+    n = Term.bvar(0)
 
     {:ok, body} =
       Equation.compile_nat(
-        Theoria.Term.const(:Nat),
+        nat(),
         [
           Clause.new([Pattern.constructor(:zero)], n),
-          Clause.new(
-            [Pattern.constructor(:succ, [Pattern.var(:pred)])],
-            Theoria.Term.app(Theoria.Term.const(:succ), n)
-          )
+          Clause.new([Pattern.constructor(:succ, [Pattern.var(:pred)])], succ(n))
         ],
-        Theoria.Term.bvar(1)
+        Term.bvar(1)
       )
 
-    Theoria.Term.lam(
-      :m,
-      Theoria.Term.const(:Nat),
-      Theoria.Term.lam(:n, Theoria.Term.const(:Nat), body)
-    )
+    nat_lam(:m, nat_lam(:n, body))
   end
+
+  defp nat, do: Term.const(:Nat)
+  defp succ(term), do: Term.app(Term.const(:succ), term)
+  defp nat_lam(name, body), do: Term.lam(name, nat(), body)
 end

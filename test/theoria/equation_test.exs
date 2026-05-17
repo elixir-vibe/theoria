@@ -54,11 +54,11 @@ defmodule Theoria.EquationTest do
   end
 
   test "builds Nat recursor applications" do
-    succ_case = Term.lam(:n, Term.const(:Nat), Term.bvar(0))
-    term = Equation.nat(Term.const(:Nat), Term.const(:zero), succ_case, Term.const(:zero))
+    succ_case = nat_lam(:n, Term.bvar(0))
+    term = Equation.nat(nat(), zero(), succ_case, zero())
 
     assert {%Term.Const{name: :nat_rec}, args} = Term.Application.collect(term)
-    assert args == [Term.const(:Nat), Term.const(:zero), succ_case, Term.const(:zero)]
+    assert args == [nat(), zero(), succ_case, zero()]
   end
 
   test "validates recursive pattern shape" do
@@ -73,7 +73,7 @@ defmodule Theoria.EquationTest do
 
     assert Equation.compile_list(
              Term.const(:Nat),
-             Term.app(Term.const(:List), Term.const(:Nat)),
+             nat_list(),
              [
                Clause.new([Pattern.constructor(:list_nil)], Term.const(:list_nil)),
                Clause.new(
@@ -95,7 +95,7 @@ defmodule Theoria.EquationTest do
   end
 
   test "compiles Nat constructor clauses" do
-    succ_case = Term.lam(:n, Term.const(:Nat), Term.bvar(0))
+    succ_case = nat_lam(:n, Term.bvar(0))
 
     assert {:ok, term} =
              Equation.compile_nat(
@@ -108,7 +108,7 @@ defmodule Theoria.EquationTest do
              )
 
     assert {%Term.Const{name: :nat_rec}, args} = Term.Application.collect(term)
-    assert args == [Term.const(:Nat), Term.const(:zero), succ_case, Term.const(:zero)]
+    assert args == [nat(), zero(), succ_case, zero()]
   end
 
   test "materializes Nat succ branches from non-lambda bodies" do
@@ -125,24 +125,23 @@ defmodule Theoria.EquationTest do
     assert {%Term.Const{name: :nat_rec}, [_motive, _zero, succ_case, _major]} =
              Term.Application.collect(term)
 
-    ih = Term.bvar(0)
-    assert %Term.Lam{name: :pred, body: %Term.Lam{name: :ih, body: ^ih}} = succ_case
+    assert_lams(succ_case, [:pred, :ih], Term.bvar(0))
   end
 
   test "builds List recursor applications" do
-    list = Term.app(Term.const(:List), Term.const(:Nat))
-    cons_case = Term.lam(:x, Term.const(:Nat), Term.bvar(0))
+    list = nat_list()
+    cons_case = nat_lam(:x, Term.bvar(0))
 
     term =
-      Equation.list(Term.const(:Nat), list, Term.const(:list_nil), cons_case, Term.const(:xs))
+      Equation.list(nat(), list, Term.const(:list_nil), cons_case, Term.const(:xs))
 
     assert {%Term.Const{name: :list_rec}, args} = Term.Application.collect(term)
-    assert args == [Term.const(:Nat), list, Term.const(:list_nil), cons_case, Term.const(:xs)]
+    assert args == [nat(), list, Term.const(:list_nil), cons_case, Term.const(:xs)]
   end
 
   test "compiles List constructor clauses" do
-    list = Term.app(Term.const(:List), Term.const(:Nat))
-    cons_case = Term.lam(:x, Term.const(:Nat), Term.bvar(0))
+    list = nat_list()
+    cons_case = nat_lam(:x, Term.bvar(0))
 
     assert {:ok, term} =
              Equation.compile_list(
@@ -159,11 +158,11 @@ defmodule Theoria.EquationTest do
              )
 
     assert {%Term.Const{name: :list_rec}, args} = Term.Application.collect(term)
-    assert args == [Term.const(:Nat), list, Term.const(:list_nil), cons_case, Term.const(:xs)]
+    assert args == [nat(), list, Term.const(:list_nil), cons_case, Term.const(:xs)]
   end
 
   test "materializes List cons branches from non-lambda bodies" do
-    list = Term.app(Term.const(:List), Term.const(:Nat))
+    list = nat_list()
 
     assert {:ok, term} =
              Equation.compile_list(
@@ -182,12 +181,22 @@ defmodule Theoria.EquationTest do
     assert {%Term.Const{name: :list_rec}, [_element_type, _motive, _nil, cons_case, _major]} =
              Term.Application.collect(term)
 
-    ih = Term.bvar(0)
-
-    assert %Term.Lam{
-             name: :head,
-             body: %Term.Lam{name: :tail, body: %Term.Lam{name: :ih, body: ^ih}}
-           } =
-             cons_case
+    assert_lams(cons_case, [:head, :tail, :ih], Term.bvar(0))
   end
+
+  defp nat, do: Term.const(:Nat)
+  defp zero, do: Term.const(:zero)
+  defp nat_list, do: Term.app(Term.const(:List), nat())
+  defp nat_lam(name, body), do: Term.lam(name, nat(), body)
+
+  defp assert_lams(term, names, body) do
+    assert collect_lams(term) == {names, body}
+  end
+
+  defp collect_lams(%Term.Lam{name: name, body: body}) do
+    {names, body} = collect_lams(body)
+    {[name | names], body}
+  end
+
+  defp collect_lams(body), do: {[], body}
 end

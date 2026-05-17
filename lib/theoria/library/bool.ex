@@ -12,11 +12,12 @@ defmodule Theoria.Library.Bool do
   alias Theoria.Inductive.Generate
   alias Theoria.Inductive.Spec
   alias Theoria.Kernel
+  alias Theoria.Term
 
   import Theoria.DSL, except: [type: 1]
 
   @doc "The core universe for `Type 0`."
-  def type, do: Theoria.Term.sort(1)
+  def type, do: Term.sort(1)
 
   @doc "Extends an environment with boolean declarations."
   def extend(%Env{} = env) do
@@ -37,8 +38,8 @@ defmodule Theoria.Library.Bool do
     spec =
       :Bool
       |> Spec.new(type(), universe_params: [:u])
-      |> Spec.constructor(true, Theoria.Term.const(:Bool))
-      |> Spec.constructor(false, Theoria.Term.const(:Bool))
+      |> Spec.constructor(true, Term.const(:Bool))
+      |> Spec.constructor(false, Term.const(:Bool))
 
     %Spec{spec | recursors: Generate.eliminators!(spec)}
   end
@@ -50,15 +51,15 @@ defmodule Theoria.Library.Bool do
   defp bool_not_value do
     {:ok, body} =
       Equation.compile_bool(
-        Theoria.Term.const(:Bool),
+        bool(),
         [
-          Clause.new([Pattern.constructor(true)], Theoria.Term.const(false)),
-          Clause.new([Pattern.constructor(false)], Theoria.Term.const(true))
+          Clause.new([Pattern.constructor(true)], bool_false()),
+          Clause.new([Pattern.constructor(false)], bool_true())
         ],
-        Theoria.Term.bvar(0)
+        Term.bvar(0)
       )
 
-    Theoria.Term.lam(:b, Theoria.Term.const(:Bool), body)
+    bool_lam(:b, body)
   end
 
   defp bool_binary_type do
@@ -73,36 +74,33 @@ defmodule Theoria.Library.Bool do
   defp bool_and_value do
     {:ok, body} =
       Equation.compile_bool(
-        Theoria.Term.const(:Bool),
+        bool(),
         [
-          Clause.new([Pattern.constructor(true)], Theoria.Term.bvar(0)),
-          Clause.new([Pattern.constructor(false)], Theoria.Term.const(false))
+          Clause.new([Pattern.constructor(true)], Term.bvar(0)),
+          Clause.new([Pattern.constructor(false)], bool_false())
         ],
-        Theoria.Term.bvar(1)
+        Term.bvar(1)
       )
 
-    Theoria.Term.lam(
-      :a,
-      Theoria.Term.const(:Bool),
-      Theoria.Term.lam(:b, Theoria.Term.const(:Bool), body)
-    )
+    bool_lam(:a, bool_lam(:b, body))
   end
 
   defp bool_or_value do
     {:ok, body} =
       Equation.compile_bool(
-        Theoria.Term.const(:Bool),
+        bool(),
         [
-          Clause.new([Pattern.constructor(true)], Theoria.Term.const(true)),
-          Clause.new([Pattern.constructor(false)], Theoria.Term.bvar(0))
+          Clause.new([Pattern.constructor(true)], bool_true()),
+          Clause.new([Pattern.constructor(false)], Term.bvar(0))
         ],
-        Theoria.Term.bvar(1)
+        Term.bvar(1)
       )
 
-    Theoria.Term.lam(
-      :a,
-      Theoria.Term.const(:Bool),
-      Theoria.Term.lam(:b, Theoria.Term.const(:Bool), body)
-    )
+    bool_lam(:a, bool_lam(:b, body))
   end
+
+  defp bool, do: Term.const(:Bool)
+  defp bool_true, do: Term.const(true)
+  defp bool_false, do: Term.const(false)
+  defp bool_lam(name, body), do: Term.lam(name, bool(), body)
 end

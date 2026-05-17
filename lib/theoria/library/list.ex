@@ -11,6 +11,7 @@ defmodule Theoria.Library.List do
   alias Theoria.Kernel
   alias Theoria.Level
   alias Theoria.Library.Nat
+  alias Theoria.Term
 
   import Theoria.DSL, except: [type: 1]
 
@@ -99,7 +100,7 @@ defmodule Theoria.Library.List do
 
   defp list_append_value do
     u = Level.param(:u)
-    a = Theoria.Term.bvar(2)
+    a = Term.bvar(2)
     list_a = list_of(a)
 
     {:ok, body} =
@@ -107,71 +108,71 @@ defmodule Theoria.Library.List do
         a,
         list_a,
         [
-          Clause.new([Pattern.constructor(:list_nil)], Theoria.Term.bvar(0)),
+          Clause.new([Pattern.constructor(:list_nil)], Term.bvar(0)),
           Clause.new(
             [Pattern.constructor(:list_cons, [Pattern.var(:head), Pattern.var(:tail)])],
             list_cons_branch()
           )
         ],
-        Theoria.Term.bvar(1),
+        Term.bvar(1),
         [u, u]
       )
 
-    sort_u = Theoria.Term.sort(u)
-    bound_a = Theoria.Term.bvar(0)
+    sort_u = Term.sort(u)
+    bound_a = Term.bvar(0)
     outer_list = list_of(bound_a)
 
-    Theoria.Term.lam(
+    Term.lam(
       :a,
       sort_u,
-      Theoria.Term.lam(
+      Term.lam(
         :left,
         outer_list,
-        Theoria.Term.lam(:right, list_of(Theoria.Term.shift(bound_a, 1)), body)
+        Term.lam(:right, list_of(Term.shift(bound_a, 1)), body)
       )
     )
   end
 
   defp list_length_value do
     u = Level.param(:u)
-    xs = Theoria.Term.bvar(0)
-    element_type = Theoria.Term.bvar(1)
+    xs = Term.bvar(0)
+    element_type = Term.bvar(1)
 
     {:ok, body} =
       Equation.compile_list(
         element_type,
-        Theoria.Term.const(:Nat),
+        Term.const(:Nat),
         [
-          Clause.new([Pattern.constructor(:list_nil)], Theoria.Term.const(:zero)),
+          Clause.new([Pattern.constructor(:list_nil)], Term.const(:zero)),
           Clause.new(
             [Pattern.constructor(:list_cons, [Pattern.wildcard(), Pattern.var(:tail)])],
-            Theoria.Term.app(Theoria.Term.const(:succ), branch_ih())
+            Term.app(Term.const(:succ), branch_ih())
           )
         ],
         xs,
         [u, 1]
       )
 
-    sort_u = Theoria.Term.sort(u)
-    bound_a = Theoria.Term.bvar(0)
+    sort_u = Term.sort(u)
+    bound_a = Term.bvar(0)
 
-    Theoria.Term.lam(
+    Term.lam(
       :a,
       sort_u,
-      Theoria.Term.lam(:xs, list_of(bound_a), body)
+      Term.lam(:xs, list_of(bound_a), body)
     )
   end
 
-  defp branch_ih, do: Theoria.Term.bvar(0)
+  defp branch_ih, do: Term.bvar(0)
 
   defp list_cons_branch do
-    Theoria.Term.const(:list_cons, [Level.param(:u)])
-    |> Theoria.Term.app(Theoria.Term.bvar(5))
-    |> Theoria.Term.app(Theoria.Term.bvar(2))
-    |> Theoria.Term.app(Theoria.Term.bvar(0))
+    Term.const(:list_cons, [Level.param(:u)])
+    |> Term.app(Term.bvar(5))
+    |> Term.app(Term.bvar(2))
+    |> Term.app(Term.bvar(0))
   end
 
   defp list_of(type) do
-    Theoria.Term.app(Theoria.Term.const(:List, [Level.param(:u)]), type)
+    Term.app(Term.const(:List, [Level.param(:u)]), type)
   end
 end

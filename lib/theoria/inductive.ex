@@ -395,20 +395,7 @@ defmodule Theoria.Inductive do
     Enum.reverse(parameters ++ fields)
   end
 
-  defp syntax_from_core(%Theoria.Term.Sort{level: level}, _context), do: S.sort(level)
-
-  defp syntax_from_core(%Theoria.Term.Const{name: name, levels: levels}, _context),
-    do: S.const(name, levels)
-
-  defp syntax_from_core(%Theoria.Term.BVar{index: index}, context),
-    do: context |> Enum.fetch!(index) |> S.var()
-
-  defp syntax_from_core(%App{fun: fun, arg: arg}, context),
-    do: S.app(syntax_from_core(fun, context), syntax_from_core(arg, context))
-
-  defp syntax_from_core(%Forall{name: name, domain: domain, body: body}, context) do
-    S.forall(name, syntax_from_core(domain, context), syntax_from_core(body, [name | context]))
-  end
+  defp syntax_from_core(term, context), do: S.from_core(term, context)
 
   defp minor_names(%Spec{} = spec) do
     spec.constructors
@@ -799,6 +786,17 @@ defmodule Theoria.Inductive do
 
   defp positive_occurrences?(%Theoria.Term.Refl{value: value}, name, polarity) do
     positive_occurrences?(value, name, polarity)
+  end
+
+  defp positive_occurrences?(
+         %Theoria.Term.EqRec{type: type, motive: motive, base: base, proof: proof},
+         name,
+         polarity
+       ) do
+    positive_occurrences?(type, name, polarity) and
+      positive_occurrences?(motive, name, polarity) and
+      positive_occurrences?(base, name, polarity) and
+      positive_occurrences?(proof, name, polarity)
   end
 
   defp flip_polarity(:positive), do: :negative

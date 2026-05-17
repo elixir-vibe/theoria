@@ -64,7 +64,10 @@ defmodule Theoria.NormalizeTest do
           forall(name, domain, body)
         end),
         map({child, child, child}, fn {type, left, right} -> eq(type, left, right) end),
-        map(child, &refl/1)
+        map(child, &refl/1),
+        map({child, child, child, child}, fn {type, motive, base, proof} ->
+          eq_rec(type, motive, base, proof)
+        end)
       ])
     end)
   end

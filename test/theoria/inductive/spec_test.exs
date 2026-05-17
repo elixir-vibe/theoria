@@ -67,6 +67,24 @@ defmodule Theoria.Inductive.SpecTest do
     assert Inductive.validate(spec) == :ok
   end
 
+  test "positivity validation traverses equality recursors" do
+    field_type =
+      eq_rec(
+        const(:Nat),
+        lam(:_, const(:Nat), sort(1)),
+        const(:Nat),
+        refl(const(:zero))
+      )
+
+    spec = %Spec{
+      name: :Box,
+      type: sort(1),
+      constructors: [%Constructor{name: :box, type: arrow(field_type, const(:Box))}]
+    }
+
+    assert Inductive.validate(spec) == :ok
+  end
+
   test "rejects negative recursive constructor occurrences" do
     spec = %Spec{
       name: :Bad,

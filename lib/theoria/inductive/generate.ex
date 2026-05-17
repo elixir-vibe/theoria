@@ -505,21 +505,7 @@ defmodule Theoria.Inductive.Generate do
     )
   end
 
-  defp syntax_from_core(term, context \\ [])
-  defp syntax_from_core(%Theoria.Term.Sort{level: level}, _context), do: S.sort(level)
-
-  defp syntax_from_core(%Theoria.Term.BVar{index: index}, context) do
-    context
-    |> Enum.fetch!(index)
-    |> S.var()
-  end
-
-  defp syntax_from_core(%Theoria.Term.Const{name: name, levels: levels}, _context),
-    do: S.const(name, levels)
-
-  defp syntax_from_core(%Theoria.Term.App{fun: fun, arg: arg}, context) do
-    S.app(syntax_from_core(fun, context), syntax_from_core(arg, context))
-  end
+  defp syntax_from_core(term, context \\ []), do: S.from_core(term, context)
 
   defp base_name(name) do
     name

@@ -56,6 +56,9 @@ defmodule Theoria.Term.PropertyTest do
       map({smaller, smaller}, fn {fun, arg} -> app(fun, arg) end),
       map({smaller, smaller, smaller}, fn {type, left, right} -> eq(type, left, right) end),
       map(smaller, &refl/1),
+      map({smaller, smaller, smaller, smaller}, fn {type, motive, base, proof} ->
+        eq_rec(type, motive, base, proof)
+      end),
       map({leaf_gen(depth), under_binder}, fn {domain, body} -> lam(:x, domain, body) end),
       map({leaf_gen(depth), under_binder}, fn {domain, body} -> forall(:x, domain, body) end),
       map({leaf_gen(depth), smaller, under_binder}, fn {type, value, body} ->

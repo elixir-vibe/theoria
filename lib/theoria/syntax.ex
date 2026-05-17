@@ -159,4 +159,54 @@ defmodule Theoria.Syntax do
   def eq_rec(type, motive, base, proof) do
     %EqRec{type: type, motive: motive, base: base, proof: proof}
   end
+
+  @doc "Converts a core de Bruijn term back to named syntax using `context` for bound variables."
+  @spec from_core(Theoria.Term.t(), [atom()]) :: t()
+  def from_core(term, context \\ [])
+
+  def from_core(%Theoria.Term.Sort{level: level}, _context), do: sort(level)
+
+  def from_core(%Theoria.Term.Const{name: name, levels: levels}, _context),
+    do: const(name, levels)
+
+  def from_core(%Theoria.Term.BVar{index: index}, context),
+    do: context |> Enum.fetch!(index) |> var()
+
+  def from_core(%Theoria.Term.App{fun: fun, arg: arg}, context),
+    do: app(from_core(fun, context), from_core(arg, context))
+
+  def from_core(%Theoria.Term.Forall{name: name, domain: domain, body: body}, context) do
+    forall(name, from_core(domain, context), from_core(body, [name | context]))
+  end
+
+  def from_core(%Theoria.Term.Lam{name: name, domain: domain, body: body}, context) do
+    lam(name, from_core(domain, context), from_core(body, [name | context]))
+  end
+
+  def from_core(%Theoria.Term.Let{name: name, type: type, value: value, body: body}, context) do
+    let(
+      name,
+      from_core(type, context),
+      from_core(value, context),
+      from_core(body, [name | context])
+    )
+  end
+
+  def from_core(%Theoria.Term.Eq{type: type, left: left, right: right}, context) do
+    eq(from_core(type, context), from_core(left, context), from_core(right, context))
+  end
+
+  def from_core(%Theoria.Term.Refl{value: value}, context), do: refl(from_core(value, context))
+
+  def from_core(
+        %Theoria.Term.EqRec{type: type, motive: motive, base: base, proof: proof},
+        context
+      ) do
+    eq_rec(
+      from_core(type, context),
+      from_core(motive, context),
+      from_core(base, context),
+      from_core(proof, context)
+    )
+  end
 end

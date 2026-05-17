@@ -3,6 +3,7 @@ defmodule Theoria.Equation.Lemma do
 
   alias Theoria.Env
   alias Theoria.Equation.Clause
+  alias Theoria.Equation.Info
   alias Theoria.Kernel
   alias Theoria.Term
   alias Theoria.Theorem
@@ -22,6 +23,13 @@ defmodule Theoria.Equation.Lemma do
   @spec new(atom(), Term.t(), Term.t(), keyword()) :: t()
   def new(name, left, right, opts \\ []) when is_atom(name) do
     %__MODULE__{name: name, left: left, right: right, source: Keyword.get(opts, :source)}
+  end
+
+  @doc "Builds equation-lemma metadata named after a compiled definition."
+  @spec for_definition(Info.t(), atom(), Term.t(), Term.t(), keyword()) :: t()
+  def for_definition(%Info{name: definition_name}, suffix, left, right, opts \\ [])
+      when is_atom(suffix) do
+    new(:"#{definition_name}.eq_#{suffix}", left, right, opts)
   end
 
   @doc "Turns equation-lemma metadata into a native definitional-equality validation check."

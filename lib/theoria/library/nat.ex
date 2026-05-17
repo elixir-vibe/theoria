@@ -5,7 +5,7 @@ defmodule Theoria.Library.Nat do
 
   alias Theoria.Env
   alias Theoria.Equation
-  alias Theoria.Equation.{Clause, Definition, Pattern}
+  alias Theoria.Equation.{Clause, Definition, FixedParams, Info, Pattern}
   alias Theoria.Inductive.Generate
   alias Theoria.Inductive.Spec
   alias Theoria.Kernel
@@ -19,7 +19,11 @@ defmodule Theoria.Library.Nat do
   @doc "Extends an environment with natural number declarations."
   def extend(%Env{} = env) do
     with {:ok, env} <- Kernel.add_inductive(env, inductive_spec()) do
-      Kernel.add_definition(env, :nat_add, nat_add_type(), nat_add_value())
+      type = nat_add_type()
+      value = nat_add_value()
+      metadata = Info.new(:nat_add, type, value, rec_arg_pos: 0, fixed_params: FixedParams.new())
+
+      Kernel.add_definition(env, :nat_add, type, value, [], metadata: metadata)
     end
   end
 

@@ -1,6 +1,7 @@
 defmodule Theoria.Library.ListTest do
   use ExUnit.Case, async: true
 
+  alias Theoria.Equation.Info
   alias Theoria.Kernel
   alias Theoria.Library.List
   alias Theoria.Normalize
@@ -16,6 +17,18 @@ defmodule Theoria.Library.ListTest do
 
     assert {:ok, _type} = Kernel.infer(env, const(:list_rec, [1, 1]))
     assert {:ok, _type} = Kernel.infer(env, const(:list_ind, [1, 1]))
+  end
+
+  test "compiled list definitions store equation metadata" do
+    {:ok, env} = List.env()
+
+    assert {:ok, %Info{} = length_info} = Info.get(env, :list_length)
+    assert length_info.rec_arg_pos == 1
+    assert length_info.level_params == [:u]
+
+    assert {:ok, %Info{} = append_info} = Info.get(env, :list_append)
+    assert append_info.rec_arg_pos == 1
+    assert append_info.level_params == [:u]
   end
 
   test "List maps Type 0 to Type 0" do

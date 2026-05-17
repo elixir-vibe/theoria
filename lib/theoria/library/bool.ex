@@ -8,7 +8,7 @@ defmodule Theoria.Library.Bool do
 
   alias Theoria.Env
   alias Theoria.Equation
-  alias Theoria.Equation.{Clause, Context, Definition, Pattern}
+  alias Theoria.Equation.{Clause, Context, Definition, FixedParams, Info, Pattern}
   alias Theoria.Inductive.Generate
   alias Theoria.Inductive.Spec
   alias Theoria.Kernel
@@ -22,9 +22,11 @@ defmodule Theoria.Library.Bool do
   @doc "Extends an environment with boolean declarations."
   def extend(%Env{} = env) do
     with {:ok, env} <- Kernel.add_inductive(env, inductive_spec()),
-         {:ok, env} <- Kernel.add_definition(env, :bool_not, bool_not_type(), bool_not_value()),
-         {:ok, env} <- Kernel.add_definition(env, :bool_and, bool_binary_type(), bool_and_value()) do
-      Kernel.add_definition(env, :bool_or, bool_binary_type(), bool_or_value())
+         {:ok, env} <-
+           add_equation_definition(env, :bool_not, bool_not_type(), bool_not_value(), 0),
+         {:ok, env} <-
+           add_equation_definition(env, :bool_and, bool_binary_type(), bool_and_value(), 0) do
+      add_equation_definition(env, :bool_or, bool_binary_type(), bool_or_value(), 0)
     end
   end
 
@@ -99,6 +101,16 @@ defmodule Theoria.Library.Bool do
       )
 
     Definition.binary(:a, bool(), :b, bool(), body)
+  end
+
+  defp add_equation_definition(env, name, type, value, rec_arg_pos) do
+    metadata =
+      Info.new(name, type, value,
+        rec_arg_pos: rec_arg_pos,
+        fixed_params: FixedParams.new()
+      )
+
+    Kernel.add_definition(env, name, type, value, [], metadata: metadata)
   end
 
   defp bool, do: Term.const(:Bool)

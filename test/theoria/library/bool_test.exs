@@ -1,6 +1,7 @@
 defmodule Theoria.Library.BoolTest do
   use ExUnit.Case, async: true
 
+  alias Theoria.Equation.Info
   alias Theoria.Kernel
   alias Theoria.Library.Bool
 
@@ -15,6 +16,16 @@ defmodule Theoria.Library.BoolTest do
 
     assert {:ok, _type} = Kernel.infer(env, const(:bool_rec, [1]))
     assert {:ok, _type} = Kernel.infer(env, const(:bool_ind, [1]))
+  end
+
+  test "compiled bool definitions store equation metadata" do
+    {:ok, env} = Bool.env()
+
+    for name <- [:bool_not, :bool_and, :bool_or] do
+      assert {:ok, %Info{} = info} = Info.get(env, name)
+      assert info.name == name
+      assert info.rec_arg_pos == 0
+    end
   end
 
   test "Bool lives in Type 0, distinct from Prop" do

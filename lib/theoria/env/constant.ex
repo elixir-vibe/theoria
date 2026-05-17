@@ -18,6 +18,7 @@ defmodule Theoria.Env.Constant do
           Theoria.Env.Inductive.t()
           | Theoria.Env.Constructor.t()
           | Theoria.Env.Recursor.t()
+          | Theoria.Equation.Info.t()
           | nil
 
   @type kind ::

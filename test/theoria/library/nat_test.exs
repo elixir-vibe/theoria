@@ -1,6 +1,7 @@
 defmodule Theoria.Library.NatTest do
   use ExUnit.Case, async: true
 
+  alias Theoria.Equation.Info
   alias Theoria.Kernel
   alias Theoria.Library.Nat
   alias Theoria.Normalize
@@ -16,6 +17,15 @@ defmodule Theoria.Library.NatTest do
 
     assert {:ok, _type} = Kernel.infer(env, const(:nat_rec, [1]))
     assert {:ok, _type} = Kernel.infer(env, const(:nat_ind, [1]))
+  end
+
+  test "nat_add stores equation metadata" do
+    {:ok, env} = Nat.env()
+
+    assert {:ok, %Info{} = info} = Info.get(env, :nat_add)
+    assert info.name == :nat_add
+    assert info.rec_arg_pos == 0
+    assert info.level_params == []
   end
 
   test "Nat lives in Type 0" do

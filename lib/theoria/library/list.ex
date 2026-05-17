@@ -5,7 +5,7 @@ defmodule Theoria.Library.List do
 
   alias Theoria.Env
   alias Theoria.Equation
-  alias Theoria.Equation.{Clause, Definition, Pattern}
+  alias Theoria.Equation.{Clause, Definition, FixedParams, Info, Pattern}
   alias Theoria.Inductive.Generate
   alias Theoria.Inductive.Spec
   alias Theoria.Kernel
@@ -19,8 +19,8 @@ defmodule Theoria.Library.List do
   def extend(%Env{} = env) do
     with {:ok, env} <- Kernel.add_inductive(env, inductive_spec()),
          {:ok, env} <-
-           Kernel.add_definition(env, :list_length, list_length_type(), list_length_value(), [:u]) do
-      Kernel.add_definition(env, :list_append, list_append_type(), list_append_value(), [:u])
+           add_equation_definition(env, :list_length, list_length_type(), list_length_value(), 1) do
+      add_equation_definition(env, :list_append, list_append_type(), list_append_value(), 1)
     end
   end
 
@@ -156,6 +156,17 @@ defmodule Theoria.Library.List do
     bound_a = Term.bvar(0)
 
     Definition.lam_many([{:a, sort_u}, {:xs, list_of(bound_a)}], body)
+  end
+
+  defp add_equation_definition(env, name, type, value, rec_arg_pos) do
+    metadata =
+      Info.new(name, type, value,
+        level_params: [:u],
+        rec_arg_pos: rec_arg_pos,
+        fixed_params: FixedParams.new([0])
+      )
+
+    Kernel.add_definition(env, name, type, value, [:u], metadata: metadata)
   end
 
   defp list_cons(type, head, tail) do

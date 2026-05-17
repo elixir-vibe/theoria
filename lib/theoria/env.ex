@@ -60,15 +60,16 @@ defmodule Theoria.Env do
     }
   end
 
-  @spec put_definition(t(), atom(), Term.t(), Term.t(), [atom()]) :: t()
+  @spec put_definition(t(), atom(), Term.t(), Term.t(), [atom()], keyword()) :: t()
   def put_definition(
         %__MODULE__{constants: constants} = env,
         name,
         type,
         value,
-        universe_params \\ []
+        universe_params \\ [],
+        opts \\ []
       )
-      when is_atom(name) and is_list(universe_params) do
+      when is_atom(name) and is_list(universe_params) and is_list(opts) do
     %{
       env
       | constants:
@@ -77,7 +78,8 @@ defmodule Theoria.Env do
             value: value,
             kind: :definition,
             reducible?: true,
-            universe_params: universe_params
+            universe_params: universe_params,
+            metadata: Keyword.get(opts, :metadata)
           }),
         declarations: put_order(env, name)
     }

@@ -41,6 +41,16 @@ defmodule Theoria.Equation.Info do
     }
   end
 
+  @doc "Fetches stored equation metadata for an environment declaration."
+  @spec get(Env.t(), atom()) :: {:ok, t()} | {:error, term()}
+  def get(%Env{} = env, name) when is_atom(name) do
+    case Env.fetch(env, name) do
+      {:ok, %Constant{metadata: %__MODULE__{} = metadata}} -> {:ok, metadata}
+      {:ok, %Constant{}} -> {:error, :not_equation_definition}
+      :error -> {:error, {:unknown_declaration, name}}
+    end
+  end
+
   @doc "Builds equation metadata from a checked environment definition or theorem."
   @spec from_env(Env.t(), atom(), keyword()) :: {:ok, t()} | {:error, term()}
   def from_env(%Env{} = env, name, opts \\ []) when is_atom(name) do

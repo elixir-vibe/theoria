@@ -162,15 +162,16 @@ defmodule Theoria.Kernel do
     end
   end
 
-  def add_definition(%Env{} = env, name, type, value, universe_params \\ [])
-      when is_atom(name) and is_list(universe_params) do
+  def add_definition(%Env{} = env, name, type, value, universe_params \\ [], opts \\ [])
+      when is_atom(name) and is_list(universe_params) and is_list(opts) do
     with :ok <- ensure_fresh_declaration(env, name),
          :ok <- ensure_universe_params(universe_params),
+         :ok <- ensure_definition_metadata(Keyword.get(opts, :metadata), name, type, value),
          :ok <- ensure_level_params(type, universe_params),
          :ok <- ensure_level_params(value, universe_params),
          {:ok, %Sort{}} <- infer_sort(env, Context.new(), type),
          :ok <- check(env, Context.new(), value, type) do
-      {:ok, Env.put_definition(env, name, type, value, universe_params)}
+      {:ok, Env.put_definition(env, name, type, value, universe_params, opts)}
     end
   end
 
@@ -291,6 +292,23 @@ defmodule Theoria.Kernel do
       true ->
         :ok
     end
+  end
+
+  defp ensure_definition_metadata(nil, _name, _type, _value), do: :ok
+
+  defp ensure_definition_metadata(
+         %Theoria.Equation.Info{name: name, type: type, value: value},
+         name,
+         type,
+         value
+       ),
+       do: :ok
+
+  defp ensure_definition_metadata(%Theoria.Equation.Info{} = metadata, name, _type, _value),
+    do: error(:invalid_declaration, kind: :equation_metadata, name: name, metadata: metadata)
+
+  defp ensure_definition_metadata(metadata, name, _type, _value) do
+    error(:invalid_declaration, kind: :definition_metadata, name: name, metadata: metadata)
   end
 
   defp ensure_constant_kind(:constant, nil, nil), do: :ok
@@ -453,10 +471,11 @@ defmodule Theoria.Kernel do
          type: type,
          value: value,
          universe_params: params,
-         reduction: nil
+         reduction: nil,
+         metadata: metadata
        }}
       when not is_nil(value) ->
-        add_definition(checked_env, name, type, value, params)
+        add_definition(checked_env, name, type, value, params, metadata: metadata)
 
       {:ok,
        %Constant{

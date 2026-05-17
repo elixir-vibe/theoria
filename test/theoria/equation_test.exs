@@ -21,6 +21,7 @@ defmodule Theoria.EquationTest do
     assert info.name == :nat_add
     assert info.rec_arg_pos == 0
     assert info.level_params == []
+    assert {:ok, ^info} = Info.get(env, :nat_add)
   end
 
   test "matcher info records small Lean-like matcher metadata" do
@@ -31,10 +32,11 @@ defmodule Theoria.EquationTest do
   end
 
   test "equation lemma metadata becomes defeq checks and checked theorems" do
-    lemma = Lemma.new(:equation_zero, zero(), zero())
+    info = Info.new(:nat_add, nat(), zero())
+    lemma = Lemma.for_definition(info, :zero, zero(), zero())
     check = Lemma.defeq_check(lemma, :nat)
 
-    assert check.name == "equation_zero"
+    assert check.name == "nat_add.eq_zero"
     assert check.category == :nat
     assert check.left == zero()
     assert check.right == zero()
@@ -45,8 +47,8 @@ defmodule Theoria.EquationTest do
     assert theorem.proof == Term.refl(zero())
 
     assert {:ok, env, theorem} = Lemma.add_to_env(env, lemma, nat())
-    assert theorem.name == :equation_zero
-    assert {:ok, _constant} = Theoria.Env.fetch(env, :equation_zero)
+    assert theorem.name == :"nat_add.eq_zero"
+    assert {:ok, _constant} = Theoria.Env.fetch(env, :"nat_add.eq_zero")
   end
 
   test "context exposes branch and outer values" do

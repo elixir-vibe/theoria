@@ -204,10 +204,10 @@ Legend:
 
 | Lean feature / concept | Lean role | Theoria status | Current Theoria state | Needed roadmap | Priority |
 |---|---|---:|---|---|---:|
-| Pattern matching compiler | Compile equations to recursors | 🟡 | Internal `Info/FixedParams → Pattern → Clause → Validator → Branch → Context → Compiler → Recursors` pipeline plus matcher metadata mirrors and lemma metadata for Bool/Nat/List | Add public syntax and dependent matching later | P1 |
+| Pattern matching compiler | Compile equations to recursors | 🟡 | Internal `Info/FixedParams → Pattern → Clause → Validator → Branch → Context → Compiler → Recursors` pipeline; compiled Bool/Nat/List definitions store equation metadata | Add public syntax and dependent matching later | P1 |
 | Structural recursion | Termination by smaller argument | 🟡 | Library definitions use primitive Nat/List recursion; no general checker | Start conservative checker | P1 |
 | Termination checker | Ensure recursive definitions terminate | 🔴 | Missing | Start conservative | P2 |
-| Equation lemmas | Generated simplification theorems | 🟡 | Metadata via `Theoria.Equation.Lemma`; reflexivity theorem conversion and theorem installation for defeq sides; full declaration generation later | Needed for `simp` | P2 |
+| Equation lemmas | Generated simplification theorems | 🟡 | Metadata named from stored `Equation.Info`; reflexivity theorem conversion and theorem installation for defeq sides; full declaration generation later | Needed for `simp` | P2 |
 | Dependent pattern matching | Match indexed families | 🔴 | Missing | After indexed iota | P2 |
 | Inaccessible patterns | Lean dependent matching feature | ❌ / later | Missing | Probably much later | P5 |
 | Partial functions | Lean has partial support | ❌ | Missing | Avoid early; kernel should stay total | P5 |

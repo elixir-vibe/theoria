@@ -230,6 +230,7 @@ Contributors with Lean installed can also run:
 
 ```bash
 mix theoria.lean.check
+mix theoria.lean.check --only equality,bool,nat,list
 ```
 
 This generates a Lean oracle file from Theoria's core terms and asks Lean to check it. Lean is not required for normal use.

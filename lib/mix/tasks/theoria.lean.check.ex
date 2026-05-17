@@ -2,8 +2,9 @@ defmodule Mix.Tasks.Theoria.Lean.Check do
   @moduledoc """
   Generates a Lean oracle file from Theoria checks and asks Lean to validate it.
 
-  This task is contributor-only. Lean is not required to use Theoria as a
-  library.
+  Use `--only equality`, `--only bool,nat,list`, or `--only defeq` to run a
+  smaller corpus while developing encoders. This task is contributor-only. Lean
+  is not required to use Theoria as a library.
   """
 
   use Mix.Task
@@ -22,7 +23,7 @@ defmodule Mix.Tasks.Theoria.Lean.Check do
 
     Mix.shell().info("Generating Lean oracle corpus...")
 
-    with {:ok, lean_module, stats} <- Corpus.build(),
+    with {:ok, lean_module, stats} <- Corpus.build(only: Keyword.get(opts, :only)),
          source = LeanModule.render(lean_module),
          path = Keyword.get(opts, :path, Path.join(["_build", "theoria_lean", "oracle.lean"])),
          {:ok, result} <- Oracle.run(source, Keyword.put(opts, :path, path)) do
@@ -59,7 +60,8 @@ defmodule Mix.Tasks.Theoria.Lean.Check do
   end
 
   defp parse_args(args) do
-    {opts, _argv, invalid} = OptionParser.parse(args, strict: [path: :string, lean: :string])
+    {opts, _argv, invalid} =
+      OptionParser.parse(args, strict: [path: :string, lean: :string, only: :keep])
 
     if invalid != [] do
       Mix.raise(
@@ -67,6 +69,24 @@ defmodule Mix.Tasks.Theoria.Lean.Check do
       )
     end
 
-    opts
+    Keyword.update(opts, :only, Corpus.valid_categories(), &parse_only!/1)
+  end
+
+  defp parse_only!(values) do
+    values
+    |> List.wrap()
+    |> Enum.flat_map(&String.split(&1, ",", trim: true))
+    |> Enum.map(&parse_category!/1)
+  end
+
+  defp parse_category!(value) do
+    category = Enum.find(Corpus.valid_categories(), &(Atom.to_string(&1) == value))
+
+    if category do
+      category
+    else
+      valid = Enum.map_join(Corpus.valid_categories(), ", ", &Atom.to_string/1)
+      Mix.raise("invalid --only value: #{value}. Expected one of: #{valid}")
+    end
   end
 end

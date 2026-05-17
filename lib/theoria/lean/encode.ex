@@ -1,13 +1,3 @@
-defprotocol Theoria.Lean.Encodable do
-  @moduledoc "Protocol for rendering Theoria structures as Lean oracle source."
-
-  @fallback_to_any true
-
-  @doc "Encodes a value as Lean source with a de Bruijn context."
-  @spec encode(t(), [String.t()]) :: String.t()
-  def encode(value, context)
-end
-
 defmodule Theoria.Lean.Encode do
   @moduledoc """
   Encodes Theoria core terms as Lean source for contributor oracle checks.
@@ -37,9 +27,11 @@ defmodule Theoria.Lean.Encode do
     bool_and: "Bool.and",
     bool_or: "Bool.or",
     List: "List",
-    list_nil: "List.nil",
-    list_cons: "List.cons",
-    list_length: "List.length",
+    list_nil: "(fun (a : Type) => (@List.nil a))",
+    list_cons: "(fun (a : Type) => fun (x : a) => fun (xs : List a) => (@List.cons a x xs))",
+    list_rec: "tListRec",
+    list_ind: "tListInd",
+    list_length: "(fun (a : Type) => fun (xs : List a) => List.length xs)",
     true: "Bool.true",
     false: "Bool.false"
   }
@@ -132,122 +124,5 @@ defmodule Theoria.Lean.Encode do
     Stream.iterate(0, &(&1 + 1))
     |> Stream.map(&"#{base}#{&1}")
     |> Enum.find(&(&1 not in context))
-  end
-end
-
-defimpl Theoria.Lean.Encodable, for: Theoria.Term.Sort do
-  alias Theoria.Lean.Encode
-
-  def encode(%{level: level}, _context), do: Encode.sort(level)
-end
-
-defimpl Theoria.Lean.Encodable, for: Theoria.Term.Const do
-  alias Theoria.Lean.Encode
-
-  def encode(%{name: name}, _context), do: Encode.constant(name)
-end
-
-defimpl Theoria.Lean.Encodable, for: Theoria.Term.BVar do
-  def encode(%{index: index}, context), do: Enum.fetch!(context, index)
-end
-
-defimpl Theoria.Lean.Encodable, for: Theoria.Term.App do
-  alias Theoria.Lean.Encode
-  alias Theoria.Term
-  alias Theoria.Term.Const
-
-  def encode(app, context) do
-    {fun, args} = Term.Application.collect(app)
-
-    case {fun, args} do
-      {%Const{name: :bool_rec}, [motive, on_true, on_false, major]} ->
-        encode_bool_match(motive, on_true, on_false, major, context)
-
-      {%Const{name: :bool_ind}, [motive, on_true, on_false, major]} ->
-        encode_bool_match(motive, on_true, on_false, major, context)
-
-      {%Const{name: :nat_rec}, [_motive, zero_case, succ_case, major]} ->
-        Encode.apply_source("Nat.rec", encode_args([zero_case, succ_case, major], context))
-
-      {%Const{name: :nat_ind}, [motive, zero_case, succ_case, major]} ->
-        fun = "Nat.rec (motive := #{Encode.term(motive, context)})"
-        Encode.apply_source(fun, encode_args([zero_case, succ_case, major], context))
-
-      _other ->
-        fun
-        |> Encode.term(context)
-        |> Encode.apply_source(encode_args(args, context))
-    end
-  end
-
-  defp encode_bool_match(_motive, on_true, on_false, major, context) do
-    "(match #{Encode.term(major, context)} with | Bool.true => #{Encode.term(on_true, context)} | Bool.false => #{Encode.term(on_false, context)})"
-  end
-
-  defp encode_args(args, context), do: Enum.map(args, &Encode.term(&1, context))
-end
-
-defimpl Theoria.Lean.Encodable, for: Theoria.Term.Lam do
-  alias Theoria.Lean.Encode
-  alias Theoria.Term.Lam
-
-  def encode(%Lam{name: name, domain: domain, body: body}, context) do
-    binder = Encode.fresh_name(name, context)
-
-    "(fun (#{binder} : #{Encode.term(domain, context)}) => #{Encode.term(body, [binder | context])})"
-  end
-end
-
-defimpl Theoria.Lean.Encodable, for: Theoria.Term.Forall do
-  alias Theoria.Lean.Encode
-  alias Theoria.Term.Forall
-
-  def encode(%Forall{name: :_, domain: domain, body: body}, context) do
-    "(#{Encode.term(domain, context)} -> #{Encode.term(body, ["_" | context])})"
-  end
-
-  def encode(%Forall{name: name, domain: domain, body: body}, context) do
-    binder = Encode.fresh_name(name, context)
-
-    "(forall (#{binder} : #{Encode.term(domain, context)}), #{Encode.term(body, [binder | context])})"
-  end
-end
-
-defimpl Theoria.Lean.Encodable, for: Theoria.Term.Let do
-  alias Theoria.Lean.Encode
-
-  def encode(%{name: name, type: type, value: value, body: body}, context) do
-    binder = Encode.fresh_name(name, context)
-
-    "(let #{binder} : #{Encode.term(type, context)} := #{Encode.term(value, context)}; #{Encode.term(body, [binder | context])})"
-  end
-end
-
-defimpl Theoria.Lean.Encodable, for: Theoria.Term.Eq do
-  alias Theoria.Lean.Encode
-
-  def encode(%{left: left, right: right}, context) do
-    "(#{Encode.term(left, context)} = #{Encode.term(right, context)})"
-  end
-end
-
-defimpl Theoria.Lean.Encodable, for: Theoria.Term.Refl do
-  def encode(_refl, _context), do: "rfl"
-end
-
-defimpl Theoria.Lean.Encodable, for: Theoria.Term.EqRec do
-  alias Theoria.Lean.Encode
-
-  def encode(%{motive: motive, base: base, proof: proof}, context) do
-    "(tEqRec #{Encode.term(motive, context)} #{Encode.term(base, context)} #{Encode.term(proof, context)})"
-  end
-end
-
-defimpl Theoria.Lean.Encodable, for: Any do
-  def encode(value, _context) do
-    raise Protocol.UndefinedError,
-      protocol: Theoria.Lean.Encodable,
-      value: value,
-      description: "cannot encode value as Lean source"
   end
 end

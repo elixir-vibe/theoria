@@ -2,6 +2,7 @@ defmodule Theoria.PrettyTest do
   use ExUnit.Case, async: true
 
   alias Theoria.Env.Matcher, as: EnvMatcher
+  alias Theoria.Equation.Extension.Registry
 
   alias Theoria.Equation.{
     CaseTemplate,
@@ -78,6 +79,8 @@ defmodule Theoria.PrettyTest do
       recursor: :nat_rec
     }
 
+    registry = %Registry{definitions: %{list_append: info}, matchers: %{match_list: nil}}
+
     env_matcher =
       EnvMatcher.new(:match_list, :list_append, const(:Nat), matcher,
         value: const(:zero),
@@ -107,6 +110,9 @@ defmodule Theoria.PrettyTest do
 
     assert inspect(descriptor) ==
              "#Theoria.MatcherDescriptor<nat, discrs: 0, alts: 0, recursor: nat_rec>"
+
+    assert inspect(registry) ==
+             "#Theoria.EquationRegistry<definitions: 1, matchers: 1, theorems: 0>"
 
     assert inspect(env_matcher) ==
              "#Theoria.EnvMatcher<match_list, source: list_append, mode: source_aligned, checked, equations: 1>"

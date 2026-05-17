@@ -144,6 +144,18 @@ defimpl Inspect, for: Theoria.Equation.Lemma do
   end
 end
 
+defimpl Inspect, for: Theoria.Equation.Extension.Registry do
+  import Inspect.Algebra
+
+  def inspect(registry, _opts) do
+    concat([
+      "#Theoria.EquationRegistry<",
+      "definitions: #{map_size(registry.definitions)}, matchers: #{map_size(registry.matchers)}, theorems: #{map_size(registry.theorem_sources)}",
+      ">"
+    ])
+  end
+end
+
 defimpl Inspect, for: Theoria.Equation.MatcherDescriptor do
   import Inspect.Algebra
 

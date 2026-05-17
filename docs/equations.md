@@ -94,10 +94,11 @@ Generated theorem metadata can also be realized without installing declarations:
 ```elixir
 Theoria.Equation.Eqns.realize(env, :nat_add)
 Theoria.Equation.Eqns.realize(env, :"nat_add.eq_succ")
+Theoria.Equation.Eqns.realize(env, :"nat_add.eq_def")
 Theoria.Equation.MatcherEqns.realize(env, :"nat_add.match_1.eq_succ")
 ```
 
-`Theoria.Equation.Extension` provides typed registry helpers for source lookup, matcher lookup, and generated theorem-name enumeration. It is currently environment-scanning infrastructure, not a persistent disk-backed extension.
+`Theoria.Equation.Extension` provides typed registry helpers for source lookup, matcher lookup, unfold names, generated theorem-name enumeration, and an in-memory `Extension.Registry` snapshot. It is currently rebuilt from environment metadata rather than stored as a persistent disk-backed extension.
 
 ## Matcher maturity
 
@@ -177,4 +178,4 @@ The verbose form prints generated lemma names under each stored equation definit
 
 ## Limitations
 
-The current generator is deliberately small. It emits schematic equation lemmas from schemas for the built-in Bool/Nat/List definitions, derives fixed parameters from signatures, and stores basic matcher/discriminant/overlap metadata in checked matcher declarations. It is not yet Lean's full equation theorem machinery: there is no public equation syntax, no mutual-recursive fixed-parameter permutation analysis, no discriminant dependency analysis, descriptors are still limited to simple nondependent matchers, no recursor-info extraction from `Env.Recursor`, no dependent/indexed matcher descriptors, no persistent disk-backed env extension, no general structural recursion checker, no `brecOn`/below dictionaries, no attribute/prioritized simp database, no full lazy theorem declaration registry, and no proof-producing rewrite tactic.
+The current generator is deliberately small. It emits schematic equation lemmas from schemas for the built-in Bool/Nat/List definitions, derives fixed parameters from signatures, and stores basic matcher/discriminant/overlap metadata in checked matcher declarations. It is not yet Lean's full equation theorem machinery: there is no public equation syntax, no mutual-recursive fixed-parameter permutation analysis, no discriminant dependency analysis, descriptors are still limited to simple nondependent matchers, no recursor-info extraction from `Env.Recursor`, no dependent/indexed matcher descriptors, registry snapshots are rebuilt in memory and not persisted to disk, no general structural recursion checker, no `brecOn`/below dictionaries, no attribute/prioritized simp database, no full lazy theorem declaration registry, and no proof-producing rewrite tactic.

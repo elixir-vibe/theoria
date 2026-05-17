@@ -95,14 +95,23 @@ defmodule Theoria.Equation.Eqns do
     env
     |> Info.all()
     |> Enum.find_value({:error, {:unknown_equation, theorem_name}}, fn info ->
-      info
-      |> Lemma.generated_for()
-      |> Enum.find(&(&1.name == theorem_name))
-      |> case do
-        %Lemma{} = lemma -> Lemma.to_theorem(env, lemma)
-        nil -> false
-      end
+      realize_info_theorem(env, info, theorem_name)
     end)
+  end
+
+  defp realize_info_theorem(env, info, theorem_name) do
+    unfold = Lemma.unfold_for(info)
+
+    cond do
+      unfold.name == theorem_name ->
+        Lemma.to_theorem(env, unfold)
+
+      lemma = Enum.find(Lemma.generated_for(info), &(&1.name == theorem_name)) ->
+        Lemma.to_theorem(env, lemma)
+
+      true ->
+        false
+    end
   end
 
   defp matcher_source_definition(env, matcher_name) do

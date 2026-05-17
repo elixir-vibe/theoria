@@ -10,6 +10,7 @@ defmodule Theoria.EquationTest do
     Clause,
     Context,
     Eqns,
+    Extension,
     FixedParams,
     Info,
     Lemma,
@@ -88,6 +89,35 @@ defmodule Theoria.EquationTest do
     info = MatcherInfo.new(:match_nat, 0, 1, [alt])
 
     assert MatcherInfo.arity(info) == 3
+  end
+
+  test "extension registry indexes generated equations and matchers" do
+    {:ok, env} = Prelude.env()
+    registry = Extension.build(env)
+
+    assert Map.has_key?(registry.definitions, :nat_add)
+    assert Map.has_key?(registry.matchers, :"bool_and.match_1")
+
+    assert registry.equation_names.bool_and == [
+             :"bool_and.eq_true_true",
+             :"bool_and.eq_true_false",
+             :"bool_and.eq_false_true",
+             :"bool_and.eq_false_false"
+           ]
+
+    assert registry.matcher_equation_names[:"bool_and.match_1"] == [
+             :"bool_and.match_1.eq_true_true",
+             :"bool_and.match_1.eq_true_false",
+             :"bool_and.match_1.eq_false_true",
+             :"bool_and.match_1.eq_false_false"
+           ]
+
+    assert Extension.source_for(registry, :"bool_and.match_1.eq_false_false") ==
+             {:ok, :"bool_and.match_1"}
+
+    assert Extension.unfold_name(env, :nat_add) == {:ok, :"nat_add.eq_def"}
+    assert {:ok, [matcher]} = {:ok, Extension.matchers_for(env, :nat_add)}
+    assert matcher.name == :"nat_add.match_1"
   end
 
   test "matcher descriptors drive real matcher types and bodies" do
@@ -248,6 +278,8 @@ defmodule Theoria.EquationTest do
     assert succ_theorem.name == :"nat_add.eq_succ"
     assert {:ok, theorem} = Eqns.realize(env, :"nat_add.eq_succ")
     assert theorem.name == :"nat_add.eq_succ"
+    assert {:ok, unfold_theorem} = Eqns.realize(env, :"nat_add.eq_def")
+    assert unfold_theorem.name == :"nat_add.eq_def"
     assert {:ok, unfold} = Eqns.unfold(env, :nat_add)
     assert unfold.name == :"nat_add.eq_def"
     assert {:ok, _theorem} = Lemma.to_theorem(env, unfold)

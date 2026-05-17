@@ -7,6 +7,7 @@ defmodule Theoria.Normalize.ReductionMetadataTest do
   alias Theoria.Kernel
   alias Theoria.Library.Bool
   alias Theoria.Library.Nat
+  alias Theoria.Library.Vec
   alias Theoria.Normalize
 
   import Theoria.Term
@@ -107,6 +108,29 @@ defmodule Theoria.Normalize.ReductionMetadataTest do
         %Theoria.Env.Recursor{
           recursor
           | rules: [bad_rule | Enum.reject(recursor.rules, &(&1.constructor == true))]
+        }
+      end)
+
+    assert {:error, error} = Kernel.validate_env(env)
+    assert error.reason == :invalid_reduction
+  end
+
+  test "indexed recursor rule patterns must match constructor result indices" do
+    {:ok, env} = Vec.env()
+
+    env =
+      put_metadata(env, :vec_ind, fn %Theoria.Env.Recursor{} = recursor ->
+        %Theoria.Env.RecursorRule{} =
+          nil_rule = Enum.find(recursor.rules, &(&1.constructor == :vec_nil))
+
+        bad_rule = %Theoria.Env.RecursorRule{
+          nil_rule
+          | index_patterns: [app(const(:succ), const(:zero))]
+        }
+
+        %Theoria.Env.Recursor{
+          recursor
+          | rules: [bad_rule | Enum.reject(recursor.rules, &(&1.constructor == :vec_nil))]
         }
       end)
 

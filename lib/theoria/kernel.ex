@@ -373,7 +373,15 @@ defmodule Theoria.Kernel do
          {:ok, recursor_inductive} <- recursor_inductive(recursor),
          {:ok, %EnvConstructor{inductive: inductive, num_fields: ^field_count}} <-
            Env.fetch_constructor(env, constructor),
-         true <- inductive == recursor_inductive do
+         true <- inductive == recursor_inductive,
+         true <-
+           valid_recursor_rule_index_patterns?(
+             env,
+             recursor,
+             constructor,
+             field_count,
+             index_patterns
+           ) do
       true
     else
       _other -> false
@@ -382,6 +390,42 @@ defmodule Theoria.Kernel do
 
   defp valid_recursor_rule_indices?(%EnvRecursor{num_indices: num_indices}, index_patterns) do
     is_list(index_patterns) and length(index_patterns) == num_indices
+  end
+
+  defp valid_recursor_rule_index_patterns?(
+         _env,
+         %EnvRecursor{num_indices: 0},
+         _constructor,
+         _field_count,
+         []
+       ) do
+    true
+  end
+
+  defp valid_recursor_rule_index_patterns?(
+         env,
+         recursor,
+         constructor,
+         field_count,
+         index_patterns
+       ) do
+    case constructor_result_indices(env, recursor, constructor, field_count) do
+      {:ok, expected_patterns} -> domain_lists_defeq?(env, index_patterns, expected_patterns)
+      :error -> false
+    end
+  end
+
+  defp constructor_result_indices(env, %EnvRecursor{} = recursor, constructor, field_count) do
+    with {:ok, %Constant{type: constructor_type}} <- Env.fetch(env, constructor),
+         {:ok, _domains, target} <-
+           take_forall_domains(constructor_type, recursor.num_params + field_count),
+         {%Const{name: inductive}, arguments} <- Term.Application.collect(target),
+         {:ok, ^inductive} <- recursor_inductive(recursor),
+         true <- length(arguments) == recursor.num_params + recursor.num_indices do
+      {:ok, Enum.drop(arguments, recursor.num_params)}
+    else
+      _other -> :error
+    end
   end
 
   defp well_scoped_index_patterns?(index_patterns, depth) do

@@ -69,7 +69,7 @@ Legend:
 | Beta reduction | `(λ x => t) a` | ✅ | Implemented | Stable | P0 |
 | Delta reduction | Definitions unfold | ✅ | Reducible definitions unfold | Add opacity controls later | P1 |
 | Zeta reduction | `let` unfolds | ✅ | Implemented | Stable | P0 |
-| Iota reduction | Recursor computation | 🟡 | Simple recursors via `%Reduction.Iota{}` and rules | Indexed iota missing | P0 |
+| Iota reduction | Recursor computation | 🟡 | Simple and basic indexed recursors via `%Reduction.Iota{}` and rules | Harden dependent indexed cases | P0 |
 | Eta reduction | Function eta | ❌ | Not supported | Decide explicitly; likely postpone | P3 |
 | Proof irrelevance | Lean Prop proof irrelevance | ❌ | Not implemented | Decide theory first | P4 |
 | Quotient reduction | Lean quotient kernel support | ❌ | None | Probably postpone/avoid | P5 |
@@ -83,7 +83,7 @@ Legend:
 | `InductiveVal` | Metadata for type former | ✅ | `%Env.Inductive{}` | Add mutual/nested fields later | P0 |
 | `ConstructorVal` | Metadata for constructors | ✅ | `%Env.Constructor{}` | Stable | P0 |
 | `RecursorVal` | Metadata for recursors | 🟡 | `%Env.Recursor{}` for simple and indexed recursors | Harden indexed validation | P0 |
-| `RecursorRule` | Iota rule metadata | 🟡 | `%Env.RecursorRule{constructor, field_count, rhs, index_patterns}` | Full dependent codomain validation | P0 |
+| `RecursorRule` | Iota rule metadata | 🟡 | `%Env.RecursorRule{constructor, field_count, rhs, index_patterns}` with constructor-index validation | Full dependent codomain validation | P0 |
 | Inductive admission pipeline | Kernel checks inductive declarations | 🟡 | `Inductive.Admission` staged path | Move more ownership here; more Lean checks | P0 |
 | Strict positivity | Reject negative recursive occurrences | 🟡 | Basic positivity check | Harden nested/mutual cases | P0 |
 | Constructor target checks | Constructors return the family | ✅ | Implemented | Stable | P0 |
@@ -95,7 +95,7 @@ Legend:
 | Recursor RHS typing | Rules type-infer as expected shape | 🟡 | Type shape validation added | Full dependent result validation later | P0 |
 | Indexed inductives | Families like `Vec A n` | 🟡 | Vec-style families admit constructors and generated eliminators | Harden dependent validation | P0 |
 | Indexed eliminators | `Vec.ind` | 🟡 | Recursors with validated rules/index patterns and basic iota | Harden dependent validation | P0 |
-| Indexed iota reduction | Computation for indexed recursors | 🟡 | Basic Vec library iota reduction implemented | Harden dependent validation | P0 |
+| Indexed iota reduction | Computation for indexed recursors | 🟡 | Basic Vec library iota reduction with constructor-index validation | Harden dependent codomains | P0 |
 | Mutual inductives | `mutual Even/Odd` | 🔴 | Missing | Add `Inductive.Group` later | P2 |
 | Nested inductives | Recursive occurrence under containers | 🔴 | Mostly rejected/unsupported | Later after positivity overhaul | P3 |
 | Quotient inductives | Lean-specific quotient support | ❌ | None | Probably do not port early | P5 |

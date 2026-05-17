@@ -44,6 +44,6 @@ Generated files are build artifacts and should not be committed.
 
 ## Scope
 
-The initial corpus validates the primitive equality theorem corpus and a small set of definitional-equality fixtures. The subsystem is intentionally incremental: as the encoder and mirror prelude grow, more of Bool, Nat, List, Vec, recursor iota, indexed iota, and random kernel fragments can be added.
+The current corpus validates the primitive equality, Bool, and Nat theorem corpora plus definitional-equality fixtures for beta, zeta, Bool computation, Nat recursor iota, and Nat addition. The subsystem is intentionally incremental: as the encoder and mirror prelude grow, List, Vec, indexed iota, and random kernel fragments can be added.
 
 Lean oracle validation increases confidence in Theoria's kernel, but it is not a formal proof of the Elixir implementation. A later formalization could define Theoria's syntax and typing rules inside Lean and prove soundness there.

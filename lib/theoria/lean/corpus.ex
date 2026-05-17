@@ -6,7 +6,9 @@ defmodule Theoria.Lean.Corpus do
   alias Theoria.Term
 
   @builtin_theorem_modules [
-    Theoria.Library.Equality.Theorems
+    Theoria.Library.Equality.Theorems,
+    Theoria.Library.Bool.Theorems,
+    Theoria.Library.Nat.Theorems
   ]
 
   @doc "Returns theorem modules included in the initial Lean oracle corpus."
@@ -14,12 +16,12 @@ defmodule Theoria.Lean.Corpus do
   def builtin_theorem_modules, do: @builtin_theorem_modules
 
   @doc "Builds the initial Lean oracle module."
-  @spec build() :: {:ok, LeanModule.t(), non_neg_integer()} | {:error, term()}
+  @spec build() :: {:ok, LeanModule.t(), LeanModule.stats()} | {:error, term()}
   def build do
-    with {:ok, module, proof_count} <-
+    with {:ok, module, _proof_count} <-
            add_theorem_modules(LeanModule.new(), @builtin_theorem_modules) do
       module = add_defeq_fixtures(module)
-      {:ok, module, proof_count + length(defeq_fixtures())}
+      {:ok, module, LeanModule.stats(module)}
     end
   end
 
@@ -59,16 +61,60 @@ defmodule Theoria.Lean.Corpus do
   end
 
   defp defeq_fixtures do
+    bool = Term.const(:Bool)
     nat = Term.const(:Nat)
     type = Term.sort(1)
     var = Term.bvar(0)
+    bool_true = Term.const(true)
+    bool_false = Term.const(false)
     zero = Term.const(:zero)
-    one = Term.app(Term.const(:succ), zero)
+    succ = Term.const(:succ)
+    one = Term.app(succ, zero)
+    two = Term.app(succ, one)
 
     [
       {"beta_identity", Term.app(Term.lam(:x, type, var), nat), nat},
       {"zeta_identity", Term.let(:x, type, nat, var), nat},
-      {"nat_add_one_zero", Term.const(:nat_add) |> Term.app(one) |> Term.app(zero), one}
+      {"bool_not_true", Term.app(Term.const(:bool_not), bool_true), bool_false},
+      {"bool_not_false", Term.app(Term.const(:bool_not), bool_false), bool_true},
+      {"bool_and_true_false",
+       Term.const(:bool_and) |> Term.app(bool_true) |> Term.app(bool_false), bool_false},
+      {"bool_or_false_true", Term.const(:bool_or) |> Term.app(bool_false) |> Term.app(bool_true),
+       bool_true},
+      {"bool_rec_true",
+       Term.const(:bool_rec)
+       |> Term.app(bool)
+       |> Term.app(bool_true)
+       |> Term.app(bool_false)
+       |> Term.app(bool_true), bool_true},
+      {"bool_rec_false",
+       Term.const(:bool_rec)
+       |> Term.app(bool)
+       |> Term.app(bool_true)
+       |> Term.app(bool_false)
+       |> Term.app(bool_false), bool_false},
+      {"nat_rec_zero",
+       Term.const(:nat_rec)
+       |> Term.app(nat)
+       |> Term.app(zero)
+       |> Term.app(succ_case())
+       |> Term.app(zero), zero},
+      {"nat_rec_succ",
+       Term.const(:nat_rec)
+       |> Term.app(nat)
+       |> Term.app(zero)
+       |> Term.app(succ_case())
+       |> Term.app(one), one},
+      {"nat_add_one_zero", Term.const(:nat_add) |> Term.app(one) |> Term.app(zero), one},
+      {"nat_add_two_zero", Term.const(:nat_add) |> Term.app(two) |> Term.app(zero), two}
     ]
+  end
+
+  defp succ_case do
+    Term.lam(
+      :_pred,
+      Term.const(:Nat),
+      Term.lam(:acc, Term.const(:Nat), Term.app(Term.const(:succ), Term.bvar(0)))
+    )
   end
 end

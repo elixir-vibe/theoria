@@ -23,12 +23,14 @@ defmodule Theoria.Lean.EncodeTest do
   end
 
   test "renders the initial oracle corpus" do
-    assert {:ok, lean_module, count} = Corpus.build()
+    assert {:ok, lean_module, stats} = Corpus.build()
     source = LeanModule.render(lean_module)
 
-    assert count == 9
+    assert stats == %{proof: 28, defeq: 12, total: 40}
     assert source =~ "def tEqRec"
     assert source =~ "proof Theoria.Library.Equality.Theorems.eq_symm"
+    assert source =~ "proof Theoria.Library.Bool.Theorems.bool_not_true"
+    assert source =~ "proof Theoria.Library.Nat.Theorems.nat_add_two_zero"
     assert source =~ "defeq nat_add_one_zero"
   end
 
@@ -42,6 +44,6 @@ defmodule Theoria.Lean.EncodeTest do
       |> LeanModule.render()
 
     assert source =~
-             "#check ((fun (a : Type) => (fun (x : a) => x)) : (forall (a : Type), (a -> a)))"
+             "example : (forall (a : Type), (a -> a)) := (fun (a : Type) => (fun (x : a) => x))"
   end
 end

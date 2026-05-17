@@ -22,12 +22,15 @@ defmodule Mix.Tasks.Theoria.Lean.Check do
 
     Mix.shell().info("Generating Lean oracle corpus...")
 
-    with {:ok, lean_module, count} <- Corpus.build(),
+    with {:ok, lean_module, stats} <- Corpus.build(),
          source = LeanModule.render(lean_module),
          path = Keyword.get(opts, :path, Path.join(["_build", "theoria_lean", "oracle.lean"])),
          {:ok, result} <- Oracle.run(source, Keyword.put(opts, :path, path)) do
       Mix.shell().info("  #{result.path}")
-      Mix.shell().info("\n✓ Lean accepted #{count} check(s).")
+      Mix.shell().info("\nLean: #{result.version}")
+      Mix.shell().info("✓ proof checks: #{stats.proof}")
+      Mix.shell().info("✓ defeq checks: #{stats.defeq}")
+      Mix.shell().info("✓ total: #{stats.total}")
     else
       {:error, :lean_not_found} ->
         Mix.raise("""

@@ -21,6 +21,13 @@ defmodule Theoria.Lean.Encode do
     zero: "TNat.zero",
     succ: "TNat.succ",
     nat_add: "TNat.add",
+    nat_rec: "TNat.rec_",
+    nat_ind: "TNat.ind_",
+    bool_not: "TBool.not_",
+    bool_and: "TBool.and_",
+    bool_or: "TBool.or_",
+    bool_rec: "TBool.rec_",
+    bool_ind: "TBool.ind_",
     true: "TBool.true_",
     false: "TBool.false_"
   }

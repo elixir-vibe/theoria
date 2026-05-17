@@ -11,7 +11,7 @@ defmodule Theoria.Lean.Oracle do
     with {:ok, lean} <- lean_executable(opts),
          :ok <- write_source(path, source),
          {output, 0} <- System.cmd(lean, [path], stderr_to_stdout: true) do
-      {:ok, %{path: path, output: output}}
+      {:ok, %{path: path, output: output, lean: lean, version: lean_version(lean)}}
     else
       {:error, reason} -> {:error, reason}
       {output, status} -> {:error, {:lean_failed, status, path, output}}
@@ -88,6 +88,13 @@ defmodule Theoria.Lean.Oracle do
 
       true ->
         {:error, :lean_not_found}
+    end
+  end
+
+  defp lean_version(lean) do
+    case System.cmd(lean, ["--version"], stderr_to_stdout: true) do
+      {version, 0} -> String.trim(version)
+      {_output, _status} -> "unknown"
     end
   end
 

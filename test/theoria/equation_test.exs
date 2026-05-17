@@ -89,10 +89,11 @@ defmodule Theoria.EquationTest do
     assert MatcherInfo.arity(info) == 3
   end
 
-  test "matcher type builds real Bool and Nat matcher shapes" do
+  test "matcher type builds real Bool, Nat, and List matcher shapes" do
     {:ok, env} = Prelude.env()
     {:ok, bool_info} = Info.fetch(env, :bool_not)
     {:ok, nat_info} = Info.fetch(env, :nat_add)
+    {:ok, list_info} = Info.fetch(env, :list_append)
 
     assert {:ok, bool_type} = MatcherType.build(bool_info.schema, bool_info.matcher)
 
@@ -123,6 +124,24 @@ defmodule Theoria.EquationTest do
              }
            ] =
              MatcherType.alternatives(nat_info.schema, nat_info.matcher)
+
+    assert {:ok, list_type} = MatcherType.build(list_info.schema, list_info.matcher)
+
+    assert %Term.Forall{
+             name: :a,
+             body: %Term.Forall{
+               name: :motive,
+               body: %Term.Forall{name: :xs, body: %Term.Forall{name: :on_nil}}
+             }
+           } = list_type
+
+    assert [
+             _nil_alt,
+             %MatcherType.Alternative{
+               constructor: :list_cons,
+               fields: [{:head, _head}, {:tail, _tail}]
+             }
+           ] = MatcherType.alternatives(list_info.schema, list_info.matcher)
   end
 
   test "fixed params derive from signature parameters" do
@@ -208,10 +227,15 @@ defmodule Theoria.EquationTest do
     assert %Term.Forall{name: :m, body: %Term.Forall{name: :n}} = theorem.type
   end
 
-  test "Bool and Nat matchers are checked real matcher declarations" do
+  test "Bool, Nat, and List matchers are checked real matcher declarations" do
     {:ok, env} = Prelude.env()
 
-    for {definition, matcher_name} <- [bool_not: :"bool_not.match_1", nat_add: :"nat_add.match_1"] do
+    for {definition, matcher_name} <- [
+          bool_not: :"bool_not.match_1",
+          nat_add: :"nat_add.match_1",
+          list_length: :"list_length.match_1",
+          list_append: :"list_append.match_1"
+        ] do
       {:ok, info} = Info.fetch(env, definition)
       {:ok, matcher} = Theoria.Env.fetch_matcher(env, matcher_name)
 

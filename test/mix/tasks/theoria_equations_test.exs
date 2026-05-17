@@ -23,6 +23,7 @@ defmodule Mix.Tasks.Theoria.EquationsTest do
     assert output =~ "alternatives:"
     assert output =~ "unfold: bool_not.eq_def"
     assert output =~ "list_append rec_arg=1 fixed=[0] levels=[:u]"
+    assert output =~ "matcher: list_append.match_1 mode=matcher arity=5"
     assert output =~ "list_append.eq_nil"
     assert output =~ "list_append.match_1.eq_list_cons"
   end

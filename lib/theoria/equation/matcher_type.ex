@@ -43,10 +43,25 @@ defmodule Theoria.Equation.MatcherType do
     end)
   end
 
+  def alternatives(%Schema{family: :list}, %MatcherInfo{} = info) do
+    Enum.map(info.alternatives, fn
+      %{constructor: :list_nil} ->
+        %Alternative{constructor: :list_nil, fields: [], result_type: Term.bvar(1)}
+
+      %{constructor: :list_cons} ->
+        %Alternative{
+          constructor: :list_cons,
+          fields: [{:head, Term.bvar(0)}, {:tail, list_of(Term.bvar(0))}],
+          result_type: Term.bvar(2)
+        }
+    end)
+  end
+
   @doc "Builds a matcher type for supported schemas."
   @spec build(Schema.t(), MatcherInfo.t()) :: {:ok, Term.t()} | {:error, term()}
   def build(%Schema{family: :bool}, %MatcherInfo{}), do: {:ok, bool_type()}
   def build(%Schema{family: :nat}, %MatcherInfo{}), do: {:ok, nat_type()}
+  def build(%Schema{family: :list}, %MatcherInfo{}), do: {:ok, list_type()}
 
   def build(%Schema{family: family}, %MatcherInfo{}),
     do: {:error, {:unsupported_matcher_type, family}}
@@ -55,6 +70,7 @@ defmodule Theoria.Equation.MatcherType do
   @spec value(Schema.t(), MatcherInfo.t()) :: {:ok, Term.t()} | {:error, term()}
   def value(%Schema{family: :bool}, %MatcherInfo{}), do: {:ok, bool_value()}
   def value(%Schema{family: :nat}, %MatcherInfo{}), do: {:ok, nat_value()}
+  def value(%Schema{family: :list}, %MatcherInfo{}), do: {:ok, list_value()}
 
   def value(%Schema{family: family}, %MatcherInfo{}),
     do: {:error, {:unsupported_matcher_value, family}}
@@ -128,4 +144,68 @@ defmodule Theoria.Equation.MatcherType do
       )
     )
   end
+
+  defp list_type do
+    type = Term.sort(1)
+    motive = Term.bvar(1)
+
+    Term.forall(
+      :a,
+      type,
+      Term.forall(
+        :motive,
+        type,
+        Term.forall(
+          :xs,
+          list_of(motive),
+          Term.forall(:on_nil, motive, Term.forall(:on_cons, list_cons_case_type(), Term.bvar(3)))
+        )
+      )
+    )
+  end
+
+  defp list_value do
+    type = Term.sort(1)
+    motive = Term.bvar(1)
+
+    Term.lam(
+      :a,
+      type,
+      Term.lam(
+        :motive,
+        type,
+        Term.lam(
+          :xs,
+          list_of(motive),
+          Term.lam(
+            :on_nil,
+            motive,
+            Term.lam(
+              :on_cons,
+              list_cons_case_type(),
+              Recursors.list_rec(
+                Term.bvar(4),
+                Term.bvar(3),
+                Term.bvar(1),
+                Term.bvar(0),
+                Term.bvar(2)
+              )
+            )
+          )
+        )
+      )
+    )
+  end
+
+  defp list_cons_case_type do
+    element_type = Term.bvar(4)
+
+    Term.forall(
+      :_,
+      Term.bvar(3),
+      Term.forall(:_, list_of(element_type), Term.forall(:_, element_type, Term.bvar(5)))
+    )
+  end
+
+  defp list_of(element_type), do: Term.app(Term.const(:List, [1]), element_type)
 end

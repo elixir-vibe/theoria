@@ -67,6 +67,7 @@ defmodule Theoria.MixProject do
         "README.md",
         "docs/design.md",
         "docs/inductives.md",
+        "docs/lean_validation.md",
         "docs/lean_roadmap.md",
         "docs/theorem_modules.md",
         "LICENSE"
@@ -76,6 +77,7 @@ defmodule Theoria.MixProject do
         Kernel: [Theoria.Kernel, Theoria.Env, Theoria.Context, Theoria.Error],
         Syntax: [Theoria.Syntax, Theoria.Elaborator, Theoria.DSL, Theoria.Pretty],
         Inductives: ~r/^Theoria\.Inductive/,
+        Tooling: ~r/^Theoria\.Lean/,
         Libraries: ~r/^Theoria\.Library\./,
         Tooling: [Theoria.Prelude, Theoria.Theorem]
       ]

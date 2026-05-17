@@ -92,6 +92,7 @@ defmodule Theoria.EquationTest do
   test "matcher type builds real Bool, Nat, and List matcher shapes" do
     {:ok, env} = Prelude.env()
     {:ok, bool_info} = Info.fetch(env, :bool_not)
+    {:ok, binary_bool_info} = Info.fetch(env, :bool_and)
     {:ok, nat_info} = Info.fetch(env, :nat_add)
     {:ok, list_info} = Info.fetch(env, :list_append)
 
@@ -106,6 +107,25 @@ defmodule Theoria.EquationTest do
            } = bool_type
 
     assert [_true_alt, _false_alt] = MatcherType.alternatives(bool_info.schema, bool_info.matcher)
+
+    assert {:ok, binary_bool_type} =
+             MatcherType.build(binary_bool_info.schema, binary_bool_info.matcher)
+
+    assert %Term.Forall{
+             name: :motive,
+             body: %Term.Forall{
+               name: :a,
+               body: %Term.Forall{name: :b, body: %Term.Forall{name: :on_true_true}}
+             }
+           } = binary_bool_type
+
+    assert [
+             %MatcherType.Alternative{constructor: :true_true, fields: []},
+             %MatcherType.Alternative{constructor: :true_false, fields: []},
+             %MatcherType.Alternative{constructor: :false_true, fields: []},
+             %MatcherType.Alternative{constructor: :false_false, fields: []}
+           ] = MatcherType.alternatives(binary_bool_info.schema, binary_bool_info.matcher)
+
     assert {:ok, nat_type} = MatcherType.build(nat_info.schema, nat_info.matcher)
 
     assert %Term.Forall{
@@ -232,6 +252,8 @@ defmodule Theoria.EquationTest do
 
     for {definition, matcher_name} <- [
           bool_not: :"bool_not.match_1",
+          bool_and: :"bool_and.match_1",
+          bool_or: :"bool_or.match_1",
           nat_add: :"nat_add.match_1",
           list_length: :"list_length.match_1",
           list_append: :"list_append.match_1"

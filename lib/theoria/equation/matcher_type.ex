@@ -59,6 +59,9 @@ defmodule Theoria.Equation.MatcherType do
 
   @doc "Builds a matcher type for supported schemas."
   @spec build(Schema.t(), MatcherInfo.t()) :: {:ok, Term.t()} | {:error, term()}
+  def build(%Schema{family: :bool}, %MatcherInfo{num_discriminants: 2}),
+    do: {:ok, bool_binary_type()}
+
   def build(%Schema{family: :bool}, %MatcherInfo{}), do: {:ok, bool_type()}
   def build(%Schema{family: :nat}, %MatcherInfo{}), do: {:ok, nat_type()}
   def build(%Schema{family: :list}, %MatcherInfo{}), do: {:ok, list_type()}
@@ -68,6 +71,9 @@ defmodule Theoria.Equation.MatcherType do
 
   @doc "Builds a matcher value for supported schemas."
   @spec value(Schema.t(), MatcherInfo.t()) :: {:ok, Term.t()} | {:error, term()}
+  def value(%Schema{family: :bool}, %MatcherInfo{num_discriminants: 2}),
+    do: {:ok, bool_binary_value()}
+
   def value(%Schema{family: :bool}, %MatcherInfo{}), do: {:ok, bool_value()}
   def value(%Schema{family: :nat}, %MatcherInfo{}), do: {:ok, nat_value()}
   def value(%Schema{family: :list}, %MatcherInfo{}), do: {:ok, list_value()}
@@ -104,6 +110,81 @@ defmodule Theoria.Equation.MatcherType do
           )
         )
       )
+    )
+  end
+
+  defp bool_binary_type do
+    motive = Term.sort(1)
+    result = Term.bvar(6)
+
+    Term.forall(
+      :motive,
+      motive,
+      Term.forall(
+        :a,
+        Term.const(:Bool),
+        Term.forall(
+          :b,
+          Term.const(:Bool),
+          Term.forall(
+            :on_true_true,
+            Term.bvar(2),
+            Term.forall(
+              :on_true_false,
+              Term.bvar(3),
+              Term.forall(
+                :on_false_true,
+                Term.bvar(4),
+                Term.forall(:on_false_false, Term.bvar(5), result)
+              )
+            )
+          )
+        )
+      )
+    )
+  end
+
+  defp bool_binary_value do
+    Term.lam(
+      :motive,
+      Term.sort(1),
+      Term.lam(
+        :a,
+        Term.const(:Bool),
+        Term.lam(
+          :b,
+          Term.const(:Bool),
+          Term.lam(
+            :on_true_true,
+            Term.bvar(2),
+            Term.lam(
+              :on_true_false,
+              Term.bvar(3),
+              Term.lam(
+                :on_false_true,
+                Term.bvar(4),
+                Term.lam(
+                  :on_false_false,
+                  Term.bvar(5),
+                  bool_binary_body()
+                )
+              )
+            )
+          )
+        )
+      )
+    )
+  end
+
+  defp bool_binary_body do
+    motive = Term.bvar(6)
+    second_discriminant = Term.bvar(4)
+
+    Recursors.bool_rec(
+      motive,
+      Recursors.bool_rec(motive, Term.bvar(3), Term.bvar(2), second_discriminant),
+      Recursors.bool_rec(motive, Term.bvar(1), Term.bvar(0), second_discriminant),
+      Term.bvar(5)
     )
   end
 

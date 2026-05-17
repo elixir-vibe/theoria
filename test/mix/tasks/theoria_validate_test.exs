@@ -20,7 +20,7 @@ defmodule Mix.Tasks.Theoria.ValidateTest do
     assert output =~ "✓ equation metadata: 6 definition(s)"
     assert output =~ "✓ matcher declarations: 6 checked matcher(s)"
     assert output =~ "✓ generated equations: 16 theorem(s)"
-    assert output =~ "✓ matcher equations: 12 theorem(s)"
+    assert output =~ "✓ matcher equations: 16 theorem(s)"
   end
 
   test "reports axioms when requested" do
@@ -75,7 +75,7 @@ defmodule Mix.Tasks.Theoria.ValidateTest do
     assert output =~ "✓ equation metadata: 6 definition(s)"
     assert output =~ "✓ matcher declarations: 6 checked matcher(s)"
     assert output =~ "✓ generated equations: 16 theorem(s)"
-    assert output =~ "✓ matcher equations: 12 theorem(s)"
+    assert output =~ "✓ matcher equations: 16 theorem(s)"
   end
 
   test "parses comma-separated categories" do

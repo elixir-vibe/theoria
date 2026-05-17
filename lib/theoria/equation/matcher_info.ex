@@ -5,11 +5,12 @@ defmodule Theoria.Equation.MatcherInfo do
     @moduledoc "Metadata for one matcher alternative."
 
     @enforce_keys [:constructor, :num_fields]
-    defstruct [:constructor, :num_fields, num_overlaps: 0, has_unit_thunk?: false]
+    defstruct [:constructor, :num_fields, pattern: nil, num_overlaps: 0, has_unit_thunk?: false]
 
     @type t :: %__MODULE__{
-            constructor: atom(),
+            constructor: atom() | boolean(),
             num_fields: non_neg_integer(),
+            pattern: [atom() | boolean()] | nil,
             num_overlaps: non_neg_integer(),
             has_unit_thunk?: boolean()
           }
@@ -69,8 +70,16 @@ defmodule Theoria.Equation.MatcherInfo do
 
   @doc "Builds matcher metadata from supported equation schema metadata."
   @spec for_schema(atom(), Theoria.Equation.Schema.t(), keyword()) :: t()
-  def for_schema(definition_name, %Theoria.Equation.Schema{family: family}, opts \\ []) do
-    new(:"#{definition_name}.match_1", num_params(family), 1, alternatives(family), opts)
+  def for_schema(definition_name, %Theoria.Equation.Schema{family: family} = schema, opts \\ []) do
+    discriminant_count = opts |> Keyword.get(:discriminants, []) |> length() |> max(1)
+
+    new(
+      :"#{definition_name}.match_1",
+      num_params(family),
+      discriminant_count,
+      alternatives(family, schema, discriminant_count),
+      opts
+    )
   end
 
   @doc "Returns total matcher arity in Lean's broad shape: params + motive + discriminants + alternatives."
@@ -84,24 +93,40 @@ defmodule Theoria.Equation.MatcherInfo do
   defp num_params(:list), do: 1
   defp num_params(_family), do: 0
 
-  defp alternatives(:bool) do
+  defp alternatives(:bool, schema, count) when count > 1 do
+    Enum.map(schema.equations, fn equation ->
+      %Alternative{
+        constructor: equation.suffix,
+        pattern: suffix_pattern(equation.suffix),
+        num_fields: 0
+      }
+    end)
+  end
+
+  defp alternatives(:bool, _schema, _count) do
     [
-      %Alternative{constructor: true, num_fields: 0},
-      %Alternative{constructor: false, num_fields: 0}
+      %Alternative{constructor: true, pattern: [true], num_fields: 0},
+      %Alternative{constructor: false, pattern: [false], num_fields: 0}
     ]
   end
 
-  defp alternatives(:nat) do
+  defp alternatives(:nat, _schema, _count) do
     [
       %Alternative{constructor: :zero, num_fields: 0},
       %Alternative{constructor: :succ, num_fields: 1}
     ]
   end
 
-  defp alternatives(:list) do
+  defp alternatives(:list, _schema, _count) do
     [
       %Alternative{constructor: :list_nil, num_fields: 0},
       %Alternative{constructor: :list_cons, num_fields: 2}
     ]
   end
+
+  defp suffix_pattern(:true_true), do: [true, true]
+  defp suffix_pattern(:true_false), do: [true, false]
+  defp suffix_pattern(:false_true), do: [false, true]
+  defp suffix_pattern(:false_false), do: [false, false]
+  defp suffix_pattern(suffix), do: [suffix]
 end

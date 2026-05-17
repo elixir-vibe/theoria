@@ -14,7 +14,7 @@ defmodule Mix.Tasks.Theoria.EquationsTest do
       end)
 
     assert output =~ "matcher declarations: 6"
-    assert output =~ "registry entries: 34"
+    assert output =~ "registry entries: 38"
     assert output =~ "equations:"
     assert output =~ "bool_not rec_arg=0 fixed=[]"
     assert output =~ "bool_not.eq_true"

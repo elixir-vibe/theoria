@@ -160,7 +160,10 @@ defmodule Theoria.Library.Bool do
   end
 
   defp bool_signature(name, rec_arg_pos) when name in [:bool_and, :bool_or] do
-    Signature.new(name, :bool, [{:a, bool()}, {:b, bool()}], bool(), rec_arg_pos: rec_arg_pos)
+    Signature.new(name, :bool, [{:a, bool()}, {:b, bool()}], bool(),
+      rec_arg_pos: rec_arg_pos,
+      discriminant_positions: [0, 1]
+    )
   end
 
   defp bool_cases(:bool_not) do

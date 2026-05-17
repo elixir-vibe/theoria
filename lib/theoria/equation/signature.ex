@@ -14,7 +14,8 @@ defmodule Theoria.Equation.Signature do
     :rec_arg_pos,
     parameters: [],
     arguments: [],
-    fixed_params: FixedParams.new()
+    fixed_params: FixedParams.new(),
+    discriminant_positions: nil
   ]
 
   @type t :: %__MODULE__{
@@ -24,7 +25,8 @@ defmodule Theoria.Equation.Signature do
           arguments: [binder()],
           result_type: Term.t(),
           rec_arg_pos: non_neg_integer(),
-          fixed_params: FixedParams.t()
+          fixed_params: FixedParams.t(),
+          discriminant_positions: [non_neg_integer()] | nil
         }
 
   @doc "Builds a definition signature for equation metadata generation."
@@ -41,7 +43,8 @@ defmodule Theoria.Equation.Signature do
       result_type: result_type,
       rec_arg_pos: rec_arg_pos,
       parameters: parameters,
-      fixed_params: FixedParams.new()
+      fixed_params: FixedParams.new(),
+      discriminant_positions: Keyword.get(opts, :discriminant_positions)
     }
 
     %{signature | fixed_params: Keyword.get(opts, :fixed_params, derived_fixed_params(signature))}

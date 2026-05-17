@@ -45,19 +45,23 @@ defmodule Theoria.Equation.SchemaBuilder do
   end
 
   defp discriminants(%Signature{} = signature) do
-    case Enum.at(signature.arguments, signature.rec_arg_pos) do
+    signature
+    |> discriminant_positions()
+    |> Enum.map(&discriminant(signature, &1))
+  end
+
+  defp discriminant_positions(%Signature{discriminant_positions: nil} = signature),
+    do: [signature.rec_arg_pos]
+
+  defp discriminant_positions(%Signature{discriminant_positions: positions}), do: positions
+
+  defp discriminant(signature, position) do
+    case Enum.at(signature.arguments, position) do
       {name, type} ->
-        [
-          %Discriminant{
-            name: name,
-            position: signature.rec_arg_pos,
-            type: type,
-            family: signature.family
-          }
-        ]
+        %Discriminant{name: name, position: position, type: type, family: signature.family}
 
       nil ->
-        [%Discriminant{position: signature.rec_arg_pos, family: signature.family}]
+        %Discriminant{position: position, family: signature.family}
     end
   end
 

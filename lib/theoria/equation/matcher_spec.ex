@@ -85,8 +85,7 @@ defmodule Theoria.Equation.MatcherSpec do
     )
   end
 
-  defp default_mode(%Info{schema: %Schema{family: :bool, argument_binders: [_one_argument]}}),
-    do: :matcher
+  defp default_mode(%Info{schema: %Schema{family: :bool}}), do: :matcher
 
   defp default_mode(%Info{schema: %Schema{family: family}}) when family in [:nat, :list],
     do: :matcher

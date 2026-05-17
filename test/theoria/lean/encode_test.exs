@@ -81,7 +81,7 @@ defmodule Theoria.Lean.EncodeTest do
     assert {:ok, lean_module} = LeanModule.from_validation(validation)
     source = LeanModule.render(lean_module)
 
-    assert LeanModule.stats(lean_module) == %{proof: 81, defeq: 57, total: 138}
+    assert LeanModule.stats(lean_module) == %{proof: 85, defeq: 57, total: 142}
     assert source =~ "def tEqRec"
     assert source =~ "proof Theoria.Library.Logic.Theorems.and_comm"
     assert source =~ "proof Theoria.Library.Equality.Theorems.eq_symm"
@@ -113,7 +113,7 @@ defmodule Theoria.Lean.EncodeTest do
   test "filters validation categories for Lean modules" do
     validation = Corpus.build(only: [:bool])
     assert {:ok, lean_module} = LeanModule.from_validation(validation)
-    assert LeanModule.stats(lean_module) == %{proof: 31, defeq: 15, total: 46}
+    assert LeanModule.stats(lean_module) == %{proof: 35, defeq: 15, total: 50}
 
     validation = Corpus.build(only: [:defeq])
     assert {:ok, lean_module} = LeanModule.from_validation(validation)

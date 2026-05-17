@@ -83,8 +83,14 @@ defmodule Theoria.Inductive.GenerateTest do
   end
 
   test "generates opaque indexed eliminators" do
-    assert {:ok, [%Theoria.Inductive.Recursor{name: :vec_ind, reduction: nil, type: type}]} =
-             Generate.indexed_eliminators(vec_spec())
+    assert {:ok,
+            [
+              %Theoria.Inductive.Recursor{
+                name: :vec_ind,
+                reduction: %Theoria.Env.Reduction.Iota{},
+                type: type
+              }
+            ]} = Generate.indexed_eliminators(vec_spec())
 
     assert Theoria.Term.well_scoped?(type)
   end

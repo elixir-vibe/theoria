@@ -50,7 +50,7 @@ defmodule Theoria.Inductive.Generate do
   @spec unsupported_reason(Spec.t()) :: atom() | nil
   def unsupported_reason(%Spec{} = spec), do: capabilities(spec).reason
 
-  @doc "Generates opaque indexed eliminators without iota rules."
+  @doc "Generates indexed eliminators with iota rule metadata."
   @spec indexed_eliminators(Spec.t()) :: {:ok, [Recursor.t()]} | {:error, Error.t()}
   def indexed_eliminators(%Spec{indices: []}), do: invalid(:not_indexed)
 
@@ -61,7 +61,7 @@ defmodule Theoria.Inductive.Generate do
          %Recursor{
            name: String.to_atom("#{base_name(spec.name)}_ind"),
            type: type,
-           reduction: nil
+           reduction: %Reduction.Iota{}
          }
        ]}
     end

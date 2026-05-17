@@ -40,7 +40,10 @@ defmodule Theoria.Normalize.Primitive do
          {%Const{name: constructor}, constructor_args} <- Term.Application.collect(major),
          {:ok, rule} <- recursor_rule(recursor, constructor),
          {:ok, fields} <- constructor_fields(constructor_args, rule.field_count),
-         {:ok, reduced} <- instantiate_rule(recursor, levels, rule, args, major_index, fields) do
+         {:ok, explicit_indices} <- explicit_indices(recursor, args),
+         :ok <-
+           match_index_patterns(env, recursor, rule, constructor_args, fields, explicit_indices),
+         {:ok, reduced} <- instantiate_rule(recursor, levels, rule, args, fields) do
       whnf.(env, reduced)
     else
       _other -> {:stuck, fallback}
@@ -62,12 +65,63 @@ defmodule Theoria.Normalize.Primitive do
 
   defp constructor_fields(_args, _field_count), do: :error
 
-  defp instantiate_rule(recursor, levels, rule, recursor_args, major_index, fields) do
-    prefix = Enum.take(recursor_args, major_index)
-    suffix = Enum.drop(recursor_args, major_index + 1)
+  defp explicit_indices(%Recursor{num_indices: 0}, _recursor_args), do: {:ok, []}
+
+  defp explicit_indices(%Recursor{} = recursor, recursor_args) do
+    prefix_count = rule_prefix_count(recursor)
+    {:ok, Enum.slice(recursor_args, prefix_count, recursor.num_indices)}
+  end
+
+  defp match_index_patterns(
+         _env,
+         %Recursor{num_indices: 0},
+         _rule,
+         _constructor_args,
+         _fields,
+         []
+       ),
+       do: :ok
+
+  defp match_index_patterns(
+         env,
+         %Recursor{} = recursor,
+         rule,
+         constructor_args,
+         fields,
+         explicit_indices
+       ) do
+    params = Enum.take(constructor_args, recursor.num_params)
+    replacements = Enum.reverse(params ++ fields)
+
+    patterns = Enum.map(rule.index_patterns, &instantiate_pattern(&1, replacements))
+
+    if Enum.zip(patterns, explicit_indices)
+       |> Enum.all?(fn {pattern, index} -> Theoria.Normalize.defeq?(env, pattern, index) end) do
+      :ok
+    else
+      :error
+    end
+  end
+
+  defp instantiate_rule(recursor, levels, rule, recursor_args, fields) do
+    prefix = Enum.take(recursor_args, rule_prefix_count(recursor))
+    suffix = Enum.drop(recursor_args, Recursor.major_index(recursor) + 1)
     rhs = Term.subst_levels(rule.rhs, Enum.zip(recursor.universe_params, levels) |> Map.new())
     {:ok, Enum.reduce(prefix ++ fields ++ suffix, rhs, &app(&2, &1))}
   end
+
+  defp rule_prefix_count(%Recursor{} = recursor) do
+    recursor.num_params + recursor.num_motives + recursor.num_minors
+  end
+
+  defp instantiate_pattern(%Term.BVar{index: index}, replacements),
+    do: Enum.fetch!(replacements, index)
+
+  defp instantiate_pattern(%App{fun: fun, arg: arg}, replacements) do
+    app(instantiate_pattern(fun, replacements), instantiate_pattern(arg, replacements))
+  end
+
+  defp instantiate_pattern(term, _replacements), do: term
 
   defp fetch_arg(args, position) do
     case Enum.fetch(args, position) do

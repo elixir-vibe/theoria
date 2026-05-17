@@ -6,6 +6,7 @@ defmodule Theoria.Inductive.IndexTest do
   alias Theoria.Inductive.Generate
   alias Theoria.Inductive.{Index, Spec}
   alias Theoria.Library.Nat
+  alias Theoria.Normalize
   alias Theoria.Term
 
   import Theoria.DSL
@@ -63,23 +64,28 @@ defmodule Theoria.Inductive.IndexTest do
     assert inspect(type) =~ "vec_cons"
   end
 
-  test "completion generates opaque indexed eliminators" do
+  test "completion generates indexed eliminators" do
     assert {:ok, completed} = Inductive.complete(vec_spec())
 
-    assert [%Theoria.Inductive.Recursor{name: :vec_ind, reduction: nil, type: type}] =
-             completed.recursors
+    assert [
+             %Theoria.Inductive.Recursor{
+               name: :vec_ind,
+               reduction: %Theoria.Env.Reduction.Iota{},
+               type: type
+             }
+           ] = completed.recursors
 
     assert Term.well_scoped?(type)
   end
 
-  test "installs Vec with generated opaque indexed eliminator" do
+  test "installs Vec with generated indexed eliminator" do
     {:ok, spec} = Inductive.complete(vec_spec())
     {:ok, env} = Nat.env()
 
     assert {:ok, env} = Theoria.Kernel.add_inductive(env, spec)
     assert {:ok, constant} = Env.fetch(env, :vec_ind)
     assert constant.kind == :recursor
-    assert constant.reduction == nil
+    assert constant.reduction == %Theoria.Env.Reduction.Iota{}
 
     assert %Theoria.Env.Recursor{
              name: :vec_ind,
@@ -101,6 +107,62 @@ defmodule Theoria.Inductive.IndexTest do
     assert {:ok, ^metadata} = Env.fetch_recursor(env, :vec_ind)
   end
 
+  test "indexed eliminator reduces Vec nil" do
+    {:ok, env} = vec_env()
+
+    term =
+      vec_ind_term(
+        index: term(do: zero) |> elab!(),
+        major: term(do: app(const(:vec_nil, [1]), nat())) |> elab!()
+      )
+
+    assert Normalize.defeq?(env, term, term(do: zero) |> elab!())
+  end
+
+  test "indexed eliminator reduces Vec cons" do
+    {:ok, env} = vec_env()
+
+    tail = term(do: app(const(:vec_nil, [1]), nat())) |> elab!()
+
+    major =
+      app_all(Term.const(:vec_cons, [1]), [
+        Term.const(:Nat),
+        Term.const(:zero),
+        Term.const(:zero),
+        tail
+      ])
+
+    term =
+      vec_ind_term(
+        index: term(do: app(succ, zero)) |> elab!(),
+        major: major
+      )
+
+    assert Normalize.defeq?(env, term, term(do: app(succ, zero)) |> elab!())
+  end
+
+  test "indexed eliminator does not reduce when explicit index mismatches constructor index pattern" do
+    {:ok, env} = vec_env()
+
+    tail = term(do: app(const(:vec_nil, [1]), nat())) |> elab!()
+
+    major =
+      app_all(Term.const(:vec_cons, [1]), [
+        Term.const(:Nat),
+        Term.const(:zero),
+        Term.const(:zero),
+        tail
+      ])
+
+    term =
+      vec_ind_term(
+        index: term(do: zero) |> elab!(),
+        major: major
+      )
+
+    assert Normalize.normalize(env, term) == {:ok, term}
+  end
+
   test "environment-backed checks reject missing dependencies" do
     assert Inductive.validate(vec_spec()) == :ok
     assert {:error, error} = Inductive.check_spec(Env.new(), vec_spec())
@@ -114,6 +176,49 @@ defmodule Theoria.Inductive.IndexTest do
 
     {:ok, env} = Nat.env()
     assert {:ok, _env} = Theoria.Kernel.add_inductive(env, vec_spec())
+  end
+
+  defp vec_env do
+    with {:ok, spec} <- Inductive.complete(vec_spec()),
+         {:ok, env} <- Nat.env() do
+      Theoria.Kernel.add_inductive(env, spec)
+    end
+  end
+
+  defp vec_ind_term(opts) do
+    index = Keyword.fetch!(opts, :index)
+    major = Keyword.fetch!(opts, :major)
+    motive = vec_nat_motive() |> elab!()
+    cons_case = vec_nat_cons_case() |> elab!()
+
+    [Term.const(:Nat), motive, Term.const(:zero), cons_case, index, major]
+    |> Enum.reduce(Term.const(:vec_ind, [1]), &Term.app(&2, &1))
+  end
+
+  defp app_all(fun, args), do: Enum.reduce(args, fun, &Term.app(&2, &1))
+
+  defp vec_nat_motive do
+    term do
+      lam :n, nat() do
+        lam :xs, app(app(const(:Vec, [1]), nat()), n) do
+          nat()
+        end
+      end
+    end
+  end
+
+  defp vec_nat_cons_case do
+    term do
+      lam :head, nat() do
+        lam :n, nat() do
+          lam :tail, app(app(const(:Vec, [1]), nat()), n) do
+            lam :ih, nat() do
+              app(succ, ih)
+            end
+          end
+        end
+      end
+    end
   end
 
   defp replace_first_constructor_type(type) do

@@ -1,7 +1,7 @@
 defmodule Theoria.Validation do
   @moduledoc "Runs Theoria-owned validation corpora."
 
-  alias Theoria.Equation.{Eqns, Info}
+  alias Theoria.Equation.{Eqns, Info, Lemma, MatchEqns, MatcherEquation}
   alias Theoria.Prelude
   alias Theoria.Theorem
   alias Theoria.Validation.{Checkable, Corpus, Report}
@@ -14,6 +14,7 @@ defmodule Theoria.Validation do
          :ok <- check_all(env, corpus.defeq_checks),
          :ok <- check_all(env, corpus.inductive_checks),
          {:ok, _env, generated_equations} <- Eqns.install_all(env),
+         {:ok, matcher_equation_count} <- check_matcher_equations(env),
          {:ok, theorem_count, axioms} <- theorem_summary(env, corpus.theorem_modules) do
       {:ok,
        %Report{
@@ -23,6 +24,7 @@ defmodule Theoria.Validation do
          inductive_count: length(corpus.inductive_checks),
          equations: Info.all(env),
          generated_equation_count: length(generated_equations),
+         matcher_equation_count: matcher_equation_count,
          axioms: axioms
        }}
     end
@@ -33,6 +35,17 @@ defmodule Theoria.Validation do
       case Checkable.check(check, env) do
         :ok -> {:cont, :ok}
         {:error, reason} -> {:halt, {:error, {check, reason}}}
+      end
+    end)
+  end
+
+  defp check_matcher_equations(env) do
+    env
+    |> MatchEqns.all()
+    |> Enum.reduce_while({:ok, 0}, fn %MatcherEquation{} = equation, {:ok, count} ->
+      case Lemma.to_theorem(env, MatcherEquation.to_lemma(equation)) do
+        {:ok, _theorem} -> {:cont, {:ok, count + 1}}
+        {:error, error} -> {:halt, {:error, {:matcher_equation, equation.name, error}}}
       end
     end)
   end

@@ -15,15 +15,33 @@ defmodule Theoria.Equation.MatcherInfo do
           }
   end
 
+  defmodule Discriminant do
+    @moduledoc "Metadata for one matcher discriminant."
+
+    defstruct [:name]
+
+    @type t :: %__MODULE__{name: atom() | nil}
+  end
+
   @enforce_keys [:name, :num_params, :num_discriminants, :alternatives]
-  defstruct [:name, :num_params, :num_discriminants, :alternatives, elim_level_position: nil]
+  defstruct [
+    :name,
+    :num_params,
+    :num_discriminants,
+    :alternatives,
+    elim_level_position: nil,
+    discriminants: [],
+    overlaps: %{}
+  ]
 
   @type t :: %__MODULE__{
           name: atom(),
           num_params: non_neg_integer(),
           num_discriminants: pos_integer(),
           alternatives: [Alternative.t()],
-          elim_level_position: non_neg_integer() | nil
+          elim_level_position: non_neg_integer() | nil,
+          discriminants: [Discriminant.t()],
+          overlaps: %{optional(non_neg_integer()) => [non_neg_integer()]}
         }
 
   @doc "Builds matcher metadata."
@@ -36,7 +54,9 @@ defmodule Theoria.Equation.MatcherInfo do
       num_params: num_params,
       num_discriminants: num_discriminants,
       alternatives: alternatives,
-      elim_level_position: Keyword.get(opts, :elim_level_position)
+      elim_level_position: Keyword.get(opts, :elim_level_position),
+      discriminants: Keyword.get(opts, :discriminants, default_discriminants(num_discriminants)),
+      overlaps: Keyword.get(opts, :overlaps, %{})
     }
   end
 
@@ -51,6 +71,8 @@ defmodule Theoria.Equation.MatcherInfo do
   def arity(%__MODULE__{} = info) do
     info.num_params + 1 + info.num_discriminants + length(info.alternatives)
   end
+
+  defp default_discriminants(count), do: Enum.map(1..count//1, fn _index -> %Discriminant{} end)
 
   defp num_params(:list), do: 1
   defp num_params(_family), do: 0

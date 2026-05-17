@@ -11,7 +11,7 @@ This table tracks Theoria's proof/equation abstractions against the Lean 4 sourc
 | `mkEqnTypes` / `mkEqns` | Computes equation theorem statements and realizes proofs | `SchemaBuilder`, `Equation.Lemma`, `Eqns` | 🟡 | Current generated equations are template-driven for supported fragments, not derived by splitting normalized match goals. |
 | `getEqnsFor?` / `registerGetEqnsFn` | Lazy central lookup for equation theorem names | `Equation.Eqns` | 🟡 | No lazy realization registry; source lookup is derived by scanning metadata. |
 | `mkUnfoldEq` / `getUnfoldFor?` | Unfold equation theorem generation | `Eqns.unfold/2`, `Lemma.unfold_for/1` | 🟡 | Early direct unfold lemmas only; no separate lazy unfold theorem registry. |
-| `MatchEqsExt` | Matcher-specific equation theorem extension | None | 🔴 | No matcher declarations or matcher equation extension yet. |
+| `MatchEqsExt` | Matcher-specific equation theorem extension | `MatcherEquation`, `MatchEqns` | 🟡 | Matcher equations are schema-derived and theorem-checkable, but there are no independent matcher declarations or persistent matcher equation extension yet. |
 | `brecOn` / below machinery | Structural recursion beyond simple primitive recursors | None | 🔴 | No below dictionaries or general structural recursion checker. |
 | Simp theorem DB | Attribute/prioritized proof-producing simplification | `Simp.Rule`, `Simp.Database`, `Simp.Step` | 🟠 | No attributes, indexing, conditional rules, congruence, or proof-producing simplification. |
 

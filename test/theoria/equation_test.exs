@@ -13,6 +13,8 @@ defmodule Theoria.EquationTest do
     FixedParams,
     Info,
     Lemma,
+    MatchEqns,
+    MatcherEquation,
     MatcherInfo,
     Pattern,
     Schema,
@@ -133,6 +135,8 @@ defmodule Theoria.EquationTest do
     assert {:ok, [:"nat_add.eq_zero", :"nat_add.eq_succ"]} = Eqns.get(env, :nat_add)
     assert {:ok, :nat_add} = Eqns.source(env, :"nat_add.eq_succ")
     assert {:ok, :nat_add} = Eqns.source(env, :"nat_add.eq_def")
+    assert {:ok, :nat_add} = Eqns.source(env, :"nat_add.match_1.eq_succ")
+    assert {:ok, :"nat_add.match_1"} = MatchEqns.source(env, :"nat_add.match_1.eq_succ")
     assert {:ok, unfold} = Eqns.unfold(env, :nat_add)
     assert unfold.name == :"nat_add.eq_def"
     assert {:ok, _theorem} = Lemma.to_theorem(env, unfold)
@@ -156,9 +160,28 @@ defmodule Theoria.EquationTest do
 
     assert length(info.clauses) == 2
     assert info.matcher.name == :"list_append.match_1"
+    assert length(info.matcher.discriminants) == 1
+    assert info.matcher.overlaps == %{}
     assert info.schema.family == :list
     assert Enum.map(info.schema.equations, & &1.suffix) == [nil, :cons]
     assert Enum.map(info.matcher.alternatives, & &1.constructor) == [:list_nil, :list_cons]
+  end
+
+  test "matcher equations are generated from matcher metadata" do
+    {:ok, env} = Prelude.env()
+    {:ok, names} = MatchEqns.get(env, :"list_append.match_1")
+
+    assert names == [:"list_append.match_1.eq_list_nil", :"list_append.match_1.eq_list_cons"]
+
+    [nil_equation | _rest] =
+      MatchEqns.all(env) |> Enum.filter(&(&1.matcher == :"list_append.match_1"))
+
+    assert nil_equation.constructor == :list_nil
+
+    assert {:ok, theorem} =
+             Lemma.to_theorem(env, MatcherEquation.to_lemma(nil_equation))
+
+    assert theorem.name == :"list_append.match_1.eq_list_nil"
   end
 
   test "library and compiler modules do not hand-author definition-specific schema helpers" do

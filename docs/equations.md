@@ -12,7 +12,8 @@ Signature + CaseTemplate + Clause/Pattern
   → Theoria.Equation.DefinitionSpec package
   → Theoria.Equation.Info metadata in the environment
   → generated Theoria.Equation.Lemma metadata
-  → Theoria.Equation.Eqns lookup
+  → generated Theoria.Equation.MatcherEquation metadata
+  → Theoria.Equation.Eqns / MatchEqns lookup
   → optional opaque theorem declarations
   → rewrite rules/databases
 ```
@@ -72,6 +73,16 @@ Theoria.Equation.Eqns.source(env, :"nat_add.eq_succ")
 Theoria.Equation.Eqns.installed?(env, :nat_add)
 ```
 
+`Theoria.Equation.MatchEqns` is the matcher-equation side of the same groundwork:
+
+```elixir
+Theoria.Equation.MatchEqns.get(env, :"nat_add.match_1")
+#=> {:ok, [:"nat_add.match_1.eq_zero", :"nat_add.match_1.eq_succ"]}
+
+Theoria.Equation.MatchEqns.source(env, :"nat_add.match_1.eq_succ")
+#=> {:ok, :"nat_add.match_1"}
+```
+
 ## Rewrite databases
 
 Generated equation lemmas can feed the provisional rewrite database:
@@ -119,6 +130,7 @@ Native validation kernel-checks generated equation theorems and reports them exp
 
 ```text
 ✓ generated equations: 16 theorem(s)
+✓ matcher equations: 12 theorem(s)
 ```
 
 It can also show equation metadata:

@@ -2,7 +2,7 @@ defmodule Theoria.Lean.Module do
   @moduledoc "Builds Lean oracle source files from encoded checks."
 
   alias Theoria.Elaborator
-  alias Theoria.Equation.{Info, Lemma}
+  alias Theoria.Equation.{Info, Lemma, MatchEqns, MatcherEquation}
   alias Theoria.Lean.Encode
   alias Theoria.Lean.MirrorPrelude
   alias Theoria.Prelude
@@ -86,9 +86,10 @@ defmodule Theoria.Lean.Module do
 
   defp add_equation_theorems(module, categories) do
     with {:ok, env} <- Prelude.env() do
-      env
-      |> generated_equation_lemmas(categories)
-      |> add_equation_lemma_theorems(env, module)
+      ordinary = generated_equation_lemmas(env, categories)
+      matcher = generated_matcher_equation_lemmas(env, categories)
+
+      add_equation_lemma_theorems(ordinary ++ matcher, env, module)
     end
   end
 
@@ -103,6 +104,14 @@ defmodule Theoria.Lean.Module do
     Enum.reduce_while(lemmas, {:ok, module}, fn lemma, {:ok, module} ->
       add_equation_lemma_theorem(lemma, env, module)
     end)
+  end
+
+  defp generated_matcher_equation_lemmas(env, categories) do
+    env
+    |> Info.all()
+    |> Enum.filter(&equation_category_enabled?(&1, categories))
+    |> Enum.flat_map(&MatchEqns.generated/1)
+    |> Enum.map(&MatcherEquation.to_lemma/1)
   end
 
   defp add_equation_lemma_theorem(lemma, env, module) do

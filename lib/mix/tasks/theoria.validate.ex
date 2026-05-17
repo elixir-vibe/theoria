@@ -31,6 +31,7 @@ defmodule Mix.Tasks.Theoria.Validate do
 
         Mix.shell().info("✓ equation metadata: #{Report.equation_count(result)} definition(s)")
         Mix.shell().info("✓ generated equations: #{result.generated_equation_count} theorem(s)")
+        Mix.shell().info("✓ matcher equations: #{result.matcher_equation_count} theorem(s)")
 
         print_equations(result, opts)
 

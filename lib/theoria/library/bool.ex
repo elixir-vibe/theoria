@@ -7,6 +7,8 @@ defmodule Theoria.Library.Bool do
   """
 
   alias Theoria.Env
+  alias Theoria.Equation
+  alias Theoria.Equation.{Clause, Pattern}
   alias Theoria.Inductive.Generate
   alias Theoria.Inductive.Spec
   alias Theoria.Kernel
@@ -46,13 +48,17 @@ defmodule Theoria.Library.Bool do
   end
 
   defp bool_not_value do
-    elab!(
-      lam :b, const(:Bool) do
-        term do
-          bool_rec(const(:Bool), false, true, b)
-        end
-      end
-    )
+    {:ok, body} =
+      Equation.compile_bool(
+        Theoria.Term.const(:Bool),
+        [
+          Clause.new([Pattern.constructor(true)], Theoria.Term.const(false)),
+          Clause.new([Pattern.constructor(false)], Theoria.Term.const(true))
+        ],
+        Theoria.Term.bvar(0)
+      )
+
+    Theoria.Term.lam(:b, Theoria.Term.const(:Bool), body)
   end
 
   defp bool_binary_type do

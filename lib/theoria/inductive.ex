@@ -242,13 +242,13 @@ defmodule Theoria.Inductive do
       num_indices: length(spec.indices),
       num_motives: 1,
       num_minors: length(spec.constructors),
-      rules: recursor_rules(spec, name, recursor_params)
+      rules: recursor_rules(spec, name, type, recursor_params)
     }
   end
 
   defp recursor_metadata(_spec, _name, _type, _reduction), do: nil
 
-  defp recursor_rules(%Spec{} = spec, recursor_name, recursor_params) do
+  defp recursor_rules(%Spec{} = spec, recursor_name, recursor_type, recursor_params) do
     spec.constructors
     |> Enum.with_index()
     |> Enum.map(fn {constructor, index} ->
@@ -257,7 +257,7 @@ defmodule Theoria.Inductive do
       %RecursorRule{
         constructor: constructor.name,
         field_count: length(result.binders) - length(spec.parameters),
-        rhs: recursor_rule_rhs(spec, recursor_name, recursor_params, result, index)
+        rhs: recursor_rule_rhs(spec, recursor_name, recursor_type, recursor_params, result, index)
       }
     end)
   end
@@ -265,11 +265,13 @@ defmodule Theoria.Inductive do
   defp recursor_rule_rhs(
          %Spec{} = spec,
          recursor_name,
+         recursor_type,
          recursor_params,
          result,
          constructor_index
        ) do
     prefix_names = Enum.map(spec.parameters, & &1.name) ++ [:motive] ++ minor_names(spec)
+    prefix_binders = recursor_prefix_binders(recursor_type, prefix_names)
     fields = field_binders(result, length(spec.parameters))
     minor = S.var(Enum.at(minor_names(spec), constructor_index))
 
@@ -284,9 +286,10 @@ defmodule Theoria.Inductive do
         minor
       )
 
-    (prefix_names ++ Enum.map(fields, & &1.name))
+    result
+    |> rule_binders(prefix_binders, fields)
     |> Enum.reverse()
-    |> Enum.reduce(body, fn name, body -> S.lam(name, S.sort(0), body) end)
+    |> Enum.reduce(body, fn {name, domain}, body -> S.lam(name, domain, body) end)
     |> Elaborator.elaborate!()
   end
 
@@ -315,6 +318,67 @@ defmodule Theoria.Inductive do
 
     args = Enum.map(prefix_names, &S.var/1) ++ [S.var(field_name)]
     Enum.reduce(args, S.const(recursor_name, levels), fn arg, fun -> S.app(fun, arg) end)
+  end
+
+  defp recursor_prefix_binders(recursor_type, prefix_names) do
+    recursor_type
+    |> collect_prefix_binders(prefix_names, [], [])
+    |> Enum.reverse()
+  end
+
+  defp collect_prefix_binders(_type, [], _context, binders), do: binders
+
+  defp collect_prefix_binders(
+         %Forall{domain: domain, body: body},
+         [name | names],
+         context,
+         binders
+       ) do
+    binder = {name, syntax_from_core(domain, Enum.reverse(context))}
+    collect_prefix_binders(body, names, context ++ [name], [binder | binders])
+  end
+
+  defp rule_binders(result, prefix_binders, fields) do
+    prefix_binders ++ Enum.map(fields, &field_rule_binder(result, &1))
+  end
+
+  defp field_rule_binder(result, field) do
+    %{domain: domain} = Enum.at(result.binders, field.position)
+    context = field_context(result, field.position)
+    {field.name, syntax_from_core(domain, context)}
+  end
+
+  defp field_context(result, position) do
+    parameter_count = length(result.parameters)
+
+    parameters =
+      result.binders
+      |> Enum.take(parameter_count)
+      |> Enum.map(& &1.name)
+
+    fields =
+      result.binders
+      |> Enum.drop(parameter_count)
+      |> Enum.take(position - parameter_count)
+      |> Enum.with_index()
+      |> Enum.map(fn {binder, index} -> field_name(binder.name, index) end)
+
+    Enum.reverse(parameters ++ fields)
+  end
+
+  defp syntax_from_core(%Theoria.Term.Sort{level: level}, _context), do: S.sort(level)
+
+  defp syntax_from_core(%Theoria.Term.Const{name: name, levels: levels}, _context),
+    do: S.const(name, levels)
+
+  defp syntax_from_core(%Theoria.Term.BVar{index: index}, context),
+    do: context |> Enum.fetch!(index) |> S.var()
+
+  defp syntax_from_core(%App{fun: fun, arg: arg}, context),
+    do: S.app(syntax_from_core(fun, context), syntax_from_core(arg, context))
+
+  defp syntax_from_core(%Forall{name: name, domain: domain, body: body}, context) do
+    S.forall(name, syntax_from_core(domain, context), syntax_from_core(body, [name | context]))
   end
 
   defp minor_names(%Spec{} = spec) do

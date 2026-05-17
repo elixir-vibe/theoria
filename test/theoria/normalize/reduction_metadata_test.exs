@@ -105,6 +105,17 @@ defmodule Theoria.Normalize.ReductionMetadataTest do
     assert error.reason == :invalid_reduction
   end
 
+  test "generated recursive recursor rule rhs terms infer as branch functions" do
+    {:ok, env} = Nat.env()
+
+    assert {:ok, %Constant{metadata: %Theoria.Env.Recursor{rules: rules}}} =
+             Env.fetch(env, :nat_rec)
+
+    assert Enum.all?(rules, fn rule ->
+             match?({:ok, %Theoria.Term.Forall{}}, Kernel.infer(env, rule.rhs))
+           end)
+  end
+
   test "recursor rule rhs must infer as a branch function" do
     {:ok, env} = Bool.env()
 

@@ -349,7 +349,7 @@ defmodule Theoria.Kernel do
        }) do
     with true <- Term.well_scoped?(rhs),
          true <- MapSet.subset?(Term.level_params(rhs), MapSet.new(recursor.universe_params)),
-         true <- inferable_recursor_rule?(env, field_count, rhs),
+         true <- inferable_recursor_rule?(env, rhs),
          {:ok, recursor_inductive} <- recursor_inductive(recursor),
          {:ok, %EnvConstructor{inductive: inductive, num_fields: ^field_count}} <-
            Env.fetch_constructor(env, constructor),
@@ -360,10 +360,7 @@ defmodule Theoria.Kernel do
     end
   end
 
-  defp inferable_recursor_rule?(_env, field_count, _rhs) when field_count > 0, do: true
-
-  defp inferable_recursor_rule?(env, _field_count, rhs),
-    do: match?({:ok, %Forall{}}, infer(env, rhs))
+  defp inferable_recursor_rule?(env, rhs), do: match?({:ok, %Forall{}}, infer(env, rhs))
 
   defp put_unchecked_recursor(env, %EnvRecursor{} = recursor) do
     Env.put_constant(env, recursor.name, recursor.type, recursor.universe_params,

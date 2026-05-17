@@ -27,11 +27,30 @@ defmodule Theoria.EquationTest do
     assert args == [Term.const(:Bool), Term.const(false), Term.const(true), Term.const(true)]
   end
 
-  test "reports missing Bool constructor clauses" do
+  test "validates Bool constructor clauses" do
     assert {:error, {:missing_clause, missing}} =
              Equation.compile_bool(Term.const(:Bool), [], Term.const(true))
 
     assert missing in [true, false]
+
+    assert Equation.compile_bool(
+             Term.const(:Bool),
+             [
+               Clause.new([Pattern.constructor(true)], Term.const(true)),
+               Clause.new([Pattern.constructor(true)], Term.const(false)),
+               Clause.new([Pattern.constructor(false)], Term.const(false))
+             ],
+             Term.const(true)
+           ) == {:error, {:duplicate_clause, true}}
+
+    assert Equation.compile_bool(
+             Term.const(:Bool),
+             [
+               Clause.new([Pattern.constructor(:foo)], Term.const(true)),
+               Clause.new([Pattern.constructor(false)], Term.const(false))
+             ],
+             Term.const(true)
+           ) == {:error, {:unexpected_clause, :foo}}
   end
 
   test "builds Nat recursor applications" do
@@ -40,6 +59,39 @@ defmodule Theoria.EquationTest do
 
     assert {%Term.Const{name: :nat_rec}, args} = Term.Application.collect(term)
     assert args == [Term.const(:Nat), Term.const(:zero), succ_case, Term.const(:zero)]
+  end
+
+  test "validates recursive pattern shape" do
+    assert Equation.compile_nat(
+             Term.const(:Nat),
+             [
+               Clause.new([Pattern.constructor(:zero)], Term.const(:zero)),
+               Clause.new([Pattern.constructor(:succ)], Term.const(:zero))
+             ],
+             Term.const(:zero)
+           ) == {:error, {:constructor_arity_mismatch, :succ, [expected: 1, actual: 0]}}
+
+    assert Equation.compile_list(
+             Term.const(:Nat),
+             Term.app(Term.const(:List), Term.const(:Nat)),
+             [
+               Clause.new([Pattern.constructor(:list_nil)], Term.const(:list_nil)),
+               Clause.new(
+                 [Pattern.constructor(:list_cons, [Pattern.var(:x), Pattern.var(:x)])],
+                 Term.const(:list_nil)
+               )
+             ],
+             Term.const(:xs)
+           ) == {:error, {:duplicate_pattern_variable, :x}}
+
+    assert Equation.compile_nat(
+             Term.const(:Nat),
+             [
+               Clause.new([Pattern.constructor(:zero)], Term.const(:zero)),
+               Clause.new([Pattern.constructor(:succ, [:n])], Term.const(:zero))
+             ],
+             Term.const(:zero)
+           ) == {:error, {:invalid_pattern, :n}}
   end
 
   test "compiles Nat constructor clauses" do

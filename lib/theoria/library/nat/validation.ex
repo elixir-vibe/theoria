@@ -2,6 +2,8 @@ defmodule Theoria.Library.Nat.Validation do
   @moduledoc "Validation metadata for `Theoria.Library.Nat`."
 
   alias Theoria.Env
+  alias Theoria.Equation
+  alias Theoria.Equation.{Clause, Pattern}
   alias Theoria.Library.Nat
   alias Theoria.Term
 
@@ -29,7 +31,26 @@ defmodule Theoria.Library.Nat.Validation do
     one = Term.app(Term.const(:succ), zero)
     two = Term.app(Term.const(:succ), one)
 
+    {:ok, compiled_succ} =
+      Equation.compile_nat(
+        nat,
+        [
+          Clause.new([Pattern.constructor(:zero)], zero),
+          Clause.new(
+            [Pattern.constructor(:succ, [Pattern.var(:n)])],
+            Term.app(Term.const(:succ), Term.bvar(0))
+          )
+        ],
+        one
+      )
+
     [
+      DefeqCheck.new(
+        :nat,
+        "equation_nat_succ",
+        compiled_succ,
+        one
+      ),
       DefeqCheck.new(
         :nat,
         "nat_rec_zero",

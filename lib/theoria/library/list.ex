@@ -110,7 +110,7 @@ defmodule Theoria.Library.List do
           Clause.new([Pattern.constructor(:list_nil)], Theoria.Term.bvar(0)),
           Clause.new(
             [Pattern.constructor(:list_cons, [Pattern.var(:head), Pattern.var(:tail)])],
-            list_append_cons_case(a)
+            list_cons_branch()
           )
         ],
         Theoria.Term.bvar(1),
@@ -135,18 +135,17 @@ defmodule Theoria.Library.List do
   defp list_length_value do
     u = Level.param(:u)
     xs = Theoria.Term.bvar(0)
-    a = Theoria.Term.bvar(1)
-    list_a = list_of(a)
+    element_type = Theoria.Term.bvar(1)
 
     {:ok, body} =
       Equation.compile_list(
-        a,
+        element_type,
         Theoria.Term.const(:Nat),
         [
           Clause.new([Pattern.constructor(:list_nil)], Theoria.Term.const(:zero)),
           Clause.new(
             [Pattern.constructor(:list_cons, [Pattern.wildcard(), Pattern.var(:tail)])],
-            list_length_cons_case(a, list_a)
+            Theoria.Term.app(Theoria.Term.const(:succ), branch_ih())
           )
         ],
         xs,
@@ -163,42 +162,13 @@ defmodule Theoria.Library.List do
     )
   end
 
-  defp list_append_cons_case(a) do
-    u = Level.param(:u)
-    nearest = Theoria.Term.bvar(0)
+  defp branch_ih, do: Theoria.Term.bvar(0)
 
-    Theoria.Term.lam(
-      :head,
-      a,
-      Theoria.Term.lam(
-        :_tail,
-        list_of(Theoria.Term.shift(a, 1)),
-        Theoria.Term.lam(
-          :acc,
-          list_of(Theoria.Term.shift(a, 2)),
-          Theoria.Term.const(:list_cons, [u])
-          |> Theoria.Term.app(Theoria.Term.shift(a, 3))
-          |> Theoria.Term.app(Theoria.Term.bvar(2))
-          |> Theoria.Term.app(nearest)
-        )
-      )
-    )
-  end
-
-  defp list_length_cons_case(element_type, list_a) do
-    Theoria.Term.lam(
-      :_head,
-      element_type,
-      Theoria.Term.lam(
-        :_tail,
-        Theoria.Term.shift(list_a, 1),
-        Theoria.Term.lam(
-          :acc,
-          Theoria.Term.const(:Nat),
-          Theoria.Term.app(Theoria.Term.const(:succ), Theoria.Term.bvar(0))
-        )
-      )
-    )
+  defp list_cons_branch do
+    Theoria.Term.const(:list_cons, [Level.param(:u)])
+    |> Theoria.Term.app(Theoria.Term.bvar(5))
+    |> Theoria.Term.app(Theoria.Term.bvar(2))
+    |> Theoria.Term.app(Theoria.Term.bvar(0))
   end
 
   defp list_of(type) do

@@ -47,7 +47,7 @@ defmodule Theoria.Equation.Compiler do
          element_type,
          motive,
          nil_case,
-         materialize_list_cons(cons_case, element_type),
+         materialize_list_cons(cons_case, element_type, motive),
          major,
          levels
        )}
@@ -152,18 +152,21 @@ defmodule Theoria.Equation.Compiler do
   defp materialize_nat_succ(body),
     do: wrap_lambdas([pred: Term.const(:Nat), ih: Term.const(:Nat)], body)
 
-  defp materialize_list_cons(%Term.Lam{} = body, _element_type), do: body
+  defp materialize_list_cons(%Term.Lam{} = body, _element_type, _motive), do: body
 
-  defp materialize_list_cons(body, element_type) do
-    list_type = Term.app(Term.const(:List, [Level.param(:u)]), Term.shift(element_type, 1))
+  defp materialize_list_cons(body, element_type, motive) do
+    tail_type = Term.app(Term.const(:List, [Level.param(:u)]), Term.shift(element_type, 1))
+    ih_type = Term.shift(motive, 2)
 
     wrap_lambdas(
-      [head: element_type, tail: list_type, ih: list_type],
+      [head: element_type, tail: tail_type, ih: ih_type],
       body
     )
   end
 
   defp wrap_lambdas(binders, body) do
-    Enum.reduce(binders, body, fn {name, type}, body -> Term.lam(name, type, body) end)
+    binders
+    |> Enum.reverse()
+    |> Enum.reduce(body, fn {name, type}, body -> Term.lam(name, type, body) end)
   end
 end

@@ -97,6 +97,12 @@ end
 
 `mix theoria.check` validates the native corpus against the prelude and is part of CI. It checks theorem modules, definitional-equality checks, and inductive specs. Use `mix theoria.validate --only ...` to run a narrower validation slice.
 
+## Equation compiler groundwork
+
+`Theoria.Equation` is an internal constructor-equation compiler for the current Bool/Nat/List fragment. It is deliberately not a public pattern-matching language yet. Callers provide `Theoria.Equation.Clause` values over `Theoria.Equation.Pattern` constructors, variables, and wildcards; the compiler validates coverage, duplicate clauses, unexpected constructors, arity, nested pattern shape, and duplicate pattern variables before assembling recursor applications.
+
+The compiler can materialize simple recursor branches for structural Nat and List clauses, so library definitions can write branch bodies against the generated branch context instead of manually building every recursor lambda. It still does not provide public equation syntax, termination checking, dependent pattern matching, or generated equation lemmas.
+
 ## Normalization and definitional equality
 
 The initial normalizer supports beta reduction, zeta reduction for local definitions, unfolding checked definitions, and primitive recursor reductions. Definitional equality currently normalizes both sides and compares the resulting terms structurally.

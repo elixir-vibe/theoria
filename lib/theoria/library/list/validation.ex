@@ -1,6 +1,8 @@
 defmodule Theoria.Library.List.Validation do
   @moduledoc "Validation metadata for `Theoria.Library.List`."
 
+  alias Theoria.Equation
+  alias Theoria.Equation.{Clause, Pattern}
   alias Theoria.Level
   alias Theoria.Library.{List, Nat}
   alias Theoria.Term
@@ -41,7 +43,27 @@ defmodule Theoria.Library.List.Validation do
 
     list_succ_case = Terms.list_succ_case(nat_list)
 
+    {:ok, compiled_length_singleton} =
+      Equation.compile_list(
+        nat,
+        nat,
+        [
+          Clause.new([Pattern.constructor(:list_nil)], zero),
+          Clause.new(
+            [Pattern.constructor(:list_cons, [Pattern.wildcard(), Pattern.var(:tail)])],
+            Term.app(Term.const(:succ), Term.bvar(0))
+          )
+        ],
+        singleton
+      )
+
     [
+      DefeqCheck.new(
+        :list,
+        "equation_list_length_singleton",
+        compiled_length_singleton,
+        one
+      ),
       DefeqCheck.new(
         :list,
         "list_length_nil",

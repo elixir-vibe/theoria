@@ -47,12 +47,17 @@ defmodule Theoria.Library.Nat do
   end
 
   defp nat_add_value do
+    n = Theoria.Term.bvar(0)
+
     {:ok, body} =
       Equation.compile_nat(
         Theoria.Term.const(:Nat),
         [
-          Clause.new([Pattern.constructor(:zero)], Theoria.Term.bvar(0)),
-          Clause.new([Pattern.constructor(:succ, [Pattern.var(:pred)])], nat_add_succ_case())
+          Clause.new([Pattern.constructor(:zero)], n),
+          Clause.new(
+            [Pattern.constructor(:succ, [Pattern.var(:pred)])],
+            Theoria.Term.app(Theoria.Term.const(:succ), n)
+          )
         ],
         Theoria.Term.bvar(1)
       )
@@ -61,18 +66,6 @@ defmodule Theoria.Library.Nat do
       :m,
       Theoria.Term.const(:Nat),
       Theoria.Term.lam(:n, Theoria.Term.const(:Nat), body)
-    )
-  end
-
-  defp nat_add_succ_case do
-    Theoria.Term.lam(
-      :_pred,
-      Theoria.Term.const(:Nat),
-      Theoria.Term.lam(
-        :acc,
-        Theoria.Term.const(:Nat),
-        Theoria.Term.app(Theoria.Term.const(:succ), Theoria.Term.bvar(0))
-      )
     )
   end
 end

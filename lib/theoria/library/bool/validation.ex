@@ -2,6 +2,8 @@ defmodule Theoria.Library.Bool.Validation do
   @moduledoc "Validation metadata for `Theoria.Library.Bool`."
 
   alias Theoria.Env
+  alias Theoria.Equation
+  alias Theoria.Equation.{Clause, Pattern}
   alias Theoria.Library.Bool
   alias Theoria.Term
   alias Theoria.Validation.{DefeqCheck, InductiveCheck, Library, SmallTerms, TheoremModuleCheck}
@@ -20,7 +22,23 @@ defmodule Theoria.Library.Bool.Validation do
     bool_true = Term.const(true)
     bool_false = Term.const(false)
 
+    {:ok, compiled_not_true} =
+      Equation.compile_bool(
+        bool,
+        [
+          Clause.new([Pattern.constructor(true)], bool_false),
+          Clause.new([Pattern.constructor(false)], bool_true)
+        ],
+        bool_true
+      )
+
     [
+      DefeqCheck.new(
+        :bool,
+        "equation_bool_not_true",
+        compiled_not_true,
+        bool_false
+      ),
       DefeqCheck.new(
         :bool,
         "bool_not_true",

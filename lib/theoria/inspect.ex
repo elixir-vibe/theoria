@@ -18,7 +18,8 @@ defimpl Inspect,
     Theoria.Term.Forall,
     Theoria.Term.Let,
     Theoria.Term.Eq,
-    Theoria.Term.Refl
+    Theoria.Term.Refl,
+    Theoria.Term.EqRec
   ] do
   def inspect(term, _opts) do
     Theoria.Pretty.term(term)

@@ -5,7 +5,7 @@ defmodule Theoria.Pretty do
   alias Theoria.Inductive.{Index, Parameter, Report, Shape}
   alias Theoria.Kernel.TrustReport
   alias Theoria.Term
-  alias Theoria.Term.{App, BVar, Const, Eq, Forall, Lam, Let, Refl, Sort}
+  alias Theoria.Term.{App, BVar, Const, Eq, EqRec, Forall, Lam, Let, Refl, Sort}
   alias Theoria.Theorem
 
   @spec term(Term.t()) :: String.t()
@@ -218,6 +218,13 @@ defmodule Theoria.Pretty do
 
   defp render_term(%Refl{value: value}, context) do
     "refl #{render_atomic(value, context)}"
+  end
+
+  defp render_term(%EqRec{type: type, motive: motive, base: base, proof: proof}, context) do
+    Enum.map_join(["Eq.rec", type, motive, base, proof], " ", fn
+      text when is_binary(text) -> text
+      term -> render_atomic(term, context)
+    end)
   end
 
   defp render_atomic(%Sort{} = term, context), do: render_term(term, context)

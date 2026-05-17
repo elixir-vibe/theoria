@@ -20,7 +20,7 @@ defmodule Theoria.Kernel do
   alias Theoria.Kernel.TrustReport
   alias Theoria.Normalize
   alias Theoria.Term
-  alias Theoria.Term.{App, BVar, Const, Eq, Forall, Lam, Let, Refl, Sort}
+  alias Theoria.Term.{App, BVar, Const, Eq, EqRec, Forall, Lam, Let, Refl, Sort}
 
   @type result :: {:ok, Term.t()} | {:error, Error.t()}
 
@@ -92,6 +92,25 @@ defmodule Theoria.Kernel do
   def infer(%Env{} = env, %Context{} = context, %Refl{value: value}) do
     with {:ok, type} <- infer(env, context, value) do
       {:ok, %Eq{type: type, left: value, right: value}}
+    end
+  end
+
+  def infer(%Env{} = env, %Context{} = context, %EqRec{
+        type: type,
+        motive: motive,
+        base: base,
+        proof: proof
+      }) do
+    with {:ok, %Sort{}} <- infer_sort(env, context, type),
+         {:ok, %Eq{type: proof_type, left: left, right: right}} <-
+           infer_equality_proof(env, context, proof),
+         :ok <- ensure_defeq(env, proof_type, type, :equality_type_mismatch),
+         left_target = %App{fun: motive, arg: left},
+         right_target = %App{fun: motive, arg: right},
+         {:ok, %Sort{}} <- infer_sort(env, context, left_target),
+         {:ok, %Sort{}} <- infer_sort(env, context, right_target),
+         :ok <- check(env, context, base, left_target) do
+      {:ok, right_target}
     end
   end
 
@@ -503,6 +522,16 @@ defmodule Theoria.Kernel do
       case type do
         %Sort{} -> {:ok, type}
         other -> error(:expected_sort, type: other)
+      end
+    end
+  end
+
+  defp infer_equality_proof(env, context, proof) do
+    with {:ok, proof_type} <- infer(env, context, proof),
+         {:ok, proof_type} <- Normalize.whnf(env, proof_type) do
+      case proof_type do
+        %Eq{} -> {:ok, proof_type}
+        other -> error(:expected_equality, type: other)
       end
     end
   end

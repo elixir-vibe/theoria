@@ -41,6 +41,10 @@ defmodule Theoria.DSL.TermQuoteTest do
 
     assert term(do: eq(type(0), x, x)) == eq(type(0), var(:x), var(:x))
     assert term(do: refl(x)) == refl(var(:x))
+
+    assert term(do: eq_rec(nat(), motive, base, proof)) ==
+             eq_rec(const(:Nat), var(:motive), var(:base), var(:proof))
+
     assert term(do: const(:True)) == const(:True)
     assert term(do: sort(u)) == S.sort(Theoria.Level.param(:u))
     assert term(do: const(:List, [1])) == const(:List, [1])

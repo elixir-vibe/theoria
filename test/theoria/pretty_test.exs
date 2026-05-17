@@ -35,6 +35,9 @@ defmodule Theoria.PrettyTest do
   test "inspects equality and reflexivity" do
     assert inspect(eq(bvar(1), bvar(0), bvar(0))) == "#Theoria<#0 = #0>"
     assert inspect(refl(bvar(0))) == "#Theoria<refl #0>"
+
+    assert inspect(eq_rec(const(:Nat), const(:motive), const(:base), const(:proof))) ==
+             "#Theoria<Eq.rec Nat motive base proof>"
   end
 
   test "inspects checked theorems" do

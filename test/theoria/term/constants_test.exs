@@ -23,6 +23,12 @@ defmodule Theoria.Term.ConstantsTest do
     assert Term.constants(term) == MapSet.new([:A, :x, :y])
   end
 
+  test "collects constants from equality recursors" do
+    term = eq_rec(const(:A), const(:motive), const(:base), const(:proof))
+
+    assert Term.constants(term) == MapSet.new([:A, :motive, :base, :proof])
+  end
+
   test "collects constants from lets" do
     term = let(:x, const(:A), const(:a), app(const(:f), bvar(0)))
 

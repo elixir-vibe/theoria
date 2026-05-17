@@ -87,6 +87,19 @@ defmodule Theoria.Term do
     @type t :: %__MODULE__{value: Theoria.Term.t()}
   end
 
+  defmodule EqRec do
+    @moduledoc "Primitive equality recursor."
+    @enforce_keys [:type, :motive, :base, :proof]
+    defstruct [:type, :motive, :base, :proof]
+
+    @type t :: %__MODULE__{
+            type: Theoria.Term.t(),
+            motive: Theoria.Term.t(),
+            base: Theoria.Term.t(),
+            proof: Theoria.Term.t()
+          }
+  end
+
   @type t ::
           Sort.t()
           | BVar.t()
@@ -97,6 +110,7 @@ defmodule Theoria.Term do
           | Let.t()
           | Eq.t()
           | Refl.t()
+          | EqRec.t()
 
   @spec sort(non_neg_integer() | Theoria.Level.t()) :: Sort.t()
   def sort(level), do: %Sort{level: Theoria.Level.cast!(level)}
@@ -132,6 +146,11 @@ defmodule Theoria.Term do
 
   @spec refl(t()) :: Refl.t()
   def refl(value), do: %Refl{value: value}
+
+  @spec eq_rec(t(), t(), t(), t()) :: EqRec.t()
+  def eq_rec(type, motive, base, proof) do
+    %EqRec{type: type, motive: motive, base: base, proof: proof}
+  end
 
   @doc "Returns the environment constants referenced by `term`."
   @spec constants(t()) :: MapSet.t(atom())
@@ -175,6 +194,14 @@ defmodule Theoria.Term do
     collect_constants(value, constants)
   end
 
+  defp collect_constants(%EqRec{type: type, motive: motive, base: base, proof: proof}, constants) do
+    type
+    |> collect_constants(constants)
+    |> then(&collect_constants(motive, &1))
+    |> then(&collect_constants(base, &1))
+    |> then(&collect_constants(proof, &1))
+  end
+
   defp collect_constants(%Lam{domain: domain, body: body}, constants) do
     domain
     |> collect_constants(constants)
@@ -213,6 +240,11 @@ defmodule Theoria.Term do
 
   defp scoped?(%Refl{value: value}, depth), do: scoped?(value, depth)
 
+  defp scoped?(%EqRec{type: type, motive: motive, base: base, proof: proof}, depth) do
+    scoped?(type, depth) and scoped?(motive, depth) and scoped?(base, depth) and
+      scoped?(proof, depth)
+  end
+
   defp collect_level_params(%Sort{level: level}, params),
     do: MapSet.union(params, Theoria.Level.params(level))
 
@@ -243,6 +275,14 @@ defmodule Theoria.Term do
   end
 
   defp collect_level_params(%Refl{value: value}, params), do: collect_level_params(value, params)
+
+  defp collect_level_params(%EqRec{type: type, motive: motive, base: base, proof: proof}, params) do
+    type
+    |> collect_level_params(params)
+    |> then(&collect_level_params(motive, &1))
+    |> then(&collect_level_params(base, &1))
+    |> then(&collect_level_params(proof, &1))
+  end
 
   defp collect_level_params(%Lam{domain: domain, body: body}, params) do
     domain
@@ -304,6 +344,15 @@ defmodule Theoria.Term do
     %Refl{value: shift(value, amount, cutoff)}
   end
 
+  def shift(%EqRec{type: type, motive: motive, base: base, proof: proof}, amount, cutoff) do
+    %EqRec{
+      type: shift(type, amount, cutoff),
+      motive: shift(motive, amount, cutoff),
+      base: shift(base, amount, cutoff),
+      proof: shift(proof, amount, cutoff)
+    }
+  end
+
   def shift(%Lam{name: name, domain: domain, body: body}, amount, cutoff) do
     %Lam{name: name, domain: shift(domain, amount, cutoff), body: shift(body, amount, cutoff + 1)}
   end
@@ -358,6 +407,20 @@ defmodule Theoria.Term do
     %Refl{value: subst(value, index, replacement, depth)}
   end
 
+  def subst(
+        %EqRec{type: type, motive: motive, base: base, proof: proof},
+        index,
+        replacement,
+        depth
+      ) do
+    %EqRec{
+      type: subst(type, index, replacement, depth),
+      motive: subst(motive, index, replacement, depth),
+      base: subst(base, index, replacement, depth),
+      proof: subst(proof, index, replacement, depth)
+    }
+  end
+
   def subst(%Lam{name: name, domain: domain, body: body}, index, replacement, depth) do
     %Lam{
       name: name,
@@ -409,6 +472,15 @@ defmodule Theoria.Term do
   end
 
   def subst_levels(%Refl{value: value}, subst), do: %Refl{value: subst_levels(value, subst)}
+
+  def subst_levels(%EqRec{type: type, motive: motive, base: base, proof: proof}, subst) do
+    %EqRec{
+      type: subst_levels(type, subst),
+      motive: subst_levels(motive, subst),
+      base: subst_levels(base, subst),
+      proof: subst_levels(proof, subst)
+    }
+  end
 
   def subst_levels(%Lam{name: name, domain: domain, body: body}, subst) do
     %Lam{name: name, domain: subst_levels(domain, subst), body: subst_levels(body, subst)}

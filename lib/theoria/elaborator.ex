@@ -8,7 +8,7 @@ defmodule Theoria.Elaborator do
 
   alias Theoria.Error
   alias Theoria.Syntax
-  alias Theoria.Syntax.{App, Const, Eq, Forall, Lam, Let, Refl, Sort, Var}
+  alias Theoria.Syntax.{App, Const, Eq, EqRec, Forall, Lam, Let, Refl, Sort, Var}
   alias Theoria.Term
 
   @type result :: {:ok, Term.t()} | {:error, Error.t()}
@@ -61,6 +61,15 @@ defmodule Theoria.Elaborator do
   def elaborate(%Refl{value: value}, context) do
     with {:ok, value} <- elaborate(value, context) do
       {:ok, Term.refl(value)}
+    end
+  end
+
+  def elaborate(%EqRec{type: type, motive: motive, base: base, proof: proof}, context) do
+    with {:ok, type} <- elaborate(type, context),
+         {:ok, motive} <- elaborate(motive, context),
+         {:ok, base} <- elaborate(base, context),
+         {:ok, proof} <- elaborate(proof, context) do
+      {:ok, Term.eq_rec(type, motive, base, proof)}
     end
   end
 

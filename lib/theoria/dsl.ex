@@ -67,6 +67,9 @@ defmodule Theoria.DSL do
   @doc "Reflexivity proof."
   def refl(value), do: Syntax.refl(value)
 
+  @doc "Equality recursor."
+  def eq_rec(type, motive, base, proof), do: Syntax.eq_rec(type, motive, base, proof)
+
   @doc "Elaborates a named syntax term to a core term."
   def elab(term), do: Elaborator.elaborate(term)
 
@@ -89,6 +92,7 @@ defmodule Theoria.DSL do
   def elab!(%Syntax.Let{} = term), do: Elaborator.elaborate!(term)
   def elab!(%Syntax.Eq{} = term), do: Elaborator.elaborate!(term)
   def elab!(%Syntax.Refl{} = term), do: Elaborator.elaborate!(term)
+  def elab!(%Syntax.EqRec{} = term), do: Elaborator.elaborate!(term)
 
   @doc "Lambda abstraction with `do` block syntax."
   defmacro lam({name, _meta, context}, domain, do: body)
@@ -339,6 +343,17 @@ defmodule Theoria.DSL do
 
     quote do
       Theoria.Syntax.refl(unquote(value))
+    end
+  end
+
+  defp quote_term({:eq_rec, _meta, [type, motive, base, proof]}) do
+    type = quote_term(type)
+    motive = quote_term(motive)
+    base = quote_term(base)
+    proof = quote_term(proof)
+
+    quote do
+      Theoria.Syntax.eq_rec(unquote(type), unquote(motive), unquote(base), unquote(proof))
     end
   end
 

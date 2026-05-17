@@ -95,6 +95,19 @@ defmodule Theoria.Syntax do
     @type t :: %__MODULE__{value: Theoria.Syntax.t()}
   end
 
+  defmodule EqRec do
+    @moduledoc "Named-syntax equality recursor."
+    @enforce_keys [:type, :motive, :base, :proof]
+    defstruct [:type, :motive, :base, :proof]
+
+    @type t :: %__MODULE__{
+            type: Theoria.Syntax.t(),
+            motive: Theoria.Syntax.t(),
+            base: Theoria.Syntax.t(),
+            proof: Theoria.Syntax.t()
+          }
+  end
+
   @type t ::
           Sort.t()
           | Var.t()
@@ -105,6 +118,7 @@ defmodule Theoria.Syntax do
           | Let.t()
           | Eq.t()
           | Refl.t()
+          | EqRec.t()
 
   @spec sort(non_neg_integer() | Theoria.Level.t()) :: Sort.t()
   def sort(level), do: %Sort{level: Theoria.Level.cast!(level)}
@@ -140,4 +154,9 @@ defmodule Theoria.Syntax do
 
   @spec refl(t()) :: Refl.t()
   def refl(value), do: %Refl{value: value}
+
+  @spec eq_rec(t(), t(), t(), t()) :: EqRec.t()
+  def eq_rec(type, motive, base, proof) do
+    %EqRec{type: type, motive: motive, base: base, proof: proof}
+  end
 end

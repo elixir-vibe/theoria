@@ -61,11 +61,12 @@ defmodule Mix.Tasks.Theoria.CheckTest do
 
     assert output =~ "Checking Theoria theorem modules"
     assert output =~ "Theoria.Library.Logic.Theorems"
+    assert output =~ "Theoria.Library.Equality.Theorems"
     assert output =~ "Theoria.Library.Bool.Theorems"
     assert output =~ "Theoria.Library.Nat.Theorems"
     assert output =~ "Theoria.Library.List.Theorems"
     assert output =~ "Theoria.Library.Vec.Theorems"
-    assert output =~ "Checked 45 theorem(s)."
+    assert output =~ "Checked 49 theorem(s)."
   end
 
   test "checks explicit theorem modules" do
@@ -102,7 +103,7 @@ defmodule Mix.Tasks.Theoria.CheckTest do
       end)
 
     assert output =~ "axioms: none"
-    assert output =~ "Checked 45 theorem(s)."
+    assert output =~ "Checked 49 theorem(s)."
   end
 
   test "reports axiom summaries in install mode" do
@@ -114,7 +115,7 @@ defmodule Mix.Tasks.Theoria.CheckTest do
       end)
 
     assert output =~ "installed, axioms: none"
-    assert output =~ "Checked 45 theorem(s)."
+    assert output =~ "Checked 49 theorem(s)."
   end
 
   test "dependent theorem modules fail without installation" do

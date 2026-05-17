@@ -5,13 +5,14 @@ defmodule Mix.Tasks.Theoria.Check do
 
   use Mix.Task
 
-  alias Theoria.Library.{Bool, List, Logic, Nat, Vec}
+  alias Theoria.Library.{Bool, Equality, List, Logic, Nat, Vec}
   alias Theoria.Theorem
 
   @shortdoc "Checks Theoria theorem modules"
 
   @theorem_modules [
     Logic.Theorems,
+    Equality.Theorems,
     Bool.Theorems,
     Nat.Theorems,
     List.Theorems,

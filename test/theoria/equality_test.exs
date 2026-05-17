@@ -3,6 +3,7 @@ defmodule Theoria.EqualityTest do
 
   alias Theoria.Env
   alias Theoria.Kernel
+  alias Theoria.Library.Nat
   alias Theoria.Normalize
 
   import Theoria.Term
@@ -42,6 +43,51 @@ defmodule Theoria.EqualityTest do
         lam(:a, type0, lam(:x, bvar(0), refl(bvar(0))))
 
       assert :ok = Kernel.check(Env.new(), proof, theorem_type)
+    end
+
+    test "equality recursor infers transported motive" do
+      {:ok, env} = Nat.env()
+
+      context =
+        Theoria.Context.new()
+        |> Theoria.Context.push(:m, const(:Nat))
+        |> Theoria.Context.push(:p, eq(const(:Nat), const(:zero), bvar(0)))
+
+      motive = lam(:x, const(:Nat), eq(const(:Nat), const(:zero), bvar(0)))
+      term = eq_rec(const(:Nat), motive, refl(const(:zero)), bvar(0))
+
+      assert {:ok, inferred} = Kernel.infer(env, context, term)
+      assert Normalize.defeq?(env, inferred, eq(const(:Nat), const(:zero), bvar(1)))
+    end
+
+    test "equality recursor reduces on reflexivity" do
+      {:ok, env} = Nat.env()
+
+      term =
+        eq_rec(
+          const(:Nat),
+          lam(:n, const(:Nat), const(:Nat)),
+          const(:zero),
+          refl(const(:zero))
+        )
+
+      assert Kernel.check(env, term, const(:Nat)) == :ok
+      assert Normalize.normalize(env, term) == {:ok, const(:zero)}
+    end
+
+    test "equality recursor rejects a base case outside the motive" do
+      {:ok, env} = Nat.env()
+
+      term =
+        eq_rec(
+          const(:Nat),
+          lam(:n, const(:Nat), eq(const(:Nat), bvar(0), bvar(0))),
+          const(:zero),
+          refl(const(:zero))
+        )
+
+      assert {:error, error} = Kernel.infer(env, term)
+      assert error.reason == :type_mismatch
     end
   end
 end

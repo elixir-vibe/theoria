@@ -1,6 +1,7 @@
 defmodule Theoria.Equation.Branch do
   @moduledoc "Constructor-specific branch descriptors for equation compilation."
 
+  alias Theoria.Env.RecursorRule
   alias Theoria.Equation.Clause
   alias Theoria.Equation.Context
   alias Theoria.Equation.Pattern.{Constructor, Var}
@@ -29,6 +30,43 @@ defmodule Theoria.Equation.Branch do
     ih_type = Term.shift(motive, 2)
     binders = [{head_name, element_type}, {tail_name, tail_type}, {:ih, ih_type}]
     outer = %{a: Term.shift(element_type, 3), element_type: Term.shift(element_type, 3)}
+
+    new(binders, outer)
+  end
+
+  @doc "Builds a generic branch descriptor from recursor-rule metadata."
+  @spec from_recursor_rule(Clause.t(), RecursorRule.t(), [Term.t()], map()) :: t()
+  def from_recursor_rule(%Clause{} = clause, %RecursorRule{} = rule, field_types, outer \\ %{}) do
+    binders =
+      field_types
+      |> Enum.take(rule.field_count)
+      |> Enum.with_index()
+      |> Enum.map(fn {type, index} -> {branch_name(clause, index, :"field#{index}"), type} end)
+
+    new(binders, outer)
+  end
+
+  @doc "Builds a Vec cons branch metadata descriptor for indexed-equation planning."
+  @spec vec_cons(Clause.t(), Term.t(), Term.t(), Term.t()) :: t()
+  def vec_cons(%Clause{} = clause, element_type, length_index, motive) do
+    n_name = branch_name(clause, 0, :n)
+    head_name = branch_name(clause, 1, :head)
+    tail_name = branch_name(clause, 2, :tail)
+    vec_tail = Term.const(:Vec) |> Term.app(Term.shift(element_type, 2)) |> Term.app(Term.bvar(1))
+    ih_type = Term.shift(motive, 3)
+
+    binders = [
+      {n_name, Term.const(:Nat)},
+      {head_name, element_type},
+      {tail_name, vec_tail},
+      {:ih, ih_type}
+    ]
+
+    outer = %{
+      a: Term.shift(element_type, 4),
+      element_type: Term.shift(element_type, 4),
+      length: Term.shift(length_index, 4)
+    }
 
     new(binders, outer)
   end

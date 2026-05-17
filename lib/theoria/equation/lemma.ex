@@ -1,8 +1,11 @@
 defmodule Theoria.Equation.Lemma do
   @moduledoc "Metadata for an equation lemma generated from compiled equations."
 
+  alias Theoria.Env
   alias Theoria.Equation.Clause
+  alias Theoria.Kernel
   alias Theoria.Term
+  alias Theoria.Theorem
   alias Theoria.Validation.DefeqCheck
 
   @enforce_keys [:name, :left, :right]
@@ -25,5 +28,29 @@ defmodule Theoria.Equation.Lemma do
   @spec defeq_check(t(), atom()) :: DefeqCheck.t()
   def defeq_check(%__MODULE__{} = lemma, category) when is_atom(category) do
     DefeqCheck.new(category, Atom.to_string(lemma.name), lemma.left, lemma.right)
+  end
+
+  @doc "Turns many equation lemmas into native definitional-equality validation checks."
+  @spec defeq_checks(atom(), [t()]) :: [DefeqCheck.t()]
+  def defeq_checks(category, lemmas) when is_atom(category),
+    do: Enum.map(lemmas, &defeq_check(&1, category))
+
+  @doc "Kernel-checks equation-lemma metadata as a theorem using reflexivity."
+  @spec to_theorem(Env.t(), t(), Term.t(), keyword()) ::
+          {:ok, Theorem.t()} | {:error, Theoria.Error.t()}
+  def to_theorem(%Env{} = env, %__MODULE__{} = lemma, equality_type, opts \\ []) do
+    theorem_type = Term.eq(equality_type, lemma.left, lemma.right)
+    proof = Term.refl(lemma.left)
+    universe_params = Keyword.get(opts, :universe_params, [])
+
+    with :ok <- Kernel.check(env, proof, theorem_type) do
+      {:ok,
+       %Theorem{
+         name: lemma.name,
+         type: theorem_type,
+         proof: proof,
+         universe_params: universe_params
+       }}
+    end
   end
 end

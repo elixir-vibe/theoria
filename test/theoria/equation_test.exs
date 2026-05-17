@@ -1,11 +1,30 @@
 defmodule Theoria.EquationTest do
   use ExUnit.Case, async: true
 
+  alias Theoria.Env.RecursorRule
   alias Theoria.Equation
-  alias Theoria.Equation.{Branch, Clause, Context, Lemma, Pattern}
+  alias Theoria.Equation.{Branch, Clause, Context, FixedParams, Info, Lemma, MatcherInfo, Pattern}
+  alias Theoria.Equation.MatcherInfo.Alternative
+  alias Theoria.Library.Nat
   alias Theoria.Term
 
-  test "equation lemma metadata becomes defeq checks" do
+  test "equation info records Lean-like definition metadata" do
+    info = Info.new(:f, nat(), zero(), rec_arg_pos: 0, fixed_params: FixedParams.new([1]))
+
+    assert info.name == :f
+    assert info.rec_arg_pos == 0
+    assert FixedParams.fixed?(info.fixed_params, 1)
+    refute FixedParams.fixed?(info.fixed_params, 0)
+  end
+
+  test "matcher info records small Lean-like matcher metadata" do
+    alt = %Alternative{constructor: :zero, num_fields: 0}
+    info = MatcherInfo.new(:match_nat, 0, 1, [alt])
+
+    assert MatcherInfo.arity(info) == 3
+  end
+
+  test "equation lemma metadata becomes defeq checks and checked theorems" do
     lemma = Lemma.new(:equation_zero, zero(), zero())
     check = Lemma.defeq_check(lemma, :nat)
 
@@ -13,6 +32,11 @@ defmodule Theoria.EquationTest do
     assert check.category == :nat
     assert check.left == zero()
     assert check.right == zero()
+
+    {:ok, env} = Nat.env()
+    assert {:ok, theorem} = Lemma.to_theorem(env, lemma, nat())
+    assert theorem.type == Term.eq(nat(), zero(), zero())
+    assert theorem.proof == Term.refl(zero())
   end
 
   test "context exposes branch and outer values" do
@@ -46,6 +70,31 @@ defmodule Theoria.EquationTest do
     assert list_branch.context.xs == Term.bvar(1)
     assert list_branch.context.ih == Term.bvar(0)
     assert list_branch.context.a == Term.shift(nat(), 3)
+
+    rule = %RecursorRule{constructor: :succ, field_count: 1, rhs: Term.bvar(0)}
+    generic = Branch.from_recursor_rule(nat_clause, rule, [nat()])
+
+    assert Enum.map(generic.binders, &elem(&1, 0)) == [:n]
+    assert generic.context.n == Term.bvar(0)
+  end
+
+  test "vec branch descriptor records indexed metadata context" do
+    clause =
+      Clause.new(
+        [
+          Pattern.constructor(:vec_cons, [Pattern.var(:n), Pattern.var(:head), Pattern.var(:tail)])
+        ],
+        fn ctx -> ctx.ih end
+      )
+
+    branch = Branch.vec_cons(clause, nat(), Term.bvar(0), nat_list())
+
+    assert Enum.map(branch.binders, &elem(&1, 0)) == [:n, :head, :tail, :ih]
+    assert branch.context.n == Term.bvar(3)
+    assert branch.context.head == Term.bvar(2)
+    assert branch.context.tail == Term.bvar(1)
+    assert branch.context.ih == Term.bvar(0)
+    assert branch.context.length == Term.shift(Term.bvar(0), 4)
   end
 
   test "builds Bool recursor applications" do

@@ -16,7 +16,8 @@ defmodule Theoria.Equation.Context do
     :xs,
     :a,
     :b,
-    :element_type
+    :element_type,
+    :length
   ]
 
   @type t :: %__MODULE__{
@@ -31,7 +32,8 @@ defmodule Theoria.Equation.Context do
           xs: Term.t() | nil,
           a: Term.t() | nil,
           b: Term.t() | nil,
-          element_type: Term.t() | nil
+          element_type: Term.t() | nil,
+          length: Term.t() | nil
         }
 
   @doc "Builds a context from branch variables and outer values."
@@ -51,7 +53,8 @@ defmodule Theoria.Equation.Context do
       xs: Map.get(values, :xs),
       a: Map.get(values, :a),
       b: Map.get(values, :b),
-      element_type: Map.get(values, :element_type)
+      element_type: Map.get(values, :element_type),
+      length: Map.get(values, :length)
     }
   end
 

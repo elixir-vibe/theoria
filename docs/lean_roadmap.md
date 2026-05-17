@@ -195,7 +195,7 @@ Legend:
 | `constructor` | Use constructor/introduction rule | 🔴 | Missing | After inductive APIs mature | P2 |
 | `cases` | Case split | 🔴 | Missing | Needs eliminator usage | P2 |
 | `induction` | Induction tactic | 🔴 | Missing | Needs robust recursors | P2 |
-| `rewrite` / `rw` | Rewrite by equality | 🟡 | Low-level equality transport, `symm`/`trans`/`congr`, and provisional `Theoria.Rewrite.once/3` structural rewriting | Add tactic ergonomics | P2 |
+| `rewrite` / `rw` | Rewrite by equality | 🟡 | Low-level equality transport, `symm`/`trans`/`congr`, provisional `Theoria.Rewrite.once/3`, and rewrite rule/database structs | Add proof-producing tactic ergonomics | P2 |
 | `simp` | Simplifier | 🔴 | Missing | Needs rewrite database | P3 |
 | `omega` / arithmetic solvers | Automation | ❌ | Missing | Much later / maybe not | P5 |
 | Metaprogramming framework | Lean tactic language | ❌ | Missing | Do not port Lean meta system directly | P5 |
@@ -204,10 +204,10 @@ Legend:
 
 | Lean feature / concept | Lean role | Theoria status | Current Theoria state | Needed roadmap | Priority |
 |---|---|---:|---|---|---:|
-| Pattern matching compiler | Compile equations to recursors | 🟡 | Internal `Pattern → Clause → Validator → Branch → Context → Compiler → Recursors` pipeline plus `Definition` and `Lemma` metadata for Bool/Nat/List | Add public syntax and dependent matching later | P1 |
+| Pattern matching compiler | Compile equations to recursors | 🟡 | Internal `Info/FixedParams → Pattern → Clause → Validator → Branch → Context → Compiler → Recursors` pipeline plus matcher metadata mirrors and lemma metadata for Bool/Nat/List | Add public syntax and dependent matching later | P1 |
 | Structural recursion | Termination by smaller argument | 🟡 | Library definitions use primitive Nat/List recursion; no general checker | Start conservative checker | P1 |
 | Termination checker | Ensure recursive definitions terminate | 🔴 | Missing | Start conservative | P2 |
-| Equation lemmas | Generated simplification theorems | 🟡 | Metadata via `Theoria.Equation.Lemma`; not admitted theorem declarations yet | Needed for `simp` | P2 |
+| Equation lemmas | Generated simplification theorems | 🟡 | Metadata via `Theoria.Equation.Lemma`; reflexivity theorem conversion for defeq sides; full declaration generation later | Needed for `simp` | P2 |
 | Dependent pattern matching | Match indexed families | 🔴 | Missing | After indexed iota | P2 |
 | Inaccessible patterns | Lean dependent matching feature | ❌ / later | Missing | Probably much later | P5 |
 | Partial functions | Lean has partial support | ❌ | Missing | Avoid early; kernel should stay total | P5 |
@@ -323,7 +323,7 @@ Legend:
 | Step | Deliverable | Priority |
 |---|---|---:|
 | Pattern AST | ✅ Constructors/vars/wildcards with recursive validation | P1 |
-| Bool/Nat/List equation compiler | 🟡 Internal layered compiler with validation, branch descriptors, explicit contexts, callback body contexts, and generic dispatch | P1 |
+| Bool/Nat/List equation compiler | 🟡 Internal layered compiler with Lean-shaped equation info, fixed params, validation, branch descriptors, explicit contexts, callback body contexts, and generic dispatch | P1 |
 | Generated equation theorems | 🟡 Metadata and defeq validation; theorem declaration generation later | P2 |
 | Termination checker v0 | Structural only | P2 |
 | Replace hand-written library defs | ✅ `bool_not`, `bool_and`, `bool_or`, `nat_add`, `list_length`, `list_append` use the equation compiler path | P2 |

@@ -34,8 +34,9 @@ The Lean oracle subsystem lives under `Theoria.Lean.*`:
 
 | Module | Responsibility |
 |---|---|
-| `Theoria.Lean.Encode` | Pure Theoria core term → Lean expression rendering |
-| `Theoria.Lean.MirrorPrelude` | Lean declarations that mirror Theoria's oracle fragment |
+| `Theoria.Lean.Encodable` | Protocol for rendering Theoria structures as Lean source |
+| `Theoria.Lean.Encode` | Public encoding facade and Lean syntax helpers |
+| `Theoria.Lean.MirrorPrelude` | Small bridge declarations for primitives not mapped directly to Lean core |
 | `Theoria.Lean.Module` | Builds complete Lean source files from proof/defeq checks |
 | `Theoria.Lean.Corpus` | Chooses theorem modules and fixtures for the oracle corpus |
 | `Theoria.Lean.Oracle` | Writes generated source and invokes the Lean executable |
@@ -44,6 +45,6 @@ Generated files are build artifacts and should not be committed.
 
 ## Scope
 
-The current corpus validates the primitive equality, Bool, and Nat theorem corpora plus definitional-equality fixtures for beta, zeta, Bool computation, Nat recursor iota, and Nat addition. The subsystem is intentionally incremental: as the encoder and mirror prelude grow, List, Vec, indexed iota, and random kernel fragments can be added.
+The current corpus validates the primitive equality, Bool, and Nat theorem corpora plus definitional-equality fixtures for beta, zeta, Bool computation, Nat recursor iota, and Nat addition. The encoder reuses Lean-native Bool/Nat/List constants where possible and keeps handwritten Lean to small bridge definitions such as `tEqRec` and Theoria's first-argument `tNatAdd`. The subsystem is intentionally incremental: as protocol encoders grow, List, Vec, indexed iota, and random kernel fragments can be added.
 
 Lean oracle validation increases confidence in Theoria's kernel, but it is not a formal proof of the Elixir implementation. A later formalization could define Theoria's syntax and typing rules inside Lean and prove soundness there.

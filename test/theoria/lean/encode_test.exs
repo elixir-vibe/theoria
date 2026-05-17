@@ -19,7 +19,7 @@ defmodule Theoria.Lean.EncodeTest do
     term =
       eq_rec(const(:Nat), lam(:n, const(:Nat), const(:Nat)), const(:zero), refl(const(:zero)))
 
-    assert Encode.term(term) == "(tEqRec (fun (n : TNat) => TNat) TNat.zero rfl)"
+    assert Encode.term(term) == "(tEqRec (fun (n : Nat) => Nat) Nat.zero rfl)"
   end
 
   test "renders the initial oracle corpus" do

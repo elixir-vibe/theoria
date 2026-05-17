@@ -13,14 +13,12 @@ defmodule Theoria.Library.Bool do
     Clause,
     Context,
     Definition,
+    DefinitionSpec,
     FixedParams,
-    Info,
-    MatcherInfo,
     Pattern,
     Schema
   }
 
-  alias Theoria.Equation.MatcherInfo.Alternative
   alias Theoria.Inductive.Generate
   alias Theoria.Inductive.Spec
   alias Theoria.Kernel
@@ -36,17 +34,14 @@ defmodule Theoria.Library.Bool do
     with {:ok, env} <- Kernel.add_inductive(env, inductive_spec()),
          {:ok, env} <-
            add_equation_definition(env, :bool_not, bool_not_type(), bool_not_value(), 0,
-             clauses: bool_not_clauses(),
-             matcher: bool_matcher(:bool_not)
+             clauses: bool_not_clauses()
            ),
          {:ok, env} <-
            add_equation_definition(env, :bool_and, bool_binary_type(), bool_and_value(), 0,
-             clauses: bool_and_clauses(),
-             matcher: bool_matcher(:bool_and)
+             clauses: bool_and_clauses()
            ) do
       add_equation_definition(env, :bool_or, bool_binary_type(), bool_or_value(), 0,
-        clauses: bool_or_clauses(),
-        matcher: bool_matcher(:bool_or)
+        clauses: bool_or_clauses()
       )
     end
   end
@@ -116,16 +111,15 @@ defmodule Theoria.Library.Bool do
   end
 
   defp add_equation_definition(env, name, type, value, rec_arg_pos, opts) do
-    metadata =
-      Info.new(name, type, value,
-        rec_arg_pos: rec_arg_pos,
-        fixed_params: FixedParams.new(),
-        clauses: Keyword.get(opts, :clauses, []),
-        matcher: Keyword.get(opts, :matcher),
-        schema: bool_schema(name)
-      )
-
-    Kernel.add_definition(env, name, type, value, [], metadata: metadata)
+    with {:ok, spec} <-
+           DefinitionSpec.new(name, type, value,
+             rec_arg_pos: rec_arg_pos,
+             fixed_params: FixedParams.new(),
+             clauses: Keyword.get(opts, :clauses, []),
+             schema: bool_schema(name)
+           ) do
+      DefinitionSpec.add_to_env(env, spec)
+    end
   end
 
   defp bool_not_clauses do
@@ -227,13 +221,6 @@ defmodule Theoria.Library.Bool do
       recursive_argument: 0,
       argument_binders: [{:a, bool()}, {:b, bool()}]
     )
-  end
-
-  defp bool_matcher(name) do
-    MatcherInfo.new(:"#{name}.match_1", 0, 1, [
-      %Alternative{constructor: true, num_fields: 0},
-      %Alternative{constructor: false, num_fields: 0}
-    ])
   end
 
   defp bool_app(name, arg), do: Term.app(Term.const(name), arg)

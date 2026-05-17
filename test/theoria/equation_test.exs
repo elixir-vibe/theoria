@@ -13,7 +13,8 @@ defmodule Theoria.EquationTest do
     Info,
     Lemma,
     MatcherInfo,
-    Pattern
+    Pattern,
+    Schema
   }
 
   alias Theoria.Equation.MatcherInfo.Alternative
@@ -40,6 +41,23 @@ defmodule Theoria.EquationTest do
     refute Info.equation?(env, :Nat)
     assert Enum.map(Info.all(env), & &1.name) == [:nat_add]
     assert {:error, {:missing_value, :Nat}} = Info.fetch_or_build(env, :Nat)
+  end
+
+  test "schema validates scope and duplicate equation suffixes" do
+    valid =
+      Schema.new(:nat, [
+        Schema.equation(:zero, zero(), zero(), nat())
+      ])
+
+    assert :ok = Schema.validate(valid)
+
+    duplicate =
+      Schema.new(:nat, [
+        Schema.equation(:zero, zero(), zero(), nat()),
+        Schema.equation(:zero, zero(), zero(), nat())
+      ])
+
+    assert {:error, :duplicate_equation_suffix} = Schema.validate(duplicate)
   end
 
   test "matcher info records small Lean-like matcher metadata" do

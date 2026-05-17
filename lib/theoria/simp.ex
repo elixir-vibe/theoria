@@ -2,25 +2,25 @@ defmodule Theoria.Simp do
   @moduledoc "Tiny untrusted simplification groundwork backed by generated equation rules."
 
   alias Theoria.Env
-  alias Theoria.Rewrite.Database
+  alias Theoria.Simp.Database
+  alias Theoria.Simp.Step
   alias Theoria.Term
 
-  @type step :: {atom(), Term.t()}
-  @type result :: %{term: Term.t(), steps: [step()], stopped: :normal | :fuel}
+  @type result :: %{term: Term.t(), steps: [Step.t()], stopped: :normal | :fuel}
 
-  @doc "Applies one generated equation rewrite, if possible."
-  @spec once(Env.t(), Term.t(), keyword()) :: {:ok, Term.t(), atom()} | :not_found
+  @doc "Applies one generated equation simplification, if possible."
+  @spec once(Env.t(), Term.t(), keyword()) :: {:ok, Term.t(), Step.t()} | :not_found
   def once(%Env{} = env, term, opts \\ []) do
     env
     |> Database.from_env_equations(opts)
     |> Database.once(term)
     |> case do
-      {:ok, term, rule} -> {:ok, term, rule.name}
+      {:ok, next, rule} -> {:ok, next, step(rule, term, next)}
       :not_found -> :not_found
     end
   end
 
-  @doc "Repeatedly applies generated equation rewrites until normal form or fuel exhaustion."
+  @doc "Repeatedly applies generated equation simplifications until normal form or fuel exhaustion."
   @spec normalize(Env.t(), Term.t(), keyword()) :: result()
   def normalize(%Env{} = env, term, opts \\ []) do
     max_steps = Keyword.get(opts, :max_steps, 100)
@@ -35,10 +35,14 @@ defmodule Theoria.Simp do
   defp normalize_with_database(database, term, remaining, steps) do
     case Database.once(database, term) do
       {:ok, next, rule} ->
-        normalize_with_database(database, next, remaining - 1, [{rule.name, next} | steps])
+        normalize_with_database(database, next, remaining - 1, [step(rule, term, next) | steps])
 
       :not_found ->
         %{term: term, steps: Enum.reverse(steps), stopped: :normal}
     end
+  end
+
+  defp step(rule, before, after_term) do
+    %Step{rule: rule.rewrite.name, before: before, after: after_term, source: rule.source}
   end
 end

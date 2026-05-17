@@ -48,6 +48,16 @@ defmodule Theoria.Equation.Schema do
     }
   end
 
+  @doc "Validates equation schema metadata before it drives theorem generation."
+  @spec validate(t()) :: :ok | {:error, term()}
+  def validate(%__MODULE__{} = schema) do
+    with :ok <- validate_family(schema.family),
+         :ok <- validate_recursive_argument(schema),
+         :ok <- validate_unique_suffixes(schema.equations) do
+      validate_equations(schema.equations)
+    end
+  end
+
   @doc "Builds one schematic equation entry."
   @spec equation(atom(), Term.t(), Term.t(), Term.t(), keyword()) :: Equation.t()
   def equation(suffix, left, right, equality_type, opts \\ []) when is_atom(suffix) do
@@ -58,5 +68,56 @@ defmodule Theoria.Equation.Schema do
       equality_type: equality_type,
       binders: Keyword.get(opts, :binders, [])
     }
+  end
+
+  defp validate_family(family) when family in [:bool, :nat, :list], do: :ok
+  defp validate_family(family), do: {:error, {:unsupported_family, family}}
+
+  defp validate_recursive_argument(%__MODULE__{recursive_argument: nil}), do: :ok
+
+  defp validate_recursive_argument(%__MODULE__{} = schema)
+       when is_integer(schema.recursive_argument) and schema.recursive_argument >= 0 and
+              schema.recursive_argument <
+                length(schema.parameter_binders) + length(schema.argument_binders),
+       do: :ok
+
+  defp validate_recursive_argument(%__MODULE__{recursive_argument: position}),
+    do: {:error, {:invalid_recursive_argument, position}}
+
+  defp validate_unique_suffixes(equations) do
+    suffixes = Enum.map(equations, & &1.suffix)
+
+    if Enum.uniq(suffixes) == suffixes do
+      :ok
+    else
+      {:error, :duplicate_equation_suffix}
+    end
+  end
+
+  defp validate_equations(equations) do
+    Enum.reduce_while(equations, :ok, fn equation, :ok ->
+      case validate_equation(equation) do
+        :ok -> {:cont, :ok}
+        {:error, reason} -> {:halt, {:error, {equation.suffix, reason}}}
+      end
+    end)
+  end
+
+  defp validate_equation(%Equation{} = equation) do
+    binder_count = length(equation.binders)
+
+    cond do
+      not Term.well_scoped?(equation.equality_type, binder_count) ->
+        {:error, :invalid_equality_type_scope}
+
+      not Term.well_scoped?(equation.left, binder_count) ->
+        {:error, :invalid_left_scope}
+
+      not Term.well_scoped?(equation.right, binder_count) ->
+        {:error, :invalid_right_scope}
+
+      true ->
+        :ok
+    end
   end
 end

@@ -1,7 +1,7 @@
 defmodule Theoria.Validation do
   @moduledoc "Runs Theoria-owned validation corpora."
 
-  alias Theoria.Equation.Info, as: EquationInfo
+  alias Theoria.Equation.{Eqns, Info}
   alias Theoria.Prelude
   alias Theoria.Theorem
   alias Theoria.Validation.{Checkable, Corpus, Report}
@@ -13,6 +13,7 @@ defmodule Theoria.Validation do
          :ok <- check_all(env, corpus.theorem_checks),
          :ok <- check_all(env, corpus.defeq_checks),
          :ok <- check_all(env, corpus.inductive_checks),
+         {:ok, _env, generated_equations} <- Eqns.install_all(env),
          {:ok, theorem_count, axioms} <- theorem_summary(env, corpus.theorem_modules) do
       {:ok,
        %Report{
@@ -20,7 +21,8 @@ defmodule Theoria.Validation do
          theorem_count: theorem_count,
          defeq_count: length(corpus.defeq_checks),
          inductive_count: length(corpus.inductive_checks),
-         equations: EquationInfo.all(env),
+         equations: Info.all(env),
+         generated_equation_count: length(generated_equations),
          axioms: axioms
        }}
     end

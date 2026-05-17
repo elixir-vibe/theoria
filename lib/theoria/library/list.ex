@@ -5,8 +5,7 @@ defmodule Theoria.Library.List do
 
   alias Theoria.Env
   alias Theoria.Equation
-  alias Theoria.Equation.{Clause, Definition, FixedParams, Info, MatcherInfo, Pattern, Schema}
-  alias Theoria.Equation.MatcherInfo.Alternative
+  alias Theoria.Equation.{Clause, Definition, DefinitionSpec, FixedParams, Pattern, Schema}
   alias Theoria.Inductive.Generate
   alias Theoria.Inductive.Spec
   alias Theoria.Kernel
@@ -148,17 +147,16 @@ defmodule Theoria.Library.List do
   end
 
   defp add_equation_definition(env, name, type, value, rec_arg_pos) do
-    metadata =
-      Info.new(name, type, value,
-        level_params: [:u],
-        rec_arg_pos: rec_arg_pos,
-        fixed_params: FixedParams.new([0]),
-        clauses: clauses_for(name),
-        matcher: list_matcher(name),
-        schema: schema_for(name)
-      )
-
-    Kernel.add_definition(env, name, type, value, [:u], metadata: metadata)
+    with {:ok, spec} <-
+           DefinitionSpec.new(name, type, value,
+             level_params: [:u],
+             rec_arg_pos: rec_arg_pos,
+             fixed_params: FixedParams.new([0]),
+             clauses: clauses_for(name),
+             schema: schema_for(name)
+           ) do
+      DefinitionSpec.add_to_env(env, spec)
+    end
   end
 
   defp list_length_clauses do
@@ -235,13 +233,6 @@ defmodule Theoria.Library.List do
       parameter_binders: [{:a, Term.sort(1)}],
       argument_binders: [{:xs, list_of_schema(nat())}, {:ys, list_of_schema(nat())}]
     )
-  end
-
-  defp list_matcher(name) do
-    MatcherInfo.new(:"#{name}.match_1", 1, 1, [
-      %Alternative{constructor: :list_nil, num_fields: 0},
-      %Alternative{constructor: :list_cons, num_fields: 2}
-    ])
   end
 
   defp app(fun, arg1, arg2), do: fun |> Term.app(arg1) |> Term.app(arg2)

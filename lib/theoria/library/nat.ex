@@ -5,8 +5,7 @@ defmodule Theoria.Library.Nat do
 
   alias Theoria.Env
   alias Theoria.Equation
-  alias Theoria.Equation.{Clause, Definition, FixedParams, Info, MatcherInfo, Pattern, Schema}
-  alias Theoria.Equation.MatcherInfo.Alternative
+  alias Theoria.Equation.{Clause, Definition, DefinitionSpec, FixedParams, Pattern, Schema}
   alias Theoria.Inductive.Generate
   alias Theoria.Inductive.Spec
   alias Theoria.Kernel
@@ -23,16 +22,15 @@ defmodule Theoria.Library.Nat do
       type = nat_add_type()
       value = nat_add_value()
 
-      metadata =
-        Info.new(:nat_add, type, value,
-          rec_arg_pos: 0,
-          fixed_params: FixedParams.new(),
-          clauses: nat_add_clauses(),
-          matcher: nat_matcher(:nat_add),
-          schema: nat_add_schema()
-        )
-
-      Kernel.add_definition(env, :nat_add, type, value, [], metadata: metadata)
+      with {:ok, spec} <-
+             DefinitionSpec.new(:nat_add, type, value,
+               rec_arg_pos: 0,
+               fixed_params: FixedParams.new(),
+               clauses: nat_add_clauses(),
+               schema: nat_add_schema()
+             ) do
+        DefinitionSpec.add_to_env(env, spec)
+      end
     end
   end
 
@@ -97,13 +95,6 @@ defmodule Theoria.Library.Nat do
       recursive_argument: 0,
       argument_binders: [{:m, nat()}, {:n, nat()}]
     )
-  end
-
-  defp nat_matcher(name) do
-    MatcherInfo.new(:"#{name}.match_1", 0, 1, [
-      %Alternative{constructor: :zero, num_fields: 0},
-      %Alternative{constructor: :succ, num_fields: 1}
-    ])
   end
 
   defp app(name, arg1, arg2), do: Term.const(name) |> Term.app(arg1) |> Term.app(arg2)

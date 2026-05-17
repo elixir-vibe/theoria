@@ -196,7 +196,7 @@ Legend:
 | `cases` | Case split | 🔴 | Missing | Needs eliminator usage | P2 |
 | `induction` | Induction tactic | 🔴 | Missing | Needs robust recursors | P2 |
 | `rewrite` / `rw` | Rewrite by equality | 🟡 | Low-level equality transport, `symm`/`trans`/`congr`, provisional `Theoria.Rewrite.once/3`, and rewrite databases built from generated env equation metadata | Add proof-producing tactic ergonomics | P2 |
-| `simp` | Simplifier | 🟡 | Tiny untrusted `Theoria.Simp.once/3` and `normalize/3` over generated equation DBs | Needs rule orientation, priorities, attributes, and proof-producing rewrite | P3 |
+| `simp` | Simplifier | 🟡 | Tiny untrusted priority-aware `Theoria.Simp.once/3` and `normalize/3` over generated equation DBs, plus example CLI | Needs attributes, richer rule sets, and proof-producing rewrite | P3 |
 | `omega` / arithmetic solvers | Automation | ❌ | Missing | Much later / maybe not | P5 |
 | Metaprogramming framework | Lean tactic language | ❌ | Missing | Do not port Lean meta system directly | P5 |
 
@@ -207,7 +207,7 @@ Legend:
 | Pattern matching compiler | Compile equations to recursors | 🟡 | Internal `Info/FixedParams → Pattern → Clause → Validator → Branch → Context → Compiler → Recursors` pipeline; compiled Bool/Nat/List definitions store auditable equation metadata | Add public syntax and dependent matching later | P1 |
 | Structural recursion | Termination by smaller argument | 🟡 | Library definitions use primitive Nat/List recursion; no general checker | Start conservative checker | P1 |
 | Termination checker | Ensure recursive definitions terminate | 🔴 | Missing | Start conservative | P2 |
-| Equation lemmas | Generated simplification theorems | 🟡 | Schema-backed schematic generated lemmas for supported Bool/Nat/List definitions; `Eqns` lookup/install/rules/database API; Lean oracle proof coverage; opt-in theorem installation; rewrite DB construction from env metadata | General matcher equation generation and theorem sets still needed for full `simp` | P2 |
+| Equation lemmas | Generated simplification theorems | 🟡 | `DefinitionSpec` + validated schema-backed schematic generated lemmas for supported Bool/Nat/List definitions; derived matcher metadata; `Eqns` lookup/install/rules/database API; Lean oracle proof coverage; opt-in theorem installation; rewrite DB construction from env metadata | General matcher equation generation and theorem sets still needed for full `simp` | P2 |
 | Dependent pattern matching | Match indexed families | 🔴 | Missing | After indexed iota | P2 |
 | Inaccessible patterns | Lean dependent matching feature | ❌ / later | Missing | Probably much later | P5 |
 | Partial functions | Lean has partial support | ❌ | Missing | Avoid early; kernel should stay total | P5 |

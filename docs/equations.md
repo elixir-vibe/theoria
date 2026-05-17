@@ -6,6 +6,7 @@ Current flow:
 
 ```text
 compiled definition
+  → Theoria.Equation.DefinitionSpec package
   → Theoria.Equation.Info metadata in the environment
   → generated Theoria.Equation.Lemma metadata
   → Theoria.Equation.Eqns lookup
@@ -25,7 +26,7 @@ Theoria.Equation.Info.all(env)
 Theoria.Equation.Info.equation?(env, :nat_add)
 ```
 
-The metadata records the definition name, checked type/value, recursive argument position, fixed parameters, level parameters, original clause metadata, Lean-shaped matcher alternatives, and a schema that drives schematic theorem generation.
+The metadata records the definition name, checked type/value, recursive argument position, fixed parameters, level parameters, original clause metadata, Lean-shaped matcher alternatives, and a validated schema that drives schematic theorem generation. `Theoria.Equation.DefinitionSpec` is the internal package passed from compiled definitions into the kernel environment.
 
 ## Generated equation lemmas
 
@@ -86,7 +87,13 @@ Theoria.Simp.once(env, term)
 Theoria.Simp.normalize(env, term, max_steps: 100)
 ```
 
-It repeatedly applies generated equation rewrite rules and returns the final term plus a trace. It is not a trusted simplifier yet.
+It repeatedly applies priority-sorted generated equation rewrite rules and returns the final term plus rich `%Theoria.Simp.Step{}` trace entries. It is not a trusted simplifier yet.
+
+A small smoke-test task runs built-in examples:
+
+```bash
+mix theoria.simp --examples
+```
 
 ## Mix tooling
 
@@ -103,7 +110,13 @@ Opt-in install generated equation theorems during the task run:
 mix theoria.equations --install nat_add
 ```
 
-Native validation can also show equation metadata:
+Native validation kernel-checks generated equation theorems and reports them explicitly:
+
+```text
+✓ generated equations: 16 theorem(s)
+```
+
+It can also show equation metadata:
 
 ```bash
 mix theoria.validate --equations

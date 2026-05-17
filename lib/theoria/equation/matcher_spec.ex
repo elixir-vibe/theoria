@@ -5,10 +5,23 @@ defmodule Theoria.Equation.MatcherSpec do
   alias Theoria.Equation.Info
   alias Theoria.Equation.MatcherEqns
   alias Theoria.Equation.MatcherInfo
+  alias Theoria.Equation.MatcherType
+  alias Theoria.Equation.Schema
   alias Theoria.Term
 
+  @type mode :: :source_aligned | :matcher
+
   @enforce_keys [:name, :source, :type, :value, :info]
-  defstruct [:name, :source, :type, :value, :info, level_params: [], equation_names: []]
+  defstruct [
+    :name,
+    :source,
+    :type,
+    :value,
+    :info,
+    mode: :source_aligned,
+    level_params: [],
+    equation_names: []
+  ]
 
   @type t :: %__MODULE__{
           name: atom(),
@@ -16,42 +29,64 @@ defmodule Theoria.Equation.MatcherSpec do
           type: Term.t(),
           value: Term.t(),
           info: MatcherInfo.t(),
+          mode: mode(),
           level_params: [atom()],
           equation_names: [atom()]
         }
 
   @doc "Builds a checked matcher declaration spec from equation metadata."
-  @spec from_info(Info.t()) :: {:ok, t()} | {:error, term()}
-  def from_info(%Info{matcher: nil}), do: {:error, :missing_matcher_info}
+  @spec from_info(Info.t(), keyword()) :: {:ok, t()} | {:error, term()}
+  def from_info(info, opts \\ [])
+  def from_info(%Info{matcher: nil}, _opts), do: {:error, :missing_matcher_info}
 
-  def from_info(%Info{} = info) do
-    {:ok,
-     %__MODULE__{
-       name: info.matcher.name,
-       source: info.name,
-       type: type_for(info.matcher, info.schema, info.type),
-       value: value_for(info.matcher, info.value),
-       info: info.matcher,
-       level_params: info.level_params,
-       equation_names: info |> MatcherEqns.generated() |> Enum.map(& &1.name)
-     }}
+  def from_info(%Info{} = info, opts) do
+    mode = Keyword.get(opts, :mode, default_mode(info))
+
+    with {:ok, type} <- type_for(info.matcher, info.schema, info.type, mode),
+         {:ok, value} <- value_for(info.matcher, info.schema, info.value, mode) do
+      {:ok,
+       %__MODULE__{
+         name: info.matcher.name,
+         source: info.name,
+         type: type,
+         value: value,
+         info: info.matcher,
+         mode: mode,
+         level_params: info.level_params,
+         equation_names: info |> MatcherEqns.generated() |> Enum.map(& &1.name)
+       }}
+    end
   end
 
-  @doc "Returns the current matcher type for supported equation fragments."
-  @spec type_for(MatcherInfo.t(), Theoria.Equation.Schema.t() | nil, Term.t()) :: Term.t()
-  def type_for(%MatcherInfo{}, _schema, source_type), do: source_type
+  @doc "Returns the matcher type for supported equation fragments."
+  @spec type_for(MatcherInfo.t(), Schema.t() | nil, Term.t(), mode()) ::
+          {:ok, Term.t()} | {:error, term()}
+  def type_for(%MatcherInfo{}, _schema, source_type, :source_aligned), do: {:ok, source_type}
 
-  @doc "Returns the current matcher value for supported equation fragments."
-  @spec value_for(MatcherInfo.t(), Term.t()) :: Term.t()
-  def value_for(%MatcherInfo{}, source_value), do: source_value
+  def type_for(%MatcherInfo{} = info, %Schema{} = schema, _source_type, :matcher),
+    do: MatcherType.build(schema, info)
+
+  @doc "Returns the matcher value for supported equation fragments."
+  @spec value_for(MatcherInfo.t(), Schema.t() | nil, Term.t(), mode()) ::
+          {:ok, Term.t()} | {:error, term()}
+  def value_for(%MatcherInfo{}, _schema, source_value, :source_aligned), do: {:ok, source_value}
+
+  def value_for(%MatcherInfo{} = info, %Schema{} = schema, _source_value, :matcher),
+    do: MatcherType.value(schema, info)
 
   @doc "Converts the matcher spec to environment metadata."
   @spec metadata(t()) :: EnvMatcher.t()
   def metadata(%__MODULE__{} = spec) do
     EnvMatcher.new(spec.name, spec.source, spec.type, spec.info,
       value: spec.value,
+      mode: spec.mode,
       level_params: spec.level_params,
       equation_names: spec.equation_names
     )
   end
+
+  defp default_mode(%Info{schema: %Schema{family: :bool, argument_binders: [_one_argument]}}),
+    do: :matcher
+
+  defp default_mode(%Info{}), do: :source_aligned
 end

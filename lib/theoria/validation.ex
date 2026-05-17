@@ -142,18 +142,23 @@ defmodule Theoria.Validation do
       matcher.source != info.name ->
         {:error, {:matcher_source_mismatch, matcher.name, matcher.source}}
 
-      matcher.type != info.type ->
-        {:error, {:matcher_type_mismatch, matcher.name}}
-
-      matcher.value != info.value ->
-        {:error, {:matcher_value_mismatch, matcher.name}}
-
       matcher.info.name != matcher.name ->
         {:error, {:matcher_info_name_mismatch, matcher.name}}
+
+      not matcher_mode_valid?(info, matcher) ->
+        {:error, {:invalid_matcher_mode, matcher.name, matcher.mode}}
 
       true ->
         :ok
     end
+  end
+
+  defp matcher_mode_valid?(info, %{mode: :source_aligned} = matcher) do
+    matcher.type == info.type and matcher.value == info.value
+  end
+
+  defp matcher_mode_valid?(info, %{mode: :matcher} = matcher) do
+    matcher.type != info.type and matcher.value != info.value
   end
 
   defp validate_ordinary_realization(env, info) do

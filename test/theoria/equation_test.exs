@@ -15,6 +15,7 @@ defmodule Theoria.EquationTest do
     Lemma,
     MatcherEqns,
     MatcherInfo,
+    MatcherType,
     Pattern,
     Schema,
     SchemaBuilder,
@@ -86,6 +87,23 @@ defmodule Theoria.EquationTest do
     info = MatcherInfo.new(:match_nat, 0, 1, [alt])
 
     assert MatcherInfo.arity(info) == 3
+  end
+
+  test "matcher type builds a real Bool matcher shape" do
+    {:ok, env} = Prelude.env()
+    {:ok, info} = Info.fetch(env, :bool_not)
+
+    assert {:ok, type} = MatcherType.build(info.schema, info.matcher)
+
+    assert %Term.Forall{
+             name: :motive,
+             body: %Term.Forall{
+               name: :b,
+               body: %Term.Forall{name: :on_true, body: %Term.Forall{name: :on_false}}
+             }
+           } = type
+
+    assert [_true_alt, _false_alt] = MatcherType.alternatives(info.schema, info.matcher)
   end
 
   test "fixed params derive from signature parameters" do
@@ -169,6 +187,17 @@ defmodule Theoria.EquationTest do
     assert succ_lemma.binders == [{:m, nat()}, {:n, nat()}]
     assert {:ok, theorem} = Lemma.to_theorem(env, succ_lemma)
     assert %Term.Forall{name: :m, body: %Term.Forall{name: :n}} = theorem.type
+  end
+
+  test "bool unary matcher is a checked real matcher declaration" do
+    {:ok, env} = Prelude.env()
+    {:ok, info} = Info.fetch(env, :bool_not)
+    {:ok, matcher} = Theoria.Env.fetch_matcher(env, :"bool_not.match_1")
+
+    assert matcher.mode == :matcher
+    assert matcher.type != info.type
+    assert matcher.value != info.value
+    assert {:ok, _env} = Theoria.Kernel.validate_env(env)
   end
 
   test "stored equation metadata includes clauses and matcher alternatives" do

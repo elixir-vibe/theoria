@@ -344,6 +344,9 @@ defmodule Theoria.Kernel do
       metadata.info.name != spec.name ->
         error(:invalid_declaration, kind: :matcher_metadata, name: spec.name, metadata: metadata)
 
+      metadata.mode != spec.mode ->
+        error(:invalid_declaration, kind: :matcher_metadata, name: spec.name, metadata: metadata)
+
       true ->
         :ok
     end
@@ -520,6 +523,7 @@ defmodule Theoria.Kernel do
           type: type,
           value: value,
           info: metadata.info,
+          mode: metadata.mode,
           level_params: params,
           equation_names: metadata.equation_names
         })

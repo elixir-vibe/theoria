@@ -6,7 +6,7 @@ defmodule Mix.Tasks.Theoria.Equations do
   use Mix.Task
 
   alias Theoria.Env
-  alias Theoria.Equation.{Eqns, Extension, Info, Lemma, MatcherEqns}
+  alias Theoria.Equation.{Eqns, Extension, Info, Lemma, MatcherEqns, MatcherInfo}
   alias Theoria.Prelude
 
   @shortdoc "Lists and optionally installs generated equation lemmas"
@@ -64,18 +64,18 @@ defmodule Mix.Tasks.Theoria.Equations do
     Mix.shell().info("matcher declarations: #{length(matchers)}")
     Mix.shell().info("registry entries: #{registry_entry_count(env, equations)}")
     Mix.shell().info("")
-    print_equations(equations)
+    print_equations(env, equations, :details)
   end
 
-  defp print_equations(equations) do
+  defp print_equations(env, equations, :details) do
     Mix.shell().info("equations:")
 
-    Enum.each(equations, &print_equation/1)
+    Enum.each(equations, &print_equation(env, &1))
   end
 
-  defp print_equation(%Info{} = info) do
+  defp print_equation(env, %Info{} = info) do
     Mix.shell().info("  #{Info.summary(info)}")
-    print_matcher(info)
+    print_matcher(env, info)
     print_unfold(info)
     print_lemmas(Lemma.generated_for(info))
     print_matcher_equations(MatcherEqns.generated(info))
@@ -97,10 +97,10 @@ defmodule Mix.Tasks.Theoria.Equations do
     end)
   end
 
-  defp print_matcher(%Info{matcher: nil}), do: :ok
+  defp print_matcher(_env, %Info{matcher: nil}), do: :ok
 
-  defp print_matcher(%Info{} = info) do
-    Mix.shell().info("    matcher: #{info.matcher.name}")
+  defp print_matcher(env, %Info{} = info) do
+    Mix.shell().info("    matcher: #{info.matcher.name} #{matcher_details(env, info)}")
 
     if info.matcher.discriminants != [] do
       Mix.shell().info("    discriminants:")
@@ -122,6 +122,16 @@ defmodule Mix.Tasks.Theoria.Equations do
     Enum.each(info.matcher.alternatives, fn alternative ->
       Mix.shell().info("      #{alternative.constructor} fields=#{alternative.num_fields}")
     end)
+  end
+
+  defp matcher_details(env, %Info{} = info) do
+    mode =
+      case Env.fetch_matcher(env, info.matcher.name) do
+        {:ok, matcher} -> matcher.mode
+        :error -> :unknown
+      end
+
+    "mode=#{mode} arity=#{MatcherInfo.arity(info.matcher)}"
   end
 
   defp print_unfold(%Info{} = info) do

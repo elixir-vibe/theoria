@@ -34,7 +34,7 @@ Theoria.Equation.Info.all(env)
 Theoria.Equation.Info.equation?(env, :nat_add)
 ```
 
-`Theoria.Equation.Signature` summarizes the function telescope, recursive argument, result type, and fixed parameters. Fixed parameters are derived from the signature's parameter telescope by default, with explicit overrides still available for future edge cases. `Theoria.Equation.CaseTemplate` describes schematic constructor equations without tying schema generation to concrete library definition names. `Theoria.Equation.SchemaBuilder` turns those inputs into validated schemas and matcher metadata, including discriminant names/positions/types and simple overlap records. The compiler returns `Theoria.Equation.Compiled`, which contains the recursor body plus generated clause/schema/matcher metadata. `Theoria.Equation.DefinitionSpec` wraps that compiler result with the final checked definition type/value before installation. `Theoria.Equation.MatcherSpec` builds the checked matcher declaration type/value package installed as `Theoria.Env.Matcher` metadata. Current matcher type/value generation is source-aligned for supported fragments, but it is kernel checked and replay validated. Stored metadata records the definition name, checked type/value, recursive argument position, fixed parameters, level parameters, original clause metadata, Lean-shaped matcher alternatives, matcher discriminants, matcher declaration names, and a validated schema that drives schematic theorem generation.
+`Theoria.Equation.Signature` summarizes the function telescope, recursive argument, result type, and fixed parameters. Fixed parameters are derived from the signature's parameter telescope by default, with explicit overrides still available for future edge cases. `Theoria.Equation.CaseTemplate` describes schematic constructor equations without tying schema generation to concrete library definition names. `Theoria.Equation.SchemaBuilder` turns those inputs into validated schemas and matcher metadata, including discriminant names/positions/types and simple overlap records. The compiler returns `Theoria.Equation.Compiled`, which contains the recursor body plus generated clause/schema/matcher metadata. `Theoria.Equation.DefinitionSpec` wraps that compiler result with the final checked definition type/value before installation. `Theoria.Equation.MatcherSpec` builds the checked matcher declaration type/value package installed as `Theoria.Env.Matcher` metadata. `Theoria.Equation.MatcherType` can generate a real Bool matcher type/body for unary Bool definitions; other supported fragments remain source-aligned placeholders. Stored metadata records the definition name, checked type/value, recursive argument position, fixed parameters, level parameters, original clause metadata, Lean-shaped matcher alternatives, matcher discriminants, matcher declaration names, matcher mode, and a validated schema that drives schematic theorem generation.
 
 ## Generated equation lemmas
 
@@ -96,6 +96,20 @@ Theoria.Equation.MatcherEqns.realize(env, :"nat_add.match_1.eq_succ")
 ```
 
 `Theoria.Equation.Extension` provides typed registry helpers for source lookup, matcher lookup, and generated theorem-name enumeration. It is currently environment-scanning infrastructure, not a persistent disk-backed extension.
+
+## Matcher maturity
+
+Matcher declarations have explicit modes:
+
+- `:source_aligned` — the declaration is kernel checked, but its type/value mirror the source definition while the matcher metadata is developed.
+- `:matcher` — the declaration has a generated matcher type and body.
+
+Current status:
+
+- unary Bool definitions such as `bool_not` use `:matcher` mode with type `∀ motive, ∀ b, motive → motive → motive` and a Bool recursor body;
+- Nat, List, and binary Bool definitions remain `:source_aligned`.
+
+Future stages will add true matcher arity for more families, independently compiled matcher bodies, and persistent matcher equation extensions.
 
 ## Rewrite databases
 
@@ -159,4 +173,4 @@ The verbose form prints generated lemma names under each stored equation definit
 
 ## Limitations
 
-The current generator is deliberately small. It emits schematic equation lemmas from schemas for the built-in Bool/Nat/List definitions, derives fixed parameters from signatures, and stores basic matcher/discriminant/overlap metadata in checked matcher declarations. It is not yet Lean's full equation theorem machinery: there is no public equation syntax, no mutual-recursive fixed-parameter permutation analysis, no discriminant dependency analysis, matcher type/value are source-aligned placeholders rather than true matcher arity, no independently compiled matcher bodies, no persistent disk-backed env extension, no general structural recursion checker, no `brecOn`/below dictionaries, no attribute/prioritized simp database, no full lazy theorem declaration registry, and no proof-producing rewrite tactic.
+The current generator is deliberately small. It emits schematic equation lemmas from schemas for the built-in Bool/Nat/List definitions, derives fixed parameters from signatures, and stores basic matcher/discriminant/overlap metadata in checked matcher declarations. It is not yet Lean's full equation theorem machinery: there is no public equation syntax, no mutual-recursive fixed-parameter permutation analysis, no discriminant dependency analysis, matcher type/value are source-aligned placeholders for most families, no independently compiled matcher bodies beyond the first Bool matcher shape, no persistent disk-backed env extension, no general structural recursion checker, no `brecOn`/below dictionaries, no attribute/prioritized simp database, no full lazy theorem declaration registry, and no proof-producing rewrite tactic.

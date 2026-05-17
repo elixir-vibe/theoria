@@ -118,6 +118,12 @@ defmodule Theoria.EquationTest do
     assert Extension.unfold_name(env, :nat_add) == {:ok, :"nat_add.eq_def"}
     assert {:ok, [matcher]} = {:ok, Extension.matchers_for(env, :nat_add)}
     assert matcher.name == :"nat_add.match_1"
+    assert :"bool_and.match_1.eq_true_true" in Extension.theorem_names(registry)
+    assert Extension.realizable?(env, :"bool_and.match_1.eq_true_true")
+    assert {:ok, theorem} = Extension.realize(env, :"bool_and.match_1.eq_true_true")
+    assert theorem.name == :"bool_and.match_1.eq_true_true"
+    assert {:ok, theorems} = Extension.realize_all(env)
+    assert length(theorems) == map_size(registry.theorem_sources)
   end
 
   test "matcher descriptors drive real matcher types and bodies" do

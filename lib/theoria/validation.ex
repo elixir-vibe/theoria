@@ -111,6 +111,12 @@ defmodule Theoria.Validation do
   end
 
   defp check_equation_registry(env) do
+    with :ok <- check_equation_registry_entries(env) do
+      check_equation_registry_realization(env)
+    end
+  end
+
+  defp check_equation_registry_entries(env) do
     env
     |> Info.all()
     |> Enum.reduce_while(:ok, fn info, :ok ->
@@ -119,6 +125,13 @@ defmodule Theoria.Validation do
         {:error, reason} -> {:halt, {:error, {:equation_registry, info.name, reason}}}
       end
     end)
+  end
+
+  defp check_equation_registry_realization(env) do
+    case Extension.realize_all(env) do
+      {:ok, _theorems} -> :ok
+      {:error, reason} -> {:error, {:equation_registry_realization, reason}}
+    end
   end
 
   defp validate_registry_info(env, info) do

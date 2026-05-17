@@ -6,6 +6,7 @@ defmodule Theoria.Equation.Extension do
   alias Theoria.Equation.Info
   alias Theoria.Equation.Lemma
   alias Theoria.Equation.MatcherEqns
+  alias Theoria.Equation.MatcherEquation
 
   defmodule Registry do
     @moduledoc "In-memory registry snapshot for generated equation metadata."
@@ -85,6 +86,48 @@ defmodule Theoria.Equation.Extension do
     end
   end
 
+  @doc "Returns all generated theorem names known to the registry."
+  @spec theorem_names(Env.t() | Registry.t()) :: [atom()]
+  def theorem_names(%Env{} = env), do: env |> build() |> theorem_names()
+
+  def theorem_names(%Registry{} = registry) do
+    Map.keys(registry.theorem_sources)
+  end
+
+  @doc "Returns whether a generated theorem can be realized from registry metadata."
+  @spec realizable?(Env.t(), atom()) :: boolean()
+  def realizable?(%Env{} = env, theorem_name) when is_atom(theorem_name) do
+    match?({:ok, _theorem}, realize(env, theorem_name))
+  end
+
+  @doc "Realizes any generated ordinary, unfold, or matcher equation theorem without installing it."
+  @spec realize(Env.t(), atom()) :: {:ok, Theoria.Theorem.t()} | {:error, term()}
+  def realize(%Env{} = env, theorem_name) when is_atom(theorem_name) do
+    registry = build(env)
+
+    case source_for(registry, theorem_name) do
+      {:ok, source} -> realize_source_theorem(env, registry, source, theorem_name)
+      :error -> {:error, {:unknown_generated_theorem, theorem_name}}
+    end
+  end
+
+  @doc "Realizes every theorem known to the generated equation registry."
+  @spec realize_all(Env.t()) :: {:ok, [Theoria.Theorem.t()]} | {:error, term()}
+  def realize_all(%Env{} = env) do
+    env
+    |> theorem_names()
+    |> Enum.reduce_while({:ok, []}, fn theorem_name, {:ok, theorems} ->
+      case realize(env, theorem_name) do
+        {:ok, theorem} -> {:cont, {:ok, [theorem | theorems]}}
+        {:error, reason} -> {:halt, {:error, {theorem_name, reason}}}
+      end
+    end)
+    |> case do
+      {:ok, theorems} -> {:ok, Enum.reverse(theorems)}
+      {:error, _reason} = error -> error
+    end
+  end
+
   @doc "Returns generated ordinary equation names for a source definition."
   @spec equation_names(Info.t()) :: [atom()]
   def equation_names(%Info{} = info), do: Enum.map(Lemma.generated_for(info), & &1.name)
@@ -114,6 +157,51 @@ defmodule Theoria.Equation.Extension do
       {:ok, name} -> {:ok, name}
       :error -> {:error, {:unknown_equation_definition, source}}
     end
+  end
+
+  defp realize_source_theorem(env, %Registry{} = registry, source, theorem_name) do
+    cond do
+      info = Map.get(registry.definitions, source) ->
+        realize_definition_theorem(env, info, theorem_name)
+
+      matcher = Map.get(registry.matchers, source) ->
+        realize_matcher_theorem(env, matcher, theorem_name)
+
+      true ->
+        {:error, {:unknown_generated_source, source}}
+    end
+  end
+
+  defp realize_definition_theorem(env, %Info{} = info, theorem_name) do
+    unfold = Lemma.unfold_for(info)
+
+    cond do
+      unfold.name == theorem_name ->
+        Lemma.to_theorem(env, unfold)
+
+      lemma = Enum.find(Lemma.generated_for(info), &(&1.name == theorem_name)) ->
+        Lemma.to_theorem(env, lemma)
+
+      true ->
+        {:error, {:unknown_equation_for_source, info.name, theorem_name}}
+    end
+  end
+
+  defp realize_matcher_theorem(env, %EnvMatcher{} = matcher, theorem_name) do
+    env
+    |> MatcherEqns.all()
+    |> Enum.find_value(
+      {:error, {:unknown_matcher_equation, matcher.name, theorem_name}},
+      fn equation ->
+        if equation.name == theorem_name and equation.matcher == matcher.name do
+          equation
+          |> MatcherEquation.to_lemma()
+          |> then(&Lemma.to_theorem(env, &1))
+        else
+          false
+        end
+      end
+    )
   end
 
   defp register_definition(%Info{} = info, %Registry{} = registry) do

@@ -227,10 +227,7 @@ defmodule Theoria.Kernel do
   end
 
   defp declaration_kind?(env, name, kind) do
-    case Env.fetch(env, name) do
-      {:ok, %Constant{kind: ^kind}} -> true
-      _other -> false
-    end
+    match?({:ok, %Constant{kind: ^kind}}, Env.fetch(env, name))
   end
 
   defp declaration_dependencies(%Constant{type: type, value: nil}), do: Term.constants(type)
@@ -415,8 +412,7 @@ defmodule Theoria.Kernel do
          actual_domains
        )
        when params > 0 do
-    {:ok,
-     actual_domains |> Enum.drop(EnvRecursor.major_index(recursor)) |> Enum.take(field_count)}
+    {:ok, Enum.slice(actual_domains, EnvRecursor.major_index(recursor), field_count)}
   end
 
   defp expected_field_domains(

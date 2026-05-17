@@ -172,7 +172,7 @@ defmodule Theoria.Pretty do
   end
 
   defp render_term(%BVar{index: index}, context) do
-    Enum.at(context, index) || "##{index}"
+    bound_name(context, index) || "##{index}"
   end
 
   defp render_term(%Const{name: name, levels: []}, _context), do: Atom.to_string(name)
@@ -225,6 +225,10 @@ defmodule Theoria.Pretty do
   defp render_atomic(%Const{} = term, context), do: render_term(term, context)
   defp render_atomic(%App{} = term, context), do: render_term(term, context)
   defp render_atomic(term, context), do: "(" <> render_term(term, context) <> ")"
+
+  defp bound_name([name | _rest], 0), do: name
+  defp bound_name([_name | rest], index) when index > 0, do: bound_name(rest, index - 1)
+  defp bound_name([], _index), do: nil
 
   defp render_level(level) do
     level = Theoria.Level.normalize(level)

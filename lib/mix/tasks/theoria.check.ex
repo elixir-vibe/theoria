@@ -129,7 +129,7 @@ defmodule Mix.Tasks.Theoria.Check do
     |> Enum.reject(&(&1 == ""))
     |> case do
       [] -> ""
-      suffixes -> ", " <> Enum.join(suffixes, ", ")
+      suffixes -> [", " | Enum.intersperse(suffixes, ", ")]
     end
   end
 

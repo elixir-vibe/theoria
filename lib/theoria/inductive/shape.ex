@@ -41,7 +41,7 @@ defmodule Theoria.Inductive.Shape do
 
   defp bool_like(_constructors, _name), do: nil
 
-  defp nat_like(constructors, name) when length(constructors) == 2 do
+  defp nat_like([_, _] = constructors, name) do
     zero = Enum.find(constructors, &nullary_constructor?(&1.type, name))
     succ = Enum.find(constructors, &unary_recursive_constructor?(&1.type, name))
 
@@ -52,7 +52,7 @@ defmodule Theoria.Inductive.Shape do
 
   defp nat_like(_constructors, _name), do: nil
 
-  defp list_like(constructors, name) when length(constructors) == 2 do
+  defp list_like([_, _] = constructors, name) do
     cons = Enum.find(constructors, &list_cons_constructor?(&1.type, name))
 
     nil_constructor =
@@ -116,13 +116,7 @@ defmodule Theoria.Inductive.Shape do
   end
 
   defp constructor_targets_inductive?(type, inductive_name) do
-    type
-    |> peel_foralls()
-    |> application_head()
-    |> case do
-      %Const{name: ^inductive_name} -> true
-      _other -> false
-    end
+    match?(%Const{name: ^inductive_name}, application_head(peel_foralls(type)))
   end
 
   defp peel_foralls(%Forall{body: body}), do: peel_foralls(body)

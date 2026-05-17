@@ -289,10 +289,11 @@ defmodule Theoria.Inductive do
          result,
          constructor_index
        ) do
-    prefix_names = Enum.map(spec.parameters, & &1.name) ++ [:motive] ++ minor_names(spec)
+    minor_names = minor_names(spec)
+    prefix_names = Enum.map(spec.parameters, & &1.name) ++ [:motive] ++ minor_names
     prefix_binders = recursor_prefix_binders(recursor_type, prefix_names)
     fields = field_binders(result, length(spec.parameters))
-    minor = S.var(Enum.at(minor_names(spec), constructor_index))
+    minor = S.var(Enum.at(minor_names, constructor_index))
 
     body =
       recursor_rule_body(
@@ -353,8 +354,8 @@ defmodule Theoria.Inductive do
          context,
          binders
        ) do
-    binder = {name, syntax_from_core(domain, Enum.reverse(context))}
-    collect_prefix_binders(body, names, context ++ [name], [binder | binders])
+    binder = {name, syntax_from_core(domain, context)}
+    collect_prefix_binders(body, names, [name | context], [binder | binders])
   end
 
   defp rule_binders(result, prefix_binders, fields) do
@@ -377,8 +378,7 @@ defmodule Theoria.Inductive do
 
     fields =
       result.binders
-      |> Enum.drop(parameter_count)
-      |> Enum.take(position - parameter_count)
+      |> Enum.slice(parameter_count, position - parameter_count)
       |> Enum.with_index()
       |> Enum.map(fn {binder, index} -> field_name(binder.name, index) end)
 
@@ -843,13 +843,7 @@ defmodule Theoria.Inductive do
   end
 
   defp constructor_targets_inductive?(type, inductive_name) do
-    type
-    |> peel_foralls()
-    |> application_head()
-    |> case do
-      %Const{name: ^inductive_name} -> true
-      _other -> false
-    end
+    match?(%Const{name: ^inductive_name}, application_head(peel_foralls(type)))
   end
 
   defp constructor_result?(%Forall{}, _inductive_name), do: false

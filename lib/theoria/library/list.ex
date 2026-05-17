@@ -40,10 +40,11 @@ defmodule Theoria.Library.List do
 
   defp list_type do
     u = Level.param(:u)
+    sort_u = Theoria.Syntax.sort(u)
 
     elab!(
-      forall :a, Theoria.Syntax.sort(u) do
-        Theoria.Syntax.sort(u)
+      forall :a, sort_u do
+        sort_u
       end
     )
   end
@@ -60,13 +61,12 @@ defmodule Theoria.Library.List do
 
   defp list_cons_type do
     u = Level.param(:u)
+    a = var(:a)
+    list_a = call(const(:List, [u]), a)
 
     elab!(
       forall :a, Theoria.Syntax.sort(u) do
-        arrow(
-          var(:a),
-          arrow(call(const(:List, [u]), var(:a)), call(const(:List, [u]), var(:a)))
-        )
+        arrow(a, arrow(list_a, list_a))
       end
     )
   end
@@ -83,22 +83,26 @@ defmodule Theoria.Library.List do
 
   defp list_length_value do
     u = Level.param(:u)
+    a = var(:a)
+    xs = var(:xs)
+    acc = var(:acc)
+    list_a = call(const(:List, [u]), a)
 
     elab!(
       lam :a, Theoria.Syntax.sort(u) do
-        lam :xs, call(const(:List, [u]), var(:a)) do
+        lam :xs, list_a do
           call(const(:list_rec, [u, 1]), [
-            var(:a),
+            a,
             const(:Nat),
             const(:zero),
-            lam :_head, var(:a) do
-              lam :_tail, call(const(:List, [u]), var(:a)) do
+            lam :_head, a do
+              lam :_tail, list_a do
                 lam :acc, const(:Nat) do
-                  call(const(:succ), var(:acc))
+                  call(const(:succ), acc)
                 end
               end
             end,
-            var(:xs)
+            xs
           ])
         end
       end

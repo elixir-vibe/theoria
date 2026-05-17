@@ -96,11 +96,13 @@ defmodule Theoria.Library.Logic do
   end
 
   defp and_right_type do
+    q = var(:q)
+
     elab!(
       forall :p, Theoria.DSL.prop() do
         forall :q, Theoria.DSL.prop() do
-          forall :h, call(const(:and), var(:p), var(:q)) do
-            var(:q)
+          forall :h, call(const(:and), var(:p), q) do
+            q
           end
         end
       end

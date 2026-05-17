@@ -29,20 +29,32 @@ defmodule Theoria.Equation.MatcherType do
     end)
   end
 
+  def alternatives(%Schema{family: :nat}, %MatcherInfo{} = info) do
+    Enum.map(info.alternatives, fn
+      %{constructor: :zero} ->
+        %Alternative{constructor: :zero, fields: [], result_type: Term.bvar(1)}
+
+      %{constructor: :succ} ->
+        %Alternative{
+          constructor: :succ,
+          fields: [{:pred, Term.const(:Nat)}],
+          result_type: Term.bvar(2)
+        }
+    end)
+  end
+
   @doc "Builds a matcher type for supported schemas."
   @spec build(Schema.t(), MatcherInfo.t()) :: {:ok, Term.t()} | {:error, term()}
-  def build(%Schema{family: :bool}, %MatcherInfo{}) do
-    {:ok, bool_type()}
-  end
+  def build(%Schema{family: :bool}, %MatcherInfo{}), do: {:ok, bool_type()}
+  def build(%Schema{family: :nat}, %MatcherInfo{}), do: {:ok, nat_type()}
 
   def build(%Schema{family: family}, %MatcherInfo{}),
     do: {:error, {:unsupported_matcher_type, family}}
 
   @doc "Builds a matcher value for supported schemas."
   @spec value(Schema.t(), MatcherInfo.t()) :: {:ok, Term.t()} | {:error, term()}
-  def value(%Schema{family: :bool}, %MatcherInfo{}) do
-    {:ok, bool_value()}
-  end
+  def value(%Schema{family: :bool}, %MatcherInfo{}), do: {:ok, bool_value()}
+  def value(%Schema{family: :nat}, %MatcherInfo{}), do: {:ok, nat_value()}
 
   def value(%Schema{family: family}, %MatcherInfo{}),
     do: {:error, {:unsupported_matcher_value, family}}
@@ -73,6 +85,44 @@ defmodule Theoria.Equation.MatcherType do
             :on_false,
             Term.bvar(2),
             Recursors.bool_rec(Term.bvar(3), Term.bvar(1), Term.bvar(0), Term.bvar(2))
+          )
+        )
+      )
+    )
+  end
+
+  defp nat_type do
+    succ_case_type =
+      Term.forall(:_, Term.const(:Nat), Term.forall(:_, Term.bvar(3), Term.bvar(4)))
+
+    Term.forall(
+      :motive,
+      Term.sort(1),
+      Term.forall(
+        :n,
+        Term.const(:Nat),
+        Term.forall(:on_zero, Term.bvar(1), Term.forall(:on_succ, succ_case_type, Term.bvar(3)))
+      )
+    )
+  end
+
+  defp nat_value do
+    succ_case_type =
+      Term.forall(:_, Term.const(:Nat), Term.forall(:_, Term.bvar(3), Term.bvar(4)))
+
+    Term.lam(
+      :motive,
+      Term.sort(1),
+      Term.lam(
+        :n,
+        Term.const(:Nat),
+        Term.lam(
+          :on_zero,
+          Term.bvar(1),
+          Term.lam(
+            :on_succ,
+            succ_case_type,
+            Recursors.nat_rec(Term.bvar(3), Term.bvar(1), Term.bvar(0), Term.bvar(2))
           )
         )
       )

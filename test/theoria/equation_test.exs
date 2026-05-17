@@ -89,11 +89,12 @@ defmodule Theoria.EquationTest do
     assert MatcherInfo.arity(info) == 3
   end
 
-  test "matcher type builds a real Bool matcher shape" do
+  test "matcher type builds real Bool and Nat matcher shapes" do
     {:ok, env} = Prelude.env()
-    {:ok, info} = Info.fetch(env, :bool_not)
+    {:ok, bool_info} = Info.fetch(env, :bool_not)
+    {:ok, nat_info} = Info.fetch(env, :nat_add)
 
-    assert {:ok, type} = MatcherType.build(info.schema, info.matcher)
+    assert {:ok, bool_type} = MatcherType.build(bool_info.schema, bool_info.matcher)
 
     assert %Term.Forall{
              name: :motive,
@@ -101,9 +102,27 @@ defmodule Theoria.EquationTest do
                name: :b,
                body: %Term.Forall{name: :on_true, body: %Term.Forall{name: :on_false}}
              }
-           } = type
+           } = bool_type
 
-    assert [_true_alt, _false_alt] = MatcherType.alternatives(info.schema, info.matcher)
+    assert [_true_alt, _false_alt] = MatcherType.alternatives(bool_info.schema, bool_info.matcher)
+    assert {:ok, nat_type} = MatcherType.build(nat_info.schema, nat_info.matcher)
+
+    assert %Term.Forall{
+             name: :motive,
+             body: %Term.Forall{
+               name: :n,
+               body: %Term.Forall{name: :on_zero, body: %Term.Forall{name: :on_succ}}
+             }
+           } = nat_type
+
+    assert [
+             _zero_alt,
+             %MatcherType.Alternative{
+               constructor: :succ,
+               fields: [{:pred, %Term.Const{name: :Nat}}]
+             }
+           ] =
+             MatcherType.alternatives(nat_info.schema, nat_info.matcher)
   end
 
   test "fixed params derive from signature parameters" do
@@ -189,14 +208,18 @@ defmodule Theoria.EquationTest do
     assert %Term.Forall{name: :m, body: %Term.Forall{name: :n}} = theorem.type
   end
 
-  test "bool unary matcher is a checked real matcher declaration" do
+  test "Bool and Nat matchers are checked real matcher declarations" do
     {:ok, env} = Prelude.env()
-    {:ok, info} = Info.fetch(env, :bool_not)
-    {:ok, matcher} = Theoria.Env.fetch_matcher(env, :"bool_not.match_1")
 
-    assert matcher.mode == :matcher
-    assert matcher.type != info.type
-    assert matcher.value != info.value
+    for {definition, matcher_name} <- [bool_not: :"bool_not.match_1", nat_add: :"nat_add.match_1"] do
+      {:ok, info} = Info.fetch(env, definition)
+      {:ok, matcher} = Theoria.Env.fetch_matcher(env, matcher_name)
+
+      assert matcher.mode == :matcher
+      assert matcher.type != info.type
+      assert matcher.value != info.value
+    end
+
     assert {:ok, _env} = Theoria.Kernel.validate_env(env)
   end
 

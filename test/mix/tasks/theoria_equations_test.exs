@@ -36,6 +36,7 @@ defmodule Mix.Tasks.Theoria.EquationsTest do
       end)
 
     assert output =~ "nat_add rec_arg=0 fixed=[]"
+    assert output =~ "matcher: nat_add.match_1 mode=matcher arity=4"
     assert output =~ "0: m position=0 family=nat"
     assert output =~ "nat_add.eq_succ"
     assert output =~ "nat_add.match_1.eq_succ"

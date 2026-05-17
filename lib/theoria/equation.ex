@@ -7,6 +7,7 @@ defmodule Theoria.Equation do
   target one implementation path.
   """
 
+  alias Theoria.Level
   alias Theoria.Term
 
   defmodule Pattern do
@@ -81,8 +82,11 @@ defmodule Theoria.Equation do
   @doc "Compiles Bool constructor clauses to a Bool recursor application."
   @spec compile_bool(Term.t(), [Clause.t()], Term.t()) :: {:ok, Term.t()} | {:error, term()}
   def compile_bool(motive, clauses, major) do
-    with {:ok, on_true} <- constructor_body(clauses, true, 0),
-         {:ok, on_false} <- constructor_body(clauses, false, 0) do
+    expected = %{true => 0, false => 0}
+
+    with :ok <- validate_clauses(clauses, expected),
+         {:ok, on_true} <- constructor_body(clauses, true),
+         {:ok, on_false} <- constructor_body(clauses, false) do
       {:ok, bool(motive, on_true, on_false, major)}
     end
   end
@@ -100,16 +104,20 @@ defmodule Theoria.Equation do
   @doc "Compiles Nat zero/succ clauses to a Nat recursor application."
   @spec compile_nat(Term.t(), [Clause.t()], Term.t()) :: {:ok, Term.t()} | {:error, term()}
   def compile_nat(motive, clauses, major) do
-    with {:ok, zero_case} <- constructor_body(clauses, :zero, 0),
-         {:ok, succ_case} <- constructor_body(clauses, :succ, 1) do
+    expected = %{zero: 0, succ: 1}
+
+    with :ok <- validate_clauses(clauses, expected),
+         {:ok, zero_case} <- constructor_body(clauses, :zero),
+         {:ok, succ_case} <- constructor_body(clauses, :succ) do
       {:ok, nat(motive, zero_case, succ_case, major)}
     end
   end
 
   @doc "Builds a List recursor application from nil/cons equations."
-  @spec list(Term.t(), Term.t(), Term.t(), Term.t(), Term.t()) :: Term.t()
-  def list(element_type, motive, nil_case, cons_case, major) do
-    Term.const(:list_rec, [1, 1])
+  @spec list(Term.t(), Term.t(), Term.t(), Term.t(), Term.t(), [Level.t() | non_neg_integer()]) ::
+          Term.t()
+  def list(element_type, motive, nil_case, cons_case, major, levels \\ [1, 1]) do
+    Term.const(:list_rec, levels)
     |> Term.app(element_type)
     |> Term.app(motive)
     |> Term.app(nil_case)
@@ -118,27 +126,70 @@ defmodule Theoria.Equation do
   end
 
   @doc "Compiles List nil/cons clauses to a List recursor application."
-  @spec compile_list(Term.t(), Term.t(), [Clause.t()], Term.t()) ::
+  @spec compile_list(Term.t(), Term.t(), [Clause.t()], Term.t(), [Level.t() | non_neg_integer()]) ::
           {:ok, Term.t()} | {:error, term()}
-  def compile_list(element_type, motive, clauses, major) do
-    with {:ok, nil_case} <- constructor_body(clauses, :list_nil, 0),
-         {:ok, cons_case} <- constructor_body(clauses, :list_cons, 2) do
-      {:ok, list(element_type, motive, nil_case, cons_case, major)}
+  def compile_list(element_type, motive, clauses, major, levels \\ [1, 1]) do
+    expected = %{list_nil: 0, list_cons: 2}
+
+    with :ok <- validate_clauses(clauses, expected),
+         {:ok, nil_case} <- constructor_body(clauses, :list_nil),
+         {:ok, cons_case} <- constructor_body(clauses, :list_cons) do
+      {:ok, list(element_type, motive, nil_case, cons_case, major, levels)}
     end
   end
 
-  defp constructor_body(clauses, constructor, arity) do
+  defp validate_clauses(clauses, expected) do
+    Enum.reduce_while(clauses, MapSet.new(), &validate_clause(&1, &2, expected))
+    |> case do
+      {:error, _reason} = error -> error
+      seen -> validate_coverage(seen, expected)
+    end
+  end
+
+  defp validate_clause(%Clause{patterns: [%Constructor{name: name, args: args}]}, seen, expected) do
+    cond do
+      not Map.has_key?(expected, name) ->
+        {:halt, {:error, {:unexpected_clause, name}}}
+
+      MapSet.member?(seen, name) ->
+        {:halt, {:error, {:duplicate_clause, name}}}
+
+      arity_mismatch?(args, expected, name) ->
+        expected_arity = Map.fetch!(expected, name)
+        actual_arity = length(args)
+
+        {:halt,
+         {:error,
+          {:constructor_arity_mismatch, name, [expected: expected_arity, actual: actual_arity]}}}
+
+      true ->
+        {:cont, MapSet.put(seen, name)}
+    end
+  end
+
+  defp validate_clause(_clause, _seen, _expected), do: {:halt, {:error, :invalid_clause}}
+
+  defp arity_mismatch?(args, expected, name), do: length(args) != Map.fetch!(expected, name)
+
+  defp validate_coverage(seen, expected) do
+    expected
+    |> Map.keys()
+    |> Enum.find(&(&1 not in seen))
+    |> case do
+      nil -> :ok
+      missing -> {:error, {:missing_clause, missing}}
+    end
+  end
+
+  defp constructor_body(clauses, constructor) do
     clauses
-    |> Enum.find(&constructor_clause?(&1, constructor, arity))
+    |> Enum.find(&constructor_clause?(&1, constructor))
     |> case do
       %Clause{body: body} -> {:ok, body}
       nil -> {:error, {:missing_clause, constructor}}
     end
   end
 
-  defp constructor_clause?(%Clause{patterns: [%Constructor{name: name, args: args}]}, name, arity) do
-    length(args) == arity
-  end
-
-  defp constructor_clause?(_clause, _constructor, _arity), do: false
+  defp constructor_clause?(%Clause{patterns: [%Constructor{name: name}]}, name), do: true
+  defp constructor_clause?(_clause, _constructor), do: false
 end

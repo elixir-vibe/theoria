@@ -4,6 +4,8 @@ defmodule Theoria.Library.Nat do
   """
 
   alias Theoria.Env
+  alias Theoria.Equation
+  alias Theoria.Equation.{Clause, Pattern}
   alias Theoria.Inductive.Generate
   alias Theoria.Inductive.Spec
   alias Theoria.Kernel
@@ -45,22 +47,32 @@ defmodule Theoria.Library.Nat do
   end
 
   defp nat_add_value do
-    elab!(
-      lam :m, const(:Nat) do
-        lam :n, const(:Nat) do
-          call(
-            const(:nat_rec, [1]),
-            const(:Nat),
-            var(:n),
-            lam :_pred, const(:Nat) do
-              lam :acc, const(:Nat) do
-                call(const(:succ), var(:acc))
-              end
-            end,
-            var(:m)
-          )
-        end
-      end
+    {:ok, body} =
+      Equation.compile_nat(
+        Theoria.Term.const(:Nat),
+        [
+          Clause.new([Pattern.constructor(:zero)], Theoria.Term.bvar(0)),
+          Clause.new([Pattern.constructor(:succ, [Pattern.var(:pred)])], nat_add_succ_case())
+        ],
+        Theoria.Term.bvar(1)
+      )
+
+    Theoria.Term.lam(
+      :m,
+      Theoria.Term.const(:Nat),
+      Theoria.Term.lam(:n, Theoria.Term.const(:Nat), body)
+    )
+  end
+
+  defp nat_add_succ_case do
+    Theoria.Term.lam(
+      :_pred,
+      Theoria.Term.const(:Nat),
+      Theoria.Term.lam(
+        :acc,
+        Theoria.Term.const(:Nat),
+        Theoria.Term.app(Theoria.Term.const(:succ), Theoria.Term.bvar(0))
+      )
     )
   end
 end

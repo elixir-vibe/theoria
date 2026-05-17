@@ -28,8 +28,10 @@ defmodule Theoria.EquationTest do
   end
 
   test "reports missing Bool constructor clauses" do
-    assert Equation.compile_bool(Term.const(:Bool), [], Term.const(true)) ==
-             {:error, {:missing_clause, true}}
+    assert {:error, {:missing_clause, missing}} =
+             Equation.compile_bool(Term.const(:Bool), [], Term.const(true))
+
+    assert missing in [true, false]
   end
 
   test "builds Nat recursor applications" do

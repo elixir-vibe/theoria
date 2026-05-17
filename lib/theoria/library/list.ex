@@ -4,6 +4,8 @@ defmodule Theoria.Library.List do
   """
 
   alias Theoria.Env
+  alias Theoria.Equation
+  alias Theoria.Equation.{Clause, Pattern}
   alias Theoria.Inductive.Generate
   alias Theoria.Inductive.Spec
   alias Theoria.Kernel
@@ -97,61 +99,109 @@ defmodule Theoria.Library.List do
 
   defp list_append_value do
     u = Level.param(:u)
-    a = var(:a)
-    left = var(:left)
-    right = var(:right)
-    head = var(:head)
-    acc = var(:acc)
-    list_a = call(const(:List, [u]), a)
+    a = Theoria.Term.bvar(2)
+    list_a = list_of(a)
 
-    elab!(
-      lam :a, Theoria.Syntax.sort(u) do
-        lam :left, list_a do
-          lam :right, list_a do
-            call(const(:list_rec, [u, u]), [
-              a,
-              list_a,
-              right,
-              lam :head, a do
-                lam :_tail, list_a do
-                  lam :acc, list_a do
-                    call(const(:list_cons, [u]), a, head, acc)
-                  end
-                end
-              end,
-              left
-            ])
-          end
-        end
-      end
+    {:ok, body} =
+      Equation.compile_list(
+        a,
+        list_a,
+        [
+          Clause.new([Pattern.constructor(:list_nil)], Theoria.Term.bvar(0)),
+          Clause.new(
+            [Pattern.constructor(:list_cons, [Pattern.var(:head), Pattern.var(:tail)])],
+            list_append_cons_case(a)
+          )
+        ],
+        Theoria.Term.bvar(1),
+        [u, u]
+      )
+
+    sort_u = Theoria.Term.sort(u)
+    bound_a = Theoria.Term.bvar(0)
+    outer_list = list_of(bound_a)
+
+    Theoria.Term.lam(
+      :a,
+      sort_u,
+      Theoria.Term.lam(
+        :left,
+        outer_list,
+        Theoria.Term.lam(:right, list_of(Theoria.Term.shift(bound_a, 1)), body)
+      )
     )
   end
 
   defp list_length_value do
     u = Level.param(:u)
-    a = var(:a)
-    xs = var(:xs)
-    acc = var(:acc)
-    list_a = call(const(:List, [u]), a)
+    xs = Theoria.Term.bvar(0)
+    a = Theoria.Term.bvar(1)
+    list_a = list_of(a)
 
-    elab!(
-      lam :a, Theoria.Syntax.sort(u) do
-        lam :xs, list_a do
-          call(const(:list_rec, [u, 1]), [
-            a,
-            const(:Nat),
-            const(:zero),
-            lam :_head, a do
-              lam :_tail, list_a do
-                lam :acc, const(:Nat) do
-                  call(const(:succ), acc)
-                end
-              end
-            end,
-            xs
-          ])
-        end
-      end
+    {:ok, body} =
+      Equation.compile_list(
+        a,
+        Theoria.Term.const(:Nat),
+        [
+          Clause.new([Pattern.constructor(:list_nil)], Theoria.Term.const(:zero)),
+          Clause.new(
+            [Pattern.constructor(:list_cons, [Pattern.wildcard(), Pattern.var(:tail)])],
+            list_length_cons_case(a, list_a)
+          )
+        ],
+        xs,
+        [u, 1]
+      )
+
+    sort_u = Theoria.Term.sort(u)
+    bound_a = Theoria.Term.bvar(0)
+
+    Theoria.Term.lam(
+      :a,
+      sort_u,
+      Theoria.Term.lam(:xs, list_of(bound_a), body)
     )
+  end
+
+  defp list_append_cons_case(a) do
+    u = Level.param(:u)
+    nearest = Theoria.Term.bvar(0)
+
+    Theoria.Term.lam(
+      :head,
+      a,
+      Theoria.Term.lam(
+        :_tail,
+        list_of(Theoria.Term.shift(a, 1)),
+        Theoria.Term.lam(
+          :acc,
+          list_of(Theoria.Term.shift(a, 2)),
+          Theoria.Term.const(:list_cons, [u])
+          |> Theoria.Term.app(Theoria.Term.shift(a, 3))
+          |> Theoria.Term.app(Theoria.Term.bvar(2))
+          |> Theoria.Term.app(nearest)
+        )
+      )
+    )
+  end
+
+  defp list_length_cons_case(element_type, list_a) do
+    Theoria.Term.lam(
+      :_head,
+      element_type,
+      Theoria.Term.lam(
+        :_tail,
+        Theoria.Term.shift(list_a, 1),
+        Theoria.Term.lam(
+          :acc,
+          Theoria.Term.const(:Nat),
+          Theoria.Term.app(Theoria.Term.const(:succ), Theoria.Term.bvar(0))
+        )
+      )
+    )
+  end
+
+  defp list_of(type) do
+    Theoria.Term.app(Theoria.Term.const(:List, [Level.param(:u)]), type)
   end
 end

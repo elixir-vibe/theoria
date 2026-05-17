@@ -71,26 +71,38 @@ defmodule Theoria.Library.Bool do
   end
 
   defp bool_and_value do
-    elab!(
-      lam :a, const(:Bool) do
-        lam :b, const(:Bool) do
-          term do
-            bool_rec(const(:Bool), b, false, a)
-          end
-        end
-      end
+    {:ok, body} =
+      Equation.compile_bool(
+        Theoria.Term.const(:Bool),
+        [
+          Clause.new([Pattern.constructor(true)], Theoria.Term.bvar(0)),
+          Clause.new([Pattern.constructor(false)], Theoria.Term.const(false))
+        ],
+        Theoria.Term.bvar(1)
+      )
+
+    Theoria.Term.lam(
+      :a,
+      Theoria.Term.const(:Bool),
+      Theoria.Term.lam(:b, Theoria.Term.const(:Bool), body)
     )
   end
 
   defp bool_or_value do
-    elab!(
-      lam :a, const(:Bool) do
-        lam :b, const(:Bool) do
-          term do
-            bool_rec(const(:Bool), true, b, a)
-          end
-        end
-      end
+    {:ok, body} =
+      Equation.compile_bool(
+        Theoria.Term.const(:Bool),
+        [
+          Clause.new([Pattern.constructor(true)], Theoria.Term.const(true)),
+          Clause.new([Pattern.constructor(false)], Theoria.Term.bvar(0))
+        ],
+        Theoria.Term.bvar(1)
+      )
+
+    Theoria.Term.lam(
+      :a,
+      Theoria.Term.const(:Bool),
+      Theoria.Term.lam(:b, Theoria.Term.const(:Bool), body)
     )
   end
 end

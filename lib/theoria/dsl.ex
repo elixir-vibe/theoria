@@ -295,8 +295,16 @@ defmodule Theoria.DSL do
     quote_list_application(:List, level, [element_type])
   end
 
+  defp quote_term({:vec, _meta, [element_type, length]}) do
+    quote_level_application(:Vec, [1], [element_type, length])
+  end
+
+  defp quote_term({:vec, _meta, [element_type, length, level]}) do
+    quote_level_application(:Vec, [level], [element_type, length])
+  end
+
   defp quote_term({name, _meta, context})
-       when name in [:list_nil, :list_cons] and is_atom(context) do
+       when name in [:list_nil, :list_cons, :vec_nil, :vec_cons] and is_atom(context) do
     quote do
       Theoria.Syntax.const(unquote(name), [1])
     end
@@ -308,12 +316,16 @@ defmodule Theoria.DSL do
   end
 
   defp quote_term({name, _meta, args})
-       when name in [:list_nil, :list_cons, :list_length] and is_list(args) do
+       when name in [:list_nil, :list_cons, :list_length, :vec_nil, :vec_cons] and is_list(args) do
     quote_level_application(name, [1], args)
   end
 
   defp quote_term({name, _meta, args}) when name in [:list_rec, :list_ind] and is_list(args) do
     quote_level_application(name, [1, 1], args)
+  end
+
+  defp quote_term({:vec_ind, _meta, args}) when is_list(args) do
+    quote_level_application(:vec_ind, [1], args)
   end
 
   defp quote_term({:type, _meta, [level]}) when is_integer(level) and level >= 0 do

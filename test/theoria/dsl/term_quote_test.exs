@@ -59,6 +59,10 @@ defmodule Theoria.DSL.TermQuoteTest do
     assert term(do: list(a, 2)) == call(const(:List, [2]), var(:a))
     assert term(do: list_nil) == const(:list_nil, [1])
     assert term(do: list_cons) == const(:list_cons, [1])
+    assert term(do: vec(a, n)) == call(const(:Vec, [1]), var(:a), var(:n))
+    assert term(do: vec(a, n, 2)) == call(const(:Vec, [2]), var(:a), var(:n))
+    assert term(do: vec_nil) == const(:vec_nil, [1])
+    assert term(do: vec_cons) == const(:vec_cons, [1])
 
     assert term(do: bool_rec(bool(), bool_true(), bool_false(), bool_true())) ==
              call(const(:bool_rec, [1]), [const(:Bool), const(true), const(false), const(true)])
@@ -87,6 +91,16 @@ defmodule Theoria.DSL.TermQuoteTest do
                var(:motive),
                var(:nil_case),
                var(:cons_case),
+               var(:xs)
+             ])
+
+    assert term(do: vec_ind(nat(), motive, nil_case, cons_case, n, xs)) ==
+             call(const(:vec_ind, [1]), [
+               const(:Nat),
+               var(:motive),
+               var(:nil_case),
+               var(:cons_case),
+               var(:n),
                var(:xs)
              ])
 

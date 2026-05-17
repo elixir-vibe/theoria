@@ -82,8 +82,8 @@ Legend:
 |---|---|---:|---|---|---:|
 | `InductiveVal` | Metadata for type former | ✅ | `%Env.Inductive{}` | Add mutual/nested fields later | P0 |
 | `ConstructorVal` | Metadata for constructors | ✅ | `%Env.Constructor{}` | Stable | P0 |
-| `RecursorVal` | Metadata for recursors | 🟡 | `%Env.Recursor{}` for simple and opaque indexed recursors | Add indexed rule metadata | P0 |
-| `RecursorRule` | Iota rule metadata | 🟡 | `%Env.RecursorRule{constructor, field_count, rhs, index_patterns}` | Generate indexed rules | P0 |
+| `RecursorVal` | Metadata for recursors | 🟡 | `%Env.Recursor{}` for simple and indexed recursors | Harden indexed validation | P0 |
+| `RecursorRule` | Iota rule metadata | 🟡 | `%Env.RecursorRule{constructor, field_count, rhs, index_patterns}` | Full dependent codomain validation | P0 |
 | Inductive admission pipeline | Kernel checks inductive declarations | 🟡 | `Inductive.Admission` staged path | Move more ownership here; more Lean checks | P0 |
 | Strict positivity | Reject negative recursive occurrences | 🟡 | Basic positivity check | Harden nested/mutual cases | P0 |
 | Constructor target checks | Constructors return the family | ✅ | Implemented | Stable | P0 |
@@ -91,10 +91,10 @@ Legend:
 | Index arity checks | Indexed result has correct args | ✅ | Implemented | Stable | P0 |
 | Recursive index occurrence rejection | Lean-inspired safety | ✅ | Added | Stable | P0 |
 | Constructor universe checks | Field universe ≤ result universe or Prop | 🟡 | Initial check | Improve with solver | P0 |
-| Generated recursors | Auto rec/ind generation | 🟡 | Bool/Nat/List simple recursors | Indexed generation next | P0 |
+| Generated recursors | Auto rec/ind generation | 🟡 | Bool/Nat/List simple recursors and Vec indexed recursor | Harden arbitrary indexed cases | P0 |
 | Recursor RHS typing | Rules type-infer as expected shape | 🟡 | Type shape validation added | Full dependent result validation later | P0 |
-| Indexed inductives | Families like `Vec A n` | 🟡 | Can admit constructors; no full eliminators | Opaque eliminators → metadata → iota | P0 |
-| Indexed eliminators | `Vec.ind` | 🟡 | Recursors with validated rules/index patterns and basic iota | Harden and package as Vec library | P0 |
+| Indexed inductives | Families like `Vec A n` | 🟡 | Vec-style families admit constructors and generated eliminators | Harden dependent validation | P0 |
+| Indexed eliminators | `Vec.ind` | 🟡 | Recursors with validated rules/index patterns and basic iota | Harden dependent validation | P0 |
 | Indexed iota reduction | Computation for indexed recursors | 🟡 | Basic Vec library iota reduction implemented | Harden dependent validation | P0 |
 | Mutual inductives | `mutual Even/Odd` | 🔴 | Missing | Add `Inductive.Group` later | P2 |
 | Nested inductives | Recursive occurrence under containers | 🔴 | Mostly rejected/unsupported | Later after positivity overhaul | P3 |
@@ -121,7 +121,7 @@ Legend:
 | `Option` | Optional values | 🔴 | Missing | Easy inductive after library cleanup | P2 |
 | `Sum` / Either | Disjoint union | 🔴 | Missing | Easy inductive | P2 |
 | `Fin` | Bounded naturals | 🔴 | Missing | Needs indexed families | P2 |
-| `Vec` | Length-indexed list | ✅ / 🟡 | `Theoria.Library.Vec` with indexed `vec_ind` reduction | Add theorem corpus | P1 |
+| `Vec` | Length-indexed list | ✅ / 🟡 | `Theoria.Library.Vec` with indexed `vec_ind` reduction and theorem corpus | Expand theorem corpus | P1 |
 | Decidable propositions | Computable decisions | 🔴 | Missing | Needed for automation/specs | P2 |
 | Finite maps/sets | Program/spec library | 🔴 | Missing | Needed before Reach integration | P3 |
 
@@ -145,10 +145,10 @@ Legend:
 | Nondependent recursor | `Nat.rec`, `List.rec` | ✅ | Generated for simple types | Stable-ish | P0 |
 | Dependent induction principle | `Nat.ind`, `List.ind` | ✅ | Generated for simple types | Stable-ish | P0 |
 | Recursor major index | Locate major premise | ✅ | `Env.Recursor.major_index/1` | Extend for indexed families | P0 |
-| Iota rules from metadata | Rule-based computation | ✅ / 🟡 | Simple families only | Indexed missing | P0 |
+| Iota rules from metadata | Rule-based computation | ✅ / 🟡 | Simple families and basic indexed families | Harden indexed validation | P0 |
 | Recursor rule RHS authoritative | Normalizer uses RHS | ✅ | Implemented | Continue validation | P0 |
 | Rule type shape validation | Reject wrong domains/extra lambdas | ✅ / 🟡 | Added structural validation | Full dependent codomain validation later | P0 |
-| Indexed recursor declarations | `Vec.ind` declaration | 🟡 | Opaque non-iota declarations generated with rule metadata | Enable indexed iota | P0 |
+| Indexed recursor declarations | `Vec.ind` declaration | 🟡 | Iota declarations generated with rule metadata | Harden indexed validation | P0 |
 | Indexed recursor iota | Computation over `Vec` | 🟡 | Basic index-pattern-checked reduction | Harden dependent cases | P0 |
 | No-confusion recursors | Constructor discrimination | 🔴 | Missing | Later | P2 |
 | Recursor compilation to efficient dispatch | Performance | ❌ | Simple list lookup | Optimize later | P4 |
@@ -178,7 +178,7 @@ Legend:
 | Theorem module registry | Check all theorems | ✅ | `__theoria_theorems__/0` | Stable | P0 |
 | Axiom tracking | Trust boundary | ✅ | `axioms/2`, trust report | Stable | P0 |
 | Theorem checking Mix task | CI checker | ✅ | `mix theoria.check` | Stable | P0 |
-| Theorem corpus | Regression proofs | ✅ | 41 theorem(s) | Expand libraries | P1 |
+| Theorem corpus | Regression proofs | ✅ | 45 theorem(s) | Expand libraries | P1 |
 | Proof irrelevance for theorem proofs | Lean Prop behavior | ❌ | None | Decide theory later | P4 |
 | Proof artifact serialization | Cache/share proofs | 🔴 | Missing | Add before larger corpora | P3 |
 | Incremental proof checking | Avoid checking everything | 🔴 | Missing | After env hashing | P3 |
@@ -249,7 +249,7 @@ Legend:
 | Lean feature / concept | Lean role | Theoria status | Current Theoria state | Needed roadmap | Priority |
 |---|---|---:|---|---|---:|
 | Kernel corruption tests | Catch invalid envs | ✅ / 🟡 | Leanchecker-inspired tests | Keep expanding | P0 |
-| Theorem corpus tests | Prove library facts | ✅ | 41 theorem(s) | Expand corpus | P1 |
+| Theorem corpus tests | Prove library facts | ✅ | 45 theorem(s) | Expand corpus | P1 |
 | Property tests for terms | Subst/shift/scope laws | 🟡 | Some properties | Add well-typed generator | P1 |
 | Normalization preservation | Reduction preserves type | 🔴 | Missing broadly | Add property tests | P1 |
 | Defeq laws | Equivalence properties | 🔴 | Missing broadly | Add generated well-typed tests | P1 |
@@ -292,7 +292,7 @@ Legend:
 
 | Step | Deliverable | Priority |
 |---|---|---:|
-| Generate opaque indexed eliminators | ✅ `Generate.indexed_eliminators/1`; `Vec.ind` declaration with no iota | P0 |
+| Generate indexed eliminators | ✅ `Generate.indexed_eliminators/1`; `Vec.ind` declaration with iota metadata | P0 |
 | Add indexed recursor metadata without rules | ✅ `%Env.Recursor{num_indices > 0, rules: []}` allowed with `reduction: nil` | P0 |
 | Improve indexed induction type checking | ✅ Generated indexed eliminator type kernel-infers after install | P0 |
 | Extend docs | Explain indexed eliminators are noncomputational for now | P1 |

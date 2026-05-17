@@ -50,6 +50,31 @@ defmodule Theoria.Env.InductiveMetadataTest do
     assert error.reason == :invalid_declaration
   end
 
+  test "environment validation accepts opaque recursor metadata without rules" do
+    {:ok, env} = Nat.env()
+    %Theoria.Env.Recursor{} = recursor_metadata = env.constants.nat_rec.metadata
+    recursor = %Theoria.Env.Recursor{recursor_metadata | rules: []}
+
+    env =
+      update_constant(env, :nat_rec, fn %Constant{} = constant ->
+        %Constant{constant | reduction: nil, metadata: recursor}
+      end)
+
+    assert {:ok, _env} = Kernel.validate_env(env)
+  end
+
+  test "environment validation rejects opaque recursor metadata with rules" do
+    {:ok, env} = Nat.env()
+
+    env =
+      update_constant(env, :nat_rec, fn %Constant{} = constant ->
+        %Constant{constant | reduction: nil}
+      end)
+
+    assert {:error, error} = Kernel.validate_env(env)
+    assert error.reason == :invalid_declaration
+  end
+
   test "environment validation rejects iota marker on non-recursor declaration" do
     {:ok, env} = Nat.env()
     recursor = env.constants.nat_rec.metadata

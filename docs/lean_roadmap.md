@@ -82,7 +82,7 @@ Legend:
 |---|---|---:|---|---|---:|
 | `InductiveVal` | Metadata for type former | ✅ | `%Env.Inductive{}` | Add mutual/nested fields later | P0 |
 | `ConstructorVal` | Metadata for constructors | ✅ | `%Env.Constructor{}` | Stable | P0 |
-| `RecursorVal` | Metadata for recursors | 🟡 | `%Env.Recursor{}` for simple recursors | Add indexed recursor metadata | P0 |
+| `RecursorVal` | Metadata for recursors | 🟡 | `%Env.Recursor{}` for simple and opaque indexed recursors | Add indexed rule metadata | P0 |
 | `RecursorRule` | Iota rule metadata | 🟡 | `%Env.RecursorRule{constructor, field_count, rhs}` | Add indexed rule patterns | P0 |
 | Inductive admission pipeline | Kernel checks inductive declarations | 🟡 | `Inductive.Admission` staged path | Move more ownership here; more Lean checks | P0 |
 | Strict positivity | Reject negative recursive occurrences | 🟡 | Basic positivity check | Harden nested/mutual cases | P0 |
@@ -94,7 +94,7 @@ Legend:
 | Generated recursors | Auto rec/ind generation | 🟡 | Bool/Nat/List simple recursors | Indexed generation next | P0 |
 | Recursor RHS typing | Rules type-infer as expected shape | 🟡 | Type shape validation added | Full dependent result validation later | P0 |
 | Indexed inductives | Families like `Vec A n` | 🟡 | Can admit constructors; no full eliminators | Opaque eliminators → metadata → iota | P0 |
-| Indexed eliminators | `Vec.ind` | 🟡 | Opaque non-iota declarations generated and installable | Add metadata, then iota rules | P0 |
+| Indexed eliminators | `Vec.ind` | 🟡 | Opaque non-iota recursor declarations with metadata | Add iota rules | P0 |
 | Indexed iota reduction | Computation for indexed recursors | 🔴 | Missing | Implement after metadata/rule patterns | P0 |
 | Mutual inductives | `mutual Even/Odd` | 🔴 | Missing | Add `Inductive.Group` later | P2 |
 | Nested inductives | Recursive occurrence under containers | 🔴 | Mostly rejected/unsupported | Later after positivity overhaul | P3 |
@@ -148,7 +148,7 @@ Legend:
 | Iota rules from metadata | Rule-based computation | ✅ / 🟡 | Simple families only | Indexed missing | P0 |
 | Recursor rule RHS authoritative | Normalizer uses RHS | ✅ | Implemented | Continue validation | P0 |
 | Rule type shape validation | Reject wrong domains/extra lambdas | ✅ / 🟡 | Added structural validation | Full dependent codomain validation later | P0 |
-| Indexed recursor declarations | `Vec.ind` declaration | 🟡 | Opaque non-iota declarations generated | Add Lean-style recursor metadata | P0 |
+| Indexed recursor declarations | `Vec.ind` declaration | 🟡 | Opaque non-iota declarations generated with metadata | Add indexed iota rules | P0 |
 | Indexed recursor iota | Computation over `Vec` | 🔴 | Missing | Requires indexed rule representation | P0 |
 | No-confusion recursors | Constructor discrimination | 🔴 | Missing | Later | P2 |
 | Recursor compilation to efficient dispatch | Performance | ❌ | Simple list lookup | Optimize later | P4 |
@@ -293,7 +293,7 @@ Legend:
 | Step | Deliverable | Priority |
 |---|---|---:|
 | Generate opaque indexed eliminators | ✅ `Generate.indexed_eliminators/1`; `Vec.ind` declaration with no iota | P0 |
-| Add indexed recursor metadata without rules | `%Env.Recursor{num_indices > 0, rules: []}` allowed with `reduction: nil` | P0 |
+| Add indexed recursor metadata without rules | ✅ `%Env.Recursor{num_indices > 0, rules: []}` allowed with `reduction: nil` | P0 |
 | Improve indexed induction type checking | ✅ Generated indexed eliminator type kernel-infers after install | P0 |
 | Extend docs | Explain indexed eliminators are noncomputational for now | P1 |
 | Add tests | Vec-like install + metadata tests | P0 |

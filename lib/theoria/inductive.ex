@@ -205,7 +205,6 @@ defmodule Theoria.Inductive do
     }
   end
 
-  defp recursor_kind(nil), do: :constant
   defp recursor_kind(_reduction), do: :recursor
 
   defp inductive_metadata(%Spec{} = spec) do
@@ -249,6 +248,20 @@ defmodule Theoria.Inductive do
       num_motives: 1,
       num_minors: length(spec.constructors),
       rules: recursor_rules(spec, name, type, recursor_params)
+    }
+  end
+
+  defp recursor_metadata(%Spec{indices: [_index | _rest]} = spec, name, type, nil) do
+    %EnvRecursor{
+      name: name,
+      type: type,
+      universe_params: declaration_params(spec, type),
+      inductives: [spec.name],
+      num_params: length(spec.parameters),
+      num_indices: length(spec.indices),
+      num_motives: 1,
+      num_minors: length(spec.constructors),
+      rules: []
     }
   end
 

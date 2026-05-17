@@ -78,10 +78,22 @@ defmodule Theoria.Inductive.IndexTest do
 
     assert {:ok, env} = Theoria.Kernel.add_inductive(env, spec)
     assert {:ok, constant} = Env.fetch(env, :vec_ind)
-    assert constant.kind == :constant
+    assert constant.kind == :recursor
     assert constant.reduction == nil
-    assert constant.metadata == nil
+
+    assert %Theoria.Env.Recursor{
+             name: :vec_ind,
+             inductives: [:Vec],
+             num_params: 1,
+             num_indices: 1,
+             num_motives: 1,
+             num_minors: 2,
+             rules: []
+           } = constant.metadata
+
+    metadata = constant.metadata
     assert {:ok, %Theoria.Term.Sort{}} = Theoria.Kernel.infer(env, constant.type)
+    assert {:ok, ^metadata} = Env.fetch_recursor(env, :vec_ind)
   end
 
   test "environment-backed checks reject missing dependencies" do

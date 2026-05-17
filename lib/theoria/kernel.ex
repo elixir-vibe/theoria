@@ -280,6 +280,7 @@ defmodule Theoria.Kernel do
   defp ensure_constant_kind(:constant, nil, nil), do: :ok
   defp ensure_constant_kind(:inductive, %Theoria.Env.Inductive{}, nil), do: :ok
   defp ensure_constant_kind(:constructor, %EnvConstructor{}, nil), do: :ok
+  defp ensure_constant_kind(:recursor, %EnvRecursor{rules: []}, nil), do: :ok
   defp ensure_constant_kind(:recursor, %EnvRecursor{}, %Reduction.Iota{}), do: :ok
 
   defp ensure_constant_kind(_kind, _metadata, _reduction),

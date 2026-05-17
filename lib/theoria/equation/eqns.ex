@@ -4,6 +4,8 @@ defmodule Theoria.Equation.Eqns do
   alias Theoria.Env
   alias Theoria.Equation.Info
   alias Theoria.Equation.Lemma
+  alias Theoria.Rewrite.Database
+  alias Theoria.Rewrite.Rule
 
   @doc "Returns generated equation theorem names for a definition."
   @spec get(Env.t(), atom()) :: {:ok, [atom()]} | {:error, term()}
@@ -19,6 +21,54 @@ defmodule Theoria.Equation.Eqns do
     with {:ok, info} <- Info.fetch(env, name) do
       {:ok, Lemma.generated_for(info)}
     end
+  end
+
+  @doc "Installs generated equation theorems for one definition."
+  @spec install(Env.t(), atom(), keyword()) ::
+          {:ok, Env.t(), [Theoria.Theorem.t()]} | {:error, term()}
+  def install(%Env{} = env, name, opts \\ []) when is_atom(name) do
+    Lemma.add_generated_to_env(env, name, opts)
+  end
+
+  @doc "Installs all generated equation theorems in declaration order."
+  @spec install_all(Env.t(), keyword()) ::
+          {:ok, Env.t(), [Theoria.Theorem.t()]} | {:error, term()}
+  def install_all(%Env{} = env, opts \\ []) do
+    env
+    |> Info.all()
+    |> Enum.reduce_while({:ok, env, []}, fn info, {:ok, env, theorems} ->
+      case Lemma.add_generated_to_env(env, info, opts) do
+        {:ok, env, installed} -> {:cont, {:ok, env, prepend_reversed(installed, theorems)}}
+        {:error, reason} -> {:halt, {:error, reason}}
+      end
+    end)
+    |> case do
+      {:ok, env, theorems} -> {:ok, env, Enum.reverse(theorems)}
+      {:error, _reason} = error -> error
+    end
+  end
+
+  defp prepend_reversed(items, accumulator), do: Enum.reduce(items, accumulator, &[&1 | &2])
+
+  @doc "Builds rewrite rules for generated equations of one definition."
+  @spec rules(Env.t(), atom(), keyword()) :: {:ok, [Rule.t()]} | {:error, term()}
+  def rules(%Env{} = env, name, opts \\ []) when is_atom(name) do
+    with {:ok, lemmas} <- generated(env, name) do
+      {:ok, Enum.map(lemmas, &Rule.from_lemma(&1, opts))}
+    end
+  end
+
+  @doc "Builds a rewrite database from all generated equation metadata in an environment."
+  @spec database(Env.t(), keyword()) :: Database.t()
+  def database(%Env{} = env, opts \\ []) do
+    env
+    |> Info.all()
+    |> Enum.flat_map(fn info ->
+      info
+      |> Lemma.generated_for(opts)
+      |> Enum.map(&Rule.from_lemma(&1, opts))
+    end)
+    |> Database.new()
   end
 
   @doc "Returns true when every generated equation theorem for a definition is installed."

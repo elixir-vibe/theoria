@@ -5,7 +5,7 @@ defmodule Theoria.Library.List do
 
   alias Theoria.Env
   alias Theoria.Equation
-  alias Theoria.Equation.{Clause, Definition, FixedParams, Info, MatcherInfo, Pattern}
+  alias Theoria.Equation.{Clause, Definition, FixedParams, Info, MatcherInfo, Pattern, Schema}
   alias Theoria.Equation.MatcherInfo.Alternative
   alias Theoria.Inductive.Generate
   alias Theoria.Inductive.Spec
@@ -154,7 +154,8 @@ defmodule Theoria.Library.List do
         rec_arg_pos: rec_arg_pos,
         fixed_params: FixedParams.new([0]),
         clauses: clauses_for(name),
-        matcher: list_matcher(name)
+        matcher: list_matcher(name),
+        schema: schema_for(name)
       )
 
     Kernel.add_definition(env, name, type, value, [:u], metadata: metadata)
@@ -183,11 +184,80 @@ defmodule Theoria.Library.List do
   defp clauses_for(:list_length), do: list_length_clauses()
   defp clauses_for(:list_append), do: list_append_clauses()
 
+  defp schema_for(:list_length) do
+    list_length = list_constant(:list_length)
+    x = Term.bvar(1)
+    xs = Term.bvar(0)
+
+    Schema.new(
+      :list,
+      [
+        Schema.equation(nil, app(list_length, nat(), list_nil(nat())), zero(), nat()),
+        Schema.equation(
+          :cons,
+          app(list_length, nat(), list_cons_schema(nat(), x, xs)),
+          succ(app(list_length, nat(), xs)),
+          nat(),
+          binders: [{:x, nat()}, {:xs, list_of_schema(nat())}]
+        )
+      ],
+      recursive_argument: 1,
+      parameter_binders: [{:a, Term.sort(1)}],
+      argument_binders: [{:xs, list_of_schema(nat())}]
+    )
+  end
+
+  defp schema_for(:list_append) do
+    list_append = list_constant(:list_append)
+    x = Term.bvar(2)
+    xs = Term.bvar(1)
+    ys = Term.bvar(0)
+
+    Schema.new(
+      :list,
+      [
+        Schema.equation(
+          nil,
+          app(list_append, nat(), list_nil(nat()), ys),
+          ys,
+          list_of_schema(nat()),
+          binders: [{:ys, list_of_schema(nat())}]
+        ),
+        Schema.equation(
+          :cons,
+          app(list_append, nat(), list_cons_schema(nat(), x, xs), ys),
+          list_cons_schema(nat(), x, app(list_append, nat(), xs, ys)),
+          list_of_schema(nat()),
+          binders: [{:x, nat()}, {:xs, list_of_schema(nat())}, {:ys, list_of_schema(nat())}]
+        )
+      ],
+      recursive_argument: 1,
+      parameter_binders: [{:a, Term.sort(1)}],
+      argument_binders: [{:xs, list_of_schema(nat())}, {:ys, list_of_schema(nat())}]
+    )
+  end
+
   defp list_matcher(name) do
     MatcherInfo.new(:"#{name}.match_1", 1, 1, [
       %Alternative{constructor: :list_nil, num_fields: 0},
       %Alternative{constructor: :list_cons, num_fields: 2}
     ])
+  end
+
+  defp app(fun, arg1, arg2), do: fun |> Term.app(arg1) |> Term.app(arg2)
+  defp app(fun, arg1, arg2, arg3), do: fun |> Term.app(arg1) |> Term.app(arg2) |> Term.app(arg3)
+  defp nat, do: Term.const(:Nat)
+  defp zero, do: Term.const(:zero)
+  defp succ(term), do: Term.app(Term.const(:succ), term)
+  defp list_constant(name), do: Term.const(name, [1])
+  defp list_nil(type), do: Term.app(list_constant(:list_nil), type)
+  defp list_of_schema(type), do: Term.app(list_constant(:List), type)
+
+  defp list_cons_schema(type, head, tail) do
+    list_constant(:list_cons)
+    |> Term.app(type)
+    |> Term.app(head)
+    |> Term.app(tail)
   end
 
   defp list_cons(type, head, tail) do

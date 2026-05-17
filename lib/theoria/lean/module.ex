@@ -2,8 +2,10 @@ defmodule Theoria.Lean.Module do
   @moduledoc "Builds Lean oracle source files from encoded checks."
 
   alias Theoria.Elaborator
+  alias Theoria.Equation.{Info, Lemma}
   alias Theoria.Lean.Encode
   alias Theoria.Lean.MirrorPrelude
+  alias Theoria.Prelude
   alias Theoria.Term
   alias Theoria.Validation.Corpus
 
@@ -33,7 +35,8 @@ defmodule Theoria.Lean.Module do
   @doc "Builds a Lean module from Theoria's validation corpus."
   @spec from_validation(Corpus.t()) :: {:ok, t()} | {:error, term()}
   def from_validation(%Corpus{} = validation) do
-    with {:ok, module} <- add_theorem_modules(new(), validation.theorem_modules) do
+    with {:ok, module} <- add_theorem_modules(new(), validation.theorem_modules),
+         {:ok, module} <- add_equation_theorems(module, validation.categories) do
       {:ok, add_defeq_checks(module, validation.defeq_checks)}
     end
   end
@@ -80,6 +83,46 @@ defmodule Theoria.Lean.Module do
       end
     end)
   end
+
+  defp add_equation_theorems(module, categories) do
+    with {:ok, env} <- Prelude.env() do
+      env
+      |> generated_equation_lemmas(categories)
+      |> add_equation_lemma_theorems(env, module)
+    end
+  end
+
+  defp generated_equation_lemmas(env, categories) do
+    env
+    |> Info.all()
+    |> Enum.filter(&equation_category_enabled?(&1, categories))
+    |> Enum.flat_map(&Lemma.generated_for/1)
+  end
+
+  defp add_equation_lemma_theorems(lemmas, env, module) do
+    Enum.reduce_while(lemmas, {:ok, module}, fn lemma, {:ok, module} ->
+      add_equation_lemma_theorem(lemma, env, module)
+    end)
+  end
+
+  defp add_equation_lemma_theorem(lemma, env, module) do
+    case Lemma.to_theorem(env, lemma) do
+      {:ok, theorem} ->
+        {:cont,
+         {:ok, add_proof_check(module, "equation.#{theorem.name}", theorem.proof, theorem.type)}}
+
+      {:error, error} ->
+        {:halt, {:error, {:equation, lemma.name, error}}}
+    end
+  end
+
+  defp equation_category_enabled?(info, categories),
+    do: equation_category(info.name) in categories
+
+  defp equation_category(name) when name in [:bool_not, :bool_and, :bool_or], do: :bool
+  defp equation_category(:nat_add), do: :nat
+  defp equation_category(name) when name in [:list_length, :list_append], do: :list
+  defp equation_category(_name), do: :unknown
 
   defp add_defeq_checks(module, checks) do
     Enum.reduce(checks, module, fn check, module ->

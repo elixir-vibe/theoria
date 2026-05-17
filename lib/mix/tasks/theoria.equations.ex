@@ -5,8 +5,7 @@ defmodule Mix.Tasks.Theoria.Equations do
 
   use Mix.Task
 
-  alias Theoria.Equation.Info
-  alias Theoria.Equation.Lemma
+  alias Theoria.Equation.{Eqns, Info, Lemma}
   alias Theoria.Prelude
 
   @shortdoc "Lists and optionally installs generated equation lemmas"
@@ -75,7 +74,7 @@ defmodule Mix.Tasks.Theoria.Equations do
   defp install_equations(env, equations) do
     equations
     |> Enum.reduce_while({env, 0}, fn info, {env, count} ->
-      case Lemma.add_generated_to_env(env, info) do
+      case Eqns.install(env, info.name) do
         {:ok, env, theorems} -> {:cont, {env, count + length(theorems)}}
         {:error, reason} -> Mix.raise("failed to install #{info.name}: #{inspect(reason)}")
       end

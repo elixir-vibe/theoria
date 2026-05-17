@@ -114,7 +114,20 @@ defmodule Theoria.EquationTest do
 
     assert length(info.clauses) == 2
     assert info.matcher.name == :"list_append.match_1"
+    assert info.schema.family == :list
+    assert Enum.map(info.schema.equations, & &1.suffix) == [nil, :cons]
     assert Enum.map(info.matcher.alternatives, & &1.constructor) == [:list_nil, :list_cons]
+  end
+
+  test "equation lookup installs all generated theorems and builds rules" do
+    {:ok, env} = Prelude.env()
+
+    assert {:ok, rules} = Eqns.rules(env, :nat_add)
+    assert Enum.map(rules, & &1.name) == [:"nat_add.eq_zero", :"nat_add.eq_succ"]
+
+    assert {:ok, env, theorems} = Eqns.install_all(env)
+    assert length(theorems) == 16
+    assert Eqns.installed?(env, :list_append)
   end
 
   test "generated equation lemmas cover supported compiled definitions" do

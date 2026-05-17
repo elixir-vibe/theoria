@@ -49,91 +49,18 @@ defmodule Theoria.Equation.Lemma do
     new(theorem_name(definition_name, suffix), left, right, opts)
   end
 
-  @doc "Generates known equation lemmas for a supported compiled definition."
+  @doc "Generates equation lemmas from stored equation schema metadata."
   @spec generated_for(Info.t(), keyword()) :: [t()]
   def generated_for(info, opts \\ [])
 
-  def generated_for(%Info{name: :bool_not} = info, _opts) do
-    [
-      for_definition(info, true, app(:bool_not, bool_true()), bool_false()),
-      for_definition(info, false, app(:bool_not, bool_false()), bool_true())
-    ]
-  end
-
-  def generated_for(%Info{name: :bool_and} = info, _opts) do
-    [
-      for_definition(info, :true_true, app(:bool_and, bool_true(), bool_true()), bool_true()),
-      for_definition(info, :true_false, app(:bool_and, bool_true(), bool_false()), bool_false()),
-      for_definition(info, :false_true, app(:bool_and, bool_false(), bool_true()), bool_false()),
-      for_definition(info, :false_false, app(:bool_and, bool_false(), bool_false()), bool_false())
-    ]
-  end
-
-  def generated_for(%Info{name: :bool_or} = info, _opts) do
-    [
-      for_definition(info, :true_true, app(:bool_or, bool_true(), bool_true()), bool_true()),
-      for_definition(info, :true_false, app(:bool_or, bool_true(), bool_false()), bool_true()),
-      for_definition(info, :false_true, app(:bool_or, bool_false(), bool_true()), bool_true()),
-      for_definition(info, :false_false, app(:bool_or, bool_false(), bool_false()), bool_false())
-    ]
-  end
-
-  def generated_for(%Info{name: :nat_add} = info, _opts) do
-    n = Term.bvar(0)
-    m = Term.bvar(1)
-
-    [
-      for_definition(info, :zero, app(:nat_add, zero(), n), n,
-        binders: [{:n, nat()}],
-        equality_type: nat()
-      ),
-      for_definition(info, :succ, app(:nat_add, succ(m), n), succ(app(:nat_add, m, n)),
-        binders: [{:m, nat()}, {:n, nat()}],
-        equality_type: nat()
+  def generated_for(%Info{schema: %{equations: equations}} = info, _opts)
+      when is_list(equations) do
+    Enum.map(equations, fn equation ->
+      for_definition(info, equation.suffix, equation.left, equation.right,
+        binders: equation.binders,
+        equality_type: equation.equality_type
       )
-    ]
-  end
-
-  def generated_for(%Info{name: :list_length} = info, _opts) do
-    list_length = list_constant(:list_length)
-    x = Term.bvar(1)
-    xs = Term.bvar(0)
-
-    [
-      for_definition(info, nil, app_term(list_length, nat(), list_nil()), zero(),
-        equality_type: nat()
-      ),
-      for_definition(
-        info,
-        :cons,
-        app_term(list_length, nat(), list_cons(nat(), x, xs)),
-        succ(app_term(list_length, nat(), xs)),
-        binders: [{:x, nat()}, {:xs, list_nat()}],
-        equality_type: nat()
-      )
-    ]
-  end
-
-  def generated_for(%Info{name: :list_append} = info, _opts) do
-    list_append = list_constant(:list_append)
-    x = Term.bvar(2)
-    xs = Term.bvar(1)
-    ys = Term.bvar(0)
-
-    [
-      for_definition(info, nil, app_term(list_append, nat(), list_nil(), ys), ys,
-        binders: [{:ys, list_nat()}],
-        equality_type: list_nat()
-      ),
-      for_definition(
-        info,
-        :cons,
-        app_term(list_append, nat(), list_cons(nat(), x, xs), ys),
-        list_cons(nat(), x, app_term(list_append, nat(), xs, ys)),
-        binders: [{:x, nat()}, {:xs, list_nat()}, {:ys, list_nat()}],
-        equality_type: list_nat()
-      )
-    ]
+    end)
   end
 
   def generated_for(%Info{}, _opts), do: []
@@ -155,18 +82,9 @@ defmodule Theoria.Equation.Lemma do
     if lemmas == [] do
       {:error, {:unsupported_equation_definition, info.name}}
     else
-      add_all_to_env(env, lemmas, equality_type_for!(info), opts)
+      add_all_to_env(env, lemmas, opts)
     end
   end
-
-  @doc "Returns the equality type used by generated closed equation lemmas."
-  @spec equality_type_for!(Info.t()) :: Term.t()
-  def equality_type_for!(%Info{name: name}) when name in [:bool_not, :bool_and, :bool_or],
-    do: bool()
-
-  def equality_type_for!(%Info{name: :nat_add}), do: nat()
-  def equality_type_for!(%Info{name: :list_length}), do: nat()
-  def equality_type_for!(%Info{name: :list_append}), do: list_nat()
 
   @doc "Turns equation-lemma metadata into a native definitional-equality validation check."
   @spec defeq_check(t(), atom()) :: DefeqCheck.t()
@@ -210,11 +128,12 @@ defmodule Theoria.Equation.Lemma do
   end
 
   @doc "Kernel-checks and installs many equation lemmas as opaque theorem declarations."
-  @spec add_all_to_env(Env.t(), [t()], Term.t(), keyword()) ::
+  @spec add_all_to_env(Env.t(), [t()], Term.t() | keyword(), keyword()) ::
           {:ok, Env.t(), [Theorem.t()]} | {:error, Theoria.Error.t()}
-  def add_all_to_env(%Env{} = env, lemmas, equality_type, opts \\ []) when is_list(lemmas) do
+  def add_all_to_env(%Env{} = env, lemmas, equality_or_opts \\ [], opts \\ [])
+      when is_list(lemmas) do
     Enum.reduce_while(lemmas, {:ok, env, []}, fn lemma, {:ok, env, theorems} ->
-      case add_to_env(env, lemma, equality_type, opts) do
+      case add_to_env(env, lemma, equality_or_opts, opts) do
         {:ok, env, theorem} -> {:cont, {:ok, env, [theorem | theorems]}}
         {:error, error} -> {:halt, {:error, error}}
       end
@@ -245,30 +164,4 @@ defmodule Theoria.Equation.Lemma do
 
   defp suffix_name(nil), do: "nil"
   defp suffix_name(suffix), do: Atom.to_string(suffix)
-
-  defp app(name, arg), do: Term.app(Term.const(name), arg)
-  defp app(name, arg1, arg2), do: Term.const(name) |> Term.app(arg1) |> Term.app(arg2)
-
-  defp app_term(fun, arg1, arg2), do: fun |> Term.app(arg1) |> Term.app(arg2)
-
-  defp app_term(fun, arg1, arg2, arg3),
-    do: fun |> Term.app(arg1) |> Term.app(arg2) |> Term.app(arg3)
-
-  defp bool, do: Term.const(:Bool)
-  defp bool_true, do: Term.const(true)
-  defp bool_false, do: Term.const(false)
-  defp nat, do: Term.const(:Nat)
-  defp zero, do: Term.const(:zero)
-  defp succ(term), do: Term.app(Term.const(:succ), term)
-  defp list_nat, do: Term.app(list_constant(:List), nat())
-  defp list_nil, do: Term.app(list_constant(:list_nil), nat())
-
-  defp list_cons(type, head, tail) do
-    list_constant(:list_cons)
-    |> Term.app(type)
-    |> Term.app(head)
-    |> Term.app(tail)
-  end
-
-  defp list_constant(name), do: Term.const(name, [1])
 end

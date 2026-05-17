@@ -25,11 +25,11 @@ Theoria.Equation.Info.all(env)
 Theoria.Equation.Info.equation?(env, :nat_add)
 ```
 
-The metadata records the definition name, checked type/value, recursive argument position, fixed parameters, level parameters, original clause metadata, and Lean-shaped matcher alternatives.
+The metadata records the definition name, checked type/value, recursive argument position, fixed parameters, level parameters, original clause metadata, Lean-shaped matcher alternatives, and a schema that drives schematic theorem generation.
 
 ## Generated equation lemmas
 
-For the currently supported library definitions, Theoria can generate schematic equation-lemma metadata:
+For the currently supported library definitions, Theoria can generate schematic equation-lemma metadata from stored `Equation.Schema` entries:
 
 ```elixir
 {:ok, info} = Theoria.Equation.Info.fetch(env, :nat_add)
@@ -77,6 +77,17 @@ Theoria.Rewrite.Database.once(database, term)
 
 The rewrite layer is intentionally untrusted and first-order for now. It can match schematic equation-rule binders, but it does not produce proofs and does not replace kernel checking.
 
+## Simp groundwork
+
+`Theoria.Simp` is a tiny consumer of generated equation databases:
+
+```elixir
+Theoria.Simp.once(env, term)
+Theoria.Simp.normalize(env, term, max_steps: 100)
+```
+
+It repeatedly applies generated equation rewrite rules and returns the final term plus a trace. It is not a trusted simplifier yet.
+
 ## Mix tooling
 
 List equation metadata and generated lemma names:
@@ -103,4 +114,4 @@ The verbose form prints generated lemma names under each stored equation definit
 
 ## Limitations
 
-The current generator is deliberately small. It emits schematic equation lemmas for the built-in Bool/Nat/List definitions and stores basic matcher metadata, but the theorem generation is still specialized to those definitions. It is not yet Lean's full equation theorem machinery: there is no public equation syntax, no general matcher equation generation, no structural recursion checker, no `brecOn`/below dictionaries, no simp database, and no proof-producing rewrite tactic.
+The current generator is deliberately small. It emits schematic equation lemmas from schemas for the built-in Bool/Nat/List definitions and stores basic matcher metadata. It is not yet Lean's full equation theorem machinery: there is no public equation syntax, no general structural recursion checker, no `brecOn`/below dictionaries, no attribute/prioritized simp database, and no proof-producing rewrite tactic.

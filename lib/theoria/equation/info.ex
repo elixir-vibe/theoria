@@ -3,7 +3,7 @@ defmodule Theoria.Equation.Info do
 
   alias Theoria.Env
   alias Theoria.Env.Constant
-  alias Theoria.Equation.{Clause, FixedParams, MatcherInfo}
+  alias Theoria.Equation.{Clause, FixedParams, MatcherInfo, Schema}
   alias Theoria.Term
 
   @enforce_keys [:name, :type, :value]
@@ -16,7 +16,8 @@ defmodule Theoria.Equation.Info do
     decl_names: [],
     fixed_params: FixedParams.new(),
     clauses: [],
-    matcher: nil
+    matcher: nil,
+    schema: nil
   ]
 
   @type t :: %__MODULE__{
@@ -28,7 +29,8 @@ defmodule Theoria.Equation.Info do
           decl_names: [atom()],
           fixed_params: FixedParams.t(),
           clauses: [Clause.t()],
-          matcher: MatcherInfo.t() | nil
+          matcher: MatcherInfo.t() | nil,
+          schema: Schema.t() | nil
         }
 
   @doc "Builds equation metadata for a compiled definition."
@@ -43,7 +45,8 @@ defmodule Theoria.Equation.Info do
       decl_names: Keyword.get(opts, :decl_names, [name]),
       fixed_params: Keyword.get(opts, :fixed_params, FixedParams.new()),
       clauses: Keyword.get(opts, :clauses, []),
-      matcher: Keyword.get(opts, :matcher)
+      matcher: Keyword.get(opts, :matcher),
+      schema: Keyword.get(opts, :schema)
     }
   end
 
@@ -112,7 +115,8 @@ defmodule Theoria.Equation.Info do
            decl_names: Keyword.get(opts, :decl_names, [name]),
            fixed_params: Keyword.get(opts, :fixed_params, FixedParams.new()),
            clauses: Keyword.get(opts, :clauses, []),
-           matcher: Keyword.get(opts, :matcher)
+           matcher: Keyword.get(opts, :matcher),
+           schema: Keyword.get(opts, :schema)
          )}
 
       :error ->

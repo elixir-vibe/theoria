@@ -8,7 +8,18 @@ defmodule Theoria.Library.Bool do
 
   alias Theoria.Env
   alias Theoria.Equation
-  alias Theoria.Equation.{Clause, Context, Definition, FixedParams, Info, MatcherInfo, Pattern}
+
+  alias Theoria.Equation.{
+    Clause,
+    Context,
+    Definition,
+    FixedParams,
+    Info,
+    MatcherInfo,
+    Pattern,
+    Schema
+  }
+
   alias Theoria.Equation.MatcherInfo.Alternative
   alias Theoria.Inductive.Generate
   alias Theoria.Inductive.Spec
@@ -110,7 +121,8 @@ defmodule Theoria.Library.Bool do
         rec_arg_pos: rec_arg_pos,
         fixed_params: FixedParams.new(),
         clauses: Keyword.get(opts, :clauses, []),
-        matcher: Keyword.get(opts, :matcher)
+        matcher: Keyword.get(opts, :matcher),
+        schema: bool_schema(name)
       )
 
     Kernel.add_definition(env, name, type, value, [], metadata: metadata)
@@ -137,12 +149,95 @@ defmodule Theoria.Library.Bool do
     ]
   end
 
+  defp bool_schema(:bool_not) do
+    Schema.new(
+      :bool,
+      [
+        Schema.equation(true, bool_app(:bool_not, bool_true()), bool_false(), bool()),
+        Schema.equation(false, bool_app(:bool_not, bool_false()), bool_true(), bool())
+      ],
+      recursive_argument: 0,
+      argument_binders: [{:b, bool()}]
+    )
+  end
+
+  defp bool_schema(:bool_and) do
+    Schema.new(
+      :bool,
+      [
+        Schema.equation(
+          :true_true,
+          bool_app(:bool_and, bool_true(), bool_true()),
+          bool_true(),
+          bool()
+        ),
+        Schema.equation(
+          :true_false,
+          bool_app(:bool_and, bool_true(), bool_false()),
+          bool_false(),
+          bool()
+        ),
+        Schema.equation(
+          :false_true,
+          bool_app(:bool_and, bool_false(), bool_true()),
+          bool_false(),
+          bool()
+        ),
+        Schema.equation(
+          :false_false,
+          bool_app(:bool_and, bool_false(), bool_false()),
+          bool_false(),
+          bool()
+        )
+      ],
+      recursive_argument: 0,
+      argument_binders: [{:a, bool()}, {:b, bool()}]
+    )
+  end
+
+  defp bool_schema(:bool_or) do
+    Schema.new(
+      :bool,
+      [
+        Schema.equation(
+          :true_true,
+          bool_app(:bool_or, bool_true(), bool_true()),
+          bool_true(),
+          bool()
+        ),
+        Schema.equation(
+          :true_false,
+          bool_app(:bool_or, bool_true(), bool_false()),
+          bool_true(),
+          bool()
+        ),
+        Schema.equation(
+          :false_true,
+          bool_app(:bool_or, bool_false(), bool_true()),
+          bool_true(),
+          bool()
+        ),
+        Schema.equation(
+          :false_false,
+          bool_app(:bool_or, bool_false(), bool_false()),
+          bool_false(),
+          bool()
+        )
+      ],
+      recursive_argument: 0,
+      argument_binders: [{:a, bool()}, {:b, bool()}]
+    )
+  end
+
   defp bool_matcher(name) do
     MatcherInfo.new(:"#{name}.match_1", 0, 1, [
       %Alternative{constructor: true, num_fields: 0},
       %Alternative{constructor: false, num_fields: 0}
     ])
   end
+
+  defp bool_app(name, arg), do: Term.app(Term.const(name), arg)
+  defp bool_app(name, arg1, arg2), do: Term.const(name) |> Term.app(arg1) |> Term.app(arg2)
 
   defp bool, do: Term.const(:Bool)
   defp bool_true, do: Term.const(true)

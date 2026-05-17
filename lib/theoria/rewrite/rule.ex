@@ -26,11 +26,19 @@ defmodule Theoria.Rewrite.Rule do
   end
 
   @doc "Builds a rewrite rule from equation-lemma metadata."
-  @spec from_lemma(Lemma.t(), Term.t(), keyword()) :: t()
-  def from_lemma(%Lemma{} = lemma, equality_type, opts \\ []) do
+  @spec from_lemma(Lemma.t(), Term.t() | keyword(), keyword()) :: t()
+  def from_lemma(%Lemma{} = lemma, equality_or_opts \\ [], opts \\ []) do
+    {equality_type, opts} = equality_type_and_opts(lemma, equality_or_opts, opts)
+
     new(lemma.name, Term.eq(equality_type, lemma.left, lemma.right),
       binders: lemma.binders,
       direction: Keyword.get(opts, :direction, :forward)
     )
   end
+
+  defp equality_type_and_opts(%Lemma{} = lemma, opts, []) when is_list(opts) do
+    {lemma.equality_type || Keyword.fetch!(opts, :equality_type), opts}
+  end
+
+  defp equality_type_and_opts(_lemma, equality_type, opts), do: {equality_type, opts}
 end

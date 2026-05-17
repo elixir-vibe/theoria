@@ -15,7 +15,7 @@ defmodule Mix.Tasks.Theoria.CheckTest do
 
     assert output =~ "Validating Theoria corpus"
     assert output =~ "✓ theorem modules: 53 theorem(s)"
-    assert output =~ "✓ defeq checks: 53 check(s)"
+    assert output =~ "✓ defeq checks: 57 check(s)"
     assert output =~ "✓ inductive specs: 4 check(s)"
   end
 

@@ -71,6 +71,20 @@ defmodule Theoria.Library.List.Validation do
         singleton
       )
 
+    {:ok, compiled_append_nil} =
+      Equation.compile_list(
+        nat,
+        nat_list,
+        [
+          Clause.new([Pattern.constructor(:list_nil)], singleton),
+          Clause.new(
+            [Pattern.constructor(:list_cons, [Pattern.var(:head), Pattern.var(:tail)])],
+            fn ctx -> list_cons(ctx.a, ctx.head, ctx.ih) end
+          )
+        ],
+        empty
+      )
+
     [
       DefeqCheck.new(
         :list,
@@ -83,6 +97,12 @@ defmodule Theoria.Library.List.Validation do
         "equation_list_append_singleton",
         compiled_append_singleton,
         pair
+      ),
+      DefeqCheck.new(
+        :list,
+        "equation_list_append_nil",
+        compiled_append_nil,
+        singleton
       ),
       DefeqCheck.new(
         :list,

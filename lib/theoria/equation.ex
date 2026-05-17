@@ -16,6 +16,7 @@ defmodule Theoria.Equation do
   defdelegate list(element_type, motive, nil_case, cons_case, major), to: Recursors
   defdelegate list(element_type, motive, nil_case, cons_case, major, levels), to: Recursors
 
+  defdelegate compile(kind, motive, clauses, major), to: Compiler
   defdelegate compile_bool(motive, clauses, major), to: Compiler
   defdelegate compile_nat(motive, clauses, major), to: Compiler
   defdelegate compile_list(element_type, motive, clauses, major), to: Compiler

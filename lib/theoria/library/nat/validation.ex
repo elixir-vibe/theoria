@@ -31,18 +31,16 @@ defmodule Theoria.Library.Nat.Validation do
     one = Term.app(Term.const(:succ), zero)
     two = Term.app(Term.const(:succ), one)
 
-    {:ok, compiled_succ} =
-      Equation.compile_nat(
-        nat,
-        [
-          Clause.new([Pattern.constructor(:zero)], zero),
-          Clause.new(
-            [Pattern.constructor(:succ, [Pattern.var(:n)])],
-            Term.app(Term.const(:succ), Term.bvar(0))
-          )
-        ],
-        one
+    add_clauses = [
+      Clause.new([Pattern.constructor(:zero)], zero),
+      Clause.new(
+        [Pattern.constructor(:succ, [Pattern.var(:n)])],
+        fn ctx -> Term.app(Term.const(:succ), ctx.ih) end
       )
+    ]
+
+    {:ok, compiled_succ} = Equation.compile_nat(nat, add_clauses, one)
+    {:ok, compiled_add_two_zero} = Equation.compile_nat(nat, add_clauses, two)
 
     [
       DefeqCheck.new(
@@ -50,6 +48,12 @@ defmodule Theoria.Library.Nat.Validation do
         "equation_nat_succ",
         compiled_succ,
         one
+      ),
+      DefeqCheck.new(
+        :nat,
+        "equation_nat_add_two_zero",
+        compiled_add_two_zero,
+        two
       ),
       DefeqCheck.new(
         :nat,

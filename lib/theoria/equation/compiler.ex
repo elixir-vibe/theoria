@@ -1,22 +1,39 @@
 defmodule Theoria.Equation.Compiler do
   @moduledoc "Constructor-equation compiler for the initial Bool/Nat/List fragment."
 
+  alias Theoria.Equation.Branch
   alias Theoria.Equation.Clause
-  alias Theoria.Equation.Pattern.{Constructor, Var, Wildcard}
+  alias Theoria.Equation.Context
+  alias Theoria.Equation.Pattern.Constructor
   alias Theoria.Equation.Recursors
+  alias Theoria.Equation.Validator
   alias Theoria.Level
   alias Theoria.Term
 
   @type result :: {:ok, Term.t()} | {:error, term()}
+
+  @doc "Compiles a supported constructor-equation fragment."
+  @spec compile(
+          :bool | :nat | {:list, Term.t(), [Level.t() | non_neg_integer()]},
+          Term.t(),
+          [Clause.t()],
+          Term.t()
+        ) ::
+          result()
+  def compile(:bool, motive, clauses, major), do: compile_bool(motive, clauses, major)
+  def compile(:nat, motive, clauses, major), do: compile_nat(motive, clauses, major)
+
+  def compile({:list, element_type, levels}, motive, clauses, major),
+    do: compile_list(element_type, motive, clauses, major, levels)
 
   @doc "Compiles Bool constructor clauses to a Bool recursor application."
   @spec compile_bool(Term.t(), [Clause.t()], Term.t()) :: result()
   def compile_bool(motive, clauses, major) do
     expected = %{true => 0, false => 0}
 
-    with :ok <- validate_clauses(clauses, expected),
-         {:ok, on_true} <- constructor_body(clauses, true, %{}),
-         {:ok, on_false} <- constructor_body(clauses, false, %{}) do
+    with :ok <- Validator.validate_clauses(clauses, expected),
+         {:ok, on_true} <- constructor_body(clauses, true, Context.new()),
+         {:ok, on_false} <- constructor_body(clauses, false, Context.new()) do
       {:ok, Recursors.bool(motive, on_true, on_false, major)}
     end
   end
@@ -26,10 +43,10 @@ defmodule Theoria.Equation.Compiler do
   def compile_nat(motive, clauses, major) do
     expected = %{zero: 0, succ: 1}
 
-    with :ok <- validate_clauses(clauses, expected),
-         {:ok, zero_case} <- constructor_body(clauses, :zero, %{}),
+    with :ok <- Validator.validate_clauses(clauses, expected),
+         {:ok, zero_case} <- constructor_body(clauses, :zero, Context.new()),
          {:ok, succ_clause} <- constructor_clause(clauses, :succ) do
-      {:ok, Recursors.nat(motive, zero_case, materialize_nat_succ(succ_clause), major)}
+      {:ok, Recursors.nat(motive, zero_case, nat_succ_case(succ_clause), major)}
     end
   end
 
@@ -39,102 +56,24 @@ defmodule Theoria.Equation.Compiler do
   def compile_list(element_type, motive, clauses, major, levels \\ [1, 1]) do
     expected = %{list_nil: 0, list_cons: 2}
 
-    with :ok <- validate_clauses(clauses, expected),
-         {:ok, nil_case} <- constructor_body(clauses, :list_nil, %{}),
+    with :ok <- Validator.validate_clauses(clauses, expected),
+         {:ok, nil_case} <- constructor_body(clauses, :list_nil, Context.new()),
          {:ok, cons_clause} <- constructor_clause(clauses, :list_cons) do
       {:ok,
        Recursors.list(
          element_type,
          motive,
          nil_case,
-         materialize_list_cons(cons_clause, element_type, motive),
+         list_cons_case(cons_clause, element_type, motive),
          major,
          levels
        )}
     end
   end
 
-  defp validate_clauses(clauses, expected) do
-    Enum.reduce_while(clauses, MapSet.new(), &validate_clause(&1, &2, expected))
-    |> case do
-      {:error, _reason} = error -> error
-      seen -> validate_coverage(seen, expected)
-    end
-  end
-
-  defp validate_clause(%Clause{patterns: [%Constructor{name: name, args: args}]}, seen, expected) do
-    cond do
-      not Map.has_key?(expected, name) ->
-        {:halt, {:error, {:unexpected_clause, name}}}
-
-      MapSet.member?(seen, name) ->
-        {:halt, {:error, {:duplicate_clause, name}}}
-
-      arity_mismatch?(args, expected, name) ->
-        expected_arity = Map.fetch!(expected, name)
-        actual_arity = length(args)
-
-        {:halt,
-         {:error,
-          {:constructor_arity_mismatch, name, [expected: expected_arity, actual: actual_arity]}}}
-
-      true ->
-        case validate_patterns(args, MapSet.new()) do
-          :ok -> {:cont, MapSet.put(seen, name)}
-          {:error, reason} -> {:halt, {:error, reason}}
-        end
-    end
-  end
-
-  defp validate_clause(_clause, _seen, _expected), do: {:halt, {:error, :invalid_clause}}
-
-  defp validate_patterns(patterns, seen) do
-    patterns
-    |> validate_pattern_list(seen)
-    |> case do
-      {:ok, _seen} -> :ok
-      {:error, _reason} = error -> error
-    end
-  end
-
-  defp validate_pattern(%Wildcard{}, seen), do: {:ok, seen}
-
-  defp validate_pattern(%Var{name: name}, seen) do
-    if MapSet.member?(seen, name) do
-      {:error, {:duplicate_pattern_variable, name}}
-    else
-      {:ok, MapSet.put(seen, name)}
-    end
-  end
-
-  defp validate_pattern(%Constructor{args: args}, seen), do: validate_pattern_list(args, seen)
-
-  defp validate_pattern(other, _seen), do: {:error, {:invalid_pattern, other}}
-
-  defp validate_pattern_list(patterns, seen) do
-    Enum.reduce_while(patterns, {:ok, seen}, fn pattern, {:ok, seen} ->
-      case validate_pattern(pattern, seen) do
-        {:ok, seen} -> {:cont, {:ok, seen}}
-        {:error, reason} -> {:halt, {:error, reason}}
-      end
-    end)
-  end
-
-  defp arity_mismatch?(args, expected, name), do: length(args) != Map.fetch!(expected, name)
-
-  defp validate_coverage(seen, expected) do
-    expected
-    |> Map.keys()
-    |> Enum.find(&(&1 not in seen))
-    |> case do
-      nil -> :ok
-      missing -> {:error, {:missing_clause, missing}}
-    end
-  end
-
   defp constructor_body(clauses, constructor, context) do
     with {:ok, %Clause{} = clause} <- constructor_clause(clauses, constructor) do
-      {:ok, materialize_body(clause.body, context)}
+      {:ok, Clause.materialize(clause, context)}
     end
   end
 
@@ -150,57 +89,23 @@ defmodule Theoria.Equation.Compiler do
   defp constructor_clause?(%Clause{patterns: [%Constructor{name: name}]}, name), do: true
   defp constructor_clause?(_clause, _constructor), do: false
 
-  defp materialize_body(body, context) when is_function(body, 1), do: body.(context)
-  defp materialize_body(body, _context), do: body
+  defp nat_succ_case(%Clause{body: %Term.Lam{} = body}), do: body
 
-  defp materialize_nat_succ(%Clause{body: %Term.Lam{} = body}), do: body
+  defp nat_succ_case(%Clause{} = clause) do
+    branch = Branch.nat_succ(clause)
 
-  defp materialize_nat_succ(%Clause{} = clause) do
-    pred_name = branch_name(clause, 0, :pred)
-    binders = [{pred_name, Term.const(:Nat)}, {:ih, Term.const(:Nat)}]
-    body = materialize_body(clause.body, branch_context(binders))
-    wrap_lambdas(binders, body)
+    clause
+    |> Clause.materialize(branch.context)
+    |> then(&Branch.wrap(branch, &1))
   end
 
-  defp materialize_list_cons(%Clause{body: %Term.Lam{} = body}, _element_type, _motive), do: body
+  defp list_cons_case(%Clause{body: %Term.Lam{} = body}, _element_type, _motive), do: body
 
-  defp materialize_list_cons(%Clause{} = clause, element_type, motive) do
-    head_name = branch_name(clause, 0, :head)
-    tail_name = branch_name(clause, 1, :tail)
-    tail_type = Term.app(Term.const(:List, [Level.param(:u)]), Term.shift(element_type, 1))
-    ih_type = Term.shift(motive, 2)
+  defp list_cons_case(%Clause{} = clause, element_type, motive) do
+    branch = Branch.list_cons(clause, element_type, motive)
 
-    binders = [{head_name, element_type}, {tail_name, tail_type}, {:ih, ih_type}]
-
-    context =
-      Map.merge(branch_context(binders), %{
-        a: Term.shift(element_type, 3),
-        element_type: Term.shift(element_type, 3)
-      })
-
-    clause.body
-    |> materialize_body(context)
-    |> then(&wrap_lambdas(binders, &1))
-  end
-
-  defp branch_name(%Clause{patterns: [%Constructor{args: args}]}, index, fallback) do
-    case Enum.at(args, index) do
-      %Var{name: name} -> name
-      _pattern -> fallback
-    end
-  end
-
-  defp branch_context(binders) do
-    binders
-    |> Enum.map(&elem(&1, 0))
-    |> Enum.reverse()
-    |> Enum.with_index()
-    |> Map.new(fn {name, index} -> {name, Term.bvar(index)} end)
-  end
-
-  defp wrap_lambdas(binders, body) do
-    binders
-    |> Enum.reverse()
-    |> Enum.reduce(body, fn {name, type}, body -> Term.lam(name, type, body) end)
+    clause
+    |> Clause.materialize(branch.context)
+    |> then(&Branch.wrap(branch, &1))
   end
 end

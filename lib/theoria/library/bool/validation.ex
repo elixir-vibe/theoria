@@ -32,12 +32,44 @@ defmodule Theoria.Library.Bool.Validation do
         bool_true
       )
 
+    {:ok, compiled_and_true_false} =
+      Equation.compile_bool(
+        bool,
+        [
+          Clause.new([Pattern.constructor(true)], bool_false),
+          Clause.new([Pattern.constructor(false)], bool_false)
+        ],
+        bool_true
+      )
+
+    {:ok, compiled_or_false_true} =
+      Equation.compile_bool(
+        bool,
+        [
+          Clause.new([Pattern.constructor(true)], bool_true),
+          Clause.new([Pattern.constructor(false)], bool_true)
+        ],
+        bool_false
+      )
+
     [
       DefeqCheck.new(
         :bool,
         "equation_bool_not_true",
         compiled_not_true,
         bool_false
+      ),
+      DefeqCheck.new(
+        :bool,
+        "equation_bool_and_true_false",
+        compiled_and_true_false,
+        bool_false
+      ),
+      DefeqCheck.new(
+        :bool,
+        "equation_bool_or_false_true",
+        compiled_or_false_true,
+        bool_true
       ),
       DefeqCheck.new(
         :bool,

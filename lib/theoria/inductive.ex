@@ -82,7 +82,7 @@ defmodule Theoria.Inductive do
 
   @spec complete(Spec.t()) :: {:ok, Spec.t()} | {:error, Error.t()}
   def complete(%Spec{recursors: []} = spec) do
-    case Generate.eliminators(spec) do
+    case generated_eliminators(spec) do
       {:ok, recursors} -> {:ok, %Spec{spec | recursors: recursors}}
       {:error, %Error{details: [problem: :unknown_shape]}} -> invalid(:unknown_inductive_shape)
       {:error, error} -> {:error, error}
@@ -91,6 +91,9 @@ defmodule Theoria.Inductive do
 
   def complete(%Spec{} = spec), do: {:ok, spec}
   def complete(_spec), do: invalid(:invalid_spec)
+
+  defp generated_eliminators(%Spec{indices: []} = spec), do: Generate.eliminators(spec)
+  defp generated_eliminators(%Spec{} = spec), do: Generate.indexed_eliminators(spec)
 
   @spec verify_env(Env.t(), Spec.t()) :: validation_result()
   def verify_env(%Env{} = env, %Spec{} = spec) do
@@ -195,12 +198,15 @@ defmodule Theoria.Inductive do
     %Declaration{
       name: name,
       type: type,
-      kind: :recursor,
+      kind: recursor_kind(reduction),
       universe_params: declaration_params(spec, type),
       reduction: reduction,
       metadata: recursor_metadata(spec, name, type, reduction)
     }
   end
+
+  defp recursor_kind(nil), do: :constant
+  defp recursor_kind(_reduction), do: :recursor
 
   defp inductive_metadata(%Spec{} = spec) do
     %EnvInductive{
@@ -651,7 +657,7 @@ defmodule Theoria.Inductive do
 
   defp validate_recursor_reductions(recursors) do
     Enum.reduce_while(recursors, :ok, fn recursor, :ok ->
-      if Reduction.known?(recursor.reduction) do
+      if is_nil(recursor.reduction) or Reduction.known?(recursor.reduction) do
         {:cont, :ok}
       else
         {:halt, invalid(:invalid_reduction, recursor: recursor.name)}

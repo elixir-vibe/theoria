@@ -50,6 +50,25 @@ defmodule Theoria.Inductive.Generate do
   @spec unsupported_reason(Spec.t()) :: atom() | nil
   def unsupported_reason(%Spec{} = spec), do: capabilities(spec).reason
 
+  @doc "Generates opaque indexed eliminators without iota rules."
+  @spec indexed_eliminators(Spec.t()) :: {:ok, [Recursor.t()]} | {:error, Error.t()}
+  def indexed_eliminators(%Spec{indices: []}), do: invalid(:not_indexed)
+
+  def indexed_eliminators(%Spec{} = spec) do
+    with {:ok, type} <- indexed_induction_type(spec) do
+      {:ok,
+       [
+         %Recursor{
+           name: String.to_atom("#{base_name(spec.name)}_ind"),
+           type: type,
+           reduction: nil
+         }
+       ]}
+    end
+  end
+
+  def indexed_eliminators(_spec), do: invalid(:invalid_spec)
+
   @doc "Generates the dependent eliminator type for an indexed inductive without iota rules."
   @spec indexed_induction_type(Spec.t()) :: {:ok, Term.t()} | {:error, Error.t()}
   def indexed_induction_type(%Spec{indices: []}), do: invalid(:not_indexed)
@@ -461,8 +480,10 @@ defmodule Theoria.Inductive.Generate do
       previous_arguments = result.binders |> Enum.drop(parameter_count) |> Enum.take(index)
 
       context =
-        Enum.map(previous_arguments, &argument_name(&1.name, &1.depth - parameter_count)) ++
-          Enum.map(result.binders |> Enum.take(parameter_count), & &1.name)
+        (previous_arguments
+         |> Enum.map(&argument_name(&1.name, &1.depth - parameter_count))
+         |> Enum.reverse()) ++
+          (result.binders |> Enum.take(parameter_count) |> Enum.map(& &1.name) |> Enum.reverse())
 
       Map.merge(binder, %{name: name, position: binder.depth, context: context})
     end)

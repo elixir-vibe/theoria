@@ -82,6 +82,13 @@ defmodule Theoria.Inductive.GenerateTest do
     assert Generate.unsupported_reason(vec_spec()) == :indexed_eliminators_unsupported
   end
 
+  test "generates opaque indexed eliminators" do
+    assert {:ok, [%Theoria.Inductive.Recursor{name: :vec_ind, reduction: nil, type: type}]} =
+             Generate.indexed_eliminators(vec_spec())
+
+    assert Theoria.Term.well_scoped?(type)
+  end
+
   test "generic eliminators reject unsupported specs" do
     assert {:error, indexed_error} = Generate.eliminators(vec_spec())
     assert indexed_error.reason == :invalid_inductive

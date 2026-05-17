@@ -63,10 +63,25 @@ defmodule Theoria.Inductive.IndexTest do
     assert inspect(type) =~ "vec_cons"
   end
 
-  test "completion rejects indexed eliminators explicitly" do
-    assert {:error, error} = Inductive.complete(vec_spec())
-    assert error.reason == :invalid_inductive
-    assert Keyword.fetch!(error.details, :problem) == :indexed_eliminators_unsupported
+  test "completion generates opaque indexed eliminators" do
+    assert {:ok, completed} = Inductive.complete(vec_spec())
+
+    assert [%Theoria.Inductive.Recursor{name: :vec_ind, reduction: nil, type: type}] =
+             completed.recursors
+
+    assert Term.well_scoped?(type)
+  end
+
+  test "installs Vec with generated opaque indexed eliminator" do
+    {:ok, spec} = Inductive.complete(vec_spec())
+    {:ok, env} = Nat.env()
+
+    assert {:ok, env} = Theoria.Kernel.add_inductive(env, spec)
+    assert {:ok, constant} = Env.fetch(env, :vec_ind)
+    assert constant.kind == :constant
+    assert constant.reduction == nil
+    assert constant.metadata == nil
+    assert {:ok, %Theoria.Term.Sort{}} = Theoria.Kernel.infer(env, constant.type)
   end
 
   test "environment-backed checks reject missing dependencies" do

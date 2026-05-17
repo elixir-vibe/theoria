@@ -7,6 +7,6 @@ defmodule Theoria.Inductive.Recursor do
   @type t :: %__MODULE__{
           name: atom(),
           type: Theoria.Term.t(),
-          reduction: Theoria.Env.Reduction.t()
+          reduction: Theoria.Env.Reduction.t() | nil
         }
 end

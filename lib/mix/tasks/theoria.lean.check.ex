@@ -70,6 +70,9 @@ defmodule Mix.Tasks.Theoria.Lean.Check do
     end
   end
 
+  @doc false
+  def __parse_args__(args), do: parse_args(args)
+
   defp parse_args(args) do
     {opts, _argv, invalid} =
       OptionParser.parse(args, strict: [path: :string, lean: :string, only: :keep])

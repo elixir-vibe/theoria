@@ -1,45 +1,28 @@
 defmodule Theoria.Lean.Corpus do
-  @moduledoc "Collects contributor oracle checks from Theoria theorem modules and fixtures."
+  @moduledoc "Thin adapter from Theoria's validation corpus to Lean oracle modules."
 
   alias Theoria.Elaborator
   alias Theoria.Lean.Module, as: LeanModule
-  alias Theoria.Term
+  alias Theoria.Validation.Corpus, as: ValidationCorpus
 
-  @theorem_modules %{
-    equality: Theoria.Library.Equality.Theorems,
-    bool: Theoria.Library.Bool.Theorems,
-    nat: Theoria.Library.Nat.Theorems,
-    list: Theoria.Library.List.Theorems,
-    vec: Theoria.Library.Vec.Theorems
-  }
-
-  @builtin_categories [:equality, :bool, :nat, :list, :vec]
-  @valid_categories @builtin_categories ++ [:defeq]
-
-  @doc "Returns theorem modules included in the initial Lean oracle corpus."
+  @doc "Returns theorem modules included in the default validation corpus."
   @spec builtin_theorem_modules() :: [module()]
-  def builtin_theorem_modules,
-    do: Enum.map(@builtin_categories, &Map.fetch!(@theorem_modules, &1))
+  def builtin_theorem_modules, do: ValidationCorpus.builtin_theorem_modules()
 
   @doc "Returns valid `--only` corpus categories."
   @spec valid_categories() :: [atom()]
-  def valid_categories, do: @valid_categories
+  def valid_categories, do: ValidationCorpus.valid_categories()
 
-  @doc "Builds the initial Lean oracle module."
+  @doc "Builds the Lean oracle module from Theoria's validation corpus."
   @spec build(keyword()) :: {:ok, LeanModule.t(), LeanModule.stats()} | {:error, term()}
   def build(opts \\ []) do
-    categories = Keyword.get(opts, :only) || @valid_categories
-    theorem_categories = Enum.filter(categories, &(&1 != :defeq))
+    validation = ValidationCorpus.build(opts)
 
     with {:ok, module, _proof_count} <-
-           add_theorem_modules(LeanModule.new(), theorem_modules(theorem_categories)) do
-      module = maybe_add_defeq_fixtures(module, categories)
+           add_theorem_modules(LeanModule.new(), validation.theorem_modules) do
+      module = add_defeq_checks(module, validation.defeq_checks)
       {:ok, module, LeanModule.stats(module)}
     end
-  end
-
-  defp theorem_modules(categories) do
-    Enum.map(categories, &Map.fetch!(@theorem_modules, &1))
   end
 
   defp add_theorem_modules(module, theorem_modules) do
@@ -71,164 +54,9 @@ defmodule Theoria.Lean.Corpus do
     end)
   end
 
-  defp maybe_add_defeq_fixtures(module, categories) do
-    if :defeq in categories do
-      add_defeq_fixtures(module)
-    else
-      module
-    end
-  end
-
-  defp add_defeq_fixtures(module) do
-    Enum.reduce(defeq_fixtures(), module, fn {_category, name, left, right}, module ->
-      LeanModule.add_defeq_check(module, name, left, right)
+  defp add_defeq_checks(module, checks) do
+    Enum.reduce(checks, module, fn check, module ->
+      LeanModule.add_defeq_check(module, check.name, check.left, check.right)
     end)
-  end
-
-  defp defeq_fixtures do
-    bool = Term.const(:Bool)
-    nat = Term.const(:Nat)
-    type = Term.sort(1)
-    var = Term.bvar(0)
-    bool_true = Term.const(true)
-    bool_false = Term.const(false)
-    zero = Term.const(:zero)
-    succ = Term.const(:succ)
-    one = Term.app(succ, zero)
-    two = Term.app(succ, one)
-    nat_list = Term.app(Term.const(:List), nat)
-    nil_nat = Term.app(Term.const(:list_nil), nat)
-    vec_nil_nat = Term.app(Term.const(:vec_nil), nat)
-
-    vec_singleton_zero =
-      Term.const(:vec_cons)
-      |> Term.app(nat)
-      |> Term.app(zero)
-      |> Term.app(zero)
-      |> Term.app(vec_nil_nat)
-
-    singleton_zero =
-      Term.const(:list_cons) |> Term.app(nat) |> Term.app(zero) |> Term.app(nil_nat)
-
-    [
-      {:defeq, "beta_identity", Term.app(Term.lam(:x, type, var), nat), nat},
-      {:defeq, "zeta_identity", Term.let(:x, type, nat, var), nat},
-      {:bool, "bool_not_true", Term.app(Term.const(:bool_not), bool_true), bool_false},
-      {:bool, "bool_not_false", Term.app(Term.const(:bool_not), bool_false), bool_true},
-      {:bool, "bool_and_true_false",
-       Term.const(:bool_and) |> Term.app(bool_true) |> Term.app(bool_false), bool_false},
-      {:bool, "bool_or_false_true",
-       Term.const(:bool_or) |> Term.app(bool_false) |> Term.app(bool_true), bool_true},
-      {:bool, "bool_rec_true",
-       Term.const(:bool_rec)
-       |> Term.app(bool)
-       |> Term.app(bool_true)
-       |> Term.app(bool_false)
-       |> Term.app(bool_true), bool_true},
-      {:bool, "bool_rec_false",
-       Term.const(:bool_rec)
-       |> Term.app(bool)
-       |> Term.app(bool_true)
-       |> Term.app(bool_false)
-       |> Term.app(bool_false), bool_false},
-      {:nat, "nat_rec_zero",
-       Term.const(:nat_rec)
-       |> Term.app(nat)
-       |> Term.app(zero)
-       |> Term.app(nat_succ_case())
-       |> Term.app(zero), zero},
-      {:nat, "nat_rec_succ",
-       Term.const(:nat_rec)
-       |> Term.app(nat)
-       |> Term.app(zero)
-       |> Term.app(nat_succ_case())
-       |> Term.app(one), one},
-      {:nat, "nat_add_one_zero", Term.const(:nat_add) |> Term.app(one) |> Term.app(zero), one},
-      {:nat, "nat_add_two_zero", Term.const(:nat_add) |> Term.app(two) |> Term.app(zero), two},
-      {:list, "list_length_nil", Term.const(:list_length) |> Term.app(nat) |> Term.app(nil_nat),
-       zero},
-      {:list, "list_length_singleton",
-       Term.const(:list_length) |> Term.app(nat) |> Term.app(singleton_zero), one},
-      {:list, "list_rec_nil",
-       Term.const(:list_rec)
-       |> Term.app(nat)
-       |> Term.app(nat)
-       |> Term.app(zero)
-       |> Term.app(list_succ_case(nat_list))
-       |> Term.app(nil_nat), zero},
-      {:list, "list_rec_cons",
-       Term.const(:list_rec)
-       |> Term.app(nat)
-       |> Term.app(nat)
-       |> Term.app(zero)
-       |> Term.app(list_succ_case(nat_list))
-       |> Term.app(singleton_zero), one},
-      {:vec, "vec_ind_nil",
-       Term.const(:vec_ind)
-       |> Term.app(nat)
-       |> Term.app(vec_nat_motive())
-       |> Term.app(zero)
-       |> Term.app(vec_succ_case())
-       |> Term.app(zero)
-       |> Term.app(vec_nil_nat), zero},
-      {:vec, "vec_ind_cons",
-       Term.const(:vec_ind)
-       |> Term.app(nat)
-       |> Term.app(vec_nat_motive())
-       |> Term.app(zero)
-       |> Term.app(vec_succ_case())
-       |> Term.app(one)
-       |> Term.app(vec_singleton_zero), one}
-    ]
-  end
-
-  defp vec_nat_motive do
-    Term.lam(
-      :n,
-      Term.const(:Nat),
-      Term.lam(
-        :_xs,
-        Term.const(:Vec) |> Term.app(Term.const(:Nat)) |> Term.app(Term.bvar(0)),
-        Term.const(:Nat)
-      )
-    )
-  end
-
-  defp vec_succ_case do
-    nearest = Term.bvar(0)
-
-    Term.lam(
-      :_head,
-      Term.const(:Nat),
-      Term.lam(
-        :n,
-        Term.const(:Nat),
-        Term.lam(
-          :_tail,
-          Term.const(:Vec) |> Term.app(Term.const(:Nat)) |> Term.app(nearest),
-          Term.lam(:ih, Term.const(:Nat), Term.app(Term.const(:succ), nearest))
-        )
-      )
-    )
-  end
-
-  defp list_succ_case(nat_list) do
-    Term.lam(
-      :_head,
-      Term.const(:Nat),
-      Term.lam(
-        :_tail,
-        nat_list,
-        Term.lam(:acc, Term.const(:Nat), Term.app(Term.const(:succ), Term.bvar(0)))
-      )
-    )
-  end
-
-  defp nat_succ_case do
-    Term.lam(
-      :_pred,
-      Term.const(:Nat),
-      Term.lam(:acc, Term.const(:Nat), Term.app(Term.const(:succ), Term.bvar(0)))
-    )
   end
 end

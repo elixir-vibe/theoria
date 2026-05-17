@@ -6,9 +6,41 @@ defmodule Theoria.Lean.Mirror.Inductive do
   alias Theoria.Lean.Encode
   alias Theoria.Term.Sort
 
+  @doc "Returns true when the oracle generator supports this inductive shape."
+  @spec supports?(Spec.t()) :: boolean()
+  def supports?(%Spec{
+        name: :Vec,
+        parameters: [_parameter],
+        indices: [_index],
+        constructors: [_, _]
+      }),
+      do: true
+
+  def supports?(%Spec{}), do: false
+
+  @doc "Returns a short reason when `source/1` cannot render a spec."
+  @spec unsupported_reason(Spec.t()) :: String.t() | nil
+  def unsupported_reason(%Spec{} = spec) do
+    if supports?(spec) do
+      nil
+    else
+      "only Vec-like single-parameter, single-index inductive specs are supported"
+    end
+  end
+
   @doc "Renders a Lean inductive declaration for the supported oracle fragment."
-  @spec source(Spec.t()) :: String.t()
-  def source(%Spec{name: :Vec} = spec) do
+  @spec source(Spec.t()) :: {:ok, String.t()} | {:error, String.t()}
+  def source(%Spec{} = spec) do
+    if supports?(spec) do
+      {:ok, source!(spec)}
+    else
+      {:error, unsupported_reason(spec)}
+    end
+  end
+
+  @doc "Renders a Lean inductive declaration or raises if unsupported."
+  @spec source!(Spec.t()) :: String.t()
+  def source!(%Spec{name: :Vec} = spec) do
     params = render_params(spec)
     indices = render_indices(spec)
     constructors = Enum.map_join(spec.constructors, "\n", &render_constructor(&1, spec))
@@ -20,8 +52,9 @@ defmodule Theoria.Lean.Mirror.Inductive do
     """
   end
 
-  def source(%Spec{name: name}) do
-    raise ArgumentError, "Lean oracle cannot generate inductive #{inspect(name)} yet"
+  def source!(%Spec{name: name} = spec) do
+    raise ArgumentError,
+          "Lean oracle cannot generate inductive #{inspect(name)}: #{unsupported_reason(spec)}"
   end
 
   defp render_params(%Spec{parameters: parameters}) do

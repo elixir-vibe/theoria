@@ -77,7 +77,7 @@ defmodule Theoria.Lean.EncodeTest do
     assert {:ok, lean_module, stats} = Corpus.build()
     source = LeanModule.render(lean_module)
 
-    assert stats == %{proof: 39, defeq: 18, total: 57}
+    assert stats == %{proof: 39, defeq: 41, total: 80}
     assert source =~ "def tEqRec"
     assert source =~ "proof Theoria.Library.Equality.Theorems.eq_symm"
     assert source =~ "proof Theoria.Library.Bool.Theorems.bool_not_true"
@@ -104,10 +104,10 @@ defmodule Theoria.Lean.EncodeTest do
 
   test "filters oracle corpus categories" do
     assert {:ok, _lean_module, stats} = Corpus.build(only: [:bool])
-    assert stats == %{proof: 15, defeq: 0, total: 15}
+    assert stats == %{proof: 15, defeq: 12, total: 27}
 
     assert {:ok, _lean_module, stats} = Corpus.build(only: [:defeq])
-    assert stats == %{proof: 0, defeq: 18, total: 18}
+    assert stats == %{proof: 0, defeq: 41, total: 41}
   end
 
   defp nat_succ_case do

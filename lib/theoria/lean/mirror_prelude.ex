@@ -25,6 +25,6 @@ defmodule Theoria.Lean.MirrorPrelude do
 
     """
 
-    bridge <> Inductive.source(Vec.inductive_spec())
+    bridge <> Inductive.source!(Vec.inductive_spec())
   end
 end

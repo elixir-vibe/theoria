@@ -116,6 +116,17 @@ defmodule Theoria.EquationTest do
              {:ok, :"bool_and.match_1"}
 
     assert Extension.unfold_name(env, :nat_add) == {:ok, :"nat_add.eq_def"}
+
+    assert Extension.summary(registry) == %{
+             definitions: 6,
+             matchers: 6,
+             ordinary_equations: 16,
+             matcher_equations: 16,
+             unfolds: 6,
+             theorems: 38
+           }
+
+    assert :ok = Extension.validate(env)
     assert {:ok, [matcher]} = {:ok, Extension.matchers_for(env, :nat_add)}
     assert matcher.name == :"nat_add.match_1"
     assert :"bool_and.match_1.eq_true_true" in Extension.theorem_names(registry)
@@ -124,6 +135,17 @@ defmodule Theoria.EquationTest do
     assert theorem.name == :"bool_and.match_1.eq_true_true"
     assert {:ok, theorems} = Extension.realize_all(env)
     assert length(theorems) == map_size(registry.theorem_sources)
+  end
+
+  test "extension validation rejects stale matcher equation names" do
+    {:ok, env} = Prelude.env()
+    {:ok, constant} = Theoria.Env.fetch(env, :"bool_and.match_1")
+    stale_metadata = %{constant.metadata | equation_names: [:stale_equation]}
+    stale_constant = %{constant | metadata: stale_metadata}
+    env = %{env | constants: Map.put(env.constants, :"bool_and.match_1", stale_constant)}
+
+    assert {:error, {:matcher_equation_name_mismatch, :"bool_and.match_1", _, _}} =
+             Extension.validate(env)
   end
 
   test "matcher descriptors drive real matcher types and bodies" do

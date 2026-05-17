@@ -128,8 +128,8 @@ defmodule Theoria.Validation do
   end
 
   defp check_equation_registry_realization(env) do
-    case Extension.realize_all(env) do
-      {:ok, _theorems} -> :ok
+    case Extension.validate(env) do
+      :ok -> :ok
       {:error, reason} -> {:error, {:equation_registry_realization, reason}}
     end
   end

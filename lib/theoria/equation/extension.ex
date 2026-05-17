@@ -94,6 +94,33 @@ defmodule Theoria.Equation.Extension do
     Map.keys(registry.theorem_sources)
   end
 
+  @doc "Returns compact registry counts for diagnostics and validation output."
+  @spec summary(Env.t() | Registry.t()) :: map()
+  def summary(%Env{} = env), do: env |> build() |> summary()
+
+  def summary(%Registry{} = registry) do
+    %{
+      definitions: map_size(registry.definitions),
+      matchers: map_size(registry.matchers),
+      ordinary_equations: count_names(registry.equation_names),
+      matcher_equations: count_names(registry.matcher_equation_names),
+      unfolds: map_size(registry.unfold_names),
+      theorems: map_size(registry.theorem_sources)
+    }
+  end
+
+  @doc "Validates registry coherence and theorem realization."
+  @spec validate(Env.t()) :: :ok | {:error, term()}
+  def validate(%Env{} = env) do
+    registry = build(env)
+
+    with :ok <- validate_matcher_sources(registry),
+         :ok <- validate_matcher_equation_names(env, registry),
+         :ok <- validate_source_roundtrip(registry) do
+      validate_realization(env, registry)
+    end
+  end
+
   @doc "Returns whether a generated theorem can be realized from registry metadata."
   @spec realizable?(Env.t(), atom()) :: boolean()
   def realizable?(%Env{} = env, theorem_name) when is_atom(theorem_name) do
@@ -157,6 +184,74 @@ defmodule Theoria.Equation.Extension do
       {:ok, name} -> {:ok, name}
       :error -> {:error, {:unknown_equation_definition, source}}
     end
+  end
+
+  defp count_names(names_by_source) do
+    Enum.reduce(names_by_source, 0, fn {_source, names}, count -> count + length(names) end)
+  end
+
+  defp validate_matcher_sources(%Registry{} = registry) do
+    registry.matchers
+    |> Enum.reduce_while(:ok, fn {_name, matcher}, :ok ->
+      if Map.has_key?(registry.definitions, matcher.source) do
+        {:cont, :ok}
+      else
+        {:halt, {:error, {:unknown_matcher_source, matcher.name, matcher.source}}}
+      end
+    end)
+  end
+
+  defp validate_matcher_equation_names(env, %Registry{} = registry) do
+    registry.matchers
+    |> Enum.reduce_while(:ok, fn {_name, matcher}, :ok ->
+      names = Map.get(registry.matcher_equation_names, matcher.name, [])
+
+      if matcher.equation_names == names do
+        {:cont, :ok}
+      else
+        {:halt,
+         {:error, {:matcher_equation_name_mismatch, matcher.name, matcher.equation_names, names}}}
+      end
+    end)
+    |> case do
+      :ok -> validate_matcher_name_generation(env, registry)
+      {:error, _reason} = error -> error
+    end
+  end
+
+  defp validate_matcher_name_generation(env, %Registry{} = registry) do
+    registry.matchers
+    |> Enum.reduce_while(:ok, fn {_name, matcher}, :ok ->
+      generated = matcher_equation_names(env, matcher)
+      names = Map.get(registry.matcher_equation_names, matcher.name, [])
+
+      if generated == names do
+        {:cont, :ok}
+      else
+        {:halt, {:error, {:matcher_generated_name_mismatch, matcher.name, generated, names}}}
+      end
+    end)
+  end
+
+  defp validate_source_roundtrip(%Registry{} = registry) do
+    registry.theorem_sources
+    |> Enum.reduce_while(:ok, fn {theorem_name, source}, :ok ->
+      case source_for(registry, theorem_name) do
+        {:ok, ^source} -> {:cont, :ok}
+        other -> {:halt, {:error, {:source_roundtrip_failed, theorem_name, source, other}}}
+      end
+    end)
+  end
+
+  defp validate_realization(env, %Registry{} = registry) do
+    registry
+    |> theorem_names()
+    |> Enum.reduce_while(:ok, fn theorem_name, :ok ->
+      case realize(env, theorem_name) do
+        {:ok, _theorem} -> {:cont, :ok}
+        {:error, reason} -> {:halt, {:error, {:realization_failed, theorem_name, reason}}}
+      end
+    end)
   end
 
   defp realize_source_theorem(env, %Registry{} = registry, source, theorem_name) do

@@ -27,15 +27,56 @@ defmodule Theoria.Lean.Oracle do
   end
 
   defp configured_executable(opts) do
-    Keyword.get(opts, :lean) || System.get_env("THEORIA_LEAN") || bundled_elan_toolchain() ||
-      "lean"
+    Keyword.get(opts, :lean) || System.get_env("THEORIA_LEAN") || elan_toolchain_lean() || "lean"
   end
 
-  defp bundled_elan_toolchain do
-    path = Path.expand("~/.elan/toolchains/leanprover--lean4---v4.29.1/bin/lean")
-
-    if File.exists?(path), do: path
+  defp elan_toolchain_lean do
+    with {:ok, toolchains_dir} <- elan_toolchains_dir(),
+         {:ok, toolchain} <- newest_lean4_toolchain(toolchains_dir) do
+      Path.join([toolchains_dir, toolchain, "bin", "lean"])
+    else
+      _other -> nil
+    end
   end
+
+  defp elan_toolchains_dir do
+    cond do
+      elan_home = System.get_env("ELAN_HOME") ->
+        {:ok, Path.join(elan_home, "toolchains")}
+
+      home = System.get_env("HOME") ->
+        {:ok, Path.join([home, ".elan", "toolchains"])}
+
+      true ->
+        :error
+    end
+  end
+
+  defp newest_lean4_toolchain(toolchains_dir) do
+    toolchains_dir
+    |> File.ls()
+    |> case do
+      {:ok, entries} -> select_lean4_toolchain(entries)
+      {:error, _reason} -> :error
+    end
+  end
+
+  defp select_lean4_toolchain(entries) do
+    entries
+    |> Enum.filter(&lean4_toolchain?/1)
+    |> Enum.sort(:desc)
+    |> List.first()
+    |> case do
+      nil -> :error
+      toolchain -> {:ok, toolchain}
+    end
+  end
+
+  defp lean4_toolchain?("leanprover--lean4---" <> suffix) do
+    not String.ends_with?(suffix, [".tmp", ".lock"])
+  end
+
+  defp lean4_toolchain?(_entry), do: false
 
   defp resolve_executable(path) do
     cond do

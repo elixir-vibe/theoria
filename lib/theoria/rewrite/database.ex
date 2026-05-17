@@ -1,6 +1,7 @@
 defmodule Theoria.Rewrite.Database do
   @moduledoc "A tiny untrusted rewrite-rule database."
 
+  alias Theoria.Equation.Lemma
   alias Theoria.Rewrite
   alias Theoria.Rewrite.Rule
   alias Theoria.Term
@@ -17,6 +18,14 @@ defmodule Theoria.Rewrite.Database do
   @spec add(t(), Rule.t()) :: t()
   def add(%__MODULE__{rules: rules} = database, %Rule{} = rule),
     do: %{database | rules: [rule | rules]}
+
+  @doc "Builds a rewrite database from equation-lemma metadata."
+  @spec from_lemmas([Lemma.t()], Term.t(), keyword()) :: t()
+  def from_lemmas(lemmas, equality_type, opts \\ []) when is_list(lemmas) do
+    lemmas
+    |> Enum.map(&Rule.from_lemma(&1, equality_type, opts))
+    |> new()
+  end
 
   @doc "Applies the first rule that rewrites the term."
   @spec once(t(), Term.t()) :: {:ok, Term.t(), Rule.t()} | :not_found

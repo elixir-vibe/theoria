@@ -6,7 +6,7 @@ defmodule Mix.Tasks.Theoria.Validate do
   use Mix.Task
 
   alias Theoria.Validation
-  alias Theoria.Validation.{Corpus, Options}
+  alias Theoria.Validation.{Corpus, Options, Report}
 
   @shortdoc "Validates Theoria's native corpus"
 
@@ -27,7 +27,10 @@ defmodule Mix.Tasks.Theoria.Validate do
 
         Mix.shell().info("✓ defeq checks: #{result.defeq_count} check(s)")
         Mix.shell().info("✓ inductive specs: #{result.inductive_count} check(s)")
-        Mix.shell().info("✓ equation metadata: #{result.equation_count} definition(s)")
+
+        Mix.shell().info("✓ equation metadata: #{Report.equation_count(result)} definition(s)")
+
+        print_equations(result, opts)
 
       {:error, reason} ->
         Mix.raise(format_error(reason))
@@ -38,7 +41,8 @@ defmodule Mix.Tasks.Theoria.Validate do
   def __parse_args__(args), do: parse_args(args)
 
   defp parse_args(args) do
-    {opts, _argv, invalid} = OptionParser.parse(args, strict: [only: :keep, axioms: :boolean])
+    {opts, _argv, invalid} =
+      OptionParser.parse(args, strict: [only: :keep, axioms: :boolean, equations: :boolean])
 
     if invalid != [] do
       Mix.raise(
@@ -52,6 +56,24 @@ defmodule Mix.Tasks.Theoria.Validate do
       Corpus.valid_categories(),
       &Options.parse_only!(&1, Corpus.valid_categories())
     )
+  end
+
+  defp print_equations(result, opts) do
+    if Keyword.get(opts, :equations, false) do
+      Mix.shell().info("\nequations:")
+      Enum.each(result.equations, &Mix.shell().info("  #{format_equation(&1)}"))
+    end
+  end
+
+  defp format_equation(equation) do
+    suffix =
+      if equation.level_params == [] do
+        ""
+      else
+        " levels=#{inspect(equation.level_params)}"
+      end
+
+    "#{equation.name} rec_arg=#{inspect(equation.rec_arg_pos)} fixed=#{inspect(equation.fixed_params.positions)}#{suffix}"
   end
 
   defp axiom_suffix(result, opts) do

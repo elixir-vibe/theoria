@@ -31,7 +31,7 @@ defmodule Theoria.RewriteTest do
   test "database applies the first matching equation rule" do
     lemma = Lemma.new(:zero_to_one, Term.const(:zero), Term.const(:one))
     rule = Rule.from_lemma(lemma, Term.const(:Nat))
-    database = Database.new() |> Database.add(rule)
+    database = Database.from_lemmas([lemma], Term.const(:Nat))
     term = Term.app(Term.const(:succ), Term.const(:zero))
 
     assert Database.once(database, term) ==

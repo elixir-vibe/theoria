@@ -20,7 +20,7 @@ defmodule Theoria.Validation do
          theorem_count: theorem_count,
          defeq_count: length(corpus.defeq_checks),
          inductive_count: length(corpus.inductive_checks),
-         equation_count: length(EquationInfo.all(env)),
+         equations: EquationInfo.all(env),
          axioms: axioms
        }}
     end

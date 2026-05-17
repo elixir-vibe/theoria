@@ -31,6 +31,20 @@ defmodule Mix.Tasks.Theoria.ValidateTest do
     assert output =~ "✓ theorem modules: 53 theorem(s), axioms: none"
   end
 
+  test "reports equation metadata when requested" do
+    Mix.Task.clear()
+
+    output =
+      capture_io(fn ->
+        Validate.run(["--equations"])
+      end)
+
+    assert output =~ "equations:"
+    assert output =~ "bool_not rec_arg=0 fixed=[]"
+    assert output =~ "nat_add rec_arg=0 fixed=[]"
+    assert output =~ "list_append rec_arg=1 fixed=[0] levels=[:u]"
+  end
+
   test "validates filtered corpus" do
     Mix.Task.clear()
 

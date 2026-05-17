@@ -195,7 +195,7 @@ Legend:
 | `constructor` | Use constructor/introduction rule | 🔴 | Missing | After inductive APIs mature | P2 |
 | `cases` | Case split | 🔴 | Missing | Needs eliminator usage | P2 |
 | `induction` | Induction tactic | 🔴 | Missing | Needs robust recursors | P2 |
-| `rewrite` / `rw` | Rewrite by equality | 🟡 | Low-level equality transport, `symm`/`trans`/`congr`, provisional `Theoria.Rewrite.once/3`, and rewrite rule/database structs fed by equation lemmas | Add proof-producing tactic ergonomics | P2 |
+| `rewrite` / `rw` | Rewrite by equality | 🟡 | Low-level equality transport, `symm`/`trans`/`congr`, provisional `Theoria.Rewrite.once/3`, and rewrite rule/database structs built from equation lemmas | Add proof-producing tactic ergonomics | P2 |
 | `simp` | Simplifier | 🔴 | Missing | Needs rewrite database | P3 |
 | `omega` / arithmetic solvers | Automation | ❌ | Missing | Much later / maybe not | P5 |
 | Metaprogramming framework | Lean tactic language | ❌ | Missing | Do not port Lean meta system directly | P5 |
@@ -204,10 +204,10 @@ Legend:
 
 | Lean feature / concept | Lean role | Theoria status | Current Theoria state | Needed roadmap | Priority |
 |---|---|---:|---|---|---:|
-| Pattern matching compiler | Compile equations to recursors | 🟡 | Internal `Info/FixedParams → Pattern → Clause → Validator → Branch → Context → Compiler → Recursors` pipeline; compiled Bool/Nat/List definitions store equation metadata | Add public syntax and dependent matching later | P1 |
+| Pattern matching compiler | Compile equations to recursors | 🟡 | Internal `Info/FixedParams → Pattern → Clause → Validator → Branch → Context → Compiler → Recursors` pipeline; compiled Bool/Nat/List definitions store auditable equation metadata | Add public syntax and dependent matching later | P1 |
 | Structural recursion | Termination by smaller argument | 🟡 | Library definitions use primitive Nat/List recursion; no general checker | Start conservative checker | P1 |
 | Termination checker | Ensure recursive definitions terminate | 🔴 | Missing | Start conservative | P2 |
-| Equation lemmas | Generated simplification theorems | 🟡 | Metadata named from stored `Equation.Info`; reflexivity theorem conversion and theorem installation for defeq sides; full declaration generation later | Needed for `simp` | P2 |
+| Equation lemmas | Generated simplification theorems | 🟡 | Metadata named from stored `Equation.Info`; reflexivity theorem conversion, batch theorem installation for defeq sides, and rewrite DB construction; full declaration generation later | Needed for `simp` | P2 |
 | Dependent pattern matching | Match indexed families | 🔴 | Missing | After indexed iota | P2 |
 | Inaccessible patterns | Lean dependent matching feature | ❌ / later | Missing | Probably much later | P5 |
 | Partial functions | Lean has partial support | ❌ | Missing | Avoid early; kernel should stay total | P5 |

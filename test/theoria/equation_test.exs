@@ -22,7 +22,11 @@ defmodule Theoria.EquationTest do
     assert info.rec_arg_pos == 0
     assert info.level_params == []
     assert {:ok, ^info} = Info.get(env, :nat_add)
+    assert {:ok, ^info} = Info.fetch_or_build(env, :nat_add)
+    assert Info.equation?(env, :nat_add)
+    refute Info.equation?(env, :Nat)
     assert Enum.map(Info.all(env), & &1.name) == [:nat_add]
+    assert {:error, {:missing_value, :Nat}} = Info.fetch_or_build(env, :Nat)
   end
 
   test "matcher info records small Lean-like matcher metadata" do
@@ -34,6 +38,7 @@ defmodule Theoria.EquationTest do
 
   test "equation lemma metadata becomes defeq checks and checked theorems" do
     info = Info.new(:nat_add, nat(), zero())
+    assert Lemma.theorem_name(:nat_add, :zero) == :"nat_add.eq_zero"
     lemma = Lemma.for_definition(info, :zero, zero(), zero())
     check = Lemma.defeq_check(lemma, :nat)
 
@@ -50,6 +55,11 @@ defmodule Theoria.EquationTest do
     assert {:ok, env, theorem} = Lemma.add_to_env(env, lemma, nat())
     assert theorem.name == :"nat_add.eq_zero"
     assert {:ok, _constant} = Theoria.Env.fetch(env, :"nat_add.eq_zero")
+
+    other = Lemma.for_definition(info, :zero_again, zero(), zero())
+    assert {:ok, env, [installed]} = Lemma.install_many(env, [other], nat())
+    assert installed.name == :"nat_add.eq_zero_again"
+    assert {:ok, _constant} = Theoria.Env.fetch(env, :"nat_add.eq_zero_again")
   end
 
   test "context exposes branch and outer values" do

@@ -23,9 +23,12 @@ defmodule Mix.Tasks.Theoria.Lean.Check do
 
     opts = parse_args(args)
 
-    Mix.shell().info("Generating Lean validation oracle...")
+    categories = Keyword.get(opts, :only) || @lean_categories
 
-    validation = Corpus.build(only: Keyword.get(opts, :only) || @lean_categories)
+    Mix.shell().info("Generating Lean validation oracle...")
+    Mix.shell().info("  categories: #{Enum.join(categories, ", ")}")
+
+    validation = Corpus.build(only: categories)
 
     with {:ok, lean_module} <- LeanModule.from_validation(validation),
          stats = LeanModule.stats(lean_module),

@@ -1,8 +1,7 @@
 defmodule Theoria.Validation.Corpus do
   @moduledoc "Theoria-owned validation corpus consumed by local checks and external oracles."
 
-  alias Theoria.Term
-  alias Theoria.Validation.DefeqCheck
+  alias Theoria.Validation.Core
 
   @library_validations %{
     logic: Theoria.Library.Logic.Validation,
@@ -80,16 +79,7 @@ defmodule Theoria.Validation.Corpus do
        |> Enum.uniq_by(& &1.name))
   end
 
-  defp global_defeq_checks do
-    nat = Term.const(:Nat)
-    type = Term.sort(1)
-    var = Term.bvar(0)
-
-    [
-      DefeqCheck.new(:defeq, "beta_identity", Term.app(Term.lam(:x, type, var), nat), nat),
-      DefeqCheck.new(:defeq, "zeta_identity", Term.let(:x, type, nat, var), nat)
-    ]
-  end
+  defp global_defeq_checks, do: Core.defeq_checks()
 
   defp all_inductive_checks do
     @builtin_categories

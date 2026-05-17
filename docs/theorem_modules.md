@@ -71,12 +71,15 @@ A checked theorem's trusted assumptions can be inspected with:
 From Mix, use:
 
 ```bash
-mix theoria.check
+mix theoria.theorems MyApp.Proofs
+mix theoria.theorems --install MyApp.Proofs
+mix theoria.theorems --axioms MyApp.Proofs
 mix theoria.validate --only logic
-mix theoria.validate --axioms
 ```
 
-`mix theoria.check` runs the full native validation corpus against `Theoria.Prelude.env/0`, including theorem modules, definitional-equality checks, and inductive specs. Use `mix theoria.validate --only CATEGORY` to narrow validation while developing. With `--axioms`, validation reports trusted axiom assumptions used by theorem modules.
+`mix theoria.theorems` checks theorem modules against `Theoria.Prelude.env/0`. With `--install`, theorem modules are checked sequentially and installed as opaque theorem declarations, so later theorems/modules can refer to earlier theorem constants. With `--axioms`, the task reports trusted axiom assumptions used by each theorem module.
+
+`mix theoria.check` runs the full native validation corpus, including theorem modules, definitional-equality checks, and inductive specs. Use `mix theoria.validate --only CATEGORY` to narrow validation while developing.
 
 The generated theorem functions are intentionally normal Elixir functions so ExDoc can document them alongside their surrounding module docs.
 

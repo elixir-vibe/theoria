@@ -107,6 +107,7 @@ Validate Theoria's native corpus from Mix:
 mix theoria.check
 mix theoria.validate --only defeq
 mix theoria.validate --axioms
+mix theoria.theorems MyApp.Proofs
 ```
 
 `mix theoria.check` is the full native validation entrypoint. It checks theorem modules, definitional-equality checks, and inductive specs against `Theoria.Prelude.env/0`.

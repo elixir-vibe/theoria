@@ -8,6 +8,12 @@ Run native validation with:
 mix theoria.validate
 ```
 
+Check a downstream theorem module with:
+
+```bash
+mix theoria.theorems MyApp.Proofs
+```
+
 To narrow the corpus while developing:
 
 ```bash
@@ -78,6 +84,43 @@ Guidelines:
 1. Add a theorem to the appropriate `Theoria.Library.*.Theorems` module when it is a reusable library fact.
 2. Add a `%Theoria.Validation.DefeqCheck{}` in the owning library validation module when the point is definitional equality or reduction behavior.
 3. Add an inductive check in the owning library validation module when a built-in spec/declaration shape needs to stay validated.
+
+## Downstream theorem example
+
+```elixir
+defmodule MyApp.Proofs do
+  use Theoria.DSL
+
+  theorem :identity do
+    type do
+      term do
+        forall :p, prop() do
+          p ~> p
+        end
+      end
+    end
+
+    proof do
+      term do
+        lam :p, prop() do
+          lam :hp, p do
+            hp
+          end
+        end
+      end
+    end
+  end
+end
+
+{:ok, env} = Theoria.Prelude.env()
+Theoria.Theorem.check_all(MyApp.Proofs, env)
+```
+
+From Mix:
+
+```bash
+mix theoria.theorems MyApp.Proofs
+```
 
 After adding checks, run:
 

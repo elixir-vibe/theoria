@@ -3,17 +3,10 @@ defmodule Theoria.Validation do
 
   alias Theoria.Prelude
   alias Theoria.Theorem
-  alias Theoria.Validation.{Checkable, Corpus}
-
-  @type result :: %{
-          theorem_count: non_neg_integer(),
-          defeq_count: non_neg_integer(),
-          inductive_count: non_neg_integer(),
-          axioms: MapSet.t(atom())
-        }
+  alias Theoria.Validation.{Checkable, Corpus, Report}
 
   @doc "Checks theorem modules, definitional equalities, and inductive specs."
-  @spec check(Corpus.t()) :: {:ok, result()} | {:error, term()}
+  @spec check(Corpus.t()) :: {:ok, Report.t()} | {:error, term()}
   def check(%Corpus{} = corpus) do
     with {:ok, env} <- Prelude.env(),
          :ok <- check_all(env, corpus.theorem_checks),
@@ -21,7 +14,8 @@ defmodule Theoria.Validation do
          :ok <- check_all(env, corpus.inductive_checks),
          {:ok, theorem_count, axioms} <- theorem_summary(env, corpus.theorem_modules) do
       {:ok,
-       %{
+       %Report{
+         categories: corpus.categories,
          theorem_count: theorem_count,
          defeq_count: length(corpus.defeq_checks),
          inductive_count: length(corpus.inductive_checks),

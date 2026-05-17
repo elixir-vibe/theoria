@@ -17,6 +17,7 @@ defmodule Mix.Tasks.Theoria.CheckTest do
     assert output =~ "✓ theorem modules: 53 theorem(s)"
     assert output =~ "✓ defeq checks: 57 check(s)"
     assert output =~ "✓ inductive specs: 4 check(s)"
+    assert output =~ "✓ equation metadata: 6 definition(s)"
   end
 
   test "passes options through to validation" do
@@ -30,5 +31,6 @@ defmodule Mix.Tasks.Theoria.CheckTest do
     assert output =~ "✓ theorem modules: 12 theorem(s), axioms: none"
     assert output =~ "✓ defeq checks: 0 check(s)"
     assert output =~ "✓ inductive specs: 0 check(s)"
+    assert output =~ "✓ equation metadata: 6 definition(s)"
   end
 end

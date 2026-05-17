@@ -1,6 +1,7 @@
 defmodule Theoria.Validation do
   @moduledoc "Runs Theoria-owned validation corpora."
 
+  alias Theoria.Equation.Info, as: EquationInfo
   alias Theoria.Prelude
   alias Theoria.Theorem
   alias Theoria.Validation.{Checkable, Corpus, Report}
@@ -19,6 +20,7 @@ defmodule Theoria.Validation do
          theorem_count: theorem_count,
          defeq_count: length(corpus.defeq_checks),
          inductive_count: length(corpus.inductive_checks),
+         equation_count: length(EquationInfo.all(env)),
          axioms: axioms
        }}
     end

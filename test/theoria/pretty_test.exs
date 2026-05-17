@@ -1,10 +1,13 @@
 defmodule Theoria.PrettyTest do
   use ExUnit.Case, async: true
 
+  alias Theoria.Equation.{FixedParams, Info, Lemma, MatcherInfo}
+  alias Theoria.Equation.MatcherInfo.Alternative
   alias Theoria.Kernel
   alias Theoria.Level
   alias Theoria.Library.Logic
   alias Theoria.Library.Logic.Theorems
+  alias Theoria.Rewrite.{Database, Rule}
 
   import Theoria.Term
 
@@ -38,6 +41,31 @@ defmodule Theoria.PrettyTest do
 
     assert inspect(eq_rec(const(:Nat), const(:motive), const(:base), const(:proof))) ==
              "#Theoria<Eq.rec Nat motive base proof>"
+  end
+
+  test "inspects equation and rewrite metadata" do
+    info =
+      Info.new(:list_append, const(:Nat), const(:zero),
+        level_params: [:u],
+        rec_arg_pos: 1,
+        fixed_params: FixedParams.new([0])
+      )
+
+    lemma = Lemma.new(:"list_append.eq_nil", const(:zero), const(:zero))
+    alternative = %Alternative{constructor: :list_nil, num_fields: 0}
+    matcher = MatcherInfo.new(:match_list, 1, 1, [alternative])
+    rule = Rule.from_lemma(lemma, const(:Nat))
+    database = Database.new([rule])
+
+    assert inspect(info) ==
+             "#Theoria.EquationInfo<list_append, rec_arg: 1, fixed: [0], levels: [:u]>"
+
+    assert inspect(info.fixed_params) == "#Theoria.FixedParams<[0]>"
+    assert inspect(lemma) == "#Theoria.EquationLemma<list_append.eq_nil>"
+    assert inspect(alternative) == "#Theoria.MatcherAlt<list_nil, fields: 0>"
+    assert inspect(matcher) == "#Theoria.MatcherInfo<match_list, discrs: 1, alts: 1>"
+    assert inspect(rule) == "#Theoria.RewriteRule<list_append.eq_nil forward>"
+    assert inspect(database) == "#Theoria.RewriteDatabase<1 rule(s)>"
   end
 
   test "inspects checked theorems" do

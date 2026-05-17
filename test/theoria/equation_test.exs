@@ -22,6 +22,7 @@ defmodule Theoria.EquationTest do
     assert info.rec_arg_pos == 0
     assert info.level_params == []
     assert {:ok, ^info} = Info.get(env, :nat_add)
+    assert Enum.map(Info.all(env), & &1.name) == [:nat_add]
   end
 
   test "matcher info records small Lean-like matcher metadata" do

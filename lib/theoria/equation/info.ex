@@ -51,6 +51,19 @@ defmodule Theoria.Equation.Info do
     end
   end
 
+  @doc "Returns all stored equation metadata in declaration order."
+  @spec all(Env.t()) :: [t()]
+  def all(%Env{} = env) do
+    env
+    |> Env.declarations()
+    |> Enum.flat_map(fn name ->
+      case get(env, name) do
+        {:ok, metadata} -> [metadata]
+        {:error, _reason} -> []
+      end
+    end)
+  end
+
   @doc "Builds equation metadata from a checked environment definition or theorem."
   @spec from_env(Env.t(), atom(), keyword()) :: {:ok, t()} | {:error, term()}
   def from_env(%Env{} = env, name, opts \\ []) when is_atom(name) do

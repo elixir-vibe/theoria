@@ -27,6 +27,7 @@ defmodule Mix.Tasks.Theoria.Validate do
 
         Mix.shell().info("✓ defeq checks: #{result.defeq_count} check(s)")
         Mix.shell().info("✓ inductive specs: #{result.inductive_count} check(s)")
+        Mix.shell().info("✓ equation metadata: #{result.equation_count} definition(s)")
 
       {:error, reason} ->
         Mix.raise(format_error(reason))

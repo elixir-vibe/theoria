@@ -8,7 +8,7 @@ defmodule Theoria.Library.Bool do
 
   alias Theoria.Env
   alias Theoria.Equation
-  alias Theoria.Equation.{Clause, Pattern}
+  alias Theoria.Equation.{Clause, Context, Definition, Pattern}
   alias Theoria.Inductive.Generate
   alias Theoria.Inductive.Spec
   alias Theoria.Kernel
@@ -76,13 +76,14 @@ defmodule Theoria.Library.Bool do
       Equation.compile_bool(
         bool(),
         [
-          Clause.new([Pattern.constructor(true)], Term.bvar(0)),
+          Clause.new([Pattern.constructor(true)], fn ctx -> ctx.b end),
           Clause.new([Pattern.constructor(false)], bool_false())
         ],
-        Term.bvar(1)
+        Term.bvar(1),
+        Context.new(%{}, %{b: Term.bvar(0)})
       )
 
-    bool_lam(:a, bool_lam(:b, body))
+    Definition.binary(:a, bool(), :b, bool(), body)
   end
 
   defp bool_or_value do
@@ -91,16 +92,17 @@ defmodule Theoria.Library.Bool do
         bool(),
         [
           Clause.new([Pattern.constructor(true)], bool_true()),
-          Clause.new([Pattern.constructor(false)], Term.bvar(0))
+          Clause.new([Pattern.constructor(false)], fn ctx -> ctx.b end)
         ],
-        Term.bvar(1)
+        Term.bvar(1),
+        Context.new(%{}, %{b: Term.bvar(0)})
       )
 
-    bool_lam(:a, bool_lam(:b, body))
+    Definition.binary(:a, bool(), :b, bool(), body)
   end
 
   defp bool, do: Term.const(:Bool)
   defp bool_true, do: Term.const(true)
   defp bool_false, do: Term.const(false)
-  defp bool_lam(name, body), do: Term.lam(name, bool(), body)
+  defp bool_lam(name, body), do: Definition.unary(name, bool(), body)
 end

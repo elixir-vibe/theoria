@@ -2,8 +2,18 @@ defmodule Theoria.EquationTest do
   use ExUnit.Case, async: true
 
   alias Theoria.Equation
-  alias Theoria.Equation.{Branch, Clause, Context, Pattern}
+  alias Theoria.Equation.{Branch, Clause, Context, Lemma, Pattern}
   alias Theoria.Term
+
+  test "equation lemma metadata becomes defeq checks" do
+    lemma = Lemma.new(:equation_zero, zero(), zero())
+    check = Lemma.defeq_check(lemma, :nat)
+
+    assert check.name == "equation_zero"
+    assert check.category == :nat
+    assert check.left == zero()
+    assert check.right == zero()
+  end
 
   test "context exposes branch and outer values" do
     context = Context.new(%{ih: Term.bvar(0), x: Term.bvar(2)}, %{a: nat()})

@@ -27,13 +27,13 @@ defmodule Theoria.Equation.Compiler do
     do: compile_list(element_type, motive, clauses, major, levels)
 
   @doc "Compiles Bool constructor clauses to a Bool recursor application."
-  @spec compile_bool(Term.t(), [Clause.t()], Term.t()) :: result()
-  def compile_bool(motive, clauses, major) do
+  @spec compile_bool(Term.t(), [Clause.t()], Term.t(), Context.t()) :: result()
+  def compile_bool(motive, clauses, major, context \\ Context.new()) do
     expected = %{true => 0, false => 0}
 
     with :ok <- Validator.validate_clauses(clauses, expected),
-         {:ok, on_true} <- constructor_body(clauses, true, Context.new()),
-         {:ok, on_false} <- constructor_body(clauses, false, Context.new()) do
+         {:ok, on_true} <- constructor_body(clauses, true, context),
+         {:ok, on_false} <- constructor_body(clauses, false, context) do
       {:ok, Recursors.bool(motive, on_true, on_false, major)}
     end
   end

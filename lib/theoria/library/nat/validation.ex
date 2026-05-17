@@ -3,7 +3,7 @@ defmodule Theoria.Library.Nat.Validation do
 
   alias Theoria.Env
   alias Theoria.Equation
-  alias Theoria.Equation.{Clause, Pattern}
+  alias Theoria.Equation.{Clause, Lemma, Pattern}
   alias Theoria.Library.Nat
   alias Theoria.Term
 
@@ -43,17 +43,13 @@ defmodule Theoria.Library.Nat.Validation do
     {:ok, compiled_add_two_zero} = Equation.compile_nat(nat, add_clauses, two)
 
     [
-      DefeqCheck.new(
-        :nat,
-        "equation_nat_succ",
-        compiled_succ,
-        one
+      Lemma.defeq_check(
+        Lemma.new(:equation_nat_succ, compiled_succ, one),
+        :nat
       ),
-      DefeqCheck.new(
-        :nat,
-        "equation_nat_add_two_zero",
-        compiled_add_two_zero,
-        two
+      Lemma.defeq_check(
+        Lemma.new(:equation_nat_add_two_zero, compiled_add_two_zero, two),
+        :nat
       ),
       DefeqCheck.new(
         :nat,

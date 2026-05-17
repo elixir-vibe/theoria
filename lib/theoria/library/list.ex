@@ -5,7 +5,7 @@ defmodule Theoria.Library.List do
 
   alias Theoria.Env
   alias Theoria.Equation
-  alias Theoria.Equation.{Clause, Pattern}
+  alias Theoria.Equation.{Clause, Definition, Pattern}
   alias Theoria.Inductive.Generate
   alias Theoria.Inductive.Spec
   alias Theoria.Kernel
@@ -122,14 +122,13 @@ defmodule Theoria.Library.List do
     bound_a = Term.bvar(0)
     outer_list = list_of(bound_a)
 
-    Term.lam(
-      :a,
-      sort_u,
-      Term.lam(
-        :left,
-        outer_list,
-        Term.lam(:right, list_of(Term.shift(bound_a, 1)), body)
-      )
+    Definition.lam_many(
+      [
+        {:a, sort_u},
+        {:left, outer_list},
+        {:right, list_of(Term.shift(bound_a, 1))}
+      ],
+      body
     )
   end
 
@@ -156,11 +155,7 @@ defmodule Theoria.Library.List do
     sort_u = Term.sort(u)
     bound_a = Term.bvar(0)
 
-    Term.lam(
-      :a,
-      sort_u,
-      Term.lam(:xs, list_of(bound_a), body)
-    )
+    Definition.lam_many([{:a, sort_u}, {:xs, list_of(bound_a)}], body)
   end
 
   defp list_cons(type, head, tail) do

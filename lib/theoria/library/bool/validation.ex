@@ -3,7 +3,7 @@ defmodule Theoria.Library.Bool.Validation do
 
   alias Theoria.Env
   alias Theoria.Equation
-  alias Theoria.Equation.{Clause, Pattern}
+  alias Theoria.Equation.{Clause, Lemma, Pattern}
   alias Theoria.Library.Bool
   alias Theoria.Term
   alias Theoria.Validation.{DefeqCheck, InductiveCheck, Library, SmallTerms, TheoremModuleCheck}
@@ -53,23 +53,17 @@ defmodule Theoria.Library.Bool.Validation do
       )
 
     [
-      DefeqCheck.new(
-        :bool,
-        "equation_bool_not_true",
-        compiled_not_true,
-        bool_false
+      Lemma.defeq_check(
+        Lemma.new(:equation_bool_not_true, compiled_not_true, bool_false),
+        :bool
       ),
-      DefeqCheck.new(
-        :bool,
-        "equation_bool_and_true_false",
-        compiled_and_true_false,
-        bool_false
+      Lemma.defeq_check(
+        Lemma.new(:equation_bool_and_true_false, compiled_and_true_false, bool_false),
+        :bool
       ),
-      DefeqCheck.new(
-        :bool,
-        "equation_bool_or_false_true",
-        compiled_or_false_true,
-        bool_true
+      Lemma.defeq_check(
+        Lemma.new(:equation_bool_or_false_true, compiled_or_false_true, bool_true),
+        :bool
       ),
       DefeqCheck.new(
         :bool,

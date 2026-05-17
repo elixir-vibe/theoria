@@ -15,6 +15,7 @@ defmodule Theoria.Equation.Context do
     :x,
     :xs,
     :a,
+    :b,
     :element_type
   ]
 
@@ -29,6 +30,7 @@ defmodule Theoria.Equation.Context do
           x: Term.t() | nil,
           xs: Term.t() | nil,
           a: Term.t() | nil,
+          b: Term.t() | nil,
           element_type: Term.t() | nil
         }
 
@@ -48,6 +50,7 @@ defmodule Theoria.Equation.Context do
       x: Map.get(values, :x),
       xs: Map.get(values, :xs),
       a: Map.get(values, :a),
+      b: Map.get(values, :b),
       element_type: Map.get(values, :element_type)
     }
   end

@@ -5,7 +5,7 @@ defmodule Theoria.Library.Nat do
 
   alias Theoria.Env
   alias Theoria.Equation
-  alias Theoria.Equation.{Clause, Pattern}
+  alias Theoria.Equation.{Clause, Definition, Pattern}
   alias Theoria.Inductive.Generate
   alias Theoria.Inductive.Spec
   alias Theoria.Kernel
@@ -67,5 +67,5 @@ defmodule Theoria.Library.Nat do
 
   defp nat, do: Term.const(:Nat)
   defp succ(term), do: Term.app(Term.const(:succ), term)
-  defp nat_lam(name, body), do: Term.lam(name, nat(), body)
+  defp nat_lam(name, body), do: Definition.unary(name, nat(), body)
 end

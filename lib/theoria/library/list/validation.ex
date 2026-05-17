@@ -2,7 +2,7 @@ defmodule Theoria.Library.List.Validation do
   @moduledoc "Validation metadata for `Theoria.Library.List`."
 
   alias Theoria.Equation
-  alias Theoria.Equation.{Clause, Pattern}
+  alias Theoria.Equation.{Clause, Lemma, Pattern}
   alias Theoria.Level
   alias Theoria.Library.{List, Nat}
   alias Theoria.Term
@@ -86,23 +86,17 @@ defmodule Theoria.Library.List.Validation do
       )
 
     [
-      DefeqCheck.new(
-        :list,
-        "equation_list_length_singleton",
-        compiled_length_singleton,
-        one
+      Lemma.defeq_check(
+        Lemma.new(:equation_list_length_singleton, compiled_length_singleton, one),
+        :list
       ),
-      DefeqCheck.new(
-        :list,
-        "equation_list_append_singleton",
-        compiled_append_singleton,
-        pair
+      Lemma.defeq_check(
+        Lemma.new(:equation_list_append_singleton, compiled_append_singleton, pair),
+        :list
       ),
-      DefeqCheck.new(
-        :list,
-        "equation_list_append_nil",
-        compiled_append_nil,
-        singleton
+      Lemma.defeq_check(
+        Lemma.new(:equation_list_append_nil, compiled_append_nil, singleton),
+        :list
       ),
       DefeqCheck.new(
         :list,

@@ -18,6 +18,7 @@ defmodule Theoria.Equation do
 
   defdelegate compile(kind, motive, clauses, major), to: Compiler
   defdelegate compile_bool(motive, clauses, major), to: Compiler
+  defdelegate compile_bool(motive, clauses, major, context), to: Compiler
   defdelegate compile_nat(motive, clauses, major), to: Compiler
   defdelegate compile_list(element_type, motive, clauses, major), to: Compiler
   defdelegate compile_list(element_type, motive, clauses, major, levels), to: Compiler

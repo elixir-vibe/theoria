@@ -10,6 +10,7 @@ defmodule Theoria.Kernel do
   alias Theoria.Env
   alias Theoria.Env.Constant
   alias Theoria.Env.Constructor, as: EnvConstructor
+  alias Theoria.Env.Inductive, as: EnvInductive
   alias Theoria.Env.Recursor, as: EnvRecursor
   alias Theoria.Env.RecursorRule
   alias Theoria.Env.Reduction
@@ -297,15 +298,12 @@ defmodule Theoria.Kernel do
   defp ensure_reduction_metadata(_env, nil, _metadata), do: :ok
 
   defp ensure_reduction_metadata(env, %Reduction.Iota{}, %EnvRecursor{} = recursor) do
-    cond do
-      recursor.num_minors != length(recursor.rules) ->
-        error(:invalid_reduction, reduction: %Reduction.Iota{}, metadata: recursor)
-
-      Enum.all?(recursor.rules, &valid_recursor_rule?(env, &1)) ->
-        :ok
-
-      true ->
-        error(:invalid_reduction, reduction: %Reduction.Iota{}, metadata: recursor)
+    with :ok <- ensure_recursor_rule_count(recursor),
+         :ok <- ensure_recursor_rule_coverage(env, recursor),
+         :ok <- ensure_recursor_rules(env, recursor) do
+      :ok
+    else
+      {:error, _error} = error -> error
     end
   end
 
@@ -315,19 +313,52 @@ defmodule Theoria.Kernel do
 
   defp ensure_reduction_metadata(_env, _reduction, _metadata), do: :ok
 
-  defp valid_recursor_rule?(env, %RecursorRule{
+  defp ensure_recursor_rule_count(%EnvRecursor{} = recursor) do
+    if recursor.num_minors == length(recursor.rules) do
+      :ok
+    else
+      error(:invalid_reduction, reduction: %Reduction.Iota{}, metadata: recursor)
+    end
+  end
+
+  defp ensure_recursor_rule_coverage(env, %EnvRecursor{} = recursor) do
+    with {:ok, inductive} <- recursor_inductive(recursor),
+         {:ok, %EnvInductive{constructors: constructors}} <- Env.fetch_inductive(env, inductive),
+         true <- constructors == Enum.map(recursor.rules, & &1.constructor),
+         true <- length(constructors) == MapSet.size(MapSet.new(constructors)) do
+      :ok
+    else
+      _other -> error(:invalid_reduction, reduction: %Reduction.Iota{}, metadata: recursor)
+    end
+  end
+
+  defp ensure_recursor_rules(env, %EnvRecursor{} = recursor) do
+    if Enum.all?(recursor.rules, &valid_recursor_rule?(env, recursor, &1)) do
+      :ok
+    else
+      error(:invalid_reduction, reduction: %Reduction.Iota{}, metadata: recursor)
+    end
+  end
+
+  defp valid_recursor_rule?(env, %EnvRecursor{} = recursor, %RecursorRule{
          constructor: constructor,
          field_count: field_count,
          rhs: rhs
        }) do
     with true <- Term.well_scoped?(rhs),
-         {:ok, %EnvConstructor{num_fields: ^field_count}} <-
-           Env.fetch_constructor(env, constructor) do
+         true <- MapSet.subset?(Term.level_params(rhs), MapSet.new(recursor.universe_params)),
+         {:ok, recursor_inductive} <- recursor_inductive(recursor),
+         {:ok, %EnvConstructor{inductive: inductive, num_fields: ^field_count}} <-
+           Env.fetch_constructor(env, constructor),
+         true <- inductive == recursor_inductive do
       true
     else
       _other -> false
     end
   end
+
+  defp recursor_inductive(%EnvRecursor{inductives: [inductive]}), do: {:ok, inductive}
+  defp recursor_inductive(_recursor), do: :error
 
   defp ensure_level_params(term, allowed_params) do
     params = Term.level_params(term)

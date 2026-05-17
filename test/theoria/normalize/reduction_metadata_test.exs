@@ -105,6 +105,26 @@ defmodule Theoria.Normalize.ReductionMetadataTest do
     assert error.reason == :invalid_reduction
   end
 
+  test "recursor rule rhs must infer as a branch function" do
+    {:ok, env} = Bool.env()
+
+    env =
+      put_metadata(env, :bool_rec, fn %Theoria.Env.Recursor{} = recursor ->
+        %Theoria.Env.RecursorRule{} =
+          true_rule = Enum.find(recursor.rules, &(&1.constructor == true))
+
+        bad_rule = %Theoria.Env.RecursorRule{true_rule | rhs: const(true)}
+
+        %Theoria.Env.Recursor{
+          recursor
+          | rules: [bad_rule | Enum.reject(recursor.rules, &(&1.constructor == true))]
+        }
+      end)
+
+    assert {:error, error} = Kernel.validate_env(env)
+    assert error.reason == :invalid_reduction
+  end
+
   test "recursor rule rhs universe params must be declared by the recursor" do
     {:ok, env} = Bool.env()
 

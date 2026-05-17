@@ -94,7 +94,7 @@ Legend:
 | Generated recursors | Auto rec/ind generation | 🟡 | Bool/Nat/List simple recursors | Indexed generation next | P0 |
 | Recursor RHS typing | Rules type-infer as expected shape | 🟡 | Type shape validation added | Full dependent result validation later | P0 |
 | Indexed inductives | Families like `Vec A n` | 🟡 | Can admit constructors; no full eliminators | Opaque eliminators → metadata → iota | P0 |
-| Indexed eliminators | `Vec.ind` | 🟡 | Opaque non-iota recursor declarations with metadata | Add iota rules | P0 |
+| Indexed eliminators | `Vec.ind` | 🟡 | Opaque non-iota recursors with validated rules/index patterns | Enable iota reduction | P0 |
 | Indexed iota reduction | Computation for indexed recursors | 🔴 | Missing | Implement after metadata/rule patterns | P0 |
 | Mutual inductives | `mutual Even/Odd` | 🔴 | Missing | Add `Inductive.Group` later | P2 |
 | Nested inductives | Recursive occurrence under containers | 🔴 | Mostly rejected/unsupported | Later after positivity overhaul | P3 |
@@ -148,7 +148,7 @@ Legend:
 | Iota rules from metadata | Rule-based computation | ✅ / 🟡 | Simple families only | Indexed missing | P0 |
 | Recursor rule RHS authoritative | Normalizer uses RHS | ✅ | Implemented | Continue validation | P0 |
 | Rule type shape validation | Reject wrong domains/extra lambdas | ✅ / 🟡 | Added structural validation | Full dependent codomain validation later | P0 |
-| Indexed recursor declarations | `Vec.ind` declaration | 🟡 | Opaque non-iota declarations generated with metadata | Add indexed iota rules | P0 |
+| Indexed recursor declarations | `Vec.ind` declaration | 🟡 | Opaque non-iota declarations generated with rule metadata | Enable indexed iota | P0 |
 | Indexed recursor iota | Computation over `Vec` | 🔴 | Missing | Requires indexed rule representation | P0 |
 | No-confusion recursors | Constructor discrimination | 🔴 | Missing | Later | P2 |
 | Recursor compilation to efficient dispatch | Performance | ❌ | Simple list lookup | Optimize later | P4 |
@@ -303,7 +303,7 @@ Legend:
 | Step | Deliverable | Priority |
 |---|---|---:|
 | Extend `RecursorRule` | ✅ Add index-pattern metadata | P0 |
-| Generate indexed rules | `Vec.nil`, `Vec.cons` rules | P0 |
+| Generate indexed rules | ✅ `Vec.nil`, `Vec.cons` rule metadata | P0 |
 | Validate indexed rule types | Full dependent motive/index checking | P0 |
 | Normalize indexed recursors | Reduce `Vec.ind ... vec_nil` / `vec_cons` | P0 |
 | Add Vec library | Real `Theoria.Library.Vec` | P1 |

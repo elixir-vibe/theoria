@@ -237,7 +237,17 @@ defmodule Theoria.Inductive do
 
   defp recursor_metadata(%Spec{} = spec, name, type, %Reduction.Iota{}) do
     recursor_params = declaration_params(spec, type)
+    env_recursor(spec, name, type, recursor_params)
+  end
 
+  defp recursor_metadata(%Spec{indices: [_index | _rest]} = spec, name, type, nil) do
+    recursor_params = declaration_params(spec, type)
+    env_recursor(spec, name, type, recursor_params)
+  end
+
+  defp recursor_metadata(_spec, _name, _type, _reduction), do: nil
+
+  defp env_recursor(%Spec{} = spec, name, type, recursor_params) do
     %EnvRecursor{
       name: name,
       type: type,
@@ -251,22 +261,6 @@ defmodule Theoria.Inductive do
     }
   end
 
-  defp recursor_metadata(%Spec{indices: [_index | _rest]} = spec, name, type, nil) do
-    %EnvRecursor{
-      name: name,
-      type: type,
-      universe_params: declaration_params(spec, type),
-      inductives: [spec.name],
-      num_params: length(spec.parameters),
-      num_indices: length(spec.indices),
-      num_motives: 1,
-      num_minors: length(spec.constructors),
-      rules: []
-    }
-  end
-
-  defp recursor_metadata(_spec, _name, _type, _reduction), do: nil
-
   defp recursor_rules(%Spec{} = spec, recursor_name, recursor_type, recursor_params) do
     spec.constructors
     |> Enum.with_index()
@@ -276,7 +270,9 @@ defmodule Theoria.Inductive do
       %RecursorRule{
         constructor: constructor.name,
         field_count: length(result.binders) - length(spec.parameters),
-        rhs: recursor_rule_rhs(spec, recursor_name, recursor_type, recursor_params, result, index)
+        rhs:
+          recursor_rule_rhs(spec, recursor_name, recursor_type, recursor_params, result, index),
+        index_patterns: result.indices
       }
     end)
   end
@@ -326,18 +322,32 @@ defmodule Theoria.Inductive do
       body = S.app(body, S.var(field.name))
 
       if recursive_field?(result, field.position, spec.name) do
-        S.app(body, recursive_call(recursor_name, recursor_params, prefix_names, field.name))
+        S.app(
+          body,
+          recursive_call(spec, recursor_name, recursor_params, prefix_names, result, field)
+        )
       else
         body
       end
     end)
   end
 
-  defp recursive_call(recursor_name, recursor_params, prefix_names, field_name) do
+  defp recursive_call(spec, recursor_name, recursor_params, prefix_names, result, field) do
     levels = Enum.map(recursor_params, &Level.param/1)
-
-    args = Enum.map(prefix_names, &S.var/1) ++ [S.var(field_name)]
+    index_args = recursive_field_indices(spec, result, field)
+    args = Enum.map(prefix_names, &S.var/1) ++ index_args ++ [S.var(field.name)]
     Enum.reduce(args, S.const(recursor_name, levels), fn arg, fun -> S.app(fun, arg) end)
+  end
+
+  defp recursive_field_indices(%Spec{indices: []}, _result, _field), do: []
+
+  defp recursive_field_indices(%Spec{} = spec, result, field) do
+    %{domain: domain} = Enum.at(result.binders, field.position)
+    {_head, arguments} = Term.Application.collect(domain)
+
+    arguments
+    |> Enum.drop(length(spec.parameters))
+    |> Enum.map(&syntax_from_core(&1, field_context(result, field.position)))
   end
 
   defp recursor_prefix_binders(recursor_type, prefix_names) do

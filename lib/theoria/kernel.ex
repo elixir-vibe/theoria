@@ -277,6 +277,10 @@ defmodule Theoria.Kernel do
   defp ensure_constant_kind(:constant, nil, nil), do: :ok
   defp ensure_constant_kind(:inductive, %Theoria.Env.Inductive{}, nil), do: :ok
   defp ensure_constant_kind(:constructor, %EnvConstructor{}, nil), do: :ok
+
+  defp ensure_constant_kind(:recursor, %EnvRecursor{num_indices: indices}, nil) when indices > 0,
+    do: :ok
+
   defp ensure_constant_kind(:recursor, %EnvRecursor{rules: []}, nil), do: :ok
   defp ensure_constant_kind(:recursor, %EnvRecursor{}, %Reduction.Iota{}), do: :ok
 
@@ -290,6 +294,17 @@ defmodule Theoria.Kernel do
       :ok
     else
       error(:invalid_reduction, reduction: reduction)
+    end
+  end
+
+  defp ensure_reduction_metadata(env, nil, %EnvRecursor{num_indices: indices} = recursor)
+       when indices > 0 do
+    with :ok <- ensure_recursor_rule_count(recursor),
+         :ok <- ensure_recursor_rule_coverage(env, recursor),
+         :ok <- ensure_recursor_rules(env, recursor) do
+      :ok
+    else
+      {:error, _error} = error -> error
     end
   end
 
@@ -348,7 +363,7 @@ defmodule Theoria.Kernel do
        }) do
     with true <- valid_recursor_rule_indices?(recursor, index_patterns),
          true <- Term.well_scoped?(rhs),
-         true <- Enum.all?(index_patterns, &Term.well_scoped?/1),
+         true <- well_scoped_index_patterns?(index_patterns, recursor.num_params + field_count),
          true <-
            MapSet.subset?(
              rule_level_params(rhs, index_patterns),
@@ -369,6 +384,10 @@ defmodule Theoria.Kernel do
     is_list(index_patterns) and length(index_patterns) == num_indices
   end
 
+  defp well_scoped_index_patterns?(index_patterns, depth) do
+    Enum.all?(index_patterns, &Term.well_scoped?(&1, depth))
+  end
+
   defp rule_level_params(rhs, index_patterns) do
     Enum.reduce(index_patterns, Term.level_params(rhs), fn pattern, params ->
       MapSet.union(params, Term.level_params(pattern))
@@ -376,7 +395,8 @@ defmodule Theoria.Kernel do
   end
 
   defp valid_recursor_rule_type?(env, %EnvRecursor{} = recursor, constructor, field_count, rhs) do
-    domain_count = EnvRecursor.major_index(recursor) + field_count
+    prefix_count = recursor_rule_prefix_count(recursor)
+    domain_count = prefix_count + field_count
 
     with {:ok, rhs_type} <- infer(env, rhs),
          {:ok, actual_domains, result} <- take_forall_domains(rhs_type, domain_count),
@@ -398,7 +418,7 @@ defmodule Theoria.Kernel do
        ) do
     with {:ok, %Constant{type: constructor_type}} <- Env.fetch(env, constructor),
          {:ok, prefix_domains, _suffix} <-
-           take_forall_domains(recursor.type, EnvRecursor.major_index(recursor)),
+           take_forall_domains(recursor.type, recursor_rule_prefix_count(recursor)),
          {:ok, field_domains} <-
            expected_field_domains(constructor_type, recursor, field_count, actual_domains) do
       {:ok, prefix_domains ++ field_domains}
@@ -412,7 +432,7 @@ defmodule Theoria.Kernel do
          actual_domains
        )
        when params > 0 do
-    {:ok, Enum.slice(actual_domains, EnvRecursor.major_index(recursor), field_count)}
+    {:ok, Enum.slice(actual_domains, recursor_rule_prefix_count(recursor), field_count)}
   end
 
   defp expected_field_domains(
@@ -425,6 +445,10 @@ defmodule Theoria.Kernel do
            take_forall_domains(constructor_type, recursor.num_params + field_count) do
       {:ok, Enum.drop(constructor_domains, recursor.num_params)}
     end
+  end
+
+  defp recursor_rule_prefix_count(%EnvRecursor{} = recursor) do
+    recursor.num_params + recursor.num_motives + recursor.num_minors
   end
 
   defp take_forall_domains(term, count), do: take_forall_domains(term, count, [])

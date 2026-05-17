@@ -88,8 +88,13 @@ defmodule Theoria.Inductive.IndexTest do
              num_indices: 1,
              num_motives: 1,
              num_minors: 2,
-             rules: []
+             rules: [nil_rule, cons_rule]
            } = constant.metadata
+
+    assert %{constructor: :vec_nil, field_count: 0, index_patterns: [zero]} = nil_rule
+    assert zero == term(do: zero) |> elab!()
+    assert %{constructor: :vec_cons, field_count: 3, index_patterns: [succ_n]} = cons_rule
+    assert inspect(succ_n) == "#Theoria<succ #1>"
 
     metadata = constant.metadata
     assert {:ok, %Theoria.Term.Sort{}} = Theoria.Kernel.infer(env, constant.type)

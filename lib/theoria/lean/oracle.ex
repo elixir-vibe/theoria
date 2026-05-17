@@ -21,11 +21,32 @@ defmodule Theoria.Lean.Oracle do
   @doc "Returns the Lean executable path, if available."
   @spec lean_executable(keyword()) :: {:ok, String.t()} | {:error, :lean_not_found}
   def lean_executable(opts \\ []) do
-    executable = Keyword.get(opts, :lean, System.get_env("THEORIA_LEAN") || "lean")
+    opts
+    |> configured_executable()
+    |> resolve_executable()
+  end
 
-    case System.find_executable(executable) do
-      nil -> {:error, :lean_not_found}
-      path -> {:ok, path}
+  defp configured_executable(opts) do
+    Keyword.get(opts, :lean) || System.get_env("THEORIA_LEAN") || bundled_elan_toolchain() ||
+      "lean"
+  end
+
+  defp bundled_elan_toolchain do
+    path = Path.expand("~/.elan/toolchains/leanprover--lean4---v4.29.1/bin/lean")
+
+    if File.exists?(path), do: path
+  end
+
+  defp resolve_executable(path) do
+    cond do
+      Path.type(path) == :absolute and File.exists?(path) ->
+        {:ok, path}
+
+      executable = System.find_executable(path) ->
+        {:ok, executable}
+
+      true ->
+        {:error, :lean_not_found}
     end
   end
 

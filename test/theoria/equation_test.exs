@@ -79,6 +79,7 @@ defmodule Theoria.EquationTest do
       ])
 
     assert {:error, :duplicate_equation_suffix} = Schema.validate(duplicate)
+    assert SchemaBuilder.overlaps(duplicate) == %{0 => [1]}
   end
 
   test "matcher info records small Lean-like matcher metadata" do
@@ -86,6 +87,18 @@ defmodule Theoria.EquationTest do
     info = MatcherInfo.new(:match_nat, 0, 1, [alt])
 
     assert MatcherInfo.arity(info) == 3
+  end
+
+  test "fixed params derive from signature parameters" do
+    signature =
+      Signature.new(:list_length, :list, [{:xs, Term.const(:List)}], nat(),
+        rec_arg_pos: 0,
+        parameters: [{:a, Term.sort(1)}]
+      )
+
+    assert signature.fixed_params.positions == [0]
+    assert {:ok, fixed_params} = FixedParams.analyze(signature)
+    assert fixed_params.positions == [0]
   end
 
   test "equation lemma metadata becomes defeq checks and checked theorems" do
@@ -161,6 +174,7 @@ defmodule Theoria.EquationTest do
     assert length(info.clauses) == 2
     assert info.matcher.name == :"list_append.match_1"
     assert length(info.matcher.discriminants) == 1
+    assert [%{name: :ys, position: 1, family: :list}] = info.matcher.discriminants
     assert info.matcher.overlaps == %{}
     assert info.schema.family == :list
     assert Enum.map(info.schema.equations, & &1.suffix) == [nil, :cons]

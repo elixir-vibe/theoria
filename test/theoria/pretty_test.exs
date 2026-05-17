@@ -77,7 +77,10 @@ defmodule Theoria.PrettyTest do
     assert inspect(info.fixed_params) == "#Theoria.FixedParams<[0]>"
     assert inspect(lemma) == "#Theoria.EquationLemma<list_append.eq_nil>"
     assert inspect(alternative) == "#Theoria.MatcherAlt<list_nil, fields: 0>"
-    assert inspect(matcher.discriminants) == "[#Theoria.MatcherDiscriminant<:anonymous>]"
+
+    assert inspect(matcher.discriminants) ==
+             "[#Theoria.MatcherDiscriminant<:anonymous, position: nil, family: nil>]"
+
     assert inspect(matcher) == "#Theoria.MatcherInfo<match_list, discrs: 1, alts: 1>"
 
     assert inspect(matcher_equation) ==

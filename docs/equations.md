@@ -30,7 +30,7 @@ Theoria.Equation.Info.all(env)
 Theoria.Equation.Info.equation?(env, :nat_add)
 ```
 
-`Theoria.Equation.Signature` summarizes the function telescope, recursive argument, result type, and fixed parameters. `Theoria.Equation.CaseTemplate` describes schematic constructor equations without tying schema generation to concrete library definition names. `Theoria.Equation.SchemaBuilder` turns those inputs into validated schemas and matcher metadata. The compiler returns `Theoria.Equation.Compiled`, which contains the recursor body plus generated clause/schema/matcher metadata. `Theoria.Equation.DefinitionSpec` wraps that compiler result with the final checked type/value before installation. Stored metadata records the definition name, checked type/value, recursive argument position, fixed parameters, level parameters, original clause metadata, Lean-shaped matcher alternatives, and a validated schema that drives schematic theorem generation.
+`Theoria.Equation.Signature` summarizes the function telescope, recursive argument, result type, and fixed parameters. Fixed parameters are derived from the signature's parameter telescope by default, with explicit overrides still available for future edge cases. `Theoria.Equation.CaseTemplate` describes schematic constructor equations without tying schema generation to concrete library definition names. `Theoria.Equation.SchemaBuilder` turns those inputs into validated schemas and matcher metadata, including discriminant names/positions/types and simple overlap records. The compiler returns `Theoria.Equation.Compiled`, which contains the recursor body plus generated clause/schema/matcher metadata. `Theoria.Equation.DefinitionSpec` wraps that compiler result with the final checked type/value before installation. Stored metadata records the definition name, checked type/value, recursive argument position, fixed parameters, level parameters, original clause metadata, Lean-shaped matcher alternatives, matcher discriminants, and a validated schema that drives schematic theorem generation.
 
 ## Generated equation lemmas
 
@@ -113,7 +113,7 @@ mix theoria.simp --examples
 
 ## Mix tooling
 
-List equation metadata and generated lemma names:
+List equation metadata, generated lemma names, matcher metadata, discriminants, alternatives, unfold metadata, and matcher equations:
 
 ```bash
 mix theoria.equations
@@ -144,4 +144,4 @@ The verbose form prints generated lemma names under each stored equation definit
 
 ## Limitations
 
-The current generator is deliberately small. It emits schematic equation lemmas from schemas for the built-in Bool/Nat/List definitions and stores basic matcher metadata. It is not yet Lean's full equation theorem machinery: there is no public equation syntax, no general structural recursion checker, no `brecOn`/below dictionaries, no attribute/prioritized simp database, and no proof-producing rewrite tactic.
+The current generator is deliberately small. It emits schematic equation lemmas from schemas for the built-in Bool/Nat/List definitions, derives fixed parameters from signatures, and stores basic matcher/discriminant/overlap metadata. It is not yet Lean's full equation theorem machinery: there is no public equation syntax, no mutual-recursive fixed-parameter permutation analysis, no discriminant dependency analysis, no independent matcher declarations, no general structural recursion checker, no `brecOn`/below dictionaries, no attribute/prioritized simp database, no lazy theorem realization, and no proof-producing rewrite tactic.

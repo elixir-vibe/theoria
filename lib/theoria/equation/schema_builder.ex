@@ -3,6 +3,7 @@ defmodule Theoria.Equation.SchemaBuilder do
 
   alias Theoria.Equation.CaseTemplate
   alias Theoria.Equation.MatcherInfo
+  alias Theoria.Equation.MatcherInfo.Discriminant
   alias Theoria.Equation.Schema
   alias Theoria.Equation.Signature
 
@@ -25,8 +26,43 @@ defmodule Theoria.Equation.SchemaBuilder do
   @doc "Builds matcher metadata from a validated signature schema."
   @spec matcher(Signature.t(), Schema.t()) :: MatcherInfo.t()
   def matcher(%Signature{} = signature, %Schema{} = schema) do
-    MatcherInfo.for_schema(signature.name, schema)
+    MatcherInfo.for_schema(signature.name, schema,
+      discriminants: discriminants(signature),
+      overlaps: overlaps(schema)
+    )
   end
+
+  @doc "Derives simple overlap metadata from duplicate equation alternatives."
+  @spec overlaps(Schema.t()) :: %{optional(non_neg_integer()) => [non_neg_integer()]}
+  def overlaps(%Schema{} = schema) do
+    schema.equations
+    |> Stream.with_index()
+    |> Enum.reduce(%{}, fn {equation, index}, by_suffix ->
+      Map.update(by_suffix, equation.suffix, [index], &[index | &1])
+    end)
+    |> Enum.flat_map(fn {_suffix, indexes} -> indexes |> Enum.reverse() |> overlap_entry() end)
+    |> Map.new()
+  end
+
+  defp discriminants(%Signature{} = signature) do
+    case Enum.at(signature.arguments, signature.rec_arg_pos) do
+      {name, type} ->
+        [
+          %Discriminant{
+            name: name,
+            position: signature.rec_arg_pos,
+            type: type,
+            family: signature.family
+          }
+        ]
+
+      nil ->
+        [%Discriminant{position: signature.rec_arg_pos, family: signature.family}]
+    end
+  end
+
+  defp overlap_entry([_index]), do: []
+  defp overlap_entry([first | rest]), do: [{first, rest}]
 
   defp equation_for(%CaseTemplate{} = template, signature) do
     Schema.equation(

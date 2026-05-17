@@ -5,9 +5,9 @@ This table tracks Theoria's proof/equation abstractions against the Lean 4 sourc
 | Lean abstraction | Lean role | Theoria abstraction | Status | Missing on Theoria side |
 |---|---|---|---:|---|
 | `PreDefinition` | Not-yet-finalized definition package | `Equation.DefinitionSpec`, `Equation.Signature` | 🟡 | No mutual predefinition groups, equation-affecting options, termination data, or elaborator-owned predefinition pipeline. |
-| `Structural.EqnInfo` | Stores recursive equation metadata: declaration, levels, type/value, rec arg, fixed params | `Equation.Info` | 🟢 | Fixed params are positions, not full permutations/analysis. No recursion kind or mutual group metadata. |
-| `FixedParamPerms` | Computes fixed/varying params across recursive groups | `Equation.FixedParams` | 🟠 | No analysis, permutations, or mutual recursion support. |
-| `MatcherInfo` / `AltParamInfo` | Matcher arity, params, discriminants, alternatives, universe elimination, overlaps | `Equation.MatcherInfo` | 🟡 | No discriminant info, overlap map, independent matcher declarations, or universe-elim sophistication. |
+| `Structural.EqnInfo` | Stores recursive equation metadata: declaration, levels, type/value, rec arg, fixed params | `Equation.Info` | 🟢 | Fixed params are parameter positions, not full permutations. No recursion kind or mutual group metadata. |
+| `FixedParamPerms` | Computes fixed/varying params across recursive groups | `Equation.FixedParams` | 🟡 | Signature-level fixed parameter derivation exists, but no permutations, dependency analysis, or mutual recursion support. |
+| `MatcherInfo` / `AltParamInfo` | Matcher arity, params, discriminants, alternatives, universe elimination, overlaps | `Equation.MatcherInfo` | 🟡 | Discriminant and simple overlap metadata exist, but no independent matcher declarations, discriminant dependency analysis, or universe-elim sophistication. |
 | `mkEqnTypes` / `mkEqns` | Computes equation theorem statements and realizes proofs | `SchemaBuilder`, `Equation.Lemma`, `Eqns` | 🟡 | Current generated equations are template-driven for supported fragments, not derived by splitting normalized match goals. |
 | `getEqnsFor?` / `registerGetEqnsFn` | Lazy central lookup for equation theorem names | `Equation.Eqns` | 🟡 | No lazy realization registry; source lookup is derived by scanning metadata. |
 | `mkUnfoldEq` / `getUnfoldFor?` | Unfold equation theorem generation | `Eqns.unfold/2`, `Lemma.unfold_for/1` | 🟡 | Early direct unfold lemmas only; no separate lazy unfold theorem registry. |
@@ -28,4 +28,4 @@ Signature + CaseTemplate + Clause/Pattern
   → Rewrite/Simp
 ```
 
-The main remaining Lean-alignment target is to replace template-driven equation generation with equation type generation from matcher/definition structure, then add matcher equation extensions and fixed-parameter analysis.
+The main remaining Lean-alignment target is to replace template-driven equation generation with equation type generation from matcher/definition structure, then add independent matcher declarations, richer fixed-parameter permutations, and lazy theorem realization.

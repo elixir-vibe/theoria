@@ -11,7 +11,6 @@ defmodule Theoria.Library.List do
     Clause,
     Definition,
     DefinitionSpec,
-    FixedParams,
     Pattern,
     Signature
   }
@@ -200,7 +199,6 @@ defmodule Theoria.Library.List do
   defp list_signature(:list_length, rec_arg_pos) do
     Signature.new(:list_length, :list, [{:xs, list_of_schema(nat())}], nat(),
       rec_arg_pos: rec_arg_pos,
-      fixed_params: FixedParams.new([0]),
       parameters: [{:a, Term.sort(1)}]
     )
   end
@@ -212,7 +210,6 @@ defmodule Theoria.Library.List do
       [{:xs, list_of_schema(nat())}, {:ys, list_of_schema(nat())}],
       list_of_schema(nat()),
       rec_arg_pos: rec_arg_pos,
-      fixed_params: FixedParams.new([0]),
       parameters: [{:a, Term.sort(1)}]
     )
   end

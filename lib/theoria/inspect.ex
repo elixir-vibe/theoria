@@ -236,7 +236,13 @@ defimpl Inspect, for: Theoria.Equation.MatcherInfo.Discriminant do
 
   def inspect(discriminant, _opts) do
     label = discriminant.name || :anonymous
-    concat(["#Theoria.MatcherDiscriminant<", inspect(label), ">"])
+
+    concat([
+      "#Theoria.MatcherDiscriminant<",
+      inspect(label),
+      ", position: #{inspect(discriminant.position)}, family: #{inspect(discriminant.family)}",
+      ">"
+    ])
   end
 end
 

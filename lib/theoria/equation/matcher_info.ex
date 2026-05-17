@@ -18,9 +18,16 @@ defmodule Theoria.Equation.MatcherInfo do
   defmodule Discriminant do
     @moduledoc "Metadata for one matcher discriminant."
 
-    defstruct [:name]
+    alias Theoria.Term
 
-    @type t :: %__MODULE__{name: atom() | nil}
+    defstruct [:name, :position, :type, :family]
+
+    @type t :: %__MODULE__{
+            name: atom() | nil,
+            position: non_neg_integer() | nil,
+            type: Term.t() | nil,
+            family: atom() | nil
+          }
   end
 
   @enforce_keys [:name, :num_params, :num_discriminants, :alternatives]
@@ -61,9 +68,9 @@ defmodule Theoria.Equation.MatcherInfo do
   end
 
   @doc "Builds matcher metadata from supported equation schema metadata."
-  @spec for_schema(atom(), Theoria.Equation.Schema.t()) :: t()
-  def for_schema(definition_name, %Theoria.Equation.Schema{family: family}) do
-    new(:"#{definition_name}.match_1", num_params(family), 1, alternatives(family))
+  @spec for_schema(atom(), Theoria.Equation.Schema.t(), keyword()) :: t()
+  def for_schema(definition_name, %Theoria.Equation.Schema{family: family}, opts \\ []) do
+    new(:"#{definition_name}.match_1", num_params(family), 1, alternatives(family), opts)
   end
 
   @doc "Returns total matcher arity in Lean's broad shape: params + motive + discriminants + alternatives."

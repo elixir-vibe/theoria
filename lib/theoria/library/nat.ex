@@ -11,7 +11,6 @@ defmodule Theoria.Library.Nat do
     Clause,
     Definition,
     DefinitionSpec,
-    FixedParams,
     Pattern,
     Signature
   }
@@ -94,10 +93,7 @@ defmodule Theoria.Library.Nat do
   end
 
   defp nat_add_signature do
-    Signature.new(:nat_add, :nat, [{:m, nat()}, {:n, nat()}], nat(),
-      rec_arg_pos: 0,
-      fixed_params: FixedParams.new()
-    )
+    Signature.new(:nat_add, :nat, [{:m, nat()}, {:n, nat()}], nat(), rec_arg_pos: 0)
   end
 
   defp nat_add_cases do

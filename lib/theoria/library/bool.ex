@@ -15,7 +15,6 @@ defmodule Theoria.Library.Bool do
     Context,
     Definition,
     DefinitionSpec,
-    FixedParams,
     Pattern,
     Signature
   }
@@ -157,17 +156,11 @@ defmodule Theoria.Library.Bool do
   end
 
   defp bool_signature(:bool_not, rec_arg_pos) do
-    Signature.new(:bool_not, :bool, [{:b, bool()}], bool(),
-      rec_arg_pos: rec_arg_pos,
-      fixed_params: FixedParams.new()
-    )
+    Signature.new(:bool_not, :bool, [{:b, bool()}], bool(), rec_arg_pos: rec_arg_pos)
   end
 
   defp bool_signature(name, rec_arg_pos) when name in [:bool_and, :bool_or] do
-    Signature.new(name, :bool, [{:a, bool()}, {:b, bool()}], bool(),
-      rec_arg_pos: rec_arg_pos,
-      fixed_params: FixedParams.new()
-    )
+    Signature.new(name, :bool, [{:a, bool()}, {:b, bool()}], bool(), rec_arg_pos: rec_arg_pos)
   end
 
   defp bool_cases(:bool_not) do

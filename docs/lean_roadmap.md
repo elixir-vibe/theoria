@@ -204,10 +204,10 @@ Legend:
 
 | Lean feature / concept | Lean role | Theoria status | Current Theoria state | Needed roadmap | Priority |
 |---|---|---:|---|---|---:|
-| Pattern matching compiler | Compile equations to recursors | 🟡 | Internal `Info/FixedParams → Pattern → Clause → Validator → Branch → Context → Compiler → Recursors` pipeline; compiled Bool/Nat/List definitions store auditable equation metadata | Add public syntax and dependent matching later | P1 |
+| Pattern matching compiler | Compile equations to recursors | 🟡 | Internal `Signature/FixedParams → Pattern → Clause → Validator → Branch → Context → SchemaBuilder → Compiler → Recursors` pipeline; compiled Bool/Nat/List definitions store auditable equation metadata with derived fixed params, discriminants, and simple overlaps | Add public syntax and dependent matching later | P1 |
 | Structural recursion | Termination by smaller argument | 🟡 | Library definitions use primitive Nat/List recursion; no general checker | Start conservative checker | P1 |
 | Termination checker | Ensure recursive definitions terminate | 🔴 | Missing | Start conservative | P2 |
-| Equation lemmas | Generated simplification theorems | 🟡 | `Signature` + `CaseTemplate` + `SchemaBuilder` + `Compiled` + `DefinitionSpec`; compiler-owned validated schema-backed schematic generated lemmas for supported Bool/Nat/List definitions; derived matcher metadata; `Eqns` and `MatcherEqns` lookup/source APIs; Lean oracle proof coverage; rewrite DB construction from env metadata | Independent matcher declarations and persistent matcher equation extension still needed for full Lean parity | P2 |
+| Equation lemmas | Generated simplification theorems | 🟡 | `Signature` + `CaseTemplate` + `SchemaBuilder` + `Compiled` + `DefinitionSpec`; compiler-owned validated schema-backed schematic generated lemmas for supported Bool/Nat/List definitions; derived fixed params/discriminants/overlaps; `Eqns` and `MatcherEqns` lookup/source APIs; Lean oracle proof coverage; rewrite DB construction from env metadata | Independent matcher declarations, lazy realization, and persistent matcher equation extension still needed for full Lean parity | P2 |
 | Dependent pattern matching | Match indexed families | 🔴 | Missing | After indexed iota | P2 |
 | Inaccessible patterns | Lean dependent matching feature | ❌ / later | Missing | Probably much later | P5 |
 | Partial functions | Lean has partial support | ❌ | Missing | Avoid early; kernel should stay total | P5 |

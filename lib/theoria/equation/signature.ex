@@ -31,14 +31,26 @@ defmodule Theoria.Equation.Signature do
   @spec new(atom(), atom(), [binder()], Term.t(), keyword()) :: t()
   def new(name, family, arguments, result_type, opts \\ [])
       when is_atom(name) and is_atom(family) and is_list(arguments) do
-    %__MODULE__{
+    rec_arg_pos = Keyword.fetch!(opts, :rec_arg_pos)
+    parameters = Keyword.get(opts, :parameters, [])
+
+    signature = %__MODULE__{
       name: name,
       family: family,
       arguments: arguments,
       result_type: result_type,
-      rec_arg_pos: Keyword.fetch!(opts, :rec_arg_pos),
-      parameters: Keyword.get(opts, :parameters, []),
-      fixed_params: Keyword.get(opts, :fixed_params, FixedParams.new())
+      rec_arg_pos: rec_arg_pos,
+      parameters: parameters,
+      fixed_params: FixedParams.new()
     }
+
+    %{signature | fixed_params: Keyword.get(opts, :fixed_params, derived_fixed_params(signature))}
+  end
+
+  defp derived_fixed_params(signature) do
+    case FixedParams.analyze(signature) do
+      {:ok, fixed_params} -> fixed_params
+      {:error, _reason} -> FixedParams.new()
+    end
   end
 end

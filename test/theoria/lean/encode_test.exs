@@ -30,14 +30,15 @@ defmodule Theoria.Lean.EncodeTest do
     assert Encodable.encode(eq(const(:Nat), const(:zero), const(:zero)), []) ==
              "(Nat.zero = Nat.zero)"
 
-    assert Encodable.encode(refl(const(:zero)), []) == "rfl"
+    assert Encodable.encode(refl(const(:zero)), []) == "(show Nat.zero = Nat.zero from rfl)"
   end
 
   test "encodes equality recursor through the oracle helper" do
     term =
       eq_rec(const(:Nat), lam(:n, const(:Nat), const(:Nat)), const(:zero), refl(const(:zero)))
 
-    assert Encode.term(term) == "(tEqRec (fun (n : Nat) => Nat) Nat.zero rfl)"
+    assert Encode.term(term) ==
+             "(tEqRec (fun (n : Nat) => Nat) Nat.zero (show Nat.zero = Nat.zero from rfl))"
   end
 
   test "encodes special recursor application spines" do
@@ -80,7 +81,7 @@ defmodule Theoria.Lean.EncodeTest do
     assert {:ok, lean_module} = LeanModule.from_validation(validation)
     source = LeanModule.render(lean_module)
 
-    assert LeanModule.stats(lean_module) == %{proof: 51, defeq: 41, total: 92}
+    assert LeanModule.stats(lean_module) == %{proof: 53, defeq: 49, total: 102}
     assert source =~ "def tEqRec"
     assert source =~ "proof Theoria.Library.Logic.Theorems.and_comm"
     assert source =~ "proof Theoria.Library.Equality.Theorems.eq_symm"
@@ -113,7 +114,7 @@ defmodule Theoria.Lean.EncodeTest do
 
     validation = Corpus.build(only: [:defeq])
     assert {:ok, lean_module} = LeanModule.from_validation(validation)
-    assert LeanModule.stats(lean_module) == %{proof: 0, defeq: 41, total: 41}
+    assert LeanModule.stats(lean_module) == %{proof: 0, defeq: 49, total: 49}
   end
 
   defp nat_succ_case do

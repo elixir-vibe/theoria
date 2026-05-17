@@ -144,6 +144,62 @@ defmodule Theoria.Library.List.Theorems do
     end
   end
 
+  theorem :list_append_nil_left do
+    type do
+      term do
+        forall :a, type(0) do
+          forall :xs, list(a) do
+            eq(list(a), list_append(a, list_nil(a), xs), xs)
+          end
+        end
+      end
+    end
+
+    proof do
+      term do
+        lam :a, type(0) do
+          lam :xs, list(a) do
+            refl(xs)
+          end
+        end
+      end
+    end
+  end
+
+  theorem :list_append_cons_left do
+    type do
+      term do
+        forall :a, type(0) do
+          forall :x, a do
+            forall :xs, list(a) do
+              forall :ys, list(a) do
+                eq(
+                  list(a),
+                  list_append(a, list_cons(a, x, xs), ys),
+                  list_cons(a, x, list_append(a, xs, ys))
+                )
+              end
+            end
+          end
+        end
+      end
+    end
+
+    proof do
+      term do
+        lam :a, type(0) do
+          lam :x, a do
+            lam :xs, list(a) do
+              lam :ys, list(a) do
+                refl(list_cons(a, x, list_append(a, xs, ys)))
+              end
+            end
+          end
+        end
+      end
+    end
+  end
+
   theorem :list_length_two do
     type do
       term do

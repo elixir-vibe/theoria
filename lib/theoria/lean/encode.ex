@@ -37,6 +37,8 @@ defmodule Theoria.Lean.Encode do
     list_rec: "tListRec",
     list_ind: "tListInd",
     list_length: "(fun (a : Type) => fun (xs : List a) => List.length xs)",
+    list_append:
+      "(fun (a : Type) => fun (left : List a) => fun (right : List a) => List.append left right)",
     Vec: "TVec",
     vec_nil: "(fun (a : Type) => (@TVec.vec_nil a))",
     vec_cons:

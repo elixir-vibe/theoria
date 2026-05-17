@@ -178,7 +178,7 @@ Legend:
 | Theorem module registry | Check all theorems | ✅ | `__theoria_theorems__/0` | Stable | P0 |
 | Axiom tracking | Trust boundary | ✅ | `axioms/2`, trust report | Stable | P0 |
 | Theorem checking Mix task | CI checker | ✅ | `mix theoria.check` | Stable | P0 |
-| Theorem corpus | Regression proofs | ✅ | 51 theorem(s) | Expand libraries | P1 |
+| Theorem corpus | Regression proofs | ✅ | 53 theorem(s), all covered by native validation and Lean oracle | Expand libraries | P1 |
 | Proof irrelevance for theorem proofs | Lean Prop behavior | ❌ | None | Decide theory later | P4 |
 | Proof artifact serialization | Cache/share proofs | 🔴 | Missing | Add before larger corpora | P3 |
 | Incremental proof checking | Avoid checking everything | 🔴 | Missing | After env hashing | P3 |
@@ -195,7 +195,7 @@ Legend:
 | `constructor` | Use constructor/introduction rule | 🔴 | Missing | After inductive APIs mature | P2 |
 | `cases` | Case split | 🔴 | Missing | Needs eliminator usage | P2 |
 | `induction` | Induction tactic | 🔴 | Missing | Needs robust recursors | P2 |
-| `rewrite` / `rw` | Rewrite by equality | 🟡 | Low-level equality transport helpers | Add tactic ergonomics | P2 |
+| `rewrite` / `rw` | Rewrite by equality | 🟡 | Low-level equality transport plus `symm`/`trans`/`congr` helpers | Add tactic ergonomics | P2 |
 | `simp` | Simplifier | 🔴 | Missing | Needs rewrite database | P3 |
 | `omega` / arithmetic solvers | Automation | ❌ | Missing | Much later / maybe not | P5 |
 | Metaprogramming framework | Lean tactic language | ❌ | Missing | Do not port Lean meta system directly | P5 |
@@ -204,8 +204,8 @@ Legend:
 
 | Lean feature / concept | Lean role | Theoria status | Current Theoria state | Needed roadmap | Priority |
 |---|---|---:|---|---|---:|
-| Pattern matching compiler | Compile equations to recursors | 🔴 | Missing | Add after recursors/equality stronger | P1 |
-| Structural recursion | Termination by smaller argument | 🔴 | Missing | Start with Nat/List primitive recursion | P1 |
+| Pattern matching compiler | Compile equations to recursors | 🟡 | Internal `Theoria.Equation` recursor builders for Bool/Nat/List | Add pattern AST and public compiler later | P1 |
+| Structural recursion | Termination by smaller argument | 🟡 | Library definitions use primitive Nat/List recursion; no general checker | Start conservative checker | P1 |
 | Termination checker | Ensure recursive definitions terminate | 🔴 | Missing | Start conservative | P2 |
 | Equation lemmas | Generated simplification theorems | 🔴 | Missing | Needed for `simp` | P2 |
 | Dependent pattern matching | Match indexed families | 🔴 | Missing | After indexed iota | P2 |
@@ -249,11 +249,12 @@ Legend:
 | Lean feature / concept | Lean role | Theoria status | Current Theoria state | Needed roadmap | Priority |
 |---|---|---:|---|---|---:|
 | Kernel corruption tests | Catch invalid envs | ✅ / 🟡 | Leanchecker-inspired tests | Keep expanding | P0 |
-| Theorem corpus tests | Prove library facts | ✅ | 51 theorem(s) | Expand corpus | P1 |
+| Theorem corpus tests | Prove library facts | ✅ | 53 theorem(s), 49 defeq checks, 4 inductive checks | Expand corpus | P1 |
 | Property tests for terms | Subst/shift/scope laws | 🟡 | Some properties | Add well-typed generator | P1 |
 | Normalization preservation | Reduction preserves type | 🔴 | Missing broadly | Add property tests | P1 |
-| Defeq laws | Equivalence properties | 🔴 | Missing broadly | Add generated well-typed tests | P1 |
+| Defeq laws | Equivalence properties | 🟡 | Native validation has 49 defeq checks mirrored to Lean | Add generated well-typed tests | P1 |
 | Inductive admission fuzzing | Random invalid specs | 🔴 | Missing | Add after APIs stabilize | P2 |
+| Lean oracle validation | External contributor oracle | ✅ | Logic/Equality/Bool/Nat/List/Vec theorem corpus plus defeq checks; Vec mirror generated from `Inductive.Spec` | Continue as corpus grows | P1 |
 | Real-world spec tests | Consume by Reach/etc. | 🔴 | Missing | Later | P4 |
 
 ## Features probably not worth porting soon
@@ -313,7 +314,7 @@ Legend:
 | Step | Deliverable | Priority |
 |---|---|---:|
 | Add `Eq.rec` primitive or declaration | ✅ Primitive rewrite principle | P0 |
-| Add rewrite helper theorem APIs | Use equality proofs | P1 |
+| Add rewrite helper theorem APIs | ✅ `rewrite`/`subst`/`ndrec`/`symm`/`trans`/`congr` term builders | P1 |
 | Decide primitive vs inductive Eq | Architecture decision | P1 |
 | Add equality theorem corpus | ✅ symmetry, transitivity, congruence | P1 |
 
@@ -322,7 +323,7 @@ Legend:
 | Step | Deliverable | Priority |
 |---|---|---:|
 | Pattern AST | Constructors/vars/wildcards | P1 |
-| Bool/Nat/List equation compiler | Compile to recursors | P1 |
+| Bool/Nat/List equation compiler | 🟡 Internal recursor builders in `Theoria.Equation`; add pattern AST next | P1 |
 | Generated equation theorems | Computation lemmas | P2 |
 | Termination checker v0 | Structural only | P2 |
 | Replace hand-written library defs | `nat_add`, `list_length`, etc. | P2 |

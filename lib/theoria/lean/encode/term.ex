@@ -82,7 +82,13 @@ defimpl Theoria.Lean.Encodable, for: Theoria.Term.Eq do
 end
 
 defimpl Theoria.Lean.Encodable, for: Theoria.Term.Refl do
-  def encode(_refl, _context), do: "rfl"
+  alias Theoria.Lean.Encode
+  alias Theoria.Term.Refl
+
+  def encode(%Refl{value: value}, context) do
+    value = Encode.term(value, context)
+    "(show #{value} = #{value} from rfl)"
+  end
 end
 
 defimpl Theoria.Lean.Encodable, for: Theoria.Term.EqRec do

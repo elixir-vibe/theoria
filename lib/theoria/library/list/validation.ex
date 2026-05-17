@@ -1,6 +1,7 @@
 defmodule Theoria.Library.List.Validation do
   @moduledoc "Validation metadata for `Theoria.Library.List`."
 
+  alias Theoria.Level
   alias Theoria.Library.{List, Nat}
   alias Theoria.Term
 
@@ -31,6 +32,13 @@ defmodule Theoria.Library.List.Validation do
     nat_list = Term.app(Term.const(:List), nat)
     empty = Term.app(Term.const(:list_nil), nat)
     singleton = Term.const(:list_cons) |> Term.app(nat) |> Term.app(zero) |> Term.app(empty)
+
+    pair =
+      Term.const(:list_cons, [Level.param(:u)])
+      |> Term.app(nat)
+      |> Term.app(zero)
+      |> Term.app(singleton)
+
     list_succ_case = Terms.list_succ_case(nat_list)
 
     [
@@ -67,6 +75,18 @@ defmodule Theoria.Library.List.Validation do
         |> Term.app(list_succ_case)
         |> Term.app(singleton),
         one
+      ),
+      DefeqCheck.new(
+        :list,
+        "list_append_nil",
+        Term.const(:list_append) |> Term.app(nat) |> Term.app(empty) |> Term.app(singleton),
+        singleton
+      ),
+      DefeqCheck.new(
+        :list,
+        "list_append_singleton",
+        Term.const(:list_append) |> Term.app(nat) |> Term.app(singleton) |> Term.app(singleton),
+        pair
       )
     ] ++ SmallTerms.defeq_checks(:list)
   end

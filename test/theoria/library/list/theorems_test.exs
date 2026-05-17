@@ -13,6 +13,8 @@ defmodule Theoria.Library.List.TheoremsTest do
              :list_length_singleton,
              :list_length_cons_nil,
              :list_length_cons,
+             :list_append_nil_left,
+             :list_append_cons_left,
              :list_length_two
            ]
   end

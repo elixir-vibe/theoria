@@ -51,6 +51,10 @@ defmodule Theoria.Lean.Encode.Application do
     {:ok, Encode.apply_source("List.length", encode_args([list], context))}
   end
 
+  def encode(%Const{name: :list_append}, [_type, left, right], context) do
+    {:ok, Encode.apply_source("List.append", encode_args([left, right], context))}
+  end
+
   def encode(%Const{name: :list_rec}, [_type, motive, nil_case, cons_case, major], context) do
     fun = "List.rec (motive := fun _ => #{Encode.term(motive, context)})"
     {:ok, Encode.apply_source(fun, encode_args([nil_case, cons_case, major], context))}

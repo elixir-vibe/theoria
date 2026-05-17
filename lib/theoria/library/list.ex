@@ -14,8 +14,10 @@ defmodule Theoria.Library.List do
 
   @doc "Extends an environment with list declarations. Requires Nat declarations."
   def extend(%Env{} = env) do
-    with {:ok, env} <- Kernel.add_inductive(env, inductive_spec()) do
-      Kernel.add_definition(env, :list_length, list_length_type(), list_length_value(), [:u])
+    with {:ok, env} <- Kernel.add_inductive(env, inductive_spec()),
+         {:ok, env} <-
+           Kernel.add_definition(env, :list_length, list_length_type(), list_length_value(), [:u]) do
+      Kernel.add_definition(env, :list_append, list_append_type(), list_append_value(), [:u])
     end
   end
 
@@ -77,6 +79,50 @@ defmodule Theoria.Library.List do
     elab!(
       forall :a, Theoria.Syntax.sort(u) do
         arrow(call(const(:List, [u]), var(:a)), const(:Nat))
+      end
+    )
+  end
+
+  defp list_append_type do
+    u = Level.param(:u)
+    a = var(:a)
+    list_a = call(const(:List, [u]), a)
+
+    elab!(
+      forall :a, Theoria.Syntax.sort(u) do
+        arrow(list_a, arrow(list_a, list_a))
+      end
+    )
+  end
+
+  defp list_append_value do
+    u = Level.param(:u)
+    a = var(:a)
+    left = var(:left)
+    right = var(:right)
+    head = var(:head)
+    acc = var(:acc)
+    list_a = call(const(:List, [u]), a)
+
+    elab!(
+      lam :a, Theoria.Syntax.sort(u) do
+        lam :left, list_a do
+          lam :right, list_a do
+            call(const(:list_rec, [u, u]), [
+              a,
+              list_a,
+              right,
+              lam :head, a do
+                lam :_tail, list_a do
+                  lam :acc, list_a do
+                    call(const(:list_cons, [u]), a, head, acc)
+                  end
+                end
+              end,
+              left
+            ])
+          end
+        end
       end
     )
   end

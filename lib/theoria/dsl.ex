@@ -320,7 +320,8 @@ defmodule Theoria.DSL do
   end
 
   defp quote_term({name, _meta, args})
-       when name in [:list_nil, :list_cons, :list_length, :vec_nil, :vec_cons] and is_list(args) do
+       when name in [:list_nil, :list_cons, :list_length, :list_append, :vec_nil, :vec_cons] and
+              is_list(args) do
     quote_level_application(name, [1], args)
   end
 

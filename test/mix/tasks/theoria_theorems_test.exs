@@ -59,7 +59,7 @@ defmodule Mix.Tasks.Theoria.TheoremsTest do
     assert output =~ "Checking Theoria theorem modules"
     assert output =~ "Theoria.Library.Logic.Theorems"
     assert output =~ "Theoria.Library.Vec.Theorems"
-    assert output =~ "Checked 51 theorem(s)."
+    assert output =~ "Checked 53 theorem(s)."
   end
 
   test "checks explicit theorem modules" do
@@ -90,7 +90,7 @@ defmodule Mix.Tasks.Theoria.TheoremsTest do
     output = capture_io(fn -> Theorems.run(["--axioms"]) end)
 
     assert output =~ "axioms: none"
-    assert output =~ "Checked 51 theorem(s)."
+    assert output =~ "Checked 53 theorem(s)."
   end
 
   test "dependent theorem modules fail without installation" do

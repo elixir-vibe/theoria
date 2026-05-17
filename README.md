@@ -128,7 +128,7 @@ Current declarations include:
 | Equality | primitive `Eq`, `refl`, `Eq.rec`, transport helpers, equality theorems |
 | Bool | `Bool`, `true`, `false`, generated recursor/inductor, boolean operations |
 | Nat | `Nat`, `zero`, `succ`, generated recursor/inductor, `nat_add` |
-| List | universe-polymorphic `List`, constructors, recursor/inductor, `list_length` |
+| List | universe-polymorphic `List`, constructors, recursor/inductor, `list_length`, `list_append` |
 | Vec | length-indexed `Vec`, `vec_nil`, `vec_cons`, indexed `vec_ind` |
 
 The built-in theorem corpus currently covers logic, equality, Bool, Nat, List, and Vec facts, including equality symmetry/transitivity/substitution/congruence and recursor computation by reflexivity.

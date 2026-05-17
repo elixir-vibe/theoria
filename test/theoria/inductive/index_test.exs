@@ -3,6 +3,7 @@ defmodule Theoria.Inductive.IndexTest do
 
   alias Theoria.Env
   alias Theoria.Inductive
+  alias Theoria.Inductive.Generate
   alias Theoria.Inductive.{Index, Spec}
   alias Theoria.Library.Nat
   alias Theoria.Term
@@ -52,6 +53,14 @@ defmodule Theoria.Inductive.IndexTest do
     assert error.reason == :invalid_inductive
     assert Keyword.fetch!(error.details, :problem) == :constructor_argument_scope_mismatch
     assert Keyword.fetch!(error.details, :constructor) == :vec_nil
+  end
+
+  test "generates indexed induction type without iota rules" do
+    spec = vec_spec()
+    assert {:ok, type} = Generate.indexed_induction_type(spec)
+    assert Term.well_scoped?(type)
+    assert inspect(type) =~ "motive"
+    assert inspect(type) =~ "vec_cons"
   end
 
   test "completion rejects indexed eliminators explicitly" do

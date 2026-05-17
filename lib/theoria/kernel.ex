@@ -349,7 +349,7 @@ defmodule Theoria.Kernel do
        }) do
     with true <- Term.well_scoped?(rhs),
          true <- MapSet.subset?(Term.level_params(rhs), MapSet.new(recursor.universe_params)),
-         true <- inferable_recursor_rule?(env, rhs),
+         true <- valid_recursor_rule_type?(env, recursor, constructor, field_count, rhs),
          {:ok, recursor_inductive} <- recursor_inductive(recursor),
          {:ok, %EnvConstructor{inductive: inductive, num_fields: ^field_count}} <-
            Env.fetch_constructor(env, constructor),
@@ -360,7 +360,73 @@ defmodule Theoria.Kernel do
     end
   end
 
-  defp inferable_recursor_rule?(env, rhs), do: match?({:ok, %Forall{}}, infer(env, rhs))
+  defp valid_recursor_rule_type?(env, %EnvRecursor{} = recursor, constructor, field_count, rhs) do
+    domain_count = EnvRecursor.major_index(recursor) + field_count
+
+    with {:ok, rhs_type} <- infer(env, rhs),
+         {:ok, actual_domains, result} <- take_forall_domains(rhs_type, domain_count),
+         false <- match?(%Forall{}, result),
+         {:ok, expected_domains} <-
+           expected_recursor_rule_domains(env, recursor, constructor, field_count, actual_domains) do
+      domain_lists_defeq?(env, actual_domains, expected_domains)
+    else
+      _other -> false
+    end
+  end
+
+  defp expected_recursor_rule_domains(
+         env,
+         %EnvRecursor{} = recursor,
+         constructor,
+         field_count,
+         actual_domains
+       ) do
+    with {:ok, %Constant{type: constructor_type}} <- Env.fetch(env, constructor),
+         {:ok, prefix_domains, _suffix} <-
+           take_forall_domains(recursor.type, EnvRecursor.major_index(recursor)),
+         {:ok, field_domains} <-
+           expected_field_domains(constructor_type, recursor, field_count, actual_domains) do
+      {:ok, prefix_domains ++ field_domains}
+    end
+  end
+
+  defp expected_field_domains(
+         _constructor_type,
+         %EnvRecursor{num_params: params} = recursor,
+         field_count,
+         actual_domains
+       )
+       when params > 0 do
+    {:ok,
+     actual_domains |> Enum.drop(EnvRecursor.major_index(recursor)) |> Enum.take(field_count)}
+  end
+
+  defp expected_field_domains(
+         constructor_type,
+         %EnvRecursor{} = recursor,
+         field_count,
+         _actual_domains
+       ) do
+    with {:ok, constructor_domains, _target} <-
+           take_forall_domains(constructor_type, recursor.num_params + field_count) do
+      {:ok, Enum.drop(constructor_domains, recursor.num_params)}
+    end
+  end
+
+  defp take_forall_domains(term, count), do: take_forall_domains(term, count, [])
+  defp take_forall_domains(term, 0, domains), do: {:ok, Enum.reverse(domains), term}
+
+  defp take_forall_domains(%Forall{domain: domain, body: body}, count, domains) when count > 0 do
+    take_forall_domains(body, count - 1, [domain | domains])
+  end
+
+  defp take_forall_domains(_term, _count, _domains), do: :error
+
+  defp domain_lists_defeq?(env, actual_domains, expected_domains) do
+    actual_domains
+    |> Enum.zip(expected_domains)
+    |> Enum.all?(fn {actual, expected} -> Normalize.defeq?(env, actual, expected) end)
+  end
 
   defp put_unchecked_recursor(env, %EnvRecursor{} = recursor) do
     Env.put_constant(env, recursor.name, recursor.type, recursor.universe_params,

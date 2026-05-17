@@ -116,6 +116,85 @@ defmodule Theoria.Normalize.ReductionMetadataTest do
            end)
   end
 
+  test "recursor rule rhs must have the expected prefix domains" do
+    {:ok, env} = Bool.env()
+
+    env =
+      put_metadata(env, :bool_rec, fn %Theoria.Env.Recursor{} = recursor ->
+        %Theoria.Env.RecursorRule{} =
+          true_rule = Enum.find(recursor.rules, &(&1.constructor == true))
+
+        bad_rule = %Theoria.Env.RecursorRule{
+          true_rule
+          | rhs: lam(:motive, sort(1), lam(:minor0, bvar(0), lam(:minor1, bvar(1), bvar(1))))
+        }
+
+        %Theoria.Env.Recursor{
+          recursor
+          | rules: [bad_rule | Enum.reject(recursor.rules, &(&1.constructor == true))]
+        }
+      end)
+
+    assert {:error, error} = Kernel.validate_env(env)
+    assert error.reason == :invalid_reduction
+  end
+
+  test "recursor rule rhs must have expected field domains" do
+    {:ok, env} = Nat.env()
+
+    env =
+      put_metadata(env, :nat_rec, fn %Theoria.Env.Recursor{} = recursor ->
+        %Theoria.Env.RecursorRule{} =
+          succ_rule = Enum.find(recursor.rules, &(&1.constructor == :succ))
+
+        bad_rule = %Theoria.Env.RecursorRule{
+          succ_rule
+          | rhs:
+              lam(
+                :motive,
+                sort(Theoria.Level.param(:u)),
+                lam(
+                  :minor0,
+                  bvar(0),
+                  lam(
+                    :minor1,
+                    arrow(const(:Nat), arrow(bvar(1), bvar(2))),
+                    lam(:field0, bvar(2), bvar(2))
+                  )
+                )
+              )
+        }
+
+        %Theoria.Env.Recursor{
+          recursor
+          | rules: [bad_rule | Enum.reject(recursor.rules, &(&1.constructor == :succ))]
+        }
+      end)
+
+    assert {:error, error} = Kernel.validate_env(env)
+    assert error.reason == :invalid_reduction
+  end
+
+  test "recursor rule rhs must not have extra lambdas" do
+    {:ok, env} = Bool.env()
+
+    env =
+      put_metadata(env, :bool_rec, fn %Theoria.Env.Recursor{} = recursor ->
+        %Theoria.Env.RecursorRule{} =
+          true_rule = Enum.find(recursor.rules, &(&1.constructor == true))
+
+        bad_rule = %Theoria.Env.RecursorRule{true_rule | rhs: lam(:extra, sort(0), true_rule.rhs)}
+
+        %Theoria.Env.Recursor{
+          recursor
+          | rules: [bad_rule | Enum.reject(recursor.rules, &(&1.constructor == true))]
+        }
+      end)
+
+    assert {:error, error} = Kernel.validate_env(env)
+    assert error.reason == :invalid_reduction
+  end
+
   test "recursor rule rhs must infer as a branch function" do
     {:ok, env} = Bool.env()
 

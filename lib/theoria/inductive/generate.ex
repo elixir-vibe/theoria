@@ -6,6 +6,7 @@ defmodule Theoria.Inductive.Generate do
   alias Theoria.Inductive.{Constructor, Recursor, Shape, Spec}
   alias Theoria.Level
   alias Theoria.Syntax, as: S
+  alias Theoria.Term
   alias Theoria.Term.{App, Const}
 
   import Theoria.DSL, only: [elab!: 1]
@@ -48,6 +49,20 @@ defmodule Theoria.Inductive.Generate do
   @doc "Returns the reason generic eliminator generation does not support the spec."
   @spec unsupported_reason(Spec.t()) :: atom() | nil
   def unsupported_reason(%Spec{} = spec), do: capabilities(spec).reason
+
+  @doc "Generates the dependent eliminator type for an indexed inductive without iota rules."
+  @spec indexed_induction_type(Spec.t()) :: {:ok, Term.t()} | {:error, Error.t()}
+  def indexed_induction_type(%Spec{indices: []}), do: invalid(:not_indexed)
+
+  def indexed_induction_type(%Spec{} = spec) do
+    if simple_recursive_arguments?(spec) do
+      {:ok, indexed_ind_type(spec) |> elab!()}
+    else
+      invalid(:nested_or_unsupported_recursive_argument)
+    end
+  end
+
+  def indexed_induction_type(_spec), do: invalid(:invalid_spec)
 
   @doc "Generates non-dependent and dependent eliminators for supported simple inductives."
   @spec eliminators(Spec.t()) :: {:ok, [Recursor.t()]} | {:error, Error.t()}
@@ -285,6 +300,137 @@ defmodule Theoria.Inductive.Generate do
   defp major_name(%Spec{name: :Nat}), do: :n
   defp major_name(%Spec{name: :List}), do: :xs
   defp major_name(%Spec{}), do: :major
+
+  defp indexed_ind_type(%Spec{} = spec) do
+    v = recursor_level(spec)
+    target = indexed_target_type(spec)
+    major_name = major_name(spec)
+
+    spec.constructors
+    |> Enum.reverse()
+    |> Enum.reduce(indexed_major_type(spec, target, major_name), fn constructor, body ->
+      S.arrow(indexed_branch_type(spec, constructor), body)
+    end)
+    |> then(&S.forall(:motive, indexed_motive_type(spec, target, v), &1))
+    |> wrap_parameters(spec)
+  end
+
+  defp indexed_target_type(%Spec{} = spec) do
+    parameter_args = Enum.map(spec.parameters, &S.var(&1.name))
+    index_args = Enum.map(spec.indices, &S.var(&1.name))
+
+    levels = Enum.map(spec.universe_params, &Level.param/1)
+
+    Enum.reduce(parameter_args ++ index_args, S.const(spec.name, levels), fn arg, fun ->
+      S.app(fun, arg)
+    end)
+  end
+
+  defp indexed_motive_type(%Spec{} = spec, target, level) do
+    spec.indices
+    |> Enum.reverse()
+    |> Enum.reduce(S.arrow(target, S.sort(level)), fn index, body ->
+      S.forall(index.name, syntax_from_core(index.type), body)
+    end)
+  end
+
+  defp indexed_major_type(%Spec{} = spec, target, major_name) do
+    major = S.var(major_name)
+
+    motive_app =
+      Enum.reduce(
+        Enum.map(spec.indices, &S.var(&1.name)) ++ [major],
+        S.var(:motive),
+        &S.app(&2, &1)
+      )
+
+    spec.indices
+    |> Enum.reverse()
+    |> Enum.reduce(S.forall(major_name, target, motive_app), fn index, body ->
+      S.forall(index.name, syntax_from_core(index.type), body)
+    end)
+  end
+
+  defp indexed_branch_type(%Spec{} = spec, %Constructor{} = constructor) do
+    {:ok, result} = Constructor.result(constructor, spec)
+    parameter_count = length(spec.parameters)
+    argument_binders = argument_binders(result, parameter_count)
+
+    constructor_app =
+      constructor_application(constructor, result, spec.parameters, argument_binders)
+
+    motive_app =
+      Enum.reduce(
+        index_args(result, argument_binders, parameter_count) ++ [constructor_app],
+        S.var(:motive),
+        &S.app(&2, &1)
+      )
+
+    argument_binders
+    |> Enum.reverse()
+    |> Enum.reduce(motive_app, fn binder, body ->
+      body =
+        case recursive_indices(
+               binder.domain,
+               spec,
+               indexed_context(result, binder.position, parameter_count)
+             ) do
+          {:ok, indices} ->
+            S.arrow(
+              Enum.reduce(indices ++ [S.var(binder.name)], S.var(:motive), &S.app(&2, &1)),
+              body
+            )
+
+          :error ->
+            body
+        end
+
+      S.forall(binder.name, syntax_from_core(binder.domain, binder.context), body)
+    end)
+  end
+
+  defp index_args(result, argument_binders, parameter_count) do
+    context =
+      argument_binders
+      |> Enum.map(& &1.name)
+      |> Enum.reverse()
+      |> Kernel.++(
+        result.binders
+        |> Enum.take(parameter_count)
+        |> Enum.map(& &1.name)
+        |> Enum.reverse()
+      )
+
+    Enum.map(result.indices, &syntax_from_core(&1, context))
+  end
+
+  defp indexed_context(result, position, parameter_count) do
+    fields =
+      result.binders
+      |> Enum.drop(parameter_count)
+      |> Enum.take(position - parameter_count)
+      |> Enum.with_index()
+      |> Enum.map(fn {binder, index} -> argument_name(binder.name, index) end)
+      |> Enum.reverse()
+
+    params = result.binders |> Enum.take(parameter_count) |> Enum.map(& &1.name) |> Enum.reverse()
+    fields ++ params
+  end
+
+  defp recursive_indices(domain, %Spec{} = spec, context) do
+    {head, arguments} = Term.Application.collect(domain)
+
+    case head do
+      %Const{name: name} when name == spec.name ->
+        {:ok,
+         arguments
+         |> Enum.drop(length(spec.parameters))
+         |> Enum.map(&syntax_from_core(&1, context))}
+
+      _other ->
+        :error
+    end
+  end
 
   defp dependent_branch_type(%Spec{} = spec, %Constructor{} = constructor) do
     {:ok, result} = Constructor.result(constructor, spec)

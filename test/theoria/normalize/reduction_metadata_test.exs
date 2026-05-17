@@ -50,7 +50,11 @@ defmodule Theoria.Normalize.ReductionMetadataTest do
             }} =
              Env.fetch(checked_env, :nat_ind)
 
-    assert Enum.map(rules, &{&1.constructor, &1.field_count}) == [zero: 0, succ: 1]
+    assert Enum.map(rules, &{&1.constructor, &1.field_count, &1.index_patterns}) == [
+             {:zero, 0, []},
+             {:succ, 1, []}
+           ]
+
     assert Enum.all?(rules, &match?(%Theoria.Term.Lam{}, &1.rhs))
   end
 
@@ -79,6 +83,26 @@ defmodule Theoria.Normalize.ReductionMetadataTest do
           true_rule = Enum.find(recursor.rules, &(&1.constructor == true))
 
         bad_rule = %Theoria.Env.RecursorRule{true_rule | rhs: bvar(99)}
+
+        %Theoria.Env.Recursor{
+          recursor
+          | rules: [bad_rule | Enum.reject(recursor.rules, &(&1.constructor == true))]
+        }
+      end)
+
+    assert {:error, error} = Kernel.validate_env(env)
+    assert error.reason == :invalid_reduction
+  end
+
+  test "recursor rule index patterns must match recursor indices" do
+    {:ok, env} = Bool.env()
+
+    env =
+      put_metadata(env, :bool_rec, fn %Theoria.Env.Recursor{} = recursor ->
+        %Theoria.Env.RecursorRule{} =
+          true_rule = Enum.find(recursor.rules, &(&1.constructor == true))
+
+        bad_rule = %Theoria.Env.RecursorRule{true_rule | index_patterns: [const(:Bool)]}
 
         %Theoria.Env.Recursor{
           recursor

@@ -346,10 +346,17 @@ defmodule Theoria.Kernel do
   defp valid_recursor_rule?(env, %EnvRecursor{} = recursor, %RecursorRule{
          constructor: constructor,
          field_count: field_count,
-         rhs: rhs
+         rhs: rhs,
+         index_patterns: index_patterns
        }) do
-    with true <- Term.well_scoped?(rhs),
-         true <- MapSet.subset?(Term.level_params(rhs), MapSet.new(recursor.universe_params)),
+    with true <- valid_recursor_rule_indices?(recursor, index_patterns),
+         true <- Term.well_scoped?(rhs),
+         true <- Enum.all?(index_patterns, &Term.well_scoped?/1),
+         true <-
+           MapSet.subset?(
+             rule_level_params(rhs, index_patterns),
+             MapSet.new(recursor.universe_params)
+           ),
          true <- valid_recursor_rule_type?(env, recursor, constructor, field_count, rhs),
          {:ok, recursor_inductive} <- recursor_inductive(recursor),
          {:ok, %EnvConstructor{inductive: inductive, num_fields: ^field_count}} <-
@@ -359,6 +366,16 @@ defmodule Theoria.Kernel do
     else
       _other -> false
     end
+  end
+
+  defp valid_recursor_rule_indices?(%EnvRecursor{num_indices: num_indices}, index_patterns) do
+    is_list(index_patterns) and length(index_patterns) == num_indices
+  end
+
+  defp rule_level_params(rhs, index_patterns) do
+    Enum.reduce(index_patterns, Term.level_params(rhs), fn pattern, params ->
+      MapSet.union(params, Term.level_params(pattern))
+    end)
   end
 
   defp valid_recursor_rule_type?(env, %EnvRecursor{} = recursor, constructor, field_count, rhs) do

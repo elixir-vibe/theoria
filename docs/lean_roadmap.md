@@ -83,7 +83,7 @@ Legend:
 | `InductiveVal` | Metadata for type former | ✅ | `%Env.Inductive{}` | Add mutual/nested fields later | P0 |
 | `ConstructorVal` | Metadata for constructors | ✅ | `%Env.Constructor{}` | Stable | P0 |
 | `RecursorVal` | Metadata for recursors | 🟡 | `%Env.Recursor{}` for simple and opaque indexed recursors | Add indexed rule metadata | P0 |
-| `RecursorRule` | Iota rule metadata | 🟡 | `%Env.RecursorRule{constructor, field_count, rhs}` | Add indexed rule patterns | P0 |
+| `RecursorRule` | Iota rule metadata | 🟡 | `%Env.RecursorRule{constructor, field_count, rhs, index_patterns}` | Generate indexed rules | P0 |
 | Inductive admission pipeline | Kernel checks inductive declarations | 🟡 | `Inductive.Admission` staged path | Move more ownership here; more Lean checks | P0 |
 | Strict positivity | Reject negative recursive occurrences | 🟡 | Basic positivity check | Harden nested/mutual cases | P0 |
 | Constructor target checks | Constructors return the family | ✅ | Implemented | Stable | P0 |
@@ -302,7 +302,7 @@ Legend:
 
 | Step | Deliverable | Priority |
 |---|---|---:|
-| Extend `RecursorRule` | Add index/result pattern metadata | P0 |
+| Extend `RecursorRule` | ✅ Add index-pattern metadata | P0 |
 | Generate indexed rules | `Vec.nil`, `Vec.cons` rules | P0 |
 | Validate indexed rule types | Full dependent motive/index checking | P0 |
 | Normalize indexed recursors | Reduce `Vec.ind ... vec_nil` / `vec_cons` | P0 |

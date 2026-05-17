@@ -1,7 +1,8 @@
 defmodule Theoria.Validation.Corpus do
   @moduledoc "Theoria-owned validation corpus consumed by local checks and external oracles."
 
-  alias Theoria.Validation.DefeqChecks
+  alias Theoria.Term
+  alias Theoria.Validation.DefeqCheck
 
   @library_validations %{
     logic: Theoria.Library.Logic.Validation,
@@ -57,7 +58,7 @@ defmodule Theoria.Validation.Corpus do
 
   defp defeq_checks(categories, library_checks) do
     cond do
-      :defeq in categories -> DefeqChecks.all()
+      :defeq in categories -> all_defeq_checks()
       categories == [] -> []
       true -> library_checks |> Enum.flat_map(& &1.defeq) |> Enum.uniq_by(& &1.name)
     end
@@ -69,6 +70,25 @@ defmodule Theoria.Validation.Corpus do
       categories == [] or categories == [:defeq] -> []
       true -> library_checks |> Enum.flat_map(& &1.inductive) |> Enum.uniq_by(& &1.name)
     end
+  end
+
+  defp all_defeq_checks do
+    global_defeq_checks() ++
+      (@builtin_categories
+       |> library_checks()
+       |> Enum.flat_map(& &1.defeq)
+       |> Enum.uniq_by(& &1.name))
+  end
+
+  defp global_defeq_checks do
+    nat = Term.const(:Nat)
+    type = Term.sort(1)
+    var = Term.bvar(0)
+
+    [
+      DefeqCheck.new(:defeq, "beta_identity", Term.app(Term.lam(:x, type, var), nat), nat),
+      DefeqCheck.new(:defeq, "zeta_identity", Term.let(:x, type, nat, var), nat)
+    ]
   end
 
   defp all_inductive_checks do

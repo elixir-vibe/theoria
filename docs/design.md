@@ -95,7 +95,7 @@ end
 
 `Theoria.Prelude.env/0` is the standard environment for users and downstream tooling. It composes the built-in libraries in dependency order: Logic, Bool, Nat, List, then Vec.
 
-`mix theoria.check` checks theorem corpora against the prelude and is part of CI. With no arguments it checks built-in theorem modules; with module arguments it checks those user-provided theorem modules.
+`mix theoria.check` validates the native corpus against the prelude and is part of CI. It checks theorem modules, definitional-equality checks, and inductive specs. Use `mix theoria.validate --only ...` to run a narrower validation slice.
 
 ## Normalization and definitional equality
 

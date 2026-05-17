@@ -7,17 +7,22 @@ defmodule Theoria.Validation.SmallTerms do
   alias Theoria.Validation.DefeqCheck
   alias Theoria.Validation.Terms
 
-  @doc "Returns small definitional-equality checks whose right side is Theoria-normalized."
-  @spec defeq_checks() :: [DefeqCheck.t()]
-  def defeq_checks do
+  @doc "Returns small definitional-equality checks for a category."
+  @spec defeq_checks(atom()) :: [DefeqCheck.t()]
+  def defeq_checks(category) do
     {:ok, env} = Prelude.env()
 
-    [bool_terms(), nat_terms(), list_terms(), vec_terms()]
-    |> List.flatten()
+    category
+    |> terms()
     |> Enum.map(fn {category, name, left} ->
       DefeqCheck.new(category, name, left, normalize!(env, left))
     end)
   end
+
+  defp terms(:bool), do: bool_terms()
+  defp terms(:nat), do: nat_terms()
+  defp terms(:list), do: list_terms()
+  defp terms(:vec), do: vec_terms()
 
   defp bool_terms do
     bool_true = Term.const(true)

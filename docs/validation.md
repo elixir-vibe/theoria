@@ -67,9 +67,17 @@ Prefer adding validation data close to the Theoria feature it exercises. Library
 
 Guidelines:
 
+| Need | Put it in |
+|---|---|
+| Reusable proposition proof | `Theoria.Library.*.Theorems` |
+| Reduction/iota/defeq behavior | `Theoria.Library.*.Validation` as `%Theoria.Validation.DefeqCheck{}` |
+| Inductive declaration invariant | `Theoria.Library.*.Validation` as `%Theoria.Validation.InductiveCheck{}` |
+| Shared validation term helper | `Theoria.Validation.Terms` |
+| External oracle mapping issue | `Theoria.Lean.Encode.*` |
+
 1. Add a theorem to the appropriate `Theoria.Library.*.Theorems` module when it is a reusable library fact.
-2. Add a `%Theoria.Validation.DefeqCheck{}` when the point is definitional equality or reduction behavior.
-3. Add an inductive check when a built-in spec/declaration shape needs to stay validated.
+2. Add a `%Theoria.Validation.DefeqCheck{}` in the owning library validation module when the point is definitional equality or reduction behavior.
+3. Add an inductive check in the owning library validation module when a built-in spec/declaration shape needs to stay validated.
 
 After adding checks, run:
 

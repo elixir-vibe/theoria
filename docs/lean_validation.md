@@ -14,7 +14,7 @@ mix theoria.lean.check
 
 The task:
 
-1. Collects the current Lean oracle corpus.
+1. Collects Theoria's native validation data.
 2. Renders a Lean file under `_build/theoria_lean/oracle.lean`.
 3. Runs `lean` on that file.
 4. Reports whether Lean accepted the generated checks.
@@ -33,7 +33,7 @@ If Lean is missing, the task fails with installation guidance. Normal `mix ci` d
 
 ## Architecture
 
-Theoria owns the validation corpus described in [`validation.md`](validation.md). The Lean subsystem is only a translation and external-checking layer.
+Theoria owns the validation corpus described in [`validation.md`](validation.md). The Lean subsystem is only a translation and external-checking layer; there is no Lean-owned corpus.
 
 | Module | Responsibility |
 |---|---|
@@ -46,7 +46,7 @@ Theoria owns the validation corpus described in [`validation.md`](validation.md)
 | `Theoria.Validation.Corpus` | Chooses Theoria theorem modules and definitional-equality checks |
 | `Theoria.Validation.DefeqCheck` | First-class Theoria-owned defeq check, locally checkable by the normalizer |
 | `Theoria.Lean.Module` | Builds complete Lean source files from already-selected Theoria checks |
-| `Theoria.Lean.Corpus` | Thin adapter from `Theoria.Validation.Corpus` to `Theoria.Lean.Module` |
+
 | `Theoria.Lean.Oracle` | Writes generated source and invokes the Lean executable |
 
 Generated files are build artifacts and should not be committed.

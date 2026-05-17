@@ -1,20 +1,21 @@
 defmodule Mix.Tasks.Theoria.Lean.Check do
   @moduledoc """
-  Generates a Lean oracle file from Theoria checks and asks Lean to validate it.
+  Generates Lean source from Theoria validation data and asks Lean to validate it.
 
   Use `--only equality`, `--only bool,nat,list`, or `--only defeq` to run a
-  smaller corpus while developing encoders. This task is contributor-only. Lean
-  is not required to use Theoria as a library.
+  smaller validation slice while developing encoders. This task is contributor-only.
+  Lean is not required to use Theoria as a library.
   """
 
   use Mix.Task
 
-  alias Theoria.Lean.Corpus
   alias Theoria.Lean.Module, as: LeanModule
   alias Theoria.Lean.Oracle
+  alias Theoria.Validation.Corpus
   alias Theoria.Validation.Options
 
-  @shortdoc "Checks Theoria's Lean oracle corpus"
+  @lean_categories [:logic, :equality, :bool, :nat, :list, :vec, :defeq, :inductives]
+  @shortdoc "Checks Theoria validation data with Lean"
 
   @impl true
   def run(args) do
@@ -22,9 +23,12 @@ defmodule Mix.Tasks.Theoria.Lean.Check do
 
     opts = parse_args(args)
 
-    Mix.shell().info("Generating Lean oracle corpus...")
+    Mix.shell().info("Generating Lean validation oracle...")
 
-    with {:ok, lean_module, stats} <- Corpus.build(only: Keyword.get(opts, :only)),
+    validation = Corpus.build(only: Keyword.get(opts, :only) || @lean_categories)
+
+    with {:ok, lean_module} <- LeanModule.from_validation(validation),
+         stats = LeanModule.stats(lean_module),
          source = LeanModule.render(lean_module),
          path = Keyword.get(opts, :path, Path.join(["_build", "theoria_lean", "oracle.lean"])),
          {:ok, result} <- Oracle.run(source, Keyword.put(opts, :path, path)) do
@@ -64,7 +68,7 @@ defmodule Mix.Tasks.Theoria.Lean.Check do
   defp location_hint(path, output) do
     case Regex.run(~r/:(\d+):(\d+): error/, output) do
       [_match, line, column] ->
-        "\nOpen:\n  #{path}:#{line}:#{column}\n\nTry narrowing the corpus, for example:\n  mix theoria.lean.check --only list --path /tmp/theoria_oracle.lean"
+        "\nOpen:\n  #{path}:#{line}:#{column}\n\nTry narrowing the validation slice, for example:\n  mix theoria.lean.check --only list --path /tmp/theoria_oracle.lean"
 
       _none ->
         ""
@@ -84,11 +88,6 @@ defmodule Mix.Tasks.Theoria.Lean.Check do
       )
     end
 
-    Keyword.update(
-      opts,
-      :only,
-      Corpus.valid_categories(),
-      &Options.parse_only!(&1, Corpus.valid_categories())
-    )
+    Keyword.update(opts, :only, @lean_categories, &Options.parse_only!(&1, @lean_categories))
   end
 end

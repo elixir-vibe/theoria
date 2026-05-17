@@ -101,15 +101,15 @@ MyProofs.__theoria_theorems__()
 #=> [:identity]
 ```
 
-Check theorem modules from Mix:
+Validate Theoria's native corpus from Mix:
 
 ```bash
 mix theoria.check
-mix theoria.check MyApp.Proofs MyApp.MoreProofs
-mix theoria.check --install --axioms
+mix theoria.validate --only defeq
+mix theoria.validate --axioms
 ```
 
-With no module arguments, `mix theoria.check` checks Theoria's built-in theorem corpora against `Theoria.Prelude.env/0`.
+`mix theoria.check` is the full native validation entrypoint. It checks theorem modules, definitional-equality checks, and inductive specs against `Theoria.Prelude.env/0`.
 
 ## Built-in libraries
 
@@ -239,7 +239,7 @@ mix theoria.lean.check
 mix theoria.lean.check --only equality,bool,nat,list,vec
 ```
 
-This generates a Lean oracle file from Theoria's core terms and asks Lean to check it. Lean is not required for normal use.
+This translates Theoria's native validation data to a Lean oracle file and asks Lean to check it. Lean is not required for normal use.
 
 ## License
 

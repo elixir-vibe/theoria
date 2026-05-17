@@ -1,10 +1,10 @@
 defmodule Theoria.Lean.EncodeTest do
   use ExUnit.Case, async: true
 
-  alias Theoria.Lean.Corpus
   alias Theoria.Lean.Encodable
   alias Theoria.Lean.Encode
   alias Theoria.Lean.Module, as: LeanModule
+  alias Theoria.Validation.Corpus
 
   import Theoria.Term
 
@@ -73,11 +73,14 @@ defmodule Theoria.Lean.EncodeTest do
     assert Encode.term(list_length) == "(List.length (@List.nil Nat))"
   end
 
-  test "renders the initial oracle corpus" do
-    assert {:ok, lean_module, stats} = Corpus.build()
+  test "renders the initial Lean validation module" do
+    validation =
+      Corpus.build(only: [:logic, :equality, :bool, :nat, :list, :vec, :defeq, :inductives])
+
+    assert {:ok, lean_module} = LeanModule.from_validation(validation)
     source = LeanModule.render(lean_module)
 
-    assert stats == %{proof: 51, defeq: 41, total: 92}
+    assert LeanModule.stats(lean_module) == %{proof: 51, defeq: 41, total: 92}
     assert source =~ "def tEqRec"
     assert source =~ "proof Theoria.Library.Logic.Theorems.and_comm"
     assert source =~ "proof Theoria.Library.Equality.Theorems.eq_symm"
@@ -103,12 +106,14 @@ defmodule Theoria.Lean.EncodeTest do
              "example : (forall (a : Type), (a -> a)) := (fun (a : Type) => (fun (x : a) => x))"
   end
 
-  test "filters oracle corpus categories" do
-    assert {:ok, _lean_module, stats} = Corpus.build(only: [:bool])
-    assert stats == %{proof: 15, defeq: 12, total: 27}
+  test "filters validation categories for Lean modules" do
+    validation = Corpus.build(only: [:bool])
+    assert {:ok, lean_module} = LeanModule.from_validation(validation)
+    assert LeanModule.stats(lean_module) == %{proof: 15, defeq: 12, total: 27}
 
-    assert {:ok, _lean_module, stats} = Corpus.build(only: [:defeq])
-    assert stats == %{proof: 0, defeq: 41, total: 41}
+    validation = Corpus.build(only: [:defeq])
+    assert {:ok, lean_module} = LeanModule.from_validation(validation)
+    assert LeanModule.stats(lean_module) == %{proof: 0, defeq: 41, total: 41}
   end
 
   defp nat_succ_case do

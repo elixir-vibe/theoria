@@ -5,9 +5,14 @@ defmodule Theoria.Rewrite.Rule do
   alias Theoria.Term
 
   @enforce_keys [:name, :equality]
-  defstruct [:name, :equality, direction: :forward]
+  defstruct [:name, :equality, direction: :forward, binders: []]
 
-  @type t :: %__MODULE__{name: atom(), equality: Term.Eq.t(), direction: :forward | :backward}
+  @type t :: %__MODULE__{
+          name: atom(),
+          equality: Term.Eq.t(),
+          direction: :forward | :backward,
+          binders: [Lemma.binder()]
+        }
 
   @doc "Builds a rewrite rule."
   @spec new(atom(), Term.Eq.t(), keyword()) :: t()
@@ -15,13 +20,17 @@ defmodule Theoria.Rewrite.Rule do
     %__MODULE__{
       name: name,
       equality: equality,
-      direction: Keyword.get(opts, :direction, :forward)
+      direction: Keyword.get(opts, :direction, :forward),
+      binders: Keyword.get(opts, :binders, [])
     }
   end
 
   @doc "Builds a rewrite rule from equation-lemma metadata."
   @spec from_lemma(Lemma.t(), Term.t(), keyword()) :: t()
   def from_lemma(%Lemma{} = lemma, equality_type, opts \\ []) do
-    new(lemma.name, Term.eq(equality_type, lemma.left, lemma.right), opts)
+    new(lemma.name, Term.eq(equality_type, lemma.left, lemma.right),
+      binders: lemma.binders,
+      direction: Keyword.get(opts, :direction, :forward)
+    )
   end
 end

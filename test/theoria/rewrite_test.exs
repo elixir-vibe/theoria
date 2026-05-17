@@ -58,6 +58,11 @@ defmodule Theoria.RewriteTest do
 
     assert {:ok, ^singleton, %Rule{name: :"list_append.eq_nil"}} =
              Database.once(database, append_nil)
+
+    one = Term.app(Term.const(:succ), zero())
+    add_zero = Term.const(:nat_add) |> Term.app(zero()) |> Term.app(one)
+
+    assert {:ok, ^one, %Rule{name: :"nat_add.eq_zero"}} = Database.once(database, add_zero)
   end
 
   defp nat, do: Term.const(:Nat)

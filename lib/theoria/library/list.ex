@@ -5,7 +5,8 @@ defmodule Theoria.Library.List do
 
   alias Theoria.Env
   alias Theoria.Equation
-  alias Theoria.Equation.{Clause, Definition, FixedParams, Info, Pattern}
+  alias Theoria.Equation.{Clause, Definition, FixedParams, Info, MatcherInfo, Pattern}
+  alias Theoria.Equation.MatcherInfo.Alternative
   alias Theoria.Inductive.Generate
   alias Theoria.Inductive.Spec
   alias Theoria.Kernel
@@ -107,13 +108,7 @@ defmodule Theoria.Library.List do
       Equation.compile_list(
         a,
         list_a,
-        [
-          Clause.new([Pattern.constructor(:list_nil)], Term.bvar(0)),
-          Clause.new(
-            [Pattern.constructor(:list_cons, [Pattern.var(:head), Pattern.var(:tail)])],
-            fn ctx -> list_cons(ctx.a, ctx.head, ctx.ih) end
-          )
-        ],
+        list_append_clauses(),
         Term.bvar(1),
         [u, u]
       )
@@ -141,13 +136,7 @@ defmodule Theoria.Library.List do
       Equation.compile_list(
         element_type,
         Term.const(:Nat),
-        [
-          Clause.new([Pattern.constructor(:list_nil)], Term.const(:zero)),
-          Clause.new(
-            [Pattern.constructor(:list_cons, [Pattern.wildcard(), Pattern.var(:tail)])],
-            fn ctx -> Term.app(Term.const(:succ), ctx.ih) end
-          )
-        ],
+        list_length_clauses(),
         xs,
         [u, 1]
       )
@@ -163,10 +152,42 @@ defmodule Theoria.Library.List do
       Info.new(name, type, value,
         level_params: [:u],
         rec_arg_pos: rec_arg_pos,
-        fixed_params: FixedParams.new([0])
+        fixed_params: FixedParams.new([0]),
+        clauses: clauses_for(name),
+        matcher: list_matcher(name)
       )
 
     Kernel.add_definition(env, name, type, value, [:u], metadata: metadata)
+  end
+
+  defp list_length_clauses do
+    [
+      Clause.new([Pattern.constructor(:list_nil)], Term.const(:zero)),
+      Clause.new(
+        [Pattern.constructor(:list_cons, [Pattern.wildcard(), Pattern.var(:tail)])],
+        fn ctx -> Term.app(Term.const(:succ), ctx.ih) end
+      )
+    ]
+  end
+
+  defp list_append_clauses do
+    [
+      Clause.new([Pattern.constructor(:list_nil)], Term.bvar(0)),
+      Clause.new(
+        [Pattern.constructor(:list_cons, [Pattern.var(:head), Pattern.var(:tail)])],
+        fn ctx -> list_cons(ctx.a, ctx.head, ctx.ih) end
+      )
+    ]
+  end
+
+  defp clauses_for(:list_length), do: list_length_clauses()
+  defp clauses_for(:list_append), do: list_append_clauses()
+
+  defp list_matcher(name) do
+    MatcherInfo.new(:"#{name}.match_1", 1, 1, [
+      %Alternative{constructor: :list_nil, num_fields: 0},
+      %Alternative{constructor: :list_cons, num_fields: 2}
+    ])
   end
 
   defp list_cons(type, head, tail) do

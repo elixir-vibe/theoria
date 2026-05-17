@@ -42,7 +42,7 @@ defmodule Theoria.Rewrite.Database do
   @spec once(t(), Term.t()) :: {:ok, Term.t(), Rule.t()} | :not_found
   def once(%__MODULE__{rules: rules}, term) do
     Enum.find_value(Enum.reverse(rules), :not_found, fn rule ->
-      case Rewrite.once(term, rule.equality, direction: rule.direction) do
+      case Rewrite.once_rule(term, rule) do
         {:ok, term} -> {:ok, term, rule}
         :not_found -> false
       end

@@ -5,7 +5,8 @@ defmodule Theoria.Library.Nat do
 
   alias Theoria.Env
   alias Theoria.Equation
-  alias Theoria.Equation.{Clause, Definition, FixedParams, Info, Pattern}
+  alias Theoria.Equation.{Clause, Definition, FixedParams, Info, MatcherInfo, Pattern}
+  alias Theoria.Equation.MatcherInfo.Alternative
   alias Theoria.Inductive.Generate
   alias Theoria.Inductive.Spec
   alias Theoria.Kernel
@@ -21,7 +22,14 @@ defmodule Theoria.Library.Nat do
     with {:ok, env} <- Kernel.add_inductive(env, inductive_spec()) do
       type = nat_add_type()
       value = nat_add_value()
-      metadata = Info.new(:nat_add, type, value, rec_arg_pos: 0, fixed_params: FixedParams.new())
+
+      metadata =
+        Info.new(:nat_add, type, value,
+          rec_arg_pos: 0,
+          fixed_params: FixedParams.new(),
+          clauses: nat_add_clauses(),
+          matcher: nat_matcher(:nat_add)
+        )
 
       Kernel.add_definition(env, :nat_add, type, value, [], metadata: metadata)
     end
@@ -57,16 +65,27 @@ defmodule Theoria.Library.Nat do
     {:ok, body} =
       Equation.compile_nat(
         nat(),
-        [
-          Clause.new([Pattern.constructor(:zero)], n),
-          Clause.new([Pattern.constructor(:succ, [Pattern.var(:pred)])], fn ctx ->
-            succ(ctx.ih)
-          end)
-        ],
+        nat_add_clauses(n),
         Term.bvar(1)
       )
 
     nat_lam(:m, nat_lam(:n, body))
+  end
+
+  defp nat_add_clauses(n \\ Term.bvar(0)) do
+    [
+      Clause.new([Pattern.constructor(:zero)], n),
+      Clause.new([Pattern.constructor(:succ, [Pattern.var(:pred)])], fn ctx ->
+        succ(ctx.ih)
+      end)
+    ]
+  end
+
+  defp nat_matcher(name) do
+    MatcherInfo.new(:"#{name}.match_1", 0, 1, [
+      %Alternative{constructor: :zero, num_fields: 0},
+      %Alternative{constructor: :succ, num_fields: 1}
+    ])
   end
 
   defp nat, do: Term.const(:Nat)

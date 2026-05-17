@@ -10,19 +10,30 @@ defmodule Theoria.Equation.Lemma do
   alias Theoria.Validation.DefeqCheck
 
   @enforce_keys [:name, :left, :right]
-  defstruct [:name, :left, :right, :source]
+  defstruct [:name, :left, :right, :source, binders: [], equality_type: nil]
+
+  @type binder :: {atom(), Term.t()}
 
   @type t :: %__MODULE__{
           name: atom(),
           left: Term.t(),
           right: Term.t(),
-          source: Clause.t() | nil
+          source: Clause.t() | nil,
+          binders: [binder()],
+          equality_type: Term.t() | nil
         }
 
   @doc "Builds equation-lemma metadata."
   @spec new(atom(), Term.t(), Term.t(), keyword()) :: t()
   def new(name, left, right, opts \\ []) when is_atom(name) do
-    %__MODULE__{name: name, left: left, right: right, source: Keyword.get(opts, :source)}
+    %__MODULE__{
+      name: name,
+      left: left,
+      right: right,
+      source: Keyword.get(opts, :source),
+      binders: Keyword.get(opts, :binders, []),
+      equality_type: Keyword.get(opts, :equality_type)
+    }
   end
 
   @doc "Returns the Lean-style theorem name for a definition equation."
@@ -68,37 +79,59 @@ defmodule Theoria.Equation.Lemma do
   end
 
   def generated_for(%Info{name: :nat_add} = info, _opts) do
+    n = Term.bvar(0)
+    m = Term.bvar(1)
+
     [
-      for_definition(info, :zero_zero, app(:nat_add, zero(), zero()), zero()),
-      for_definition(info, :one_zero, app(:nat_add, one(), zero()), one()),
-      for_definition(info, :two_zero, app(:nat_add, two(), zero()), two())
+      for_definition(info, :zero, app(:nat_add, zero(), n), n,
+        binders: [{:n, nat()}],
+        equality_type: nat()
+      ),
+      for_definition(info, :succ, app(:nat_add, succ(m), n), succ(app(:nat_add, m, n)),
+        binders: [{:m, nat()}, {:n, nat()}],
+        equality_type: nat()
+      )
     ]
   end
 
   def generated_for(%Info{name: :list_length} = info, _opts) do
     list_length = list_constant(:list_length)
+    x = Term.bvar(1)
+    xs = Term.bvar(0)
 
     [
-      for_definition(info, nil, app_term(list_length, nat(), list_nil()), zero()),
-      for_definition(info, :singleton, app_term(list_length, nat(), singleton()), one())
+      for_definition(info, nil, app_term(list_length, nat(), list_nil()), zero(),
+        equality_type: nat()
+      ),
+      for_definition(
+        info,
+        :cons,
+        app_term(list_length, nat(), list_cons(nat(), x, xs)),
+        succ(app_term(list_length, nat(), xs)),
+        binders: [{:x, nat()}, {:xs, list_nat()}],
+        equality_type: nat()
+      )
     ]
   end
 
   def generated_for(%Info{name: :list_append} = info, _opts) do
     list_append = list_constant(:list_append)
+    x = Term.bvar(2)
+    xs = Term.bvar(1)
+    ys = Term.bvar(0)
 
     [
-      for_definition(
-        info,
-        nil,
-        app_term(list_append, nat(), list_nil(), singleton()),
-        singleton()
+      for_definition(info, nil, app_term(list_append, nat(), list_nil(), ys), ys,
+        binders: [{:ys, list_nat()}],
+        equality_type: list_nat()
       ),
       for_definition(
         info,
-        :singleton,
-        app_term(list_append, nat(), singleton(), singleton()),
-        pair()
+        :cons,
+        app_term(list_append, nat(), list_cons(nat(), x, xs), ys),
+        list_cons(nat(), x, app_term(list_append, nat(), xs, ys)),
+        binders: [{:x, nat()}, {:xs, list_nat()}, {:ys, list_nat()}],
+        equality_type: list_nat()
       )
     ]
   end
@@ -147,11 +180,12 @@ defmodule Theoria.Equation.Lemma do
     do: Enum.map(lemmas, &defeq_check(&1, category))
 
   @doc "Kernel-checks equation-lemma metadata as a theorem using reflexivity."
-  @spec to_theorem(Env.t(), t(), Term.t(), keyword()) ::
+  @spec to_theorem(Env.t(), t(), Term.t() | keyword(), keyword()) ::
           {:ok, Theorem.t()} | {:error, Theoria.Error.t()}
-  def to_theorem(%Env{} = env, %__MODULE__{} = lemma, equality_type, opts \\ []) do
-    theorem_type = Term.eq(equality_type, lemma.left, lemma.right)
-    proof = Term.refl(lemma.left)
+  def to_theorem(%Env{} = env, %__MODULE__{} = lemma, equality_or_opts \\ [], opts \\ []) do
+    {equality_type, opts} = equality_type_and_opts(lemma, equality_or_opts, opts)
+    theorem_type = forall_many(lemma.binders, Term.eq(equality_type, lemma.left, lemma.right))
+    proof = lam_many(lemma.binders, Term.refl(lemma.left))
     universe_params = Keyword.get(opts, :universe_params, [])
 
     with :ok <- Kernel.check(env, proof, theorem_type) do
@@ -166,10 +200,10 @@ defmodule Theoria.Equation.Lemma do
   end
 
   @doc "Kernel-checks and installs equation-lemma metadata as an opaque theorem declaration."
-  @spec add_to_env(Env.t(), t(), Term.t(), keyword()) ::
+  @spec add_to_env(Env.t(), t(), Term.t() | keyword(), keyword()) ::
           {:ok, Env.t(), Theorem.t()} | {:error, Theoria.Error.t()}
-  def add_to_env(%Env{} = env, %__MODULE__{} = lemma, equality_type, opts \\ []) do
-    with {:ok, theorem} <- to_theorem(env, lemma, equality_type, opts),
+  def add_to_env(%Env{} = env, %__MODULE__{} = lemma, equality_or_opts \\ [], opts \\ []) do
+    with {:ok, theorem} <- to_theorem(env, lemma, equality_or_opts, opts),
          {:ok, env} <- Theorem.add_to_env(env, theorem) do
       {:ok, env, theorem}
     end
@@ -191,6 +225,24 @@ defmodule Theoria.Equation.Lemma do
     end
   end
 
+  defp equality_type_and_opts(%__MODULE__{} = lemma, opts, []) when is_list(opts) do
+    {lemma.equality_type || Keyword.fetch!(opts, :equality_type), opts}
+  end
+
+  defp equality_type_and_opts(_lemma, equality_type, opts), do: {equality_type, opts}
+
+  defp forall_many(binders, body) do
+    Enum.reduce(Enum.reverse(binders), body, fn {name, type}, body ->
+      Term.forall(name, type, body)
+    end)
+  end
+
+  defp lam_many(binders, body) do
+    Enum.reduce(Enum.reverse(binders), body, fn {name, type}, body ->
+      Term.lam(name, type, body)
+    end)
+  end
+
   defp suffix_name(nil), do: "nil"
   defp suffix_name(suffix), do: Atom.to_string(suffix)
 
@@ -207,18 +259,9 @@ defmodule Theoria.Equation.Lemma do
   defp bool_false, do: Term.const(false)
   defp nat, do: Term.const(:Nat)
   defp zero, do: Term.const(:zero)
-  defp one, do: Term.app(Term.const(:succ), zero())
-  defp two, do: Term.app(Term.const(:succ), one())
+  defp succ(term), do: Term.app(Term.const(:succ), term)
   defp list_nat, do: Term.app(list_constant(:List), nat())
   defp list_nil, do: Term.app(list_constant(:list_nil), nat())
-
-  defp singleton do
-    list_cons(nat(), zero(), list_nil())
-  end
-
-  defp pair do
-    list_cons(nat(), zero(), singleton())
-  end
 
   defp list_cons(type, head, tail) do
     list_constant(:list_cons)

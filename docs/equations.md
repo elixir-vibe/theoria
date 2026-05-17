@@ -8,6 +8,7 @@ Current flow:
 compiled definition
   → Theoria.Equation.Info metadata in the environment
   → generated Theoria.Equation.Lemma metadata
+  → Theoria.Equation.Eqns lookup
   → optional opaque theorem declarations
   → rewrite rules/databases
 ```
@@ -24,16 +25,16 @@ Theoria.Equation.Info.all(env)
 Theoria.Equation.Info.equation?(env, :nat_add)
 ```
 
-The metadata records the definition name, checked type/value, recursive argument position, fixed parameters, level parameters, and optional matcher metadata.
+The metadata records the definition name, checked type/value, recursive argument position, fixed parameters, level parameters, original clause metadata, and Lean-shaped matcher alternatives.
 
 ## Generated equation lemmas
 
-For the currently supported library definitions, Theoria can generate closed equation-lemma metadata:
+For the currently supported library definitions, Theoria can generate schematic equation-lemma metadata:
 
 ```elixir
 {:ok, info} = Theoria.Equation.Info.fetch(env, :nat_add)
 Theoria.Equation.Lemma.generated_for(info)
-#=> [nat_add.eq_zero_zero, nat_add.eq_one_zero, nat_add.eq_two_zero]
+#=> [nat_add.eq_zero, nat_add.eq_succ]
 ```
 
 Supported definitions today:
@@ -45,13 +46,25 @@ Supported definitions today:
 - `list_length`
 - `list_append`
 
-These generated lemmas are metadata until explicitly checked or installed. They can be converted into native defeq validation checks, checked as reflexivity theorems when the two sides are definitionally equal, and optionally installed as opaque theorem declarations:
+These generated lemmas are metadata until explicitly checked or installed. Schematic lemmas carry binders and an equality type, so they can be checked as forall-theorems by reflexivity when the two sides are definitionally equal, and optionally installed as opaque theorem declarations:
 
 ```elixir
 Theoria.Equation.Lemma.add_generated_to_env(env, :nat_add)
 ```
 
 The prelude does not install generated equation theorems by default yet.
+
+## Equation lookup
+
+`Theoria.Equation.Eqns` is the small Theoria equivalent of Lean's equation-theorem lookup layer:
+
+```elixir
+Theoria.Equation.Eqns.get(env, :nat_add)
+#=> {:ok, [:"nat_add.eq_zero", :"nat_add.eq_succ"]}
+
+Theoria.Equation.Eqns.generated(env, :nat_add)
+Theoria.Equation.Eqns.installed?(env, :nat_add)
+```
 
 ## Rewrite databases
 
@@ -62,7 +75,7 @@ database = Theoria.Rewrite.Database.from_env_equations(env)
 Theoria.Rewrite.Database.once(database, term)
 ```
 
-The rewrite layer is intentionally untrusted and structural for now. It does not perform unification, does not produce proofs, and does not replace kernel checking.
+The rewrite layer is intentionally untrusted and first-order for now. It can match schematic equation-rule binders, but it does not produce proofs and does not replace kernel checking.
 
 ## Mix tooling
 
@@ -90,4 +103,4 @@ The verbose form prints generated lemma names under each stored equation definit
 
 ## Limitations
 
-The current generator is deliberately small. It emits closed equation lemmas for the built-in Bool/Nat/List definitions. It is not yet Lean's full equation theorem machinery: there is no public equation syntax, no matcher equation generation, no structural recursion checker, no `brecOn`/below dictionaries, no unification-based simp, and no proof-producing rewrite tactic.
+The current generator is deliberately small. It emits schematic equation lemmas for the built-in Bool/Nat/List definitions and stores basic matcher metadata, but the theorem generation is still specialized to those definitions. It is not yet Lean's full equation theorem machinery: there is no public equation syntax, no general matcher equation generation, no structural recursion checker, no `brecOn`/below dictionaries, no simp database, and no proof-producing rewrite tactic.

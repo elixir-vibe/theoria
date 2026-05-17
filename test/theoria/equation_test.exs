@@ -3,7 +3,19 @@ defmodule Theoria.EquationTest do
 
   alias Theoria.Env.RecursorRule
   alias Theoria.Equation
-  alias Theoria.Equation.{Branch, Clause, Context, FixedParams, Info, Lemma, MatcherInfo, Pattern}
+
+  alias Theoria.Equation.{
+    Branch,
+    Clause,
+    Context,
+    Eqns,
+    FixedParams,
+    Info,
+    Lemma,
+    MatcherInfo,
+    Pattern
+  }
+
   alias Theoria.Equation.MatcherInfo.Alternative
   alias Theoria.Library.Nat
   alias Theoria.Prelude
@@ -22,8 +34,8 @@ defmodule Theoria.EquationTest do
     assert info.name == :nat_add
     assert info.rec_arg_pos == 0
     assert info.level_params == []
-    assert {:ok, ^info} = Info.fetch(env, :nat_add)
-    assert {:ok, ^info} = Info.fetch_or_build(env, :nat_add)
+    assert {:ok, %Info{name: :nat_add, rec_arg_pos: 0}} = Info.fetch(env, :nat_add)
+    assert {:ok, %Info{name: :nat_add, rec_arg_pos: 0}} = Info.fetch_or_build(env, :nat_add)
     assert Info.equation?(env, :nat_add)
     refute Info.equation?(env, :Nat)
     assert Enum.map(Info.all(env), & &1.name) == [:nat_add]
@@ -68,14 +80,41 @@ defmodule Theoria.EquationTest do
     {:ok, info} = Info.fetch(env, :nat_add)
 
     assert Enum.map(Lemma.generated_for(info), & &1.name) == [
-             :"nat_add.eq_zero_zero",
-             :"nat_add.eq_one_zero",
-             :"nat_add.eq_two_zero"
+             :"nat_add.eq_zero",
+             :"nat_add.eq_succ"
            ]
 
     assert {:ok, env, theorems} = Lemma.add_generated_to_env(env, :nat_add)
     assert Enum.map(theorems, & &1.name) == Enum.map(Lemma.generated_for(info), & &1.name)
-    assert {:ok, _constant} = Theoria.Env.fetch(env, :"nat_add.eq_one_zero")
+    assert {:ok, _constant} = Theoria.Env.fetch(env, :"nat_add.eq_succ")
+    assert Eqns.installed?(env, :nat_add)
+  end
+
+  test "generated equation lookup mirrors Lean-style getEqnsFor" do
+    {:ok, env} = Prelude.env()
+
+    assert {:ok, [:"nat_add.eq_zero", :"nat_add.eq_succ"]} = Eqns.get(env, :nat_add)
+    assert {:ok, lemmas} = Eqns.generated(env, :list_append)
+    assert Enum.map(lemmas, & &1.name) == [:"list_append.eq_nil", :"list_append.eq_cons"]
+    refute Eqns.installed?(env, :nat_add)
+  end
+
+  test "schematic generated equation lemmas become forall theorems" do
+    {:ok, env} = Prelude.env()
+    {:ok, [_, succ_lemma]} = Eqns.generated(env, :nat_add)
+
+    assert succ_lemma.binders == [{:m, nat()}, {:n, nat()}]
+    assert {:ok, theorem} = Lemma.to_theorem(env, succ_lemma)
+    assert %Term.Forall{name: :m, body: %Term.Forall{name: :n}} = theorem.type
+  end
+
+  test "stored equation metadata includes clauses and matcher alternatives" do
+    {:ok, env} = Prelude.env()
+    {:ok, info} = Info.fetch(env, :list_append)
+
+    assert length(info.clauses) == 2
+    assert info.matcher.name == :"list_append.match_1"
+    assert Enum.map(info.matcher.alternatives, & &1.constructor) == [:list_nil, :list_cons]
   end
 
   test "generated equation lemmas cover supported compiled definitions" do
@@ -89,9 +128,9 @@ defmodule Theoria.EquationTest do
     assert generated.bool_not == [:"bool_not.eq_true", :"bool_not.eq_false"]
     assert :"bool_and.eq_true_false" in generated.bool_and
     assert :"bool_or.eq_false_true" in generated.bool_or
-    assert :"nat_add.eq_two_zero" in generated.nat_add
-    assert generated.list_length == [:"list_length.eq_nil", :"list_length.eq_singleton"]
-    assert generated.list_append == [:"list_append.eq_nil", :"list_append.eq_singleton"]
+    assert generated.nat_add == [:"nat_add.eq_zero", :"nat_add.eq_succ"]
+    assert generated.list_length == [:"list_length.eq_nil", :"list_length.eq_cons"]
+    assert generated.list_append == [:"list_append.eq_nil", :"list_append.eq_cons"]
   end
 
   test "context exposes branch and outer values" do

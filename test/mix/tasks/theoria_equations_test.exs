@@ -29,7 +29,7 @@ defmodule Mix.Tasks.Theoria.EquationsTest do
       end)
 
     assert output =~ "nat_add rec_arg=0 fixed=[]"
-    assert output =~ "nat_add.eq_one_zero"
+    assert output =~ "nat_add.eq_succ"
     refute output =~ "bool_not rec_arg=0 fixed=[]"
   end
 
@@ -41,7 +41,7 @@ defmodule Mix.Tasks.Theoria.EquationsTest do
         Equations.run(["--install", "nat_add"])
       end)
 
-    assert output =~ "nat_add.eq_two_zero"
-    assert output =~ "Installed 3 equation theorem(s)."
+    assert output =~ "nat_add.eq_succ"
+    assert output =~ "Installed 2 equation theorem(s)."
   end
 end

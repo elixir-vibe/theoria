@@ -54,7 +54,7 @@ defmodule Mix.Tasks.Theoria.ValidateTest do
       end)
 
     assert output =~ "bool_not.eq_true"
-    assert output =~ "nat_add.eq_one_zero"
+    assert output =~ "nat_add.eq_succ"
     assert output =~ "list_append.eq_nil"
   end
 

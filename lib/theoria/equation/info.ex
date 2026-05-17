@@ -3,7 +3,7 @@ defmodule Theoria.Equation.Info do
 
   alias Theoria.Env
   alias Theoria.Env.Constant
-  alias Theoria.Equation.FixedParams
+  alias Theoria.Equation.{Clause, FixedParams, MatcherInfo}
   alias Theoria.Term
 
   @enforce_keys [:name, :type, :value]
@@ -14,7 +14,9 @@ defmodule Theoria.Equation.Info do
     level_params: [],
     rec_arg_pos: nil,
     decl_names: [],
-    fixed_params: FixedParams.new()
+    fixed_params: FixedParams.new(),
+    clauses: [],
+    matcher: nil
   ]
 
   @type t :: %__MODULE__{
@@ -24,7 +26,9 @@ defmodule Theoria.Equation.Info do
           level_params: [atom()],
           rec_arg_pos: non_neg_integer() | nil,
           decl_names: [atom()],
-          fixed_params: FixedParams.t()
+          fixed_params: FixedParams.t(),
+          clauses: [Clause.t()],
+          matcher: MatcherInfo.t() | nil
         }
 
   @doc "Builds equation metadata for a compiled definition."
@@ -37,7 +41,9 @@ defmodule Theoria.Equation.Info do
       level_params: Keyword.get(opts, :level_params, []),
       rec_arg_pos: Keyword.get(opts, :rec_arg_pos),
       decl_names: Keyword.get(opts, :decl_names, [name]),
-      fixed_params: Keyword.get(opts, :fixed_params, FixedParams.new())
+      fixed_params: Keyword.get(opts, :fixed_params, FixedParams.new()),
+      clauses: Keyword.get(opts, :clauses, []),
+      matcher: Keyword.get(opts, :matcher)
     }
   end
 
@@ -104,7 +110,9 @@ defmodule Theoria.Equation.Info do
            level_params: constant.universe_params,
            rec_arg_pos: Keyword.get(opts, :rec_arg_pos),
            decl_names: Keyword.get(opts, :decl_names, [name]),
-           fixed_params: Keyword.get(opts, :fixed_params, FixedParams.new())
+           fixed_params: Keyword.get(opts, :fixed_params, FixedParams.new()),
+           clauses: Keyword.get(opts, :clauses, []),
+           matcher: Keyword.get(opts, :matcher)
          )}
 
       :error ->

@@ -1,0 +1,110 @@
+defmodule Theoria.Library.VecTest do
+  use ExUnit.Case, async: true
+
+  alias Theoria.Env
+  alias Theoria.Inductive
+  alias Theoria.Library.Vec
+  alias Theoria.Normalize
+  alias Theoria.Term
+
+  import Theoria.DSL
+
+  test "declares Vec as an indexed inductive family" do
+    spec = Vec.inductive_spec()
+
+    assert spec.name == :Vec
+    assert Enum.map(spec.parameters, & &1.name) == [:a]
+    assert Enum.map(spec.indices, & &1.name) == [:n]
+    assert Enum.map(spec.constructors, & &1.name) == [:vec_nil, :vec_cons]
+    assert spec.recursors == []
+  end
+
+  test "installs Vec declarations and indexed eliminator metadata" do
+    {:ok, env} = Vec.env()
+
+    assert Env.inductive?(env, :Vec)
+    assert Env.constructor?(env, :vec_nil)
+    assert Env.constructor?(env, :vec_cons)
+    assert Env.recursor?(env, :vec_ind)
+
+    assert {:ok, recursor} = Env.fetch_recursor(env, :vec_ind)
+    assert recursor.num_params == 1
+    assert recursor.num_indices == 1
+
+    assert Enum.map(recursor.rules, &{&1.constructor, &1.field_count}) == [
+             vec_nil: 0,
+             vec_cons: 3
+           ]
+  end
+
+  test "Vec environment verifies against completed inductive spec" do
+    {:ok, spec} = Inductive.complete(Vec.inductive_spec())
+    {:ok, env} = Vec.env()
+
+    assert Inductive.verify_env(env, spec) == :ok
+  end
+
+  test "Vec induction reduces nil and cons" do
+    {:ok, env} = Vec.env()
+    nil_vec = term(do: app(const(:vec_nil, [1]), nat())) |> elab!()
+
+    cons =
+      app_all(
+        [Term.const(:Nat), Term.const(:zero), Term.const(:zero), nil_vec],
+        Term.const(:vec_cons, [1])
+      )
+
+    assert Normalize.defeq?(
+             env,
+             vec_ind_term(index: Term.const(:zero), major: nil_vec),
+             Term.const(:zero)
+           )
+
+    assert Normalize.defeq?(
+             env,
+             vec_ind_term(index: Term.app(Term.const(:succ), Term.const(:zero)), major: cons),
+             Term.app(Term.const(:succ), Term.const(:zero))
+           )
+  end
+
+  test "Vec requires Nat dependencies" do
+    assert {:error, error} = Vec.extend(Env.new())
+    assert error.reason == :invalid_inductive
+  end
+
+  defp vec_ind_term(opts) do
+    index = Keyword.fetch!(opts, :index)
+    major = Keyword.fetch!(opts, :major)
+    motive = vec_nat_motive() |> elab!()
+    cons_case = vec_nat_cons_case() |> elab!()
+
+    [Term.const(:Nat), motive, Term.const(:zero), cons_case, index, major]
+    |> app_all(Term.const(:vec_ind, [1]))
+  end
+
+  defp vec_nat_motive do
+    term do
+      lam :n, nat() do
+        lam :xs, app(app(const(:Vec, [1]), nat()), n) do
+          nat()
+        end
+      end
+    end
+  end
+
+  defp vec_nat_cons_case do
+    term do
+      lam :head, nat() do
+        lam :n, nat() do
+          lam :tail, app(app(const(:Vec, [1]), nat()), n) do
+            lam :ih, nat() do
+              app(succ, ih)
+            end
+          end
+        end
+      end
+    end
+  end
+
+  defp app_all(args, fun), do: Enum.reduce(args, fun, &Term.app(&2, &1))
+end

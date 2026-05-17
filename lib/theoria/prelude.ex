@@ -8,9 +8,9 @@ defmodule Theoria.Prelude do
   """
 
   alias Theoria.Env
-  alias Theoria.Library.{Bool, List, Logic, Nat}
+  alias Theoria.Library.{Bool, List, Logic, Nat, Vec}
 
-  @doc "Returns the standard environment with Logic, Bool, Nat, and List loaded."
+  @doc "Returns the standard environment with Logic, Bool, Nat, List, and Vec loaded."
   @spec env() :: {:ok, Env.t()} | {:error, Theoria.Error.t()}
   def env do
     Env.new()
@@ -18,6 +18,7 @@ defmodule Theoria.Prelude do
     |> extend_with(Bool)
     |> extend_with(Nat)
     |> extend_with(List)
+    |> extend_with(Vec)
   end
 
   defp extend_with({:ok, %Env{} = env}, library), do: library.extend(env)

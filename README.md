@@ -51,7 +51,8 @@ The initial kernel supports:
 - initial Bool library (`Bool`, `true`, `false`, `bool_rec`, `bool_not`, `bool_and`, `bool_or`)
 - initial Nat library (`Nat`, `zero`, `succ`, `nat_rec`, `nat_add`)
 - initial List library (`List`, `list_nil`, `list_cons`, `list_rec`, `list_length`)
-- standard prelude environment composing Logic, Bool, Nat, and List
+- initial Vec library (`Vec`, `vec_nil`, `vec_cons`, `vec_ind`)
+- standard prelude environment composing Logic, Bool, Nat, List, and Vec
 - beta and zeta reduction
 - bounded normalization with fuel
 - definitional equality by normalization

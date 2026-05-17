@@ -54,7 +54,7 @@ spec =
   |> Spec.parameter(:a, term(do: sort(^u)) |> elab!())
 ```
 
-Indexed families can declare named indices. The current checker validates result arity, parameter preservation, and scopedness of constructor argument/index terms. `Theoria.Inductive.Generate.indexed_eliminators/1` can synthesize indexed induction declarations with `Theoria.Env.Recursor` metadata and validated `Theoria.Env.RecursorRule` entries. These rules record constructor field counts, RHS templates, and index patterns; normalization uses them when an iota marker is present and refuses to reduce when explicit recursor indices do not match the selected constructor rule pattern. Environment-backed admission also requires dependencies to be present. For example, this Vec-like spec must be checked in an environment that already contains `Nat`, `zero`, and `succ`.
+Indexed families can declare named indices. The current checker validates result arity, parameter preservation, and scopedness of constructor argument/index terms. `Theoria.Inductive.Generate.indexed_eliminators/1` can synthesize indexed induction declarations with `Theoria.Env.Recursor` metadata and validated `Theoria.Env.RecursorRule` entries. These rules record constructor field counts, RHS templates, and index patterns; normalization uses them when an iota marker is present and refuses to reduce when explicit recursor indices do not match the selected constructor rule pattern. Environment-backed admission also requires dependencies to be present. `Theoria.Library.Vec` packages this fragment as the standard length-indexed vector library. Custom Vec-like specs must be checked in an environment that already contains `Nat`, `zero`, and `succ`.
 
 ```elixir
 u = Theoria.Level.param(:u)

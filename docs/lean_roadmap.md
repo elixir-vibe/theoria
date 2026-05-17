@@ -95,7 +95,7 @@ Legend:
 | Recursor RHS typing | Rules type-infer as expected shape | 🟡 | Type shape validation added | Full dependent result validation later | P0 |
 | Indexed inductives | Families like `Vec A n` | 🟡 | Can admit constructors; no full eliminators | Opaque eliminators → metadata → iota | P0 |
 | Indexed eliminators | `Vec.ind` | 🟡 | Recursors with validated rules/index patterns and basic iota | Harden and package as Vec library | P0 |
-| Indexed iota reduction | Computation for indexed recursors | 🟡 | Basic Vec-like iota reduction implemented | Harden dependent validation and add Vec library | P0 |
+| Indexed iota reduction | Computation for indexed recursors | 🟡 | Basic Vec library iota reduction implemented | Harden dependent validation | P0 |
 | Mutual inductives | `mutual Even/Odd` | 🔴 | Missing | Add `Inductive.Group` later | P2 |
 | Nested inductives | Recursive occurrence under containers | 🔴 | Mostly rejected/unsupported | Later after positivity overhaul | P3 |
 | Quotient inductives | Lean-specific quotient support | ❌ | None | Probably do not port early | P5 |
@@ -121,7 +121,7 @@ Legend:
 | `Option` | Optional values | 🔴 | Missing | Easy inductive after library cleanup | P2 |
 | `Sum` / Either | Disjoint union | 🔴 | Missing | Easy inductive | P2 |
 | `Fin` | Bounded naturals | 🔴 | Missing | Needs indexed families | P2 |
-| `Vec` | Length-indexed list | 🟡 | Spec tests with opaque `vec_ind` | Make library once indexed iota works | P1 |
+| `Vec` | Length-indexed list | ✅ / 🟡 | `Theoria.Library.Vec` with indexed `vec_ind` reduction | Add theorem corpus | P1 |
 | Decidable propositions | Computable decisions | 🔴 | Missing | Needed for automation/specs | P2 |
 | Finite maps/sets | Program/spec library | 🔴 | Missing | Needed before Reach integration | P3 |
 
@@ -306,7 +306,7 @@ Legend:
 | Generate indexed rules | ✅ `Vec.nil`, `Vec.cons` rule metadata | P0 |
 | Validate indexed rule types | Full dependent motive/index checking | P0 |
 | Normalize indexed recursors | ✅ Reduce `Vec.ind ... vec_nil` / `vec_cons` | P0 |
-| Add Vec library | Real `Theoria.Library.Vec` | P1 |
+| Add Vec library | ✅ Real `Theoria.Library.Vec` | P1 |
 
 ### Milestone 3 — equality eliminator
 
@@ -342,7 +342,7 @@ Legend:
 | Step | Deliverable | Priority |
 |---|---|---:|
 | `Or`, `Exists`, `Prod`, `Sigma` | Core logic/data | P1 |
-| `Option`, `Sum`, `Fin`, `Vec` | Programming data | P2 |
+| `Option`, `Sum`, `Fin` | Programming data | P2 |
 | Nat order/arithmetic | `≤`, `<`, `+`, `*` facts | P2 |
 | List append/map/member | Useful list library | P2 |
 | Decidable predicates | Automation/specs | P3 |

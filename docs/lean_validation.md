@@ -33,7 +33,7 @@ If Lean is missing, the task fails with installation guidance. Normal `mix ci` d
 
 ## Architecture
 
-Theoria owns the validation corpus. The Lean subsystem is only a translation and external-checking layer.
+Theoria owns the validation corpus described in [`validation.md`](validation.md). The Lean subsystem is only a translation and external-checking layer.
 
 | Module | Responsibility |
 |---|---|
@@ -53,7 +53,7 @@ Generated files are build artifacts and should not be committed.
 
 ## Scope
 
-The current Theoria validation corpus validates the primitive equality, Bool, Nat, List, and Vec theorem corpora plus definitional-equality checks for beta, zeta, Bool computation, Nat recursor iota, Nat addition, List length, List recursor iota, Vec indexed iota, and deterministic small normalized Bool/Nat/List/Vec terms.
+The native Theoria validation corpus also includes Logic theorem modules. The current Lean-supported fragment validates the primitive equality, Bool, Nat, List, and Vec theorem corpora plus definitional-equality checks for beta, zeta, Bool computation, Nat recursor iota, Nat addition, List length, List recursor iota, Vec indexed iota, and deterministic small normalized Bool/Nat/List/Vec terms.
 
 The encoding boundary is intentionally narrow:
 

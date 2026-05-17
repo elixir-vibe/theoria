@@ -212,6 +212,7 @@ Guides included with the package:
 - [`docs/design.md`](docs/design.md) — kernel and environment design notes
 - [`docs/inductives.md`](docs/inductives.md) — inductive specifications and recursor generation
 - [`docs/theorem_modules.md`](docs/theorem_modules.md) — theorem module workflow
+- [`docs/validation.md`](docs/validation.md) — native validation corpus
 - [`docs/lean_validation.md`](docs/lean_validation.md) — contributor-only Lean oracle validation
 
 ## Validation
@@ -224,7 +225,12 @@ mix docs
 mix hex.build
 ```
 
-`mix ci` runs compilation with warnings as errors, formatting, Credo, ExDNA duplication checks, Reach architecture/smell checks, Dialyzer, theorem checks, and the test suite.
+`mix ci` runs compilation with warnings as errors, formatting, Credo, ExDNA duplication checks, Reach architecture/smell checks, Dialyzer, native validation, and the test suite. Run validation directly with:
+
+```bash
+mix theoria.validate
+mix theoria.validate --only defeq
+```
 
 Contributors with Lean installed can also run:
 

@@ -12,6 +12,7 @@ defmodule Mix.Tasks.Theoria.Lean.Check do
   alias Theoria.Lean.Corpus
   alias Theoria.Lean.Module, as: LeanModule
   alias Theoria.Lean.Oracle
+  alias Theoria.Validation.Options
 
   @shortdoc "Checks Theoria's Lean oracle corpus"
 
@@ -83,24 +84,11 @@ defmodule Mix.Tasks.Theoria.Lean.Check do
       )
     end
 
-    Keyword.update(opts, :only, Corpus.valid_categories(), &parse_only!/1)
-  end
-
-  defp parse_only!(values) do
-    values
-    |> List.wrap()
-    |> Enum.flat_map(&String.split(&1, ",", trim: true))
-    |> Enum.map(&parse_category!/1)
-  end
-
-  defp parse_category!(value) do
-    category = Enum.find(Corpus.valid_categories(), &(Atom.to_string(&1) == value))
-
-    if category do
-      category
-    else
-      valid = Enum.map_join(Corpus.valid_categories(), ", ", &Atom.to_string/1)
-      Mix.raise("invalid --only value: #{value}. Expected one of: #{valid}")
-    end
+    Keyword.update(
+      opts,
+      :only,
+      Corpus.valid_categories(),
+      &Options.parse_only!(&1, Corpus.valid_categories())
+    )
   end
 end

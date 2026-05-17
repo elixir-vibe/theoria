@@ -1,9 +1,11 @@
 defmodule Theoria.Lean.Module do
   @moduledoc "Builds Lean oracle source files from encoded checks."
 
+  alias Theoria.Elaborator
   alias Theoria.Lean.Encode
   alias Theoria.Lean.MirrorPrelude
   alias Theoria.Term
+  alias Theoria.Validation.Corpus
 
   defstruct checks: []
 
@@ -28,6 +30,14 @@ defmodule Theoria.Lean.Module do
     %__MODULE__{module | checks: checks ++ [{:defeq, name, left, right}]}
   end
 
+  @doc "Builds a Lean module from Theoria's validation corpus."
+  @spec from_validation(Corpus.t()) :: {:ok, t()} | {:error, term()}
+  def from_validation(%Corpus{} = validation) do
+    with {:ok, module} <- add_theorem_modules(new(), validation.theorem_modules) do
+      {:ok, add_defeq_checks(module, validation.defeq_checks)}
+    end
+  end
+
   @doc "Returns proof/defeq check counts."
   @spec stats(t()) :: stats()
   def stats(%__MODULE__{checks: checks}) do
@@ -41,6 +51,40 @@ defmodule Theoria.Lean.Module do
   def render(%__MODULE__{checks: checks}) do
     body = Enum.map_join(checks, "\n", &render_check/1)
     MirrorPrelude.source() <> body <> "\nend TheoriaOracle\n"
+  end
+
+  defp add_theorem_modules(module, theorem_modules) do
+    Enum.reduce_while(theorem_modules, {:ok, module}, fn theorem_module, {:ok, module} ->
+      case add_theorem_module(module, theorem_module) do
+        {:ok, module} -> {:cont, {:ok, module}}
+        {:error, reason} -> {:halt, {:error, reason}}
+      end
+    end)
+  end
+
+  defp add_theorem_module(module, theorem_module) do
+    theorem_module.__theoria_theorems__()
+    |> Enum.reduce_while({:ok, module}, fn theorem_name, {:ok, module} ->
+      with {:ok, type} <-
+             theorem_module
+             |> apply(String.to_existing_atom("#{theorem_name}_type"), [])
+             |> Elaborator.elaborate(),
+           {:ok, proof} <-
+             theorem_module
+             |> apply(String.to_existing_atom("#{theorem_name}_proof"), [])
+             |> Elaborator.elaborate() do
+        name = "#{inspect(theorem_module)}.#{theorem_name}"
+        {:cont, {:ok, add_proof_check(module, name, proof, type)}}
+      else
+        {:error, error} -> {:halt, {:error, {theorem_module, theorem_name, error}}}
+      end
+    end)
+  end
+
+  defp add_defeq_checks(module, checks) do
+    Enum.reduce(checks, module, fn check, module ->
+      add_defeq_check(module, check.name, check.left, check.right)
+    end)
   end
 
   defp render_check({:proof, name, proof, type}) do

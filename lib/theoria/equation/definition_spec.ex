@@ -60,6 +60,20 @@ defmodule Theoria.Equation.DefinitionSpec do
     )
   end
 
+  @doc "Builds a definition spec from a compiler result and final wrapped value."
+  @spec from_compiled(atom(), Term.t(), Term.t(), Theoria.Equation.Compiled.t(), keyword()) ::
+          {:ok, t()} | {:error, term()}
+  def from_compiled(name, type, value, %Theoria.Equation.Compiled{} = compiled, opts \\ []) do
+    new(name, type, value,
+      level_params: Keyword.get(opts, :level_params, []),
+      rec_arg_pos: compiled.rec_arg_pos,
+      fixed_params: Keyword.get(opts, :fixed_params, compiled.fixed_params),
+      clauses: compiled.clauses,
+      matcher: compiled.matcher,
+      schema: compiled.schema
+    )
+  end
+
   @doc "Converts a definition spec to stored equation metadata."
   @spec info(t()) :: Info.t()
   def info(%__MODULE__{} = spec) do

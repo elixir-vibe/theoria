@@ -5,7 +5,7 @@ defmodule Theoria.Library.Nat do
 
   alias Theoria.Env
   alias Theoria.Equation
-  alias Theoria.Equation.{Clause, Definition, DefinitionSpec, FixedParams, Pattern, Schema}
+  alias Theoria.Equation.{Clause, Definition, DefinitionSpec, FixedParams, Pattern}
   alias Theoria.Inductive.Generate
   alias Theoria.Inductive.Spec
   alias Theoria.Kernel
@@ -22,13 +22,12 @@ defmodule Theoria.Library.Nat do
       type = nat_add_type()
       value = nat_add_value()
 
-      with {:ok, spec} <-
-             DefinitionSpec.new(:nat_add, type, value,
+      with {:ok, compiled} <-
+             Equation.compile_definition(:nat, :nat_add, nat(), nat_add_clauses(), Term.bvar(1),
                rec_arg_pos: 0,
-               fixed_params: FixedParams.new(),
-               clauses: nat_add_clauses(),
-               schema: nat_add_schema()
-             ) do
+               fixed_params: FixedParams.new()
+             ),
+           {:ok, spec} <- DefinitionSpec.from_compiled(:nat_add, type, value, compiled) do
         DefinitionSpec.add_to_env(env, spec)
       end
     end
@@ -80,26 +79,7 @@ defmodule Theoria.Library.Nat do
     ]
   end
 
-  defp nat_add_schema do
-    n = Term.bvar(0)
-    m = Term.bvar(1)
-
-    Schema.new(
-      :nat,
-      [
-        Schema.equation(:zero, app(:nat_add, zero(), n), n, nat(), binders: [{:n, nat()}]),
-        Schema.equation(:succ, app(:nat_add, succ(m), n), succ(app(:nat_add, m, n)), nat(),
-          binders: [{:m, nat()}, {:n, nat()}]
-        )
-      ],
-      recursive_argument: 0,
-      argument_binders: [{:m, nat()}, {:n, nat()}]
-    )
-  end
-
-  defp app(name, arg1, arg2), do: Term.const(name) |> Term.app(arg1) |> Term.app(arg2)
   defp nat, do: Term.const(:Nat)
-  defp zero, do: Term.const(:zero)
   defp succ(term), do: Term.app(Term.const(:succ), term)
   defp nat_lam(name, body), do: Definition.unary(name, nat(), body)
 end

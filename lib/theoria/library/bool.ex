@@ -15,8 +15,7 @@ defmodule Theoria.Library.Bool do
     Definition,
     DefinitionSpec,
     FixedParams,
-    Pattern,
-    Schema
+    Pattern
   }
 
   alias Theoria.Inductive.Generate
@@ -34,14 +33,19 @@ defmodule Theoria.Library.Bool do
     with {:ok, env} <- Kernel.add_inductive(env, inductive_spec()),
          {:ok, env} <-
            add_equation_definition(env, :bool_not, bool_not_type(), bool_not_value(), 0,
-             clauses: bool_not_clauses()
+             clauses: bool_not_clauses(),
+             major: Term.bvar(0)
            ),
          {:ok, env} <-
            add_equation_definition(env, :bool_and, bool_binary_type(), bool_and_value(), 0,
-             clauses: bool_and_clauses()
+             clauses: bool_and_clauses(),
+             major: Term.bvar(1),
+             context: Context.new(%{}, %{b: Term.bvar(0)})
            ) do
       add_equation_definition(env, :bool_or, bool_binary_type(), bool_or_value(), 0,
-        clauses: bool_or_clauses()
+        clauses: bool_or_clauses(),
+        major: Term.bvar(1),
+        context: Context.new(%{}, %{b: Term.bvar(0)})
       )
     end
   end
@@ -111,13 +115,16 @@ defmodule Theoria.Library.Bool do
   end
 
   defp add_equation_definition(env, name, type, value, rec_arg_pos, opts) do
-    with {:ok, spec} <-
-           DefinitionSpec.new(name, type, value,
+    clauses = Keyword.fetch!(opts, :clauses)
+    major = Keyword.fetch!(opts, :major)
+
+    with {:ok, compiled} <-
+           Equation.compile_definition(:bool, name, bool(), clauses, major,
              rec_arg_pos: rec_arg_pos,
              fixed_params: FixedParams.new(),
-             clauses: Keyword.get(opts, :clauses, []),
-             schema: bool_schema(name)
-           ) do
+             context: Keyword.get(opts, :context, Context.new())
+           ),
+         {:ok, spec} <- DefinitionSpec.from_compiled(name, type, value, compiled) do
       DefinitionSpec.add_to_env(env, spec)
     end
   end
@@ -142,89 +149,6 @@ defmodule Theoria.Library.Bool do
       Clause.new([Pattern.constructor(false)], fn ctx -> ctx.b end)
     ]
   end
-
-  defp bool_schema(:bool_not) do
-    Schema.new(
-      :bool,
-      [
-        Schema.equation(true, bool_app(:bool_not, bool_true()), bool_false(), bool()),
-        Schema.equation(false, bool_app(:bool_not, bool_false()), bool_true(), bool())
-      ],
-      recursive_argument: 0,
-      argument_binders: [{:b, bool()}]
-    )
-  end
-
-  defp bool_schema(:bool_and) do
-    Schema.new(
-      :bool,
-      [
-        Schema.equation(
-          :true_true,
-          bool_app(:bool_and, bool_true(), bool_true()),
-          bool_true(),
-          bool()
-        ),
-        Schema.equation(
-          :true_false,
-          bool_app(:bool_and, bool_true(), bool_false()),
-          bool_false(),
-          bool()
-        ),
-        Schema.equation(
-          :false_true,
-          bool_app(:bool_and, bool_false(), bool_true()),
-          bool_false(),
-          bool()
-        ),
-        Schema.equation(
-          :false_false,
-          bool_app(:bool_and, bool_false(), bool_false()),
-          bool_false(),
-          bool()
-        )
-      ],
-      recursive_argument: 0,
-      argument_binders: [{:a, bool()}, {:b, bool()}]
-    )
-  end
-
-  defp bool_schema(:bool_or) do
-    Schema.new(
-      :bool,
-      [
-        Schema.equation(
-          :true_true,
-          bool_app(:bool_or, bool_true(), bool_true()),
-          bool_true(),
-          bool()
-        ),
-        Schema.equation(
-          :true_false,
-          bool_app(:bool_or, bool_true(), bool_false()),
-          bool_true(),
-          bool()
-        ),
-        Schema.equation(
-          :false_true,
-          bool_app(:bool_or, bool_false(), bool_true()),
-          bool_true(),
-          bool()
-        ),
-        Schema.equation(
-          :false_false,
-          bool_app(:bool_or, bool_false(), bool_false()),
-          bool_false(),
-          bool()
-        )
-      ],
-      recursive_argument: 0,
-      argument_binders: [{:a, bool()}, {:b, bool()}]
-    )
-  end
-
-  defp bool_app(name, arg), do: Term.app(Term.const(name), arg)
-  defp bool_app(name, arg1, arg2), do: Term.const(name) |> Term.app(arg1) |> Term.app(arg2)
 
   defp bool, do: Term.const(:Bool)
   defp bool_true, do: Term.const(true)

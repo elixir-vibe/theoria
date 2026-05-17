@@ -5,7 +5,9 @@ Theoria's equation compiler is still internal groundwork, but compiled library d
 Current flow:
 
 ```text
-compiled definition
+Clause/Pattern
+  → Theoria.Equation.Compiler
+  → Theoria.Equation.Compiled
   → Theoria.Equation.DefinitionSpec package
   → Theoria.Equation.Info metadata in the environment
   → generated Theoria.Equation.Lemma metadata
@@ -26,11 +28,11 @@ Theoria.Equation.Info.all(env)
 Theoria.Equation.Info.equation?(env, :nat_add)
 ```
 
-The metadata records the definition name, checked type/value, recursive argument position, fixed parameters, level parameters, original clause metadata, Lean-shaped matcher alternatives, and a validated schema that drives schematic theorem generation. `Theoria.Equation.DefinitionSpec` is the internal package passed from compiled definitions into the kernel environment.
+The compiler returns `Theoria.Equation.Compiled`, which contains the recursor body plus generated clause/schema/matcher metadata. `Theoria.Equation.DefinitionSpec` wraps that compiler result with the final checked type/value before installation. Stored metadata records the definition name, checked type/value, recursive argument position, fixed parameters, level parameters, original clause metadata, Lean-shaped matcher alternatives, and a validated schema that drives schematic theorem generation.
 
 ## Generated equation lemmas
 
-For the currently supported library definitions, Theoria can generate schematic equation-lemma metadata from stored `Equation.Schema` entries:
+For the currently supported library definitions, Theoria can generate schematic equation-lemma metadata from compiler-owned `Equation.Schema` entries:
 
 ```elixir
 {:ok, info} = Theoria.Equation.Info.fetch(env, :nat_add)

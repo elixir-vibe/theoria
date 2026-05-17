@@ -5,7 +5,7 @@ defmodule Theoria.Library.List do
 
   alias Theoria.Env
   alias Theoria.Equation
-  alias Theoria.Equation.{Clause, Definition, DefinitionSpec, FixedParams, Pattern, Schema}
+  alias Theoria.Equation.{Clause, Definition, DefinitionSpec, FixedParams, Pattern}
   alias Theoria.Inductive.Generate
   alias Theoria.Inductive.Spec
   alias Theoria.Kernel
@@ -147,14 +147,20 @@ defmodule Theoria.Library.List do
   end
 
   defp add_equation_definition(env, name, type, value, rec_arg_pos) do
-    with {:ok, spec} <-
-           DefinitionSpec.new(name, type, value,
-             level_params: [:u],
+    clauses = clauses_for(name)
+
+    with {:ok, compiled} <-
+           Equation.compile_definition(
+             {:list, nat(), [1, 1]},
+             name,
+             motive_for(name),
+             clauses,
+             major_for(name),
              rec_arg_pos: rec_arg_pos,
-             fixed_params: FixedParams.new([0]),
-             clauses: clauses_for(name),
-             schema: schema_for(name)
-           ) do
+             fixed_params: FixedParams.new([0])
+           ),
+         {:ok, spec} <-
+           DefinitionSpec.from_compiled(name, type, value, compiled, level_params: [:u]) do
       DefinitionSpec.add_to_env(env, spec)
     end
   end
@@ -182,74 +188,13 @@ defmodule Theoria.Library.List do
   defp clauses_for(:list_length), do: list_length_clauses()
   defp clauses_for(:list_append), do: list_append_clauses()
 
-  defp schema_for(:list_length) do
-    list_length = list_constant(:list_length)
-    x = Term.bvar(1)
-    xs = Term.bvar(0)
+  defp motive_for(:list_length), do: nat()
+  defp motive_for(:list_append), do: list_of(nat())
 
-    Schema.new(
-      :list,
-      [
-        Schema.equation(nil, app(list_length, nat(), list_nil(nat())), zero(), nat()),
-        Schema.equation(
-          :cons,
-          app(list_length, nat(), list_cons_schema(nat(), x, xs)),
-          succ(app(list_length, nat(), xs)),
-          nat(),
-          binders: [{:x, nat()}, {:xs, list_of_schema(nat())}]
-        )
-      ],
-      recursive_argument: 1,
-      parameter_binders: [{:a, Term.sort(1)}],
-      argument_binders: [{:xs, list_of_schema(nat())}]
-    )
-  end
+  defp major_for(:list_length), do: Term.bvar(0)
+  defp major_for(:list_append), do: Term.bvar(1)
 
-  defp schema_for(:list_append) do
-    list_append = list_constant(:list_append)
-    x = Term.bvar(2)
-    xs = Term.bvar(1)
-    ys = Term.bvar(0)
-
-    Schema.new(
-      :list,
-      [
-        Schema.equation(
-          nil,
-          app(list_append, nat(), list_nil(nat()), ys),
-          ys,
-          list_of_schema(nat()),
-          binders: [{:ys, list_of_schema(nat())}]
-        ),
-        Schema.equation(
-          :cons,
-          app(list_append, nat(), list_cons_schema(nat(), x, xs), ys),
-          list_cons_schema(nat(), x, app(list_append, nat(), xs, ys)),
-          list_of_schema(nat()),
-          binders: [{:x, nat()}, {:xs, list_of_schema(nat())}, {:ys, list_of_schema(nat())}]
-        )
-      ],
-      recursive_argument: 1,
-      parameter_binders: [{:a, Term.sort(1)}],
-      argument_binders: [{:xs, list_of_schema(nat())}, {:ys, list_of_schema(nat())}]
-    )
-  end
-
-  defp app(fun, arg1, arg2), do: fun |> Term.app(arg1) |> Term.app(arg2)
-  defp app(fun, arg1, arg2, arg3), do: fun |> Term.app(arg1) |> Term.app(arg2) |> Term.app(arg3)
   defp nat, do: Term.const(:Nat)
-  defp zero, do: Term.const(:zero)
-  defp succ(term), do: Term.app(Term.const(:succ), term)
-  defp list_constant(name), do: Term.const(name, [1])
-  defp list_nil(type), do: Term.app(list_constant(:list_nil), type)
-  defp list_of_schema(type), do: Term.app(list_constant(:List), type)
-
-  defp list_cons_schema(type, head, tail) do
-    list_constant(:list_cons)
-    |> Term.app(type)
-    |> Term.app(head)
-    |> Term.app(tail)
-  end
 
   defp list_cons(type, head, tail) do
     Term.const(:list_cons, [Level.param(:u)])

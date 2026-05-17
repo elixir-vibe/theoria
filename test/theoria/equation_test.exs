@@ -137,6 +137,19 @@ defmodule Theoria.EquationTest do
     assert Enum.map(info.matcher.alternatives, & &1.constructor) == [:list_nil, :list_cons]
   end
 
+  test "library modules do not hand-author schema or matcher helpers" do
+    forbidden = ~w(bool_schema nat_add_schema schema_for bool_matcher nat_matcher list_matcher)
+
+    for path <- [
+          "lib/theoria/library/bool.ex",
+          "lib/theoria/library/nat.ex",
+          "lib/theoria/library/list.ex"
+        ],
+        helper <- forbidden do
+      refute File.read!(path) =~ "defp #{helper}"
+    end
+  end
+
   test "equation lookup installs all generated theorems and builds rules" do
     {:ok, env} = Prelude.env()
 

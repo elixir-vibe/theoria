@@ -30,7 +30,11 @@ defmodule Mix.Tasks.Theoria.Validate do
         Mix.shell().info("✓ inductive specs: #{result.inductive_count} check(s)")
 
         Mix.shell().info("✓ equation metadata: #{Report.equation_count(result)} definition(s)")
-        Mix.shell().info("✓ matcher metadata: #{result.matcher_metadata_count} matcher(s)")
+
+        Mix.shell().info(
+          "✓ matcher declarations: #{result.matcher_metadata_count} checked matcher(s)"
+        )
+
         Mix.shell().info("✓ generated equations: #{result.generated_equation_count} theorem(s)")
         Mix.shell().info("✓ matcher equations: #{result.matcher_equation_count} theorem(s)")
 

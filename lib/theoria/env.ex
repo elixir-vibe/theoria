@@ -86,6 +86,31 @@ defmodule Theoria.Env do
     }
   end
 
+  @spec put_matcher(t(), atom(), Term.t(), Term.t(), [atom()], EnvMatcher.t()) :: t()
+  def put_matcher(
+        %__MODULE__{constants: constants} = env,
+        name,
+        type,
+        value,
+        universe_params \\ [],
+        %EnvMatcher{} = metadata
+      )
+      when is_atom(name) and is_list(universe_params) do
+    %{
+      env
+      | constants:
+          Map.put(constants, name, %Constant{
+            type: type,
+            value: value,
+            kind: :matcher,
+            reducible?: true,
+            universe_params: universe_params,
+            metadata: metadata
+          }),
+        declarations: put_order(env, name)
+    }
+  end
+
   @spec put_theorem(t(), atom(), Term.t(), Term.t(), [atom()]) :: t()
   def put_theorem(
         %__MODULE__{constants: constants} = env,

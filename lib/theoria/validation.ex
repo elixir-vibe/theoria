@@ -132,9 +132,27 @@ defmodule Theoria.Validation do
 
   defp validate_source_matcher(env, %Info{} = info) do
     case Env.fetch_matcher(env, info.matcher.name) do
-      {:ok, matcher} when matcher.source == info.name -> :ok
-      {:ok, matcher} -> {:error, {:matcher_source_mismatch, matcher.name, matcher.source}}
+      {:ok, matcher} -> validate_matcher_declaration(info, matcher)
       :error -> {:error, {:missing_matcher, info.matcher.name}}
+    end
+  end
+
+  defp validate_matcher_declaration(info, matcher) do
+    cond do
+      matcher.source != info.name ->
+        {:error, {:matcher_source_mismatch, matcher.name, matcher.source}}
+
+      matcher.type != info.type ->
+        {:error, {:matcher_type_mismatch, matcher.name}}
+
+      matcher.value != info.value ->
+        {:error, {:matcher_value_mismatch, matcher.name}}
+
+      matcher.info.name != matcher.name ->
+        {:error, {:matcher_info_name_mismatch, matcher.name}}
+
+      true ->
+        :ok
     end
   end
 

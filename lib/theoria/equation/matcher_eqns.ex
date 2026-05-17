@@ -34,6 +34,7 @@ defmodule Theoria.Equation.MatcherEqns do
       name: info.matcher.name,
       source: info.name,
       type: info.type,
+      value: info.value,
       info: info.matcher
     })
   end

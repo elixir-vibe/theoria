@@ -14,6 +14,7 @@ defmodule Theoria.Kernel do
   alias Theoria.Env.Matcher, as: EnvMatcher
   alias Theoria.Env.Recursor, as: EnvRecursor
   alias Theoria.Env.Reduction
+  alias Theoria.Equation.MatcherSpec
   alias Theoria.Error
   alias Theoria.Inductive.Admission
   alias Theoria.Inductive.Spec
@@ -176,6 +177,20 @@ defmodule Theoria.Kernel do
     end
   end
 
+  def add_matcher(%Env{} = env, %MatcherSpec{} = spec) do
+    metadata = MatcherSpec.metadata(spec)
+
+    with :ok <- ensure_fresh_declaration(env, spec.name),
+         :ok <- ensure_universe_params(spec.level_params),
+         :ok <- ensure_matcher_metadata(metadata, spec),
+         :ok <- ensure_level_params(spec.type, spec.level_params),
+         :ok <- ensure_level_params(spec.value, spec.level_params),
+         {:ok, %Sort{}} <- infer_sort(env, Context.new(), spec.type),
+         :ok <- check(env, Context.new(), spec.value, spec.type) do
+      {:ok, Env.put_matcher(env, spec.name, spec.type, spec.value, spec.level_params, metadata)}
+    end
+  end
+
   def add_theorem(%Env{} = env, name, type, proof, universe_params \\ [])
       when is_atom(name) and is_list(universe_params) do
     with :ok <- ensure_fresh_declaration(env, name),
@@ -310,6 +325,28 @@ defmodule Theoria.Kernel do
 
   defp ensure_definition_metadata(metadata, name, _type, _value) do
     error(:invalid_declaration, kind: :definition_metadata, name: name, metadata: metadata)
+  end
+
+  defp ensure_matcher_metadata(%EnvMatcher{} = metadata, %MatcherSpec{} = spec) do
+    cond do
+      metadata.name != spec.name ->
+        error(:invalid_declaration, kind: :matcher_metadata, name: spec.name, metadata: metadata)
+
+      metadata.source != spec.source ->
+        error(:invalid_declaration, kind: :matcher_metadata, name: spec.name, metadata: metadata)
+
+      metadata.type != spec.type ->
+        error(:invalid_declaration, kind: :matcher_metadata, name: spec.name, metadata: metadata)
+
+      metadata.value != spec.value ->
+        error(:invalid_declaration, kind: :matcher_metadata, name: spec.name, metadata: metadata)
+
+      metadata.info.name != spec.name ->
+        error(:invalid_declaration, kind: :matcher_metadata, name: spec.name, metadata: metadata)
+
+      true ->
+        :ok
+    end
   end
 
   defp ensure_constant_kind(:constant, nil, nil), do: :ok
@@ -456,7 +493,7 @@ defmodule Theoria.Kernel do
          reduction: reduction,
          metadata: metadata
        }}
-      when kind in [:constant, :inductive, :constructor, :recursor, :matcher] ->
+      when kind in [:constant, :inductive, :constructor, :recursor] ->
         add_constant(checked_env, name, type, params,
           kind: kind,
           reduction: reduction,
@@ -466,6 +503,26 @@ defmodule Theoria.Kernel do
       {:ok,
        %Constant{kind: :axiom, type: type, value: nil, universe_params: params, reduction: nil}} ->
         add_axiom(checked_env, name, type, params)
+
+      {:ok,
+       %Constant{
+         kind: :matcher,
+         type: type,
+         value: value,
+         universe_params: params,
+         reduction: nil,
+         metadata: %EnvMatcher{} = metadata
+       }}
+      when not is_nil(value) ->
+        add_matcher(checked_env, %MatcherSpec{
+          name: name,
+          source: metadata.source,
+          type: type,
+          value: value,
+          info: metadata.info,
+          level_params: params,
+          equation_names: metadata.equation_names
+        })
 
       {:ok,
        %Constant{

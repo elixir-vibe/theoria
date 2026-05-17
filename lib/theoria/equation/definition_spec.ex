@@ -2,8 +2,7 @@ defmodule Theoria.Equation.DefinitionSpec do
   @moduledoc "Complete metadata package for a compiled equation definition."
 
   alias Theoria.Env
-  alias Theoria.Env.Matcher, as: EnvMatcher
-  alias Theoria.Equation.{FixedParams, Info, MatcherEqns, MatcherInfo, Schema}
+  alias Theoria.Equation.{FixedParams, Info, MatcherInfo, MatcherSpec, Schema}
   alias Theoria.Kernel
   alias Theoria.Term
 
@@ -94,17 +93,9 @@ defmodule Theoria.Equation.DefinitionSpec do
   defp add_matcher_to_env(env, %__MODULE__{matcher: nil}), do: {:ok, env}
 
   defp add_matcher_to_env(env, %__MODULE__{} = spec) do
-    metadata =
-      EnvMatcher.new(spec.matcher.name, spec.name, spec.type, spec.matcher,
-        value: nil,
-        level_params: spec.level_params,
-        equation_names: spec |> info() |> MatcherEqns.generated() |> Enum.map(& &1.name)
-      )
-
-    Kernel.add_constant(env, spec.matcher.name, spec.type, spec.level_params,
-      kind: :matcher,
-      metadata: metadata
-    )
+    with {:ok, matcher_spec} <- spec |> info() |> MatcherSpec.from_info() do
+      Kernel.add_matcher(env, matcher_spec)
+    end
   end
 
   defp matcher_for(_name, nil), do: nil

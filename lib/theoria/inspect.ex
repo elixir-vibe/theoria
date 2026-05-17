@@ -99,7 +99,7 @@ defimpl Inspect, for: Theoria.Env.Matcher do
       Atom.to_string(matcher.name),
       ", source: ",
       Atom.to_string(matcher.source),
-      ", equations: #{length(matcher.equation_names)}",
+      ", checked, equations: #{length(matcher.equation_names)}",
       ">"
     ])
   end

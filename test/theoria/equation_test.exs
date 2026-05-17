@@ -208,6 +208,16 @@ defmodule Theoria.EquationTest do
     assert theorem.name == :"list_append.match_1.eq_list_nil"
   end
 
+  test "environment replay rejects corrupted matcher declarations" do
+    {:ok, env} = Prelude.env()
+    {:ok, constant} = Theoria.Env.fetch(env, :"nat_add.match_1")
+    corrupted = %{constant | value: Term.const(:zero)}
+    env = %{env | constants: Map.put(env.constants, :"nat_add.match_1", corrupted)}
+
+    assert {:error, error} = Theoria.Kernel.validate_env(env)
+    assert error.reason in [:type_mismatch, :invalid_declaration]
+  end
+
   test "library and compiler modules do not hand-author definition-specific schema helpers" do
     forbidden_helpers =
       ~w(bool_schema nat_add_schema schema_for bool_matcher nat_matcher list_matcher)

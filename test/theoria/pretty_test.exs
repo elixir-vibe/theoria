@@ -70,6 +70,7 @@ defmodule Theoria.PrettyTest do
 
     env_matcher =
       EnvMatcher.new(:match_list, :list_append, const(:Nat), matcher,
+        value: const(:zero),
         equation_names: [:"match_list.eq_list_nil"]
       )
 
@@ -95,7 +96,7 @@ defmodule Theoria.PrettyTest do
              "#Theoria.MatcherEquation<match_list.eq_list_nil, matcher: match_list, constructor: :list_nil>"
 
     assert inspect(env_matcher) ==
-             "#Theoria.EnvMatcher<match_list, source: list_append, equations: 1>"
+             "#Theoria.EnvMatcher<match_list, source: list_append, checked, equations: 1>"
 
     assert inspect(signature) ==
              "#Theoria.EquationSignature<list_append, family: list, rec_arg: 0>"

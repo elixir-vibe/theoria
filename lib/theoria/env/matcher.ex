@@ -4,14 +4,14 @@ defmodule Theoria.Env.Matcher do
   alias Theoria.Equation.MatcherInfo
   alias Theoria.Term
 
-  @enforce_keys [:name, :source, :type, :info]
+  @enforce_keys [:name, :source, :type, :value, :info]
   defstruct [:name, :source, :type, :value, :info, level_params: [], equation_names: []]
 
   @type t :: %__MODULE__{
           name: atom(),
           source: atom(),
           type: Term.t(),
-          value: Term.t() | nil,
+          value: Term.t(),
           info: MatcherInfo.t(),
           level_params: [atom()],
           equation_names: [atom()]
@@ -25,7 +25,7 @@ defmodule Theoria.Env.Matcher do
       name: name,
       source: source,
       type: type,
-      value: Keyword.get(opts, :value),
+      value: Keyword.fetch!(opts, :value),
       info: info,
       level_params: Keyword.get(opts, :level_params, []),
       equation_names: Keyword.get(opts, :equation_names, [])

@@ -26,6 +26,25 @@ Signature + CaseTemplate + Clause/Pattern
 
 The metadata is Theoria-owned data. It is checked by native validation and can be translated to Lean by the contributor-only oracle, but Lean is not part of the runtime trusted path.
 
+
+## Trusted boundary
+
+Equation, matcher, rewrite, simp, and Lean-oracle machinery are intentionally outside the trusted kernel. They may synthesize terms, metadata, declarations, or external validation modules, but they do not make proofs trusted by themselves.
+
+Trusted:
+
+- `Theoria.Kernel` type-checks definitions, theorem declarations, inductive declarations, recursor metadata, and checked matcher declarations.
+- Environment replay validates that stored declarations can be reconstructed through kernel entrypoints.
+
+Untrusted helpers:
+
+- `Theoria.Equation.Compiler`, `SchemaBuilder`, `MatcherDescriptor`, `MatcherType`, and `MatcherSpec`;
+- `Theoria.Equation.Eqns`, `MatcherEqns`, and `Extension.Registry` lookup/realization helpers;
+- `Theoria.Rewrite` and `Theoria.Simp`;
+- `Theoria.Lean.*` encoding and the external Lean oracle.
+
+The safety rule is simple: generated artifacts become meaningful only after the native kernel checks them. The Lean oracle is contributor confidence, not runtime trust.
+
 ## Stored equation metadata
 
 Compiled definitions such as `bool_not`, `nat_add`, `list_length`, and `list_append` store `Theoria.Equation.Info` in their environment declaration metadata. Use:
@@ -176,6 +195,18 @@ mix theoria.validate --equations --verbose
 
 The verbose form prints generated lemma names under each stored equation definition.
 
-## Limitations
+## Limitations by layer
 
-The current generator is deliberately small. It emits schematic equation lemmas from schemas for the built-in Bool/Nat/List definitions, derives fixed parameters from signatures, and stores basic matcher/discriminant/overlap metadata in checked matcher declarations. It is not yet Lean's full equation theorem machinery: there is no public equation syntax, no mutual-recursive fixed-parameter permutation analysis, no discriminant dependency analysis, descriptors are still limited to simple nondependent matchers, no recursor-info extraction from `Env.Recursor`, no dependent/indexed matcher descriptors, registry snapshots are rebuilt in memory and not persisted to disk, no general structural recursion checker, no `brecOn`/below dictionaries, no attribute/prioritized simp database, no full lazy theorem declaration registry, and no proof-producing rewrite tactic.
+| Layer | Current limitation |
+| --- | --- |
+| Public syntax | No public equation-definition syntax yet. Library definitions feed the internal compiler directly. |
+| Fixed parameters | Signature-derived fixed parameters only; no mutual-recursive permutation/dependency analysis yet. |
+| MatcherDescriptor | Simple nondependent Bool/Nat/List descriptors; no recursor-info extraction from `Env.Recursor` yet. |
+| MatcherType | Generated from the current simple recursor shapes; not a general dependent matcher compiler. |
+| Eqns / MatcherEqns | Generated theorem metadata and realization helpers, not a persistent Lean-style environment extension. |
+| Extension.Registry | In-memory snapshot rebuilt from environment metadata; not persisted to disk. |
+| Structural recursion | No general structural recursion checker and no `brecOn`/below dictionaries. |
+| Rewrite / Simp | Untrusted first-order rewriting with no proof terms and no attribute/prioritized simp database. |
+| Lean oracle | Contributor-only external validation; not a runtime dependency and not trusted by the kernel. |
+
+The current generator is deliberately small. It emits schematic equation lemmas from schemas for the built-in Bool/Nat/List definitions, derives fixed parameters from signatures, and stores basic matcher/discriminant/overlap metadata in checked matcher declarations. It is not yet Lean's full equation theorem machinery.

@@ -1,5 +1,5 @@
 defmodule Theoria.Equation.Context do
-  @moduledoc "Named values available while materializing an equation branch body."
+  @moduledoc "Internal named values available while materializing an equation branch body."
 
   alias Theoria.Term
 

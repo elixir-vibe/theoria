@@ -139,13 +139,62 @@ defmodule Theoria.EquationTest do
 
   test "extension validation rejects stale matcher equation names" do
     {:ok, env} = Prelude.env()
-    {:ok, constant} = Theoria.Env.fetch(env, :"bool_and.match_1")
-    stale_metadata = %{constant.metadata | equation_names: [:stale_equation]}
-    stale_constant = %{constant | metadata: stale_metadata}
-    env = %{env | constants: Map.put(env.constants, :"bool_and.match_1", stale_constant)}
+    env = corrupt_matcher(env, :"bool_and.match_1", &%{&1 | equation_names: [:stale_equation]})
 
     assert {:error, {:matcher_equation_name_mismatch, :"bool_and.match_1", _, _}} =
              Extension.validate(env)
+  end
+
+  test "extension validation rejects matcher declarations with unknown sources" do
+    {:ok, env} = Prelude.env()
+    env = corrupt_matcher(env, :"bool_and.match_1", &%{&1 | source: :missing_source})
+
+    assert {:error, {:unknown_matcher_source, :"bool_and.match_1", :missing_source}} =
+             Extension.validate(env)
+  end
+
+  test "extension realization rejects unknown generated theorems" do
+    {:ok, env} = Prelude.env()
+
+    assert Extension.realize(env, :"missing.eq") ==
+             {:error, {:unknown_generated_theorem, :"missing.eq"}}
+  end
+
+  test "matcher descriptor validation rejects corrupted shapes" do
+    info = MatcherInfo.new(:match_nat, 0, 1, [%Alternative{constructor: :zero, num_fields: 0}])
+
+    base = %MatcherDescriptor{
+      family: :nat,
+      parameters: [],
+      discriminants: info.discriminants,
+      alternatives: [
+        %MatcherDescriptor.Alternative{
+          name: :zero,
+          pattern: [:zero],
+          fields: [],
+          result: Term.bvar(1)
+        }
+      ],
+      result: Term.bvar(0),
+      recursor: :nat_rec
+    }
+
+    duplicate = %{base | alternatives: base.alternatives ++ base.alternatives}
+    wrong_discriminants = %{base | discriminants: []}
+    wrong_alternatives = %{base | alternatives: []}
+    unsupported_recursor = %{base | recursor: :vec_rec}
+
+    assert MatcherDescriptor.validate(duplicate, %{info | alternatives: duplicate.alternatives}) ==
+             {:error, :duplicate_alternative}
+
+    assert MatcherDescriptor.validate(wrong_discriminants, info) ==
+             {:error, {:discriminant_count_mismatch, 1}}
+
+    assert MatcherDescriptor.validate(wrong_alternatives, info) ==
+             {:error, {:alternative_count_mismatch, 1}}
+
+    assert MatcherDescriptor.validate(unsupported_recursor, info) ==
+             {:error, {:unsupported_recursor, :vec_rec}}
   end
 
   test "matcher descriptors drive real matcher types and bodies" do
@@ -721,6 +770,12 @@ defmodule Theoria.EquationTest do
              Term.Application.collect(term)
 
     assert_lams(cons_case, [:x, :xs, :ih], Term.bvar(0))
+  end
+
+  defp corrupt_matcher(env, name, fun) do
+    {:ok, constant} = Theoria.Env.fetch(env, name)
+    constant = %{constant | metadata: fun.(constant.metadata)}
+    %{env | constants: Map.put(env.constants, name, constant)}
   end
 
   defp nat, do: Term.const(:Nat)

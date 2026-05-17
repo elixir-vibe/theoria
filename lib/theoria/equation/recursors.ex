@@ -1,5 +1,5 @@
 defmodule Theoria.Equation.Recursors do
-  @moduledoc "Raw recursor application builders used by the equation compiler."
+  @moduledoc "Internal raw recursor application builders used by the equation compiler."
 
   alias Theoria.Level
   alias Theoria.Term

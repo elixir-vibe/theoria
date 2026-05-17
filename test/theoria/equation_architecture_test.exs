@@ -1,0 +1,59 @@
+defmodule Theoria.EquationArchitectureTest do
+  use ExUnit.Case, async: true
+
+  @equation_path Path.expand("../../lib/theoria/equation", __DIR__)
+
+  test "libraries do not own schema or matcher construction helpers" do
+    library_sources =
+      Path.wildcard(Path.expand("../../lib/theoria/library/**/*.ex", __DIR__))
+      |> Enum.map(&{&1, File.read!(&1)})
+
+    forbidden = [
+      "bool_schema",
+      "nat_add_schema",
+      "schema_for",
+      "bool_matcher",
+      "nat_matcher",
+      "list_matcher",
+      "MatcherInfo.new",
+      "Schema.new"
+    ]
+
+    for {path, source} <- library_sources, term <- forbidden do
+      refute source =~ term, "#{path} must not contain #{term}"
+    end
+  end
+
+  test "equation registry and descriptor layers stay family-policy free where required" do
+    assert_no_source("extension.ex", [":bool", ":nat", ":list", "Theoria.Library"])
+    assert_no_source("eqns.ex", ["compile_definition", "SchemaBuilder", "Theoria.Library"])
+
+    assert_no_source("matcher_eqns.ex", ["compile_definition", "SchemaBuilder", "Theoria.Library"])
+  end
+
+  test "matcher generation layers do not depend on kernel or libraries" do
+    for file <- ["matcher_descriptor.ex", "matcher_type.ex", "matcher_spec.ex"] do
+      assert_no_source(file, ["Theoria.Kernel", "Theoria.Library"])
+    end
+  end
+
+  test "compiler owns schema builder but not concrete definition names" do
+    assert_no_source("compiler.ex", [
+      "bool_not",
+      "bool_and",
+      "bool_or",
+      "nat_add",
+      "list_length",
+      "list_append"
+    ])
+  end
+
+  defp assert_no_source(file, forbidden) do
+    path = Path.join(@equation_path, file)
+    source = File.read!(path)
+
+    for term <- forbidden do
+      refute source =~ term, "#{path} must not contain #{term}"
+    end
+  end
+end

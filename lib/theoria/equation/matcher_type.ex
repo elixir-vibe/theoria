@@ -1,5 +1,5 @@
 defmodule Theoria.Equation.MatcherType do
-  @moduledoc "Builds checked matcher declaration types and bodies for supported fragments."
+  @moduledoc "Internal builder for checked matcher declaration types and bodies for supported fragments."
 
   alias Theoria.Equation.MatcherDescriptor
   alias Theoria.Equation.MatcherInfo

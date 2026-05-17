@@ -1,5 +1,5 @@
 defmodule Theoria.Equation.Compiler do
-  @moduledoc "Constructor-equation compiler for the initial Bool/Nat/List fragment."
+  @moduledoc "Internal constructor-equation compiler for the initial Bool/Nat/List fragment."
 
   alias Theoria.Equation.Branch
   alias Theoria.Equation.Clause

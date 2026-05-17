@@ -9,10 +9,11 @@ defmodule Theoria.Lean.Corpus do
     equality: Theoria.Library.Equality.Theorems,
     bool: Theoria.Library.Bool.Theorems,
     nat: Theoria.Library.Nat.Theorems,
-    list: Theoria.Library.List.Theorems
+    list: Theoria.Library.List.Theorems,
+    vec: Theoria.Library.Vec.Theorems
   }
 
-  @builtin_categories [:equality, :bool, :nat, :list]
+  @builtin_categories [:equality, :bool, :nat, :list, :vec]
   @valid_categories @builtin_categories ++ [:defeq]
 
   @doc "Returns theorem modules included in the initial Lean oracle corpus."
@@ -97,6 +98,14 @@ defmodule Theoria.Lean.Corpus do
     two = Term.app(succ, one)
     nat_list = Term.app(Term.const(:List), nat)
     nil_nat = Term.app(Term.const(:list_nil), nat)
+    vec_nil_nat = Term.app(Term.const(:vec_nil), nat)
+
+    vec_singleton_zero =
+      Term.const(:vec_cons)
+      |> Term.app(nat)
+      |> Term.app(zero)
+      |> Term.app(zero)
+      |> Term.app(vec_nil_nat)
 
     singleton_zero =
       Term.const(:list_cons) |> Term.app(nat) |> Term.app(zero) |> Term.app(nil_nat)
@@ -153,8 +162,54 @@ defmodule Theoria.Lean.Corpus do
        |> Term.app(nat)
        |> Term.app(zero)
        |> Term.app(list_succ_case(nat_list))
-       |> Term.app(singleton_zero), one}
+       |> Term.app(singleton_zero), one},
+      {:vec, "vec_ind_nil",
+       Term.const(:vec_ind)
+       |> Term.app(nat)
+       |> Term.app(vec_nat_motive())
+       |> Term.app(zero)
+       |> Term.app(vec_succ_case())
+       |> Term.app(zero)
+       |> Term.app(vec_nil_nat), zero},
+      {:vec, "vec_ind_cons",
+       Term.const(:vec_ind)
+       |> Term.app(nat)
+       |> Term.app(vec_nat_motive())
+       |> Term.app(zero)
+       |> Term.app(vec_succ_case())
+       |> Term.app(one)
+       |> Term.app(vec_singleton_zero), one}
     ]
+  end
+
+  defp vec_nat_motive do
+    Term.lam(
+      :n,
+      Term.const(:Nat),
+      Term.lam(
+        :_xs,
+        Term.const(:Vec) |> Term.app(Term.const(:Nat)) |> Term.app(Term.bvar(0)),
+        Term.const(:Nat)
+      )
+    )
+  end
+
+  defp vec_succ_case do
+    nearest = Term.bvar(0)
+
+    Term.lam(
+      :_head,
+      Term.const(:Nat),
+      Term.lam(
+        :n,
+        Term.const(:Nat),
+        Term.lam(
+          :_tail,
+          Term.const(:Vec) |> Term.app(Term.const(:Nat)) |> Term.app(nearest),
+          Term.lam(:ih, Term.const(:Nat), Term.app(Term.const(:succ), nearest))
+        )
+      )
+    )
   end
 
   defp list_succ_case(nat_list) do

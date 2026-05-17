@@ -77,14 +77,16 @@ defmodule Theoria.Lean.EncodeTest do
     assert {:ok, lean_module, stats} = Corpus.build()
     source = LeanModule.render(lean_module)
 
-    assert stats == %{proof: 35, defeq: 16, total: 51}
+    assert stats == %{proof: 39, defeq: 18, total: 57}
     assert source =~ "def tEqRec"
     assert source =~ "proof Theoria.Library.Equality.Theorems.eq_symm"
     assert source =~ "proof Theoria.Library.Bool.Theorems.bool_not_true"
     assert source =~ "proof Theoria.Library.Nat.Theorems.nat_add_two_zero"
     assert source =~ "proof Theoria.Library.List.Theorems.list_length_two"
+    assert source =~ "proof Theoria.Library.Vec.Theorems.vec_ind_cons_nat"
     assert source =~ "defeq nat_add_one_zero"
     assert source =~ "defeq list_length_singleton"
+    assert source =~ "defeq vec_ind_cons"
   end
 
   test "encodes theorem proof checks" do
@@ -105,7 +107,7 @@ defmodule Theoria.Lean.EncodeTest do
     assert stats == %{proof: 15, defeq: 0, total: 15}
 
     assert {:ok, _lean_module, stats} = Corpus.build(only: [:defeq])
-    assert stats == %{proof: 0, defeq: 16, total: 16}
+    assert stats == %{proof: 0, defeq: 18, total: 18}
   end
 
   defp nat_succ_case do

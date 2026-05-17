@@ -284,7 +284,7 @@ Legend:
 | Iota via rules | ✅ |
 | Inductive metadata | ✅ |
 | Indexed family admission | 🟡 |
-| Indexed eliminators | 🟡 opaque non-iota |
+| Indexed eliminators | 🟡 Vec-style iota validated locally and by Lean oracle |
 | Tactics | 🔴 |
 | Equation compiler | 🔴 |
 

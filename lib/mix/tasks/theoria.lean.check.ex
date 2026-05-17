@@ -49,6 +49,7 @@ defmodule Mix.Tasks.Theoria.Lean.Check do
 
         Generated file:
           #{path}
+        #{location_hint(path, output)}
 
         Lean output:
         #{output}
@@ -56,6 +57,16 @@ defmodule Mix.Tasks.Theoria.Lean.Check do
 
       {:error, reason} ->
         Mix.raise("failed to generate Lean oracle: #{inspect(reason)}")
+    end
+  end
+
+  defp location_hint(path, output) do
+    case Regex.run(~r/:(\d+):(\d+): error/, output) do
+      [_match, line, column] ->
+        "\nOpen:\n  #{path}:#{line}:#{column}\n\nTry narrowing the corpus, for example:\n  mix theoria.lean.check --only list --path /tmp/theoria_oracle.lean"
+
+      _none ->
+        ""
     end
   end
 

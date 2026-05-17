@@ -25,7 +25,7 @@ Set a custom executable or output path when needed:
 THEORIA_LEAN=/path/to/lean mix theoria.lean.check
 mix theoria.lean.check --lean /path/to/lean --path /tmp/theoria_oracle.lean
 mix theoria.lean.check --only equality
-mix theoria.lean.check --only bool,nat,list
+mix theoria.lean.check --only bool,nat,list,vec
 mix theoria.lean.check --only defeq
 ```
 
@@ -42,6 +42,7 @@ The Lean oracle subsystem lives under `Theoria.Lean.*`:
 | `Theoria.Lean.Encode.Term` | Protocol implementations for core term structs |
 | `Theoria.Lean.Encode.Application` | Lean-specific application spine encoders for recursors and implicit arguments |
 | `Theoria.Lean.MirrorPrelude` | Small bridge declarations for primitives not mapped directly to Lean core |
+| `Theoria.Lean.Mirror.Inductive` | Oracle-only Lean inductive declarations generated from supported Theoria specs |
 | `Theoria.Lean.Module` | Builds complete Lean source files from proof/defeq checks |
 | `Theoria.Lean.Corpus` | Chooses theorem modules and fixtures for the oracle corpus |
 | `Theoria.Lean.Oracle` | Writes generated source and invokes the Lean executable |
@@ -50,7 +51,7 @@ Generated files are build artifacts and should not be committed.
 
 ## Scope
 
-The current corpus validates the primitive equality, Bool, Nat, and List theorem corpora plus definitional-equality fixtures for beta, zeta, Bool computation, Nat recursor iota, Nat addition, List length, and List recursor iota.
+The current corpus validates the primitive equality, Bool, Nat, List, and Vec theorem corpora plus definitional-equality fixtures for beta, zeta, Bool computation, Nat recursor iota, Nat addition, List length, List recursor iota, and Vec indexed iota.
 
 The encoding boundary is intentionally narrow:
 
@@ -58,8 +59,8 @@ The encoding boundary is intentionally narrow:
 2. The encoder reuses Lean-native constants where possible: `Bool`, `Nat`, `List`, their constructors, and Lean recursors.
 3. Lean-specific argument order, implicit arguments, and recursor spines are handled in `Theoria.Lean.Encode.Application`.
 4. Handwritten Lean is limited to tiny bridge definitions whose semantics differ from Lean's defaults, such as `tEqRec` and Theoria's first-argument `tNatAdd`.
-5. Future custom inductives should be generated from `Theoria.Inductive.Spec`, not handwritten as a parallel mirror prelude.
+5. Custom inductives are generated from `Theoria.Inductive.Spec`; the current generated fallback covers Theoria's Vec shape because Lean's built-in `Vector` is array-backed and does not match Theoria's constructor-level indexed family.
 
-The subsystem is intentionally incremental: as protocol encoders grow, Vec, indexed iota, and random kernel fragments can be added.
+The subsystem is intentionally incremental: as protocol encoders grow, random kernel fragments and broader custom inductive generation can be added.
 
 Lean oracle validation increases confidence in Theoria's kernel, but it is not a formal proof of the Elixir implementation. A later formalization could define Theoria's syntax and typing rules inside Lean and prove soundness there.

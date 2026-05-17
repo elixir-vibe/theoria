@@ -1,10 +1,13 @@
 defmodule Theoria.Lean.MirrorPrelude do
   @moduledoc "Lean declarations that bridge Theoria primitives not rendered directly to Lean core."
 
+  alias Theoria.Lean.Mirror.Inductive
+  alias Theoria.Library.Vec
+
   @doc "Returns Lean source for the oracle mirror prelude."
   @spec source() :: String.t()
   def source do
-    """
+    bridge = """
     set_option autoImplicit false
     set_option linter.unusedVariables false
 
@@ -21,5 +24,7 @@ defmodule Theoria.Lean.MirrorPrelude do
       | Nat.succ m, n => Nat.succ (tNatAdd m n)
 
     """
+
+    bridge <> Inductive.source(Vec.inductive_spec())
   end
 end

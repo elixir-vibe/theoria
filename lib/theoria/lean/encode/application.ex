@@ -45,6 +45,19 @@ defmodule Theoria.Lean.Encode.Application do
     {:ok, Encode.apply_source(fun, encode_args([nil_case, cons_case, major], context))}
   end
 
+  def encode(%Const{name: :vec_nil}, [type], context) do
+    {:ok, Encode.apply_source("@TVec.vec_nil", [Encode.term(type, context)])}
+  end
+
+  def encode(%Const{name: :vec_cons}, [_type, _head, _index, _tail] = args, context) do
+    {:ok, Encode.apply_source("@TVec.vec_cons", encode_args(args, context))}
+  end
+
+  def encode(%Const{name: :vec_ind}, [_type, motive, nil_case, cons_case, _index, major], context) do
+    fun = "TVec.rec (motive := #{Encode.term(motive, context)})"
+    {:ok, Encode.apply_source(fun, encode_args([nil_case, cons_case, major], context))}
+  end
+
   def encode(_fun, _args, _context), do: :error
 
   defp encode_bool_match(_motive, on_true, on_false, major, context) do

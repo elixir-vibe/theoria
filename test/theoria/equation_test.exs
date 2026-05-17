@@ -14,7 +14,6 @@ defmodule Theoria.EquationTest do
     Info,
     Lemma,
     MatcherEqns,
-    MatcherEquation,
     MatcherInfo,
     Pattern,
     Schema,
@@ -150,6 +149,11 @@ defmodule Theoria.EquationTest do
     assert {:ok, :nat_add} = Eqns.source(env, :"nat_add.eq_def")
     assert {:ok, :nat_add} = Eqns.source(env, :"nat_add.match_1.eq_succ")
     assert {:ok, :"nat_add.match_1"} = MatcherEqns.source(env, :"nat_add.match_1.eq_succ")
+    assert {:ok, [zero_theorem, succ_theorem]} = Eqns.realize(env, :nat_add)
+    assert zero_theorem.name == :"nat_add.eq_zero"
+    assert succ_theorem.name == :"nat_add.eq_succ"
+    assert {:ok, theorem} = Eqns.realize(env, :"nat_add.eq_succ")
+    assert theorem.name == :"nat_add.eq_succ"
     assert {:ok, unfold} = Eqns.unfold(env, :nat_add)
     assert unfold.name == :"nat_add.eq_def"
     assert {:ok, _theorem} = Lemma.to_theorem(env, unfold)
@@ -179,6 +183,13 @@ defmodule Theoria.EquationTest do
     assert info.schema.family == :list
     assert Enum.map(info.schema.equations, & &1.suffix) == [nil, :cons]
     assert Enum.map(info.matcher.alternatives, & &1.constructor) == [:list_nil, :list_cons]
+    assert {:ok, matcher} = Theoria.Env.fetch_matcher(env, :"list_append.match_1")
+    assert matcher.source == :list_append
+
+    assert matcher.equation_names == [
+             :"list_append.match_1.eq_list_nil",
+             :"list_append.match_1.eq_list_cons"
+           ]
   end
 
   test "matcher equations are generated from matcher metadata" do
@@ -191,10 +202,9 @@ defmodule Theoria.EquationTest do
       MatcherEqns.all(env) |> Enum.filter(&(&1.matcher == :"list_append.match_1"))
 
     assert nil_equation.constructor == :list_nil
-
-    assert {:ok, theorem} =
-             Lemma.to_theorem(env, MatcherEquation.to_lemma(nil_equation))
-
+    assert {:ok, equations} = MatcherEqns.generated(env, :"list_append.match_1")
+    assert Enum.map(equations, & &1.name) == names
+    assert {:ok, theorem} = MatcherEqns.realize(env, :"list_append.match_1.eq_list_nil")
     assert theorem.name == :"list_append.match_1.eq_list_nil"
   end
 

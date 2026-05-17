@@ -90,6 +90,21 @@ defimpl Inspect, for: Theoria.Inductive.Shape do
   end
 end
 
+defimpl Inspect, for: Theoria.Env.Matcher do
+  import Inspect.Algebra
+
+  def inspect(matcher, _opts) do
+    concat([
+      "#Theoria.EnvMatcher<",
+      Atom.to_string(matcher.name),
+      ", source: ",
+      Atom.to_string(matcher.source),
+      ", equations: #{length(matcher.equation_names)}",
+      ">"
+    ])
+  end
+end
+
 defimpl Inspect, for: Theoria.Equation.Info do
   import Inspect.Algebra
 

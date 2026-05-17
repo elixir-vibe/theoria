@@ -6,6 +6,7 @@ defmodule Theoria.Env do
   alias Theoria.Env.Constant
   alias Theoria.Env.Constructor, as: EnvConstructor
   alias Theoria.Env.Inductive, as: EnvInductive
+  alias Theoria.Env.Matcher, as: EnvMatcher
   alias Theoria.Env.Recursor, as: EnvRecursor
   alias Theoria.Term
 
@@ -117,6 +118,9 @@ defmodule Theoria.Env do
   @spec fetch_recursor(t(), atom()) :: {:ok, EnvRecursor.t()} | :error
   def fetch_recursor(%__MODULE__{} = env, name), do: fetch_metadata(env, name, EnvRecursor)
 
+  @spec fetch_matcher(t(), atom()) :: {:ok, EnvMatcher.t()} | :error
+  def fetch_matcher(%__MODULE__{} = env, name), do: fetch_metadata(env, name, EnvMatcher)
+
   @spec inductive?(t(), atom()) :: boolean()
   def inductive?(%__MODULE__{} = env, name),
     do: match?({:ok, _metadata}, fetch_inductive(env, name))
@@ -128,6 +132,23 @@ defmodule Theoria.Env do
   @spec recursor?(t(), atom()) :: boolean()
   def recursor?(%__MODULE__{} = env, name),
     do: match?({:ok, _metadata}, fetch_recursor(env, name))
+
+  @spec matcher?(t(), atom()) :: boolean()
+  def matcher?(%__MODULE__{} = env, name),
+    do: match?({:ok, _metadata}, fetch_matcher(env, name))
+
+  @doc "Returns matcher declarations in insertion order."
+  @spec matchers(t()) :: [EnvMatcher.t()]
+  def matchers(%__MODULE__{} = env) do
+    env
+    |> declarations()
+    |> Enum.flat_map(fn name ->
+      case fetch_matcher(env, name) do
+        {:ok, matcher} -> [matcher]
+        :error -> []
+      end
+    end)
+  end
 
   @doc "Returns declaration names in insertion order."
   @spec declarations(t()) :: [atom()]

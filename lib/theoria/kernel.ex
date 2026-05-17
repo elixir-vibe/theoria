@@ -11,6 +11,7 @@ defmodule Theoria.Kernel do
   alias Theoria.Env.Constant
   alias Theoria.Env.Constructor, as: EnvConstructor
   alias Theoria.Env.Inductive, as: EnvInductive
+  alias Theoria.Env.Matcher, as: EnvMatcher
   alias Theoria.Env.Recursor, as: EnvRecursor
   alias Theoria.Env.Reduction
   alias Theoria.Error
@@ -314,6 +315,7 @@ defmodule Theoria.Kernel do
   defp ensure_constant_kind(:constant, nil, nil), do: :ok
   defp ensure_constant_kind(:inductive, %Theoria.Env.Inductive{}, nil), do: :ok
   defp ensure_constant_kind(:constructor, %EnvConstructor{}, nil), do: :ok
+  defp ensure_constant_kind(:matcher, %EnvMatcher{}, nil), do: :ok
 
   defp ensure_constant_kind(:recursor, %EnvRecursor{num_indices: indices}, nil) when indices > 0,
     do: :ok
@@ -454,7 +456,7 @@ defmodule Theoria.Kernel do
          reduction: reduction,
          metadata: metadata
        }}
-      when kind in [:constant, :inductive, :constructor, :recursor] ->
+      when kind in [:constant, :inductive, :constructor, :recursor, :matcher] ->
         add_constant(checked_env, name, type, params,
           kind: kind,
           reduction: reduction,

@@ -18,11 +18,19 @@ defmodule Theoria.Env.Constant do
           Theoria.Env.Inductive.t()
           | Theoria.Env.Constructor.t()
           | Theoria.Env.Recursor.t()
+          | Theoria.Env.Matcher.t()
           | Theoria.Equation.Info.t()
           | nil
 
   @type kind ::
-          :constant | :axiom | :definition | :theorem | :inductive | :constructor | :recursor
+          :constant
+          | :axiom
+          | :definition
+          | :theorem
+          | :inductive
+          | :constructor
+          | :recursor
+          | :matcher
   @type t :: %__MODULE__{
           type: Term.t(),
           value: Term.t() | nil,

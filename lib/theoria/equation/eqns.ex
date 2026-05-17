@@ -2,9 +2,9 @@ defmodule Theoria.Equation.Eqns do
   @moduledoc "Lookup helpers for generated equation theorem metadata."
 
   alias Theoria.Env
+  alias Theoria.Equation.Extension
   alias Theoria.Equation.Info
   alias Theoria.Equation.Lemma
-  alias Theoria.Equation.MatcherEqns
   alias Theoria.Rewrite.Database
   alias Theoria.Rewrite.Rule
 
@@ -35,19 +35,20 @@ defmodule Theoria.Equation.Eqns do
   @doc "Finds the source definition for a generated equation theorem name."
   @spec source(Env.t(), atom()) :: {:ok, atom()} | :error
   def source(%Env{} = env, theorem_name) when is_atom(theorem_name) do
-    env
-    |> Info.all()
-    |> Enum.find_value(:error, fn info ->
-      names =
-        [Lemma.unfold_for(info).name | Enum.map(Lemma.generated_for(info), & &1.name)] ++
-          Enum.map(MatcherEqns.generated(info), & &1.name)
+    case Extension.source_for(env, theorem_name) do
+      {:ok, matcher_name} -> matcher_source_definition(env, matcher_name)
+      :error -> :error
+    end
+  end
 
-      if theorem_name in names do
-        {:ok, info.name}
-      else
-        false
-      end
-    end)
+  @doc "Realizes generated equation theorem metadata without installing it."
+  @spec realize(Env.t(), atom()) ::
+          {:ok, Theoria.Theorem.t()} | {:ok, [Theoria.Theorem.t()]} | {:error, term()}
+  def realize(%Env{} = env, name) when is_atom(name) do
+    case Info.fetch(env, name) do
+      {:ok, info} -> realize_all(env, info)
+      {:error, _reason} -> realize_theorem(env, name)
+    end
   end
 
   @doc "Installs generated equation theorems for one definition."
@@ -72,6 +73,42 @@ defmodule Theoria.Equation.Eqns do
     |> case do
       {:ok, env, theorems} -> {:ok, env, Enum.reverse(theorems)}
       {:error, _reason} = error -> error
+    end
+  end
+
+  defp realize_all(env, info) do
+    info
+    |> Lemma.generated_for()
+    |> Enum.reduce_while({:ok, []}, fn lemma, {:ok, theorems} ->
+      case Lemma.to_theorem(env, lemma) do
+        {:ok, theorem} -> {:cont, {:ok, [theorem | theorems]}}
+        {:error, reason} -> {:halt, {:error, reason}}
+      end
+    end)
+    |> case do
+      {:ok, theorems} -> {:ok, Enum.reverse(theorems)}
+      {:error, _reason} = error -> error
+    end
+  end
+
+  defp realize_theorem(env, theorem_name) do
+    env
+    |> Info.all()
+    |> Enum.find_value({:error, {:unknown_equation, theorem_name}}, fn info ->
+      info
+      |> Lemma.generated_for()
+      |> Enum.find(&(&1.name == theorem_name))
+      |> case do
+        %Lemma{} = lemma -> Lemma.to_theorem(env, lemma)
+        nil -> false
+      end
+    end)
+  end
+
+  defp matcher_source_definition(env, matcher_name) do
+    case Env.fetch_matcher(env, matcher_name) do
+      {:ok, matcher} -> {:ok, matcher.source}
+      :error -> {:ok, matcher_name}
     end
   end
 

@@ -8,6 +8,7 @@ defmodule Theoria.Validation.Report do
     :inductive_count,
     :equations,
     :generated_equation_count,
+    :matcher_metadata_count,
     :matcher_equation_count,
     :axioms
   ]
@@ -18,6 +19,7 @@ defmodule Theoria.Validation.Report do
     :inductive_count,
     :equations,
     :generated_equation_count,
+    :matcher_metadata_count,
     :matcher_equation_count,
     :axioms
   ]
@@ -29,6 +31,7 @@ defmodule Theoria.Validation.Report do
           inductive_count: non_neg_integer(),
           equations: [Theoria.Equation.Info.t()],
           generated_equation_count: non_neg_integer(),
+          matcher_metadata_count: non_neg_integer(),
           matcher_equation_count: non_neg_integer(),
           axioms: MapSet.t(atom())
         }

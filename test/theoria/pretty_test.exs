@@ -1,6 +1,8 @@
 defmodule Theoria.PrettyTest do
   use ExUnit.Case, async: true
 
+  alias Theoria.Env.Matcher, as: EnvMatcher
+
   alias Theoria.Equation.{
     CaseTemplate,
     FixedParams,
@@ -65,6 +67,12 @@ defmodule Theoria.PrettyTest do
     alternative = %Alternative{constructor: :list_nil, num_fields: 0}
     matcher = MatcherInfo.new(:match_list, 1, 1, [alternative])
     matcher_equation = MatcherEquation.from_lemma(:match_list, :list_nil, lemma)
+
+    env_matcher =
+      EnvMatcher.new(:match_list, :list_append, const(:Nat), matcher,
+        equation_names: [:"match_list.eq_list_nil"]
+      )
+
     signature = Signature.new(:list_append, :list, [m: const(:Nat)], const(:Nat), rec_arg_pos: 0)
     template = CaseTemplate.new(:list_nil, const(:zero), const(:zero))
     schema = Schema.new(:list, [Schema.equation(nil, const(:zero), const(:zero), const(:Nat))])
@@ -85,6 +93,9 @@ defmodule Theoria.PrettyTest do
 
     assert inspect(matcher_equation) ==
              "#Theoria.MatcherEquation<match_list.eq_list_nil, matcher: match_list, constructor: :list_nil>"
+
+    assert inspect(env_matcher) ==
+             "#Theoria.EnvMatcher<match_list, source: list_append, equations: 1>"
 
     assert inspect(signature) ==
              "#Theoria.EquationSignature<list_append, family: list, rec_arg: 0>"

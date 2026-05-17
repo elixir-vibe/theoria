@@ -5,7 +5,8 @@ defmodule Mix.Tasks.Theoria.Equations do
 
   use Mix.Task
 
-  alias Theoria.Equation.{Eqns, Info, Lemma, MatcherEqns}
+  alias Theoria.Env
+  alias Theoria.Equation.{Eqns, Extension, Info, Lemma, MatcherEqns}
   alias Theoria.Prelude
 
   @shortdoc "Lists and optionally installs generated equation lemmas"
@@ -17,7 +18,7 @@ defmodule Mix.Tasks.Theoria.Equations do
     with {:ok, opts, names} <- parse_args(args),
          {:ok, env} <- Prelude.env() do
       equations = select_equations(env, names)
-      print_equations(equations)
+      print_equations(env, equations)
 
       if Keyword.get(opts, :install, false) do
         install_equations(env, equations)
@@ -56,7 +57,15 @@ defmodule Mix.Tasks.Theoria.Equations do
     end)
   end
 
-  defp print_equations([]), do: Mix.shell().info("No equation metadata found.")
+  defp print_equations(_env, []), do: Mix.shell().info("No equation metadata found.")
+
+  defp print_equations(env, equations) do
+    matchers = selected_matchers(env, equations)
+    Mix.shell().info("matcher declarations: #{length(matchers)}")
+    Mix.shell().info("registry entries: #{registry_entry_count(env, equations)}")
+    Mix.shell().info("")
+    print_equations(equations)
+  end
 
   defp print_equations(equations) do
     Mix.shell().info("equations:")
@@ -117,6 +126,30 @@ defmodule Mix.Tasks.Theoria.Equations do
 
   defp print_unfold(%Info{} = info) do
     Mix.shell().info("    unfold: #{Lemma.unfold_for(info).name}")
+  end
+
+  defp registry_entry_count(env, equations) do
+    ordinary_count =
+      Enum.reduce(equations, 0, fn info, count ->
+        count + 1 + length(Extension.equation_names(info))
+      end)
+
+    matcher_count =
+      env
+      |> selected_matchers(equations)
+      |> Enum.reduce(0, fn matcher, count ->
+        count + length(Extension.matcher_equation_names(env, matcher))
+      end)
+
+    ordinary_count + matcher_count
+  end
+
+  defp selected_matchers(env, equations) do
+    source_names = MapSet.new(Enum.map(equations, & &1.name))
+
+    env
+    |> Env.matchers()
+    |> Enum.filter(&MapSet.member?(source_names, &1.source))
   end
 
   defp install_equations(env, equations) do

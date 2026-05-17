@@ -2,7 +2,8 @@ defmodule Theoria.Equation.DefinitionSpec do
   @moduledoc "Complete metadata package for a compiled equation definition."
 
   alias Theoria.Env
-  alias Theoria.Equation.{FixedParams, Info, MatcherInfo, Schema}
+  alias Theoria.Env.Matcher, as: EnvMatcher
+  alias Theoria.Equation.{FixedParams, Info, MatcherEqns, MatcherInfo, Schema}
   alias Theoria.Kernel
   alias Theoria.Term
 
@@ -55,9 +56,12 @@ defmodule Theoria.Equation.DefinitionSpec do
   @doc "Stores a compiled equation definition in the kernel environment."
   @spec add_to_env(Env.t(), t()) :: {:ok, Env.t()} | {:error, Theoria.Error.t()}
   def add_to_env(%Env{} = env, %__MODULE__{} = spec) do
-    Kernel.add_definition(env, spec.name, spec.type, spec.value, spec.level_params,
-      metadata: info(spec)
-    )
+    with {:ok, env} <-
+           Kernel.add_definition(env, spec.name, spec.type, spec.value, spec.level_params,
+             metadata: info(spec)
+           ) do
+      add_matcher_to_env(env, spec)
+    end
   end
 
   @doc "Builds a definition spec from a compiler result and final wrapped value."
@@ -84,6 +88,22 @@ defmodule Theoria.Equation.DefinitionSpec do
       clauses: spec.clauses,
       matcher: spec.matcher,
       schema: spec.schema
+    )
+  end
+
+  defp add_matcher_to_env(env, %__MODULE__{matcher: nil}), do: {:ok, env}
+
+  defp add_matcher_to_env(env, %__MODULE__{} = spec) do
+    metadata =
+      EnvMatcher.new(spec.matcher.name, spec.name, spec.type, spec.matcher,
+        value: nil,
+        level_params: spec.level_params,
+        equation_names: spec |> info() |> MatcherEqns.generated() |> Enum.map(& &1.name)
+      )
+
+    Kernel.add_constant(env, spec.matcher.name, spec.type, spec.level_params,
+      kind: :matcher,
+      metadata: metadata
     )
   end
 

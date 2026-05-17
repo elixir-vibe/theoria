@@ -1,7 +1,8 @@
 defmodule Theoria.Validation do
   @moduledoc "Runs Theoria-owned validation corpora."
 
-  alias Theoria.Equation.{Eqns, Info, Lemma, MatcherEqns, MatcherEquation}
+  alias Theoria.Env
+  alias Theoria.Equation.{Eqns, Extension, Info, Lemma, MatcherEqns, MatcherEquation}
   alias Theoria.Prelude
   alias Theoria.Theorem
   alias Theoria.Validation.{Checkable, Corpus, Report}
@@ -14,6 +15,7 @@ defmodule Theoria.Validation do
          :ok <- check_all(env, corpus.defeq_checks),
          :ok <- check_all(env, corpus.inductive_checks),
          :ok <- check_equation_metadata(env),
+         :ok <- check_equation_registry(env),
          {:ok, _env, generated_equations} <- Eqns.install_all(env),
          {:ok, matcher_equation_count} <- check_matcher_equations(env),
          {:ok, theorem_count, axioms} <- theorem_summary(env, corpus.theorem_modules) do
@@ -25,6 +27,7 @@ defmodule Theoria.Validation do
          inductive_count: length(corpus.inductive_checks),
          equations: Info.all(env),
          generated_equation_count: length(generated_equations),
+         matcher_metadata_count: length(Env.matchers(env)),
          matcher_equation_count: matcher_equation_count,
          axioms: axioms
        }}
@@ -103,6 +106,62 @@ defmodule Theoria.Validation do
       case Eqns.source(env, equation.name) do
         {:ok, source} when source == info.name -> {:cont, :ok}
         other -> {:halt, {:error, {:invalid_matcher_source, equation.name, other}}}
+      end
+    end)
+  end
+
+  defp check_equation_registry(env) do
+    env
+    |> Info.all()
+    |> Enum.reduce_while(:ok, fn info, :ok ->
+      case validate_registry_info(env, info) do
+        :ok -> {:cont, :ok}
+        {:error, reason} -> {:halt, {:error, {:equation_registry, info.name, reason}}}
+      end
+    end)
+  end
+
+  defp validate_registry_info(env, info) do
+    with :ok <- validate_source_matcher(env, info),
+         :ok <- validate_ordinary_realization(env, info) do
+      validate_matcher_realization(env, info)
+    end
+  end
+
+  defp validate_source_matcher(_env, %Info{matcher: nil}), do: :ok
+
+  defp validate_source_matcher(env, %Info{} = info) do
+    case Env.fetch_matcher(env, info.matcher.name) do
+      {:ok, matcher} when matcher.source == info.name -> :ok
+      {:ok, matcher} -> {:error, {:matcher_source_mismatch, matcher.name, matcher.source}}
+      :error -> {:error, {:missing_matcher, info.matcher.name}}
+    end
+  end
+
+  defp validate_ordinary_realization(env, info) do
+    info
+    |> Lemma.generated_for()
+    |> Enum.reduce_while(:ok, fn lemma, :ok ->
+      with {:ok, source} <- Extension.source_for(env, lemma.name),
+           true <- source == info.name,
+           {:ok, _theorem} <- Eqns.realize(env, lemma.name) do
+        {:cont, :ok}
+      else
+        other -> {:halt, {:error, {:ordinary_equation_registry, lemma.name, other}}}
+      end
+    end)
+  end
+
+  defp validate_matcher_realization(env, info) do
+    info
+    |> MatcherEqns.generated()
+    |> Enum.reduce_while(:ok, fn equation, :ok ->
+      with {:ok, source} <- MatcherEqns.source(env, equation.name),
+           true <- source == equation.matcher,
+           {:ok, _theorem} <- MatcherEqns.realize(env, equation.name) do
+        {:cont, :ok}
+      else
+        other -> {:halt, {:error, {:matcher_equation_registry, equation.name, other}}}
       end
     end)
   end

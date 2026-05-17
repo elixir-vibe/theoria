@@ -1,0 +1,34 @@
+defmodule Theoria.Env.Matcher do
+  @moduledoc "Environment metadata for a generated matcher declaration."
+
+  alias Theoria.Equation.MatcherInfo
+  alias Theoria.Term
+
+  @enforce_keys [:name, :source, :type, :info]
+  defstruct [:name, :source, :type, :value, :info, level_params: [], equation_names: []]
+
+  @type t :: %__MODULE__{
+          name: atom(),
+          source: atom(),
+          type: Term.t(),
+          value: Term.t() | nil,
+          info: MatcherInfo.t(),
+          level_params: [atom()],
+          equation_names: [atom()]
+        }
+
+  @doc "Builds matcher declaration metadata from a source equation definition."
+  @spec new(atom(), atom(), Term.t(), MatcherInfo.t(), keyword()) :: t()
+  def new(name, source, type, %MatcherInfo{} = info, opts \\ [])
+      when is_atom(name) and is_atom(source) do
+    %__MODULE__{
+      name: name,
+      source: source,
+      type: type,
+      value: Keyword.get(opts, :value),
+      info: info,
+      level_params: Keyword.get(opts, :level_params, []),
+      equation_names: Keyword.get(opts, :equation_names, [])
+    }
+  end
+end

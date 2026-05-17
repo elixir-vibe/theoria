@@ -5,7 +5,8 @@ Theoria's equation compiler is still internal groundwork, but compiled library d
 Current flow:
 
 ```text
-Clause/Pattern
+Signature + CaseTemplate + Clause/Pattern
+  → Theoria.Equation.SchemaBuilder
   → Theoria.Equation.Compiler
   → Theoria.Equation.Compiled
   → Theoria.Equation.DefinitionSpec package
@@ -28,7 +29,7 @@ Theoria.Equation.Info.all(env)
 Theoria.Equation.Info.equation?(env, :nat_add)
 ```
 
-The compiler returns `Theoria.Equation.Compiled`, which contains the recursor body plus generated clause/schema/matcher metadata. `Theoria.Equation.DefinitionSpec` wraps that compiler result with the final checked type/value before installation. Stored metadata records the definition name, checked type/value, recursive argument position, fixed parameters, level parameters, original clause metadata, Lean-shaped matcher alternatives, and a validated schema that drives schematic theorem generation.
+`Theoria.Equation.Signature` summarizes the function telescope, recursive argument, result type, and fixed parameters. `Theoria.Equation.CaseTemplate` describes schematic constructor equations without tying schema generation to concrete library definition names. `Theoria.Equation.SchemaBuilder` turns those inputs into validated schemas and matcher metadata. The compiler returns `Theoria.Equation.Compiled`, which contains the recursor body plus generated clause/schema/matcher metadata. `Theoria.Equation.DefinitionSpec` wraps that compiler result with the final checked type/value before installation. Stored metadata records the definition name, checked type/value, recursive argument position, fixed parameters, level parameters, original clause metadata, Lean-shaped matcher alternatives, and a validated schema that drives schematic theorem generation.
 
 ## Generated equation lemmas
 
@@ -66,6 +67,8 @@ Theoria.Equation.Eqns.get(env, :nat_add)
 #=> {:ok, [:"nat_add.eq_zero", :"nat_add.eq_succ"]}
 
 Theoria.Equation.Eqns.generated(env, :nat_add)
+Theoria.Equation.Eqns.unfold(env, :nat_add)
+Theoria.Equation.Eqns.source(env, :"nat_add.eq_succ")
 Theoria.Equation.Eqns.installed?(env, :nat_add)
 ```
 

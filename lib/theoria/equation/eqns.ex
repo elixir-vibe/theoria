@@ -23,6 +23,30 @@ defmodule Theoria.Equation.Eqns do
     end
   end
 
+  @doc "Returns generated unfold equation lemma metadata for a definition."
+  @spec unfold(Env.t(), atom()) :: {:ok, Lemma.t()} | {:error, term()}
+  def unfold(%Env{} = env, name) when is_atom(name) do
+    with {:ok, info} <- Info.fetch(env, name) do
+      {:ok, Lemma.unfold_for(info)}
+    end
+  end
+
+  @doc "Finds the source definition for a generated equation theorem name."
+  @spec source(Env.t(), atom()) :: {:ok, atom()} | :error
+  def source(%Env{} = env, theorem_name) when is_atom(theorem_name) do
+    env
+    |> Info.all()
+    |> Enum.find_value(:error, fn info ->
+      names = [Lemma.unfold_for(info).name | Enum.map(Lemma.generated_for(info), & &1.name)]
+
+      if theorem_name in names do
+        {:ok, info.name}
+      else
+        false
+      end
+    end)
+  end
+
   @doc "Installs generated equation theorems for one definition."
   @spec install(Env.t(), atom(), keyword()) ::
           {:ok, Env.t(), [Theoria.Theorem.t()]} | {:error, term()}

@@ -70,6 +70,7 @@ defmodule Theoria.MixProject do
         "docs/validation.md",
         "docs/equations.md",
         "docs/lean_validation.md",
+        "docs/lean_alignment.md",
         "docs/lean_roadmap.md",
         "docs/theorem_modules.md",
         "LICENSE"

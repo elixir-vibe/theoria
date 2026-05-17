@@ -10,12 +10,14 @@ defmodule Theoria.Library.Bool do
   alias Theoria.Equation
 
   alias Theoria.Equation.{
+    CaseTemplate,
     Clause,
     Context,
     Definition,
     DefinitionSpec,
     FixedParams,
-    Pattern
+    Pattern,
+    Signature
   }
 
   alias Theoria.Inductive.Generate
@@ -119,9 +121,13 @@ defmodule Theoria.Library.Bool do
     major = Keyword.fetch!(opts, :major)
 
     with {:ok, compiled} <-
-           Equation.compile_definition(:bool, name, bool(), clauses, major,
-             rec_arg_pos: rec_arg_pos,
-             fixed_params: FixedParams.new(),
+           Equation.compile_definition(
+             :bool,
+             bool_signature(name, rec_arg_pos),
+             bool(),
+             clauses,
+             major,
+             cases: bool_cases(name),
              context: Keyword.get(opts, :context, Context.new())
            ),
          {:ok, spec} <- DefinitionSpec.from_compiled(name, type, value, compiled) do
@@ -149,6 +155,52 @@ defmodule Theoria.Library.Bool do
       Clause.new([Pattern.constructor(false)], fn ctx -> ctx.b end)
     ]
   end
+
+  defp bool_signature(:bool_not, rec_arg_pos) do
+    Signature.new(:bool_not, :bool, [{:b, bool()}], bool(),
+      rec_arg_pos: rec_arg_pos,
+      fixed_params: FixedParams.new()
+    )
+  end
+
+  defp bool_signature(name, rec_arg_pos) when name in [:bool_and, :bool_or] do
+    Signature.new(name, :bool, [{:a, bool()}, {:b, bool()}], bool(),
+      rec_arg_pos: rec_arg_pos,
+      fixed_params: FixedParams.new()
+    )
+  end
+
+  defp bool_cases(:bool_not) do
+    [
+      CaseTemplate.new(true, bool_app(:bool_not, bool_true()), bool_false()),
+      CaseTemplate.new(false, bool_app(:bool_not, bool_false()), bool_true())
+    ]
+  end
+
+  defp bool_cases(:bool_and) do
+    [
+      CaseTemplate.new(:true_true, bool_app(:bool_and, bool_true(), bool_true()), bool_true()),
+      CaseTemplate.new(:true_false, bool_app(:bool_and, bool_true(), bool_false()), bool_false()),
+      CaseTemplate.new(:false_true, bool_app(:bool_and, bool_false(), bool_true()), bool_false()),
+      CaseTemplate.new(
+        :false_false,
+        bool_app(:bool_and, bool_false(), bool_false()),
+        bool_false()
+      )
+    ]
+  end
+
+  defp bool_cases(:bool_or) do
+    [
+      CaseTemplate.new(:true_true, bool_app(:bool_or, bool_true(), bool_true()), bool_true()),
+      CaseTemplate.new(:true_false, bool_app(:bool_or, bool_true(), bool_false()), bool_true()),
+      CaseTemplate.new(:false_true, bool_app(:bool_or, bool_false(), bool_true()), bool_true()),
+      CaseTemplate.new(:false_false, bool_app(:bool_or, bool_false(), bool_false()), bool_false())
+    ]
+  end
+
+  defp bool_app(name, arg), do: Term.app(Term.const(name), arg)
+  defp bool_app(name, arg1, arg2), do: Term.const(name) |> Term.app(arg1) |> Term.app(arg2)
 
   defp bool, do: Term.const(:Bool)
   defp bool_true, do: Term.const(true)

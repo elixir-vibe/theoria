@@ -6,6 +6,7 @@ defmodule Theoria.EquationTest do
 
   alias Theoria.Equation.{
     Branch,
+    CaseTemplate,
     Clause,
     Context,
     Eqns,
@@ -14,7 +15,9 @@ defmodule Theoria.EquationTest do
     Lemma,
     MatcherInfo,
     Pattern,
-    Schema
+    Schema,
+    SchemaBuilder,
+    Signature
   }
 
   alias Theoria.Equation.MatcherInfo.Alternative
@@ -41,6 +44,22 @@ defmodule Theoria.EquationTest do
     refute Info.equation?(env, :Nat)
     assert Enum.map(Info.all(env), & &1.name) == [:nat_add]
     assert {:error, {:missing_value, :Nat}} = Info.fetch_or_build(env, :Nat)
+  end
+
+  test "schema builder generates schemas and matcher metadata from signatures" do
+    signature = Signature.new(:plus, :nat, [{:m, nat()}, {:n, nat()}], nat(), rec_arg_pos: 0)
+    n = Term.bvar(0)
+
+    assert {:ok, schema} =
+             SchemaBuilder.build(signature, [
+               CaseTemplate.new(:zero, Term.const(:plus) |> Term.app(zero()) |> Term.app(n), n,
+                 binders: [{:n, nat()}]
+               )
+             ])
+
+    assert schema.family == :nat
+    assert Enum.map(schema.equations, & &1.suffix) == [:zero]
+    assert SchemaBuilder.matcher(signature, schema).name == :"plus.match_1"
   end
 
   test "schema validates scope and duplicate equation suffixes" do
@@ -112,6 +131,11 @@ defmodule Theoria.EquationTest do
     {:ok, env} = Prelude.env()
 
     assert {:ok, [:"nat_add.eq_zero", :"nat_add.eq_succ"]} = Eqns.get(env, :nat_add)
+    assert {:ok, :nat_add} = Eqns.source(env, :"nat_add.eq_succ")
+    assert {:ok, :nat_add} = Eqns.source(env, :"nat_add.eq_def")
+    assert {:ok, unfold} = Eqns.unfold(env, :nat_add)
+    assert unfold.name == :"nat_add.eq_def"
+    assert {:ok, _theorem} = Lemma.to_theorem(env, unfold)
     assert {:ok, lemmas} = Eqns.generated(env, :list_append)
     assert Enum.map(lemmas, & &1.name) == [:"list_append.eq_nil", :"list_append.eq_cons"]
     refute Eqns.installed?(env, :nat_add)
@@ -137,16 +161,23 @@ defmodule Theoria.EquationTest do
     assert Enum.map(info.matcher.alternatives, & &1.constructor) == [:list_nil, :list_cons]
   end
 
-  test "library modules do not hand-author schema or matcher helpers" do
-    forbidden = ~w(bool_schema nat_add_schema schema_for bool_matcher nat_matcher list_matcher)
+  test "library and compiler modules do not hand-author definition-specific schema helpers" do
+    forbidden_helpers =
+      ~w(bool_schema nat_add_schema schema_for bool_matcher nat_matcher list_matcher)
 
     for path <- [
           "lib/theoria/library/bool.ex",
           "lib/theoria/library/nat.ex",
           "lib/theoria/library/list.ex"
         ],
-        helper <- forbidden do
+        helper <- forbidden_helpers do
       refute File.read!(path) =~ "defp #{helper}"
+    end
+
+    compiler = File.read!("lib/theoria/equation/compiler.ex")
+
+    for name <- ~w(bool_not bool_and bool_or nat_add list_length list_append) do
+      refute compiler =~ name
     end
   end
 

@@ -49,6 +49,21 @@ defmodule Theoria.Equation.Lemma do
     new(theorem_name(definition_name, suffix), left, right, opts)
   end
 
+  @doc "Generates an unfolding equation lemma for a stored equation definition."
+  @spec unfold_for(Info.t()) :: t()
+  def unfold_for(%Info{} = info) do
+    {binders, body} = lambda_binders(info.value, [])
+    levels = Enum.map(info.level_params, &Theoria.Level.param/1)
+    binder_count = length(binders)
+    left = apply_binders(Term.const(info.name, levels), binder_count)
+    equality_type = result_type(info.type, binder_count)
+
+    for_definition(info, :def, left, body,
+      binders: binders,
+      equality_type: equality_type
+    )
+  end
+
   @doc "Generates equation lemmas from stored equation schema metadata."
   @spec generated_for(Info.t(), keyword()) :: [t()]
   def generated_for(info, opts \\ [])
@@ -143,6 +158,24 @@ defmodule Theoria.Equation.Lemma do
       {:error, _error} = error -> error
     end
   end
+
+  defp lambda_binders(%Term.Lam{name: name, domain: domain, body: body}, binders),
+    do: lambda_binders(body, [{name, domain} | binders])
+
+  defp lambda_binders(body, binders), do: {Enum.reverse(binders), body}
+
+  defp apply_binders(function, 0), do: function
+
+  defp apply_binders(function, count) do
+    Enum.reduce((count - 1)..0//-1, function, fn index, term ->
+      Term.app(term, Term.bvar(index))
+    end)
+  end
+
+  defp result_type(%Term.Forall{body: body}, count) when count > 0,
+    do: result_type(body, count - 1)
+
+  defp result_type(type, _count), do: type
 
   defp equality_type_and_opts(%__MODULE__{} = lemma, opts, []) when is_list(opts) do
     {lemma.equality_type || Keyword.fetch!(opts, :equality_type), opts}

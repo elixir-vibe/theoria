@@ -1,6 +1,7 @@
 defmodule Theoria.RewriteTest do
   use ExUnit.Case, async: true
 
+  alias Theoria.Equation.Lemma
   alias Theoria.Rewrite
   alias Theoria.Rewrite.{Database, Rule}
   alias Theoria.Term
@@ -28,8 +29,8 @@ defmodule Theoria.RewriteTest do
   end
 
   test "database applies the first matching equation rule" do
-    equality = Term.eq(Term.const(:Nat), Term.const(:zero), Term.const(:one))
-    rule = Rule.new(:zero_to_one, equality)
+    lemma = Lemma.new(:zero_to_one, Term.const(:zero), Term.const(:one))
+    rule = Rule.from_lemma(lemma, Term.const(:Nat))
     database = Database.new() |> Database.add(rule)
     term = Term.app(Term.const(:succ), Term.const(:zero))
 

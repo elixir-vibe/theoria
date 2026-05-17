@@ -1,6 +1,8 @@
 defmodule Theoria.Equation.Info do
   @moduledoc "Lean-inspired metadata for a compiled equation definition."
 
+  alias Theoria.Env
+  alias Theoria.Env.Constant
   alias Theoria.Equation.FixedParams
   alias Theoria.Term
 
@@ -37,5 +39,26 @@ defmodule Theoria.Equation.Info do
       decl_names: Keyword.get(opts, :decl_names, [name]),
       fixed_params: Keyword.get(opts, :fixed_params, FixedParams.new())
     }
+  end
+
+  @doc "Builds equation metadata from a checked environment definition or theorem."
+  @spec from_env(Env.t(), atom(), keyword()) :: {:ok, t()} | {:error, term()}
+  def from_env(%Env{} = env, name, opts \\ []) when is_atom(name) do
+    case Env.fetch(env, name) do
+      {:ok, %Constant{value: nil}} ->
+        {:error, {:missing_value, name}}
+
+      {:ok, %Constant{} = constant} ->
+        {:ok,
+         new(name, constant.type, constant.value,
+           level_params: constant.universe_params,
+           rec_arg_pos: Keyword.get(opts, :rec_arg_pos),
+           decl_names: Keyword.get(opts, :decl_names, [name]),
+           fixed_params: Keyword.get(opts, :fixed_params, FixedParams.new())
+         )}
+
+      :error ->
+        {:error, {:unknown_declaration, name}}
+    end
   end
 end

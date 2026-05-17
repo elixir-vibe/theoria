@@ -15,6 +15,12 @@ defmodule Theoria.EquationTest do
     assert info.rec_arg_pos == 0
     assert FixedParams.fixed?(info.fixed_params, 1)
     refute FixedParams.fixed?(info.fixed_params, 0)
+
+    {:ok, env} = Nat.env()
+    assert {:ok, info} = Info.from_env(env, :nat_add, rec_arg_pos: 0)
+    assert info.name == :nat_add
+    assert info.rec_arg_pos == 0
+    assert info.level_params == []
   end
 
   test "matcher info records small Lean-like matcher metadata" do
@@ -37,6 +43,10 @@ defmodule Theoria.EquationTest do
     assert {:ok, theorem} = Lemma.to_theorem(env, lemma, nat())
     assert theorem.type == Term.eq(nat(), zero(), zero())
     assert theorem.proof == Term.refl(zero())
+
+    assert {:ok, env, theorem} = Lemma.add_to_env(env, lemma, nat())
+    assert theorem.name == :equation_zero
+    assert {:ok, _constant} = Theoria.Env.fetch(env, :equation_zero)
   end
 
   test "context exposes branch and outer values" do

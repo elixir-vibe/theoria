@@ -53,4 +53,14 @@ defmodule Theoria.Equation.Lemma do
        }}
     end
   end
+
+  @doc "Kernel-checks and installs equation-lemma metadata as an opaque theorem declaration."
+  @spec add_to_env(Env.t(), t(), Term.t(), keyword()) ::
+          {:ok, Env.t(), Theorem.t()} | {:error, Theoria.Error.t()}
+  def add_to_env(%Env{} = env, %__MODULE__{} = lemma, equality_type, opts \\ []) do
+    with {:ok, theorem} <- to_theorem(env, lemma, equality_type, opts),
+         {:ok, env} <- Theorem.add_to_env(env, theorem) do
+      {:ok, env, theorem}
+    end
+  end
 end

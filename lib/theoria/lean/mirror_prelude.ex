@@ -25,6 +25,20 @@ defmodule Theoria.Lean.MirrorPrelude do
 
     """
 
-    bridge <> Inductive.source!(Vec.inductive_spec())
+    bridge <> Inductive.source!(Vec.inductive_spec()) <> indexed_matcher_source()
+  end
+
+  defp indexed_matcher_source do
+    """
+    axiom tVecValidationMatch
+      (a : Type)
+      (motive : forall (n : Nat), TVec a n -> Type)
+      (n : Nat)
+      (xs : TVec a n)
+      (onVecNil : motive Nat.zero (@TVec.vec_nil a))
+      (onVecCons : forall (head : a), forall (n : Nat), forall (tail : TVec a n), motive n tail -> motive (Nat.succ n) (@TVec.vec_cons a head n tail)) :
+      motive n xs
+
+    """
   end
 end

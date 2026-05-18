@@ -10,12 +10,20 @@ defmodule Theoria.Lean.Module do
   alias Theoria.Prelude
   alias Theoria.Term
   alias Theoria.Validation.Corpus
+  alias Theoria.Validation.IndexedMatchers
 
   defstruct checks: []
 
   @type check ::
-          {:proof, String.t(), Term.t(), Term.t()} | {:defeq, String.t(), Term.t(), Term.t()}
-  @type stats :: %{proof: non_neg_integer(), defeq: non_neg_integer(), total: non_neg_integer()}
+          {:proof, String.t(), Term.t(), Term.t()}
+          | {:defeq, String.t(), Term.t(), Term.t()}
+          | {:type, String.t(), Term.t()}
+  @type stats :: %{
+          proof: non_neg_integer(),
+          defeq: non_neg_integer(),
+          type: non_neg_integer(),
+          total: non_neg_integer()
+        }
   @type t :: %__MODULE__{checks: [check()]}
 
   @doc "Creates an empty Lean oracle module."
@@ -28,6 +36,12 @@ defmodule Theoria.Lean.Module do
     %__MODULE__{module | checks: checks ++ [{:proof, name, proof, type}]}
   end
 
+  @doc "Adds a type check, rendered as `#check (type)` for shape validation."
+  @spec add_type_check(t(), String.t(), Term.t()) :: t()
+  def add_type_check(%__MODULE__{checks: checks} = module, name, type) do
+    %__MODULE__{module | checks: checks ++ [{:type, name, type}]}
+  end
+
   @doc "Adds a definitional-equality check, rendered as `example : left = right := rfl`."
   @spec add_defeq_check(t(), String.t(), Term.t(), Term.t()) :: t()
   def add_defeq_check(%__MODULE__{checks: checks} = module, name, left, right) do
@@ -38,7 +52,8 @@ defmodule Theoria.Lean.Module do
   @spec from_validation(Corpus.t()) :: {:ok, t()} | {:error, term()}
   def from_validation(%Corpus{} = validation) do
     with {:ok, module} <- add_theorem_modules(new(), validation.theorem_modules),
-         {:ok, module} <- add_equation_theorems(module, validation.categories) do
+         {:ok, module} <- add_equation_theorems(module, validation.categories),
+         {:ok, module} <- add_indexed_matcher_statement_types(module, validation.categories) do
       {:ok, add_defeq_checks(module, validation.defeq_checks)}
     end
   end
@@ -48,7 +63,8 @@ defmodule Theoria.Lean.Module do
   def stats(%__MODULE__{checks: checks}) do
     proof = Enum.count(checks, &match?({:proof, _name, _proof, _type}, &1))
     defeq = Enum.count(checks, &match?({:defeq, _name, _left, _right}, &1))
-    %{proof: proof, defeq: defeq, total: proof + defeq}
+    type = Enum.count(checks, &match?({:type, _name, _type}, &1))
+    %{proof: proof, defeq: defeq, type: type, total: proof + defeq + type}
   end
 
   @doc "Renders the complete Lean source file."
@@ -116,6 +132,27 @@ defmodule Theoria.Lean.Module do
     |> Enum.map(&MatcherEquation.to_lemma/1)
   end
 
+  defp add_indexed_matcher_statement_types(module, categories) do
+    if :vec in categories do
+      add_vec_indexed_matcher_statement_types(module)
+    else
+      {:ok, module}
+    end
+  end
+
+  defp add_vec_indexed_matcher_statement_types(module) do
+    with {:ok, env} <- Prelude.env(),
+         {:ok, package} <- IndexedMatchers.check(env) do
+      add_indexed_type_checks(module, package.statements)
+    end
+  end
+
+  defp add_indexed_type_checks(module, statements) do
+    Enum.reduce(statements, {:ok, module}, fn equation, {:ok, module} ->
+      {:ok, add_type_check(module, "indexed.#{equation.name}", equation.statement_type)}
+    end)
+  end
+
   defp add_equation_lemma_theorem(lemma, env, module) do
     case Lemma.to_theorem(env, lemma) do
       {:ok, theorem} ->
@@ -152,6 +189,13 @@ defmodule Theoria.Lean.Module do
     """
     -- defeq #{name}
     example : #{Encode.term(left)} = #{Encode.term(right)} := rfl
+    """
+  end
+
+  defp render_check({:type, name, type}) do
+    """
+    -- type #{name}
+    #check (#{Encode.term(type)})
     """
   end
 end

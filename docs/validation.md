@@ -33,9 +33,9 @@ mix theoria.validate --axioms
 | Theorem modules | `Theoria.Library.*.Theorems` via `Theoria.Validation.TheoremModuleCheck` | `Theoria.Validation.Checkable` / `Theoria.Theorem.check_all/2` |
 | Definitional equality | `%Theoria.Validation.DefeqCheck{}` | `Theoria.Validation.Checkable` / `Theoria.Normalize.defeq?/3` |
 | Inductive specs | `%Theoria.Validation.InductiveCheck{}` | `Theoria.Validation.Checkable` / `Theoria.Inductive.check_spec/2` and `Theoria.Inductive.verify_env/2` |
-| Explicit indexed matcher spec | Internal Vec matcher validation | `Theoria.Equation.Matcher.Spec.indexed_from_info/2`, `Theoria.Kernel.add_matcher/2`, and `Theoria.Kernel.validate_env/1` |
+| Explicit indexed matcher spec | Internal Vec matcher validation | `Theoria.Validation.IndexedMatchers` / `Theoria.Equation.Matcher.Indexed.Package` |
 
-The default corpus covers Logic, Equality, Bool, Nat, List, and Vec theorem modules, built-in reduction checks, deterministic small normalized Bool/Nat/List/Vec terms, the built-in inductive specs, equation metadata, generated equation theorem realization, matcher equation realization, one explicit indexed Vec matcher spec, and indexed matcher equation metadata planning. The indexed matcher validation constructs and admits the matcher inside validation only; it is not installed by `Prelude.env/0`, and indexed matcher equations are metadata-only until theorem realization is implemented.
+The default corpus covers Logic, Equality, Bool, Nat, List, and Vec theorem modules, built-in reduction checks, deterministic small normalized Bool/Nat/List/Vec terms, the built-in inductive specs, equation metadata, generated equation theorem realization, matcher equation realization, one explicit indexed Vec matcher spec, indexed matcher equation metadata, checked statement types, metadata-only lemmas, and the explicit non-realization boundary. The indexed matcher validation constructs and admits the matcher inside validation only; it is not installed by `Prelude.env/0`, and indexed matcher equations are metadata-only until theorem realization is implemented.
 
 ## Defeq checks
 
@@ -66,7 +66,7 @@ Lean validation is optional contributor hardening:
 mix theoria.lean.check
 ```
 
-It translates the Theoria validation corpus into Lean source and asks Lean to check the same proof and defeq claims. Lean is not Theoria's source of truth and is not required for normal use.
+It translates the Theoria validation corpus into Lean source and asks Lean to check the same proof and defeq claims. It also emits Lean `#check` type checks for the indexed Vec matcher equation statement shapes. Lean is not Theoria's source of truth and is not required for normal use.
 
 ## Adding new checks
 

@@ -39,6 +39,7 @@ defmodule Mix.Tasks.Theoria.Lean.Check do
       Mix.shell().info("\nLean: #{result.version}")
       Mix.shell().info("✓ proof checks: #{stats.proof}")
       Mix.shell().info("✓ defeq checks: #{stats.defeq}")
+      Mix.shell().info("✓ type checks: #{stats.type}")
       Mix.shell().info("✓ total: #{stats.total}")
     else
       {:error, :lean_not_found} ->

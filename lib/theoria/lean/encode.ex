@@ -45,6 +45,7 @@ defmodule Theoria.Lean.Encode do
     vec_nil: "(fun (a : Type) => (@TVec.vec_nil a))",
     vec_cons:
       "(fun (a : Type) => fun (head : a) => fun (n : Nat) => fun (tail : TVec a n) => (@TVec.vec_cons a head n tail))",
+    vec_validation_match: "tVecValidationMatch",
     true: "Bool.true",
     false: "Bool.false"
   }

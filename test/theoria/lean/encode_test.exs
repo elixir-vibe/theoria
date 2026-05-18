@@ -81,7 +81,7 @@ defmodule Theoria.Lean.EncodeTest do
     assert {:ok, lean_module} = LeanModule.from_validation(validation)
     source = LeanModule.render(lean_module)
 
-    assert LeanModule.stats(lean_module) == %{proof: 85, defeq: 57, total: 142}
+    assert LeanModule.stats(lean_module) == %{proof: 85, defeq: 57, type: 2, total: 144}
     assert source =~ "def tEqRec"
     assert source =~ "proof Theoria.Library.Logic.Theorems.and_comm"
     assert source =~ "proof Theoria.Library.Equality.Theorems.eq_symm"
@@ -95,6 +95,8 @@ defmodule Theoria.Lean.EncodeTest do
     assert source =~ "defeq nat_add_one_zero"
     assert source =~ "defeq list_length_singleton"
     assert source =~ "defeq vec_ind_cons"
+    assert source =~ "type indexed.vec_validation_match.eq_vec_nil"
+    assert source =~ "type indexed.vec_validation_match.eq_vec_cons"
   end
 
   test "encodes theorem proof checks" do
@@ -113,11 +115,11 @@ defmodule Theoria.Lean.EncodeTest do
   test "filters validation categories for Lean modules" do
     validation = Corpus.build(only: [:bool])
     assert {:ok, lean_module} = LeanModule.from_validation(validation)
-    assert LeanModule.stats(lean_module) == %{proof: 35, defeq: 15, total: 50}
+    assert LeanModule.stats(lean_module) == %{proof: 35, defeq: 15, type: 0, total: 50}
 
     validation = Corpus.build(only: [:defeq])
     assert {:ok, lean_module} = LeanModule.from_validation(validation)
-    assert LeanModule.stats(lean_module) == %{proof: 0, defeq: 57, total: 57}
+    assert LeanModule.stats(lean_module) == %{proof: 0, defeq: 57, type: 0, total: 57}
   end
 
   defp nat_succ_case do

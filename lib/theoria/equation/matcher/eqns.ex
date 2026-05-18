@@ -87,6 +87,27 @@ defmodule Theoria.Equation.Matcher.Eqns do
     end
   end
 
+  @doc "Returns metadata-only lemmas for planned indexed matcher equation statements."
+  @spec indexed_lemmas(Info.t(), Env.t()) :: {:ok, [Lemma.t()]} | {:error, term()}
+  def indexed_lemmas(%Info{} = info, %Env{} = env) do
+    with {:ok, statements} <- indexed_statements(info, env) do
+      indexed_lemmas_for(statements)
+    end
+  end
+
+  @doc "Returns the explicit non-realization result for a planned indexed matcher equation."
+  @spec indexed_realize(Info.t(), Env.t(), atom()) :: {:error, term()}
+  def indexed_realize(%Info{} = info, %Env{} = env, theorem_name) when is_atom(theorem_name) do
+    with {:ok, equations} <- indexed_generated(info, env),
+         %MatcherEquation{} <-
+           Enum.find(equations, &(&1.name == theorem_name)) ||
+             {:error, {:unknown_indexed_matcher_equation, theorem_name}} do
+      {:error, {:indexed_matcher_equation_not_realized, theorem_name}}
+    else
+      {:error, _reason} = error -> error
+    end
+  end
+
   @doc "Returns all generated matcher equation metadata in declaration order."
   @spec all(Env.t()) :: [MatcherEquation.t()]
   def all(%Env{} = env) do
@@ -130,6 +151,19 @@ defmodule Theoria.Equation.Matcher.Eqns do
         false
       end
     end)
+  end
+
+  defp indexed_lemmas_for(statements) do
+    Enum.reduce_while(statements, {:ok, []}, fn equation, {:ok, lemmas} ->
+      case MatcherStatement.indexed_to_lemma(equation) do
+        {:ok, lemma} -> {:cont, {:ok, [lemma | lemmas]}}
+        {:error, _reason} = error -> {:halt, error}
+      end
+    end)
+    |> case do
+      {:ok, lemmas} -> {:ok, Enum.reverse(lemmas)}
+      {:error, _reason} = error -> error
+    end
   end
 
   defp generated_for_matcher(%Info{} = info, %EnvMatcher{} = matcher) do

@@ -448,6 +448,47 @@ defmodule Theoria.EquationTest do
              TermApplication.collect(ih)
   end
 
+  test "indexed matcher equation statements plan metadata-only lemmas" do
+    {:ok, env} = Prelude.env()
+    info = vec_matcher_info!(:vec_validation_source, :vec_validation_match)
+    {:ok, spec} = MatcherSpec.indexed_from_info(info, env: env)
+    {:ok, env} = Kernel.add_matcher(env, spec)
+
+    assert {:ok, lemmas} = MatcherEqns.indexed_lemmas(info, env)
+
+    assert Enum.map(lemmas, & &1.name) == [
+             :"vec_validation_match.eq_vec_nil",
+             :"vec_validation_match.eq_vec_cons"
+           ]
+
+    assert Enum.all?(lemmas, &(&1.source == nil))
+    assert Enum.all?(lemmas, &match?({:ok, %Term.Sort{}}, Kernel.infer(env, &1.equality_type)))
+
+    assert MatcherEqns.indexed_realize(info, env, :"vec_validation_match.eq_vec_cons") ==
+             {:error,
+              {:indexed_matcher_equation_not_realized, :"vec_validation_match.eq_vec_cons"}}
+
+    assert MatcherEqns.indexed_realize(info, env, :"vec_validation_match.eq_vec_snoc") ==
+             {:error, {:unknown_indexed_matcher_equation, :"vec_validation_match.eq_vec_snoc"}}
+  end
+
+  test "indexed matcher statement lemma planning reports invalid inputs" do
+    ordinary =
+      MatcherEquation.from_lemma(
+        :nat_add_match,
+        :zero,
+        Lemma.new(:nat_add_match_eq_zero, zero(), zero())
+      )
+
+    assert MatcherStatement.indexed_to_lemma(ordinary) ==
+             {:error, {:not_indexed_matcher_statement, :"nat_add_match.eq_zero"}}
+
+    indexed = MatcherEquation.indexed(:vec_validation_match, :vec_nil, [Term.const(:zero)])
+
+    assert MatcherStatement.indexed_to_lemma(indexed) ==
+             {:error, {:missing_indexed_matcher_statement, :"vec_validation_match.eq_vec_nil"}}
+  end
+
   test "indexed matcher statements use shape-derived levels" do
     {:ok, env} = Prelude.env()
     info = vec_matcher_info!(:vec_validation_source, :vec_validation_match)

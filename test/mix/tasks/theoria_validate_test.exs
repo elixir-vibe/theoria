@@ -22,6 +22,7 @@ defmodule Mix.Tasks.Theoria.ValidateTest do
     assert output =~ "✓ indexed matchers: 1 checked matcher(s)"
     assert output =~ "✓ indexed matcher equations: 2 metadata entrie(s)"
     assert output =~ "✓ indexed matcher equation statements: 2 type(s)"
+    assert output =~ "✓ indexed matcher equation lemmas: 2 metadata entrie(s)"
     assert output =~ "✓ generated equations: 16 theorem(s)"
     assert output =~ "✓ matcher equations: 16 theorem(s)"
   end
@@ -80,6 +81,7 @@ defmodule Mix.Tasks.Theoria.ValidateTest do
     assert output =~ "✓ indexed matchers: 1 checked matcher(s)"
     assert output =~ "✓ indexed matcher equations: 2 metadata entrie(s)"
     assert output =~ "✓ indexed matcher equation statements: 2 type(s)"
+    assert output =~ "✓ indexed matcher equation lemmas: 2 metadata entrie(s)"
     assert output =~ "✓ generated equations: 16 theorem(s)"
     assert output =~ "✓ matcher equations: 16 theorem(s)"
   end

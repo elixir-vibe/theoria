@@ -53,6 +53,12 @@ defmodule Theoria.EquationArchitectureTest do
     ])
   end
 
+  test "indexed statement planners do not silently fall back to placeholder equality metadata" do
+    for file <- ["matcher/statement.ex", "matcher/statement/vec.ex"] do
+      assert_no_source(file, ["equation.equality_type"])
+    end
+  end
+
   defp assert_no_source(file, forbidden) do
     path = Path.join(@equation_path, file)
     source = File.read!(path)

@@ -65,6 +65,19 @@ defmodule Theoria.RewriteTest do
     assert {:ok, ^one, %Rule{name: :"nat_add.eq_zero"}} = Database.once(database, add_zero)
   end
 
+  test "database can include generated matcher equations without indexed metadata" do
+    {:ok, env} = Prelude.env()
+    database = Database.from_env_all_equations(env)
+
+    assert Enum.any?(database.rules, &(&1.name == :"bool_not.match_1.eq_true"))
+    refute Enum.any?(database.rules, &(&1.name == :"vec_validation_match.eq_vec_nil"))
+
+    assert {:ok, rewritten, %Rule{name: :"bool_not.match_1.eq_true"}} =
+             Database.once(database, Term.app(Term.const(:bool_not), Term.const(true)))
+
+    assert rewritten == Term.const(false)
+  end
+
   defp nat, do: Term.const(:Nat)
   defp zero, do: Term.const(:zero)
   defp list_nil, do: Term.app(list_constant(:list_nil), nat())

@@ -4,6 +4,8 @@ defmodule Theoria.Rewrite.Database do
   alias Theoria.Env
   alias Theoria.Equation.Eqns
   alias Theoria.Equation.Lemma
+  alias Theoria.Equation.Matcher.Eqns, as: MatcherEqns
+  alias Theoria.Equation.Matcher.Equation, as: MatcherEquation
   alias Theoria.Rewrite
   alias Theoria.Rewrite.Rule
   alias Theoria.Term
@@ -33,6 +35,24 @@ defmodule Theoria.Rewrite.Database do
   @spec from_env_equations(Env.t(), keyword()) :: t()
   def from_env_equations(%Env{} = env, opts \\ []) do
     Eqns.database(env, opts)
+  end
+
+  @doc "Builds a rewrite database from generated matcher equations stored in an environment."
+  @spec from_env_matcher_equations(Env.t(), keyword()) :: t()
+  def from_env_matcher_equations(%Env{} = env, opts \\ []) do
+    env
+    |> MatcherEqns.all()
+    |> Enum.reject(& &1.indexed?)
+    |> Enum.map(&(&1 |> MatcherEquation.to_lemma() |> Rule.from_lemma(opts)))
+    |> new()
+  end
+
+  @doc "Builds a rewrite database from generated definition and matcher equations in an environment."
+  @spec from_env_all_equations(Env.t(), keyword()) :: t()
+  def from_env_all_equations(%Env{} = env, opts \\ []) do
+    generated = from_env_equations(env, opts).rules
+    matchers = from_env_matcher_equations(env, opts).rules
+    new(generated ++ matchers)
   end
 
   @doc "Applies the first rule that rewrites the term."

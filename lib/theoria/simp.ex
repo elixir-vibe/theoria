@@ -12,7 +12,7 @@ defmodule Theoria.Simp do
   @spec once(Env.t(), Term.t(), keyword()) :: {:ok, Term.t(), Step.t()} | :not_found
   def once(%Env{} = env, term, opts \\ []) do
     env
-    |> Database.from_env_equations(opts)
+    |> database(opts)
     |> Database.once(term)
     |> case do
       {:ok, next, rule} -> {:ok, next, step(rule, term, next)}
@@ -24,7 +24,7 @@ defmodule Theoria.Simp do
   @spec normalize(Env.t(), Term.t(), keyword()) :: result()
   def normalize(%Env{} = env, term, opts \\ []) do
     max_steps = Keyword.get(opts, :max_steps, 100)
-    database = Database.from_env_equations(env, opts)
+    database = database(env, opts)
     normalize_with_database(database, term, max_steps, [])
   end
 
@@ -39,6 +39,14 @@ defmodule Theoria.Simp do
 
       :not_found ->
         %{term: term, steps: Enum.reverse(steps), stopped: :normal}
+    end
+  end
+
+  defp database(env, opts) do
+    if Keyword.get(opts, :include_matchers, false) do
+      Database.from_env_all_equations(env, opts)
+    else
+      Database.from_env_equations(env, opts)
     end
   end
 

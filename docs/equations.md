@@ -140,11 +140,14 @@ Future stages will add true matcher arity for more families, independently compi
 
 ## Rewrite databases
 
-Generated equation lemmas can feed the provisional rewrite database:
+Generated equation lemmas can feed the provisional rewrite database. Ordinary matcher equations can be included explicitly; indexed matcher equation lemmas remain metadata-only and are not added to rewrite/simp databases until proof realization exists:
 
 ```elixir
 database = Theoria.Rewrite.Database.from_env_equations(env)
 Theoria.Rewrite.Database.once(database, term)
+
+combined = Theoria.Rewrite.Database.from_env_all_equations(env)
+Theoria.Rewrite.Database.once(combined, term)
 ```
 
 The rewrite layer is intentionally untrusted and first-order for now. It can match schematic equation-rule binders, but it does not produce proofs and does not replace kernel checking.

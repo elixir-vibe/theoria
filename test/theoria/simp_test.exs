@@ -3,6 +3,8 @@ defmodule Theoria.SimpTest do
 
   alias Theoria.Prelude
   alias Theoria.Simp
+  alias Theoria.Simp.Database
+  alias Theoria.Simp.Rule
   alias Theoria.Simp.Step
   alias Theoria.Term
 
@@ -22,6 +24,34 @@ defmodule Theoria.SimpTest do
 
     assert %{term: ^one, steps: [%Step{rule: :"nat_add.eq_zero", after: ^one}], stopped: :normal} =
              Simp.normalize(env, term)
+  end
+
+  test "can simplify with the combined equation database" do
+    {:ok, env} = Prelude.env()
+    term = Term.app(Term.const(:bool_not), Term.const(true))
+
+    assert {:ok, rewritten, %Step{}} = Simp.once(env, term, include_matchers: true)
+    assert rewritten == Term.const(false)
+  end
+
+  test "simp database keeps matcher equations opt-in" do
+    {:ok, env} = Prelude.env()
+
+    equation_rules = Database.from_env_equations(env).rules
+    all_rules = Database.from_env_all_equations(env).rules
+
+    refute Enum.any?(
+             equation_rules,
+             &match?(%Rule{rewrite: %{name: :"bool_not.match_1.eq_true"}}, &1)
+           )
+
+    assert Enum.any?(
+             all_rules,
+             &match?(
+               %Rule{rewrite: %{name: :"bool_not.match_1.eq_true"}, source: :matcher_equation},
+               &1
+             )
+           )
   end
 
   test "stops when fuel is exhausted" do

@@ -4,6 +4,7 @@ defmodule Theoria.Simp.Database do
   alias Theoria.Env
   alias Theoria.Equation.Eqns
   alias Theoria.Rewrite
+  alias Theoria.Rewrite.Database, as: RewriteDatabase
   alias Theoria.Simp.Rule
   alias Theoria.Term
 
@@ -24,6 +25,25 @@ defmodule Theoria.Simp.Database do
     |> Eqns.database(opts)
     |> then(fn database -> Enum.map(database.rules, &Rule.new(&1, source: :equation)) end)
     |> new()
+  end
+
+  @doc "Builds a simplifier database from generated definition and matcher equations."
+  @spec from_env_all_equations(Env.t(), keyword()) :: t()
+  def from_env_all_equations(%Env{} = env, opts \\ []) do
+    env
+    |> RewriteDatabase.from_env_all_equations(opts)
+    |> then(fn database ->
+      Enum.map(database.rules, &Rule.new(&1, source: equation_source(&1.name)))
+    end)
+    |> new()
+  end
+
+  defp equation_source(name) do
+    if name |> Atom.to_string() |> String.contains?(".match_") do
+      :matcher_equation
+    else
+      :equation
+    end
   end
 
   @doc "Applies the first matching simplifier rule."

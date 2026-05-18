@@ -411,6 +411,17 @@ defmodule Theoria.Equation.Matcher.Type do
 
   defp apply_motive(motive, arguments), do: Enum.reduce(arguments, motive, &Term.app(&2, &1))
 
+  defp recursor_arguments(%Shape{family: :Vec} = shape) do
+    [
+      binder_ref(shape, :a),
+      binder_ref(shape, :motive),
+      binder_ref(shape, :on_vec_nil),
+      binder_ref(shape, :on_vec_cons),
+      binder_ref(shape, :n),
+      binder_ref(shape, :xs)
+    ]
+  end
+
   defp recursor_arguments(%Shape{indexed?: true}), do: []
 
   defp recursor_arguments(%Shape{family: :bool, discriminants: [_, _]} = shape) do
@@ -451,6 +462,10 @@ defmodule Theoria.Equation.Matcher.Type do
       binder_ref(shape, :on_cons),
       binder_ref(shape, :xs)
     ]
+  end
+
+  defp body_from_shape(%Shape{family: :Vec} = shape) do
+    apply_recursor!(shape.recursor, shape.recursor_arguments)
   end
 
   defp body_from_shape(%Shape{indexed?: true}), do: Term.const(:unsupported_indexed_matcher_body)

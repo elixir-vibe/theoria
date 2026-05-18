@@ -15,6 +15,9 @@ defmodule Theoria.Equation.Recursor.Application do
   def build(:list_rec, [element_type, motive, nil_case, cons_case, major]),
     do: {:ok, list_rec(element_type, motive, nil_case, cons_case, major)}
 
+  def build(:vec_ind, [element_type, motive, nil_case, cons_case, index, major]),
+    do: {:ok, vec_ind(element_type, motive, nil_case, cons_case, index, major)}
+
   def build(recursor, arguments),
     do: {:error, {:unsupported_recursor_application, recursor, length(arguments)}}
 
@@ -47,6 +50,21 @@ defmodule Theoria.Equation.Recursor.Application do
     |> Term.app(motive)
     |> Term.app(nil_case)
     |> Term.app(cons_case)
+    |> Term.app(major)
+  end
+
+  @doc "Builds a Vec recursor application from nil/cons equations."
+  @spec vec_ind(Term.t(), Term.t(), Term.t(), Term.t(), Term.t(), Term.t(), [
+          Level.t() | non_neg_integer()
+        ]) ::
+          Term.t()
+  def vec_ind(element_type, motive, nil_case, cons_case, index, major, levels \\ [1]) do
+    Term.const(:vec_ind, levels)
+    |> Term.app(element_type)
+    |> Term.app(motive)
+    |> Term.app(nil_case)
+    |> Term.app(cons_case)
+    |> Term.app(index)
     |> Term.app(major)
   end
 end

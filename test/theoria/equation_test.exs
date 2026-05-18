@@ -10,6 +10,7 @@ defmodule Theoria.EquationTest do
   alias Theoria.Equation.Matcher.Type, as: MatcherType
   alias Theoria.Equation.Recursor.Descriptor, as: RecursorDescriptor
   alias Theoria.Equation.Schema.Builder, as: SchemaBuilder
+  alias Theoria.Term.Application, as: TermApplication
 
   alias Theoria.Equation.{
     Branch,
@@ -279,6 +280,19 @@ defmodule Theoria.EquationTest do
              vec_cons_shape
 
     assert case_result == vec_cons_shape.case_result
+
+    assert matcher_shape.recursor_arguments == [
+             Term.bvar(5),
+             Term.bvar(4),
+             Term.bvar(1),
+             Term.bvar(0),
+             Term.bvar(3),
+             Term.bvar(2)
+           ]
+
+    assert {fun, args} = TermApplication.collect(matcher_shape.body)
+    assert fun == Term.const(:vec_ind, [1])
+    assert args == matcher_shape.recursor_arguments
 
     assert MatcherType.from_descriptor(matcher_descriptor) ==
              {:error, {:unsupported_indexed_matcher_type, :Vec}}

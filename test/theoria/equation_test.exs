@@ -301,6 +301,27 @@ defmodule Theoria.EquationTest do
              {:error, {:unsupported_indexed_matcher_value, :Vec}}
   end
 
+  test "matcher type shape validation rejects corrupted indexed plans" do
+    shape = vec_matcher_shape!()
+    [nil_alt, cons_alt] = shape.alternatives
+
+    assert MatcherType.validate_shape(shape) == :ok
+
+    assert MatcherType.validate_shape(%{shape | motive_arguments: []}) ==
+             {:error, {:motive_argument_count_mismatch, :Vec}}
+
+    assert MatcherType.validate_shape(%{shape | index_patterns: %{}}) ==
+             {:error, {:missing_index_patterns, :vec_nil}}
+
+    assert MatcherType.validate_shape(%{shape | recursor_arguments: []}) ==
+             {:error, {:recursor_argument_count_mismatch, :vec_ind, 6, 0}}
+
+    broken_case = %{cons_alt | case_result: nil}
+
+    assert MatcherType.validate_shape(%{shape | alternatives: [nil_alt, broken_case]}) ==
+             {:error, {:missing_case_result, :vec_cons}}
+  end
+
   test "matcher descriptor validation rejects corrupted shapes" do
     info = MatcherInfo.new(:match_nat, 0, 1, [%Alternative{constructor: :zero, num_fields: 0}])
 
@@ -1005,6 +1026,27 @@ defmodule Theoria.EquationTest do
              Term.Application.collect(term)
 
     assert_lams(cons_case, [:x, :xs, :ih], Term.bvar(0))
+  end
+
+  defp vec_matcher_shape! do
+    {:ok, env} = Prelude.env()
+
+    vec_schema =
+      Schema.new(:Vec, [],
+        recursive_argument: 1,
+        parameter_binders: [a: Term.sort(1)],
+        argument_binders: [n: Term.const(:Nat), xs: Term.const(:Vec)]
+      )
+
+    matcher =
+      MatcherInfo.new(:vec_match, 1, 1, [
+        %Alternative{constructor: :vec_nil, num_fields: 0},
+        %Alternative{constructor: :vec_cons, num_fields: 3}
+      ])
+
+    {:ok, descriptor} = MatcherDescriptor.from_env(env, vec_schema, matcher)
+    {:ok, shape} = MatcherType.shape_from_descriptor(descriptor)
+    shape
   end
 
   defp corrupt_matcher(env, name, fun) do

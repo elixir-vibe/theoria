@@ -192,8 +192,18 @@ defmodule Theoria.Equation.Matcher.Type do
       shape = plan_indexed_alternatives(shape)
       recursor_arguments = recursor_arguments(shape)
       shape_with_arguments = %{shape | recursor_arguments: recursor_arguments}
+      shape = %{shape_with_arguments | body: body_from_shape(shape_with_arguments)}
 
-      {:ok, %{shape_with_arguments | body: body_from_shape(shape_with_arguments)}}
+      with :ok <- validate_shape(shape), do: {:ok, shape}
+    end
+  end
+
+  @doc "Validates planned matcher declaration shape invariants."
+  @spec validate_shape(Shape.t()) :: :ok | {:error, term()}
+  def validate_shape(%Shape{} = shape) do
+    with :ok <- validate_common_shape(shape),
+         :ok <- validate_recursor_arguments(shape) do
+      validate_indexed_shape(shape)
     end
   end
 
@@ -210,6 +220,96 @@ defmodule Theoria.Equation.Matcher.Type do
   defp simple_value_from_shape(%Shape{} = shape) do
     {:ok, lam_telescope(binders(shape), shape.body)}
   end
+
+  defp validate_common_shape(%Shape{} = shape) do
+    cond do
+      length(shape.alternatives) != length(shape.alternative_binders) ->
+        {:error, {:alternative_binder_count_mismatch, shape.family}}
+
+      Enum.map(shape.alternatives, & &1.binder_name) !=
+          Enum.map(shape.alternative_binders, &elem(&1, 0)) ->
+        {:error, {:alternative_binder_name_mismatch, shape.family}}
+
+      is_nil(shape.result) ->
+        {:error, {:missing_shape_result, shape.family}}
+
+      is_nil(shape.body) ->
+        {:error, {:missing_shape_body, shape.family}}
+
+      not is_list(shape.recursor_arguments) ->
+        {:error, {:invalid_recursor_arguments, shape.recursor}}
+
+      true ->
+        :ok
+    end
+  end
+
+  defp validate_recursor_arguments(%Shape{} = shape) do
+    expected = expected_recursor_arity(shape)
+    actual = length(shape.recursor_arguments)
+
+    if actual == expected do
+      :ok
+    else
+      {:error, {:recursor_argument_count_mismatch, shape.recursor, expected, actual}}
+    end
+  end
+
+  defp validate_indexed_shape(%Shape{indexed?: false}), do: :ok
+
+  defp validate_indexed_shape(%Shape{indexed?: true} = shape) do
+    cond do
+      shape.index_binders != shape.indices ->
+        {:error, {:index_binder_mismatch, shape.family}}
+
+      shape.motive_binders == [] ->
+        {:error, {:missing_motive_binders, shape.family}}
+
+      length(shape.motive_arguments) != length(shape.motive_binders) ->
+        {:error, {:motive_argument_count_mismatch, shape.family}}
+
+      is_nil(shape.motive_result) ->
+        {:error, {:missing_motive_result, shape.family}}
+
+      true ->
+        validate_indexed_alternatives(shape)
+    end
+  end
+
+  defp validate_indexed_alternatives(%Shape{} = shape) do
+    Enum.reduce_while(shape.alternatives, :ok, fn alternative, :ok ->
+      cond do
+        not Map.has_key?(shape.index_patterns, alternative.constructor) ->
+          {:halt, {:error, {:missing_index_patterns, alternative.constructor}}}
+
+        length(alternative.index_patterns) != length(shape.index_binders) ->
+          {:halt, {:error, {:index_pattern_count_mismatch, alternative.constructor}}}
+
+        is_nil(alternative.case_result) ->
+          {:halt, {:error, {:missing_case_result, alternative.constructor}}}
+
+        length(alternative.motive_arguments) != length(shape.motive_binders) ->
+          {:halt,
+           {:error, {:alternative_motive_argument_count_mismatch, alternative.constructor}}}
+
+        forall_result(alternative.binder_type) != alternative.case_result ->
+          {:halt, {:error, {:case_result_mismatch, alternative.constructor}}}
+
+        true ->
+          {:cont, :ok}
+      end
+    end)
+  end
+
+  defp forall_result(%Term.Forall{body: body}), do: forall_result(body)
+  defp forall_result(term), do: term
+
+  defp expected_recursor_arity(%Shape{family: :bool, discriminants: [_, _]}), do: 7
+  defp expected_recursor_arity(%Shape{recursor: :bool_rec}), do: 4
+  defp expected_recursor_arity(%Shape{recursor: :nat_rec}), do: 4
+  defp expected_recursor_arity(%Shape{recursor: :list_rec}), do: 5
+  defp expected_recursor_arity(%Shape{recursor: :vec_ind}), do: 6
+  defp expected_recursor_arity(%Shape{}), do: 0
 
   defp alternative_from_descriptor(
          %MatcherDescriptor{} = descriptor,

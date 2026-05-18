@@ -2,24 +2,33 @@ defmodule Theoria.Rewrite.Rule do
   @moduledoc "Experimental/internal API for 0.2; subject to change before 0.3. A theorem-like rewrite rule over a core equality term."
 
   alias Theoria.Equation.Lemma
+  alias Theoria.Equation.Name
   alias Theoria.Term
 
   @enforce_keys [:name, :equality]
-  defstruct [:name, :equality, direction: :forward, binders: []]
+  defstruct [:name, :equality, :id, direction: :forward, binders: []]
 
   @type t :: %__MODULE__{
           name: atom(),
           equality: Term.Eq.t(),
+          id: Name.t() | nil,
           direction: :forward | :backward,
           binders: [Lemma.binder()]
         }
 
   @doc "Builds a rewrite rule."
-  @spec new(atom(), Term.Eq.t(), keyword()) :: t()
-  def new(name, %Term.Eq{} = equality, opts \\ []) when is_atom(name) do
+  @spec new(atom() | Name.t(), Term.Eq.t(), keyword()) :: t()
+  def new(name_or_id, equality, opts \\ [])
+
+  def new(%Name{} = id, %Term.Eq{} = equality, opts) do
+    new(Name.to_declaration(id), equality, Keyword.put(opts, :id, id))
+  end
+
+  def new(name, %Term.Eq{} = equality, opts) when is_atom(name) do
     %__MODULE__{
       name: name,
       equality: equality,
+      id: Keyword.get(opts, :id),
       direction: Keyword.get(opts, :direction, :forward),
       binders: Keyword.get(opts, :binders, [])
     }
@@ -30,7 +39,7 @@ defmodule Theoria.Rewrite.Rule do
   def from_lemma(%Lemma{} = lemma, equality_or_opts \\ [], opts \\ []) do
     {equality_type, opts} = equality_type_and_opts(lemma, equality_or_opts, opts)
 
-    new(lemma.name, Term.eq(equality_type, lemma.left, lemma.right),
+    new(lemma.id || lemma.name, Term.eq(equality_type, lemma.left, lemma.right),
       binders: lemma.binders,
       direction: Keyword.get(opts, :direction, :forward)
     )

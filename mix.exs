@@ -6,7 +6,7 @@ defmodule Theoria.MixProject do
   def project do
     [
       app: :theoria,
-      version: "0.2.0",
+      version: "0.3.0-dev",
       elixir: "~> 1.19",
       description:
         "An Elixir-native proof/spec kernel inspired by trusted theorem prover kernels.",

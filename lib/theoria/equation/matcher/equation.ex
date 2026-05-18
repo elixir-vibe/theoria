@@ -87,7 +87,7 @@ defmodule Theoria.Equation.Matcher.Equation do
   @doc "Converts matcher-equation metadata to theorem-like equation lemma metadata."
   @spec to_lemma(t()) :: Lemma.t()
   def to_lemma(%__MODULE__{} = equation) do
-    Lemma.new(equation.name, equation.left, equation.right,
+    Lemma.new(equation.id || equation.name, equation.left, equation.right,
       binders: equation.binders,
       equality_type: equation.equality_type,
       source: equation.source && equation.source.source

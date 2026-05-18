@@ -3,12 +3,14 @@ defmodule Theoria.Library.Vec do
 
   alias Theoria.Env
   alias Theoria.Equation.Matcher.Indexed.Package, as: IndexedPackage
+  alias Theoria.Equation.Matcher.Indexed.Realization, as: IndexedRealization
   alias Theoria.Equation.Matcher.Indexed.Vec, as: IndexedVec
   alias Theoria.Inductive
   alias Theoria.Inductive.Spec
   alias Theoria.Kernel
   alias Theoria.Level
   alias Theoria.Library.Nat
+  alias Theoria.Theorem
 
   import Theoria.DSL, except: [type: 1]
 
@@ -35,7 +37,7 @@ defmodule Theoria.Library.Vec do
 
     with {:ok, package} <- IndexedPackage.build(indexed_matcher_info(matcher_name), env),
          :ok <- IndexedPackage.validate(package) do
-      {:ok, package.env}
+      maybe_install_indexed_equations(package, opts)
     end
   end
 
@@ -44,6 +46,15 @@ defmodule Theoria.Library.Vec do
   def env_with_indexed_matcher(opts \\ []) do
     with {:ok, env} <- env() do
       extend_with_indexed_matcher(env, opts)
+    end
+  end
+
+  @doc "Installs realized equation theorems for an experimental indexed matcher package."
+  @spec install_indexed_matcher_equations(IndexedPackage.t()) ::
+          {:ok, Env.t(), [Theorem.t()]} | {:error, term()}
+  def install_indexed_matcher_equations(%IndexedPackage{} = package) do
+    with {:ok, theorems} <- IndexedRealization.realize_all(package) do
+      install_theorems(package.env, theorems)
     end
   end
 
@@ -64,6 +75,32 @@ defmodule Theoria.Library.Vec do
     |> Spec.index(:n, term(do: nat()) |> elab!())
     |> Spec.constructor(:vec_nil, vec_nil_type(u))
     |> Spec.constructor(:vec_cons, vec_cons_type(u))
+  end
+
+  defp install_theorems(env, theorems) do
+    theorems
+    |> Enum.reduce_while({:ok, env, []}, &install_theorem/2)
+    |> case do
+      {:ok, env, installed} -> {:ok, env, Enum.reverse(installed)}
+      {:error, _reason} = error -> error
+    end
+  end
+
+  defp install_theorem(theorem, {:ok, env, installed}) do
+    case Theorem.add_to_env(env, theorem) do
+      {:ok, env} -> {:cont, {:ok, env, [theorem | installed]}}
+      {:error, _reason} = error -> {:halt, error}
+    end
+  end
+
+  defp maybe_install_indexed_equations(package, opts) do
+    if Keyword.get(opts, :install_equations, false) do
+      with {:ok, env, _theorems} <- install_indexed_matcher_equations(package) do
+        {:ok, env}
+      end
+    else
+      {:ok, package.env}
+    end
   end
 
   defp vec_type(u) do

@@ -1,6 +1,15 @@
 # Changelog
 
-## 0.2.0 - unreleased
+## Unreleased
+
+Post-0.2 development toward the next experimental API boundary.
+
+- Introduced structured `Theoria.Equation.Name` identities for ordinary, unfold, matcher, and indexed matcher equations.
+- Kept generated equation declaration atoms as internal kernel/environment addresses instead of public identity values.
+- Added selector-based indexed matcher equation lookup/realization and opt-in Vec indexed equation theorem installation.
+- Carried structured equation identities through rewrite/simp rule metadata and friendly CLI/Lean labels.
+
+## 0.2.0
 
 Second experimental release after the initial Hex publication.
 

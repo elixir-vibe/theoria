@@ -28,6 +28,27 @@ Signature + Case.Template + Clause/Pattern
 
 The metadata is Theoria-owned data. It is checked by native validation and can be translated to Lean by the contributor-only oracle, but Lean is not part of the runtime trusted path.
 
+## Equation identities
+
+Generated equation artifacts use `Theoria.Equation.Name` as their canonical domain identity. The struct records the owner, kind, and target of an equation without exposing generated declaration atoms as public API data:
+
+```elixir
+alias Theoria.Equation.Name
+
+Name.equation(:nat_add, :succ)
+Name.unfold(:nat_add)
+Name.matcher_equation(:nat_add_match_1, :succ)
+Name.indexed_matcher_equation(:vec_match, :vec_cons)
+```
+
+`Name.format/1` is the human display form used by Mix tasks and docs, for example `nat_add.eq_succ` or `vec_match.eq_vec_cons`. `Name.to_declaration/1` converts the structured identity to the internal kernel declaration atom used when a theorem is checked or installed. That declaration atom is an environment address, not the public equation identity.
+
+Selector-based APIs accept structured names or explicit selectors where that is clearer:
+
+```elixir
+Theoria.Equation.Matcher.Eqns.indexed_statement(info, env, constructor: :vec_cons)
+Theoria.Equation.Matcher.Eqns.indexed_realize(info, env, constructor: :vec_cons)
+```
 
 ## Trusted boundary
 

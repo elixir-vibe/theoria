@@ -33,18 +33,16 @@ defmodule Theoria.Simp.Database do
     env
     |> RewriteDatabase.from_env_all_equations(opts)
     |> then(fn database ->
-      Enum.map(database.rules, &Rule.new(&1, source: equation_source(&1.name)))
+      Enum.map(database.rules, &Rule.new(&1, source: equation_source(&1)))
     end)
     |> new()
   end
 
-  defp equation_source(name) do
-    if name |> Atom.to_string() |> String.contains?("__matcher_eq__") do
-      :matcher_equation
-    else
-      :equation
-    end
-  end
+  defp equation_source(%{id: %{kind: kind}})
+       when kind in [:matcher_equation, :indexed_matcher_equation],
+       do: :matcher_equation
+
+  defp equation_source(_rule), do: :equation
 
   @doc "Applies the first matching simplifier rule."
   @spec once(t(), Term.t()) :: {:ok, Term.t(), Rule.t()} | :not_found

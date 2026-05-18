@@ -185,7 +185,7 @@ Theoria.Equation.Eqns.get(env, :nat_add)
 Theoria.Equation.Eqns.realize(env, Name.equation(:nat_add, :succ))
 ```
 
-Generated ordinary equations, matcher equations, unfold equations, and checked matcher declarations are validated natively. They are internal groundwork rather than stable public equation-definition syntax.
+Generated ordinary equations, matcher equations, unfold equations, and checked matcher declarations are validated natively. Equation artifacts are identified by `Theoria.Equation.Name` structs; generated kernel declaration atoms remain internal environment addresses. This is internal groundwork rather than stable public equation-definition syntax.
 
 Inspect them from Mix:
 

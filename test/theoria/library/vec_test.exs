@@ -120,6 +120,14 @@ defmodule Theoria.Library.VecTest do
     assert cons_equation.statement_status == :planned
   end
 
+  test "Vec indexed matcher equation theorems can be installed opt-in" do
+    {:ok, env} = Vec.env_with_indexed_matcher(install_equations: true)
+
+    assert {:ok, _constant} = Env.fetch(env, :theoria__indexed_matcher_eq__vec_match__vec_nil)
+    assert {:ok, _constant} = Env.fetch(env, :theoria__indexed_matcher_eq__vec_match__vec_cons)
+    assert {:ok, _replayed} = Kernel.validate_env(env)
+  end
+
   test "Prelude does not install experimental Vec indexed matchers" do
     {:ok, env} = Theoria.Prelude.env()
     assert Env.fetch_matcher(env, :vec_match) == :error

@@ -19,6 +19,7 @@ defmodule Theoria.Equation.Matcher.Spec do
     :type,
     :value,
     :info,
+    :schema,
     mode: :source_aligned,
     level_params: [],
     equation_names: []
@@ -30,6 +31,7 @@ defmodule Theoria.Equation.Matcher.Spec do
           type: Term.t(),
           value: Term.t(),
           info: MatcherInfo.t(),
+          schema: Schema.t() | nil,
           mode: mode(),
           level_params: [atom()],
           equation_names: [atom()]
@@ -53,6 +55,7 @@ defmodule Theoria.Equation.Matcher.Spec do
          type: type,
          value: value,
          info: info.matcher,
+         schema: info.schema,
          mode: mode,
          level_params: info.level_params,
          equation_names: info |> MatcherEqns.generated() |> Enum.map(& &1.name)
@@ -78,6 +81,7 @@ defmodule Theoria.Equation.Matcher.Spec do
          type: type,
          value: value,
          info: info.matcher,
+         schema: info.schema,
          mode: :indexed_matcher,
          level_params: info.level_params,
          equation_names: []
@@ -122,6 +126,7 @@ defmodule Theoria.Equation.Matcher.Spec do
     EnvMatcher.new(spec.name, spec.source, spec.type, spec.info,
       value: spec.value,
       mode: spec.mode,
+      schema: spec.schema,
       level_params: spec.level_params,
       equation_names: spec.equation_names
     )

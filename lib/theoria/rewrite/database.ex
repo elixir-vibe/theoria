@@ -3,10 +3,10 @@ defmodule Theoria.Rewrite.Database do
 
   alias Theoria.Env
   alias Theoria.Equation.Eqns
+  alias Theoria.Equation.Info
   alias Theoria.Equation.Lemma
   alias Theoria.Equation.Matcher.Eqns, as: MatcherEqns
   alias Theoria.Equation.Matcher.Equation, as: MatcherEquation
-  alias Theoria.Equation.Matcher.Indexed.Vec, as: IndexedVec
   alias Theoria.Rewrite
   alias Theoria.Rewrite.Rule
   alias Theoria.Term
@@ -76,12 +76,23 @@ defmodule Theoria.Rewrite.Database do
   end
 
   defp indexed_matcher_rules(env, matcher, opts) do
-    info = IndexedVec.info(matcher.name, matcher.source)
-
-    case MatcherEqns.indexed_lemmas(info, env) do
-      {:ok, lemmas} -> Enum.map(lemmas, &Rule.from_lemma(&1, opts))
+    with {:ok, info} <- indexed_matcher_info(matcher),
+         {:ok, lemmas} <- MatcherEqns.indexed_lemmas(info, env) do
+      Enum.map(lemmas, &Rule.from_lemma(&1, opts))
+    else
       {:error, _reason} -> []
     end
+  end
+
+  defp indexed_matcher_info(%{schema: nil}), do: {:error, :missing_indexed_matcher_schema}
+
+  defp indexed_matcher_info(matcher) do
+    {:ok,
+     Info.new(matcher.source, Term.const(matcher.source), Term.const(matcher.source),
+       matcher: matcher.info,
+       schema: matcher.schema,
+       level_params: matcher.level_params
+     )}
   end
 
   @doc "Applies the first rule that rewrites the term."

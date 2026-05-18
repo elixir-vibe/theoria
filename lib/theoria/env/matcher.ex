@@ -2,6 +2,7 @@ defmodule Theoria.Env.Matcher do
   @moduledoc "Environment metadata for a generated matcher declaration."
 
   alias Theoria.Equation.Matcher.Info, as: MatcherInfo
+  alias Theoria.Equation.Schema
   alias Theoria.Term
 
   @enforce_keys [:name, :source, :type, :value, :info]
@@ -11,6 +12,7 @@ defmodule Theoria.Env.Matcher do
     :type,
     :value,
     :info,
+    :schema,
     mode: :source_aligned,
     level_params: [],
     equation_names: []
@@ -22,6 +24,7 @@ defmodule Theoria.Env.Matcher do
           type: Term.t(),
           value: Term.t(),
           info: MatcherInfo.t(),
+          schema: Schema.t() | nil,
           mode: :source_aligned | :matcher | :indexed_matcher,
           level_params: [atom()],
           equation_names: [atom()]
@@ -37,6 +40,7 @@ defmodule Theoria.Env.Matcher do
       type: type,
       value: Keyword.fetch!(opts, :value),
       info: info,
+      schema: Keyword.get(opts, :schema),
       mode: Keyword.get(opts, :mode, :source_aligned),
       level_params: Keyword.get(opts, :level_params, []),
       equation_names: Keyword.get(opts, :equation_names, [])

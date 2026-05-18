@@ -301,6 +301,32 @@ defmodule Theoria.EquationTest do
              {:error, {:unsupported_indexed_matcher_value, :Vec}}
   end
 
+  test "experimental indexed matcher emission returns planned terms without enabling checked declarations" do
+    descriptor = vec_matcher_descriptor!()
+    shape = vec_matcher_shape!()
+
+    assert {:ok, type} = MatcherType.indexed_from_descriptor(descriptor)
+
+    assert collect_foralls(type) ==
+             {[:a, :motive, :n, :xs, :on_vec_nil, :on_vec_cons], shape.result}
+
+    assert {:ok, value} = MatcherType.indexed_value_from_descriptor(descriptor)
+    assert {[:a, :motive, :n, :xs, :on_vec_nil, :on_vec_cons], body} = collect_lams(value)
+    assert {fun, args} = TermApplication.collect(body)
+    assert fun == Term.const(:vec_ind, [1])
+    assert args == shape.recursor_arguments
+
+    {:ok, env} = Prelude.env()
+    {:ok, nat_info} = Info.fetch(env, :nat_add)
+    {:ok, nat_descriptor} = MatcherDescriptor.from_env(env, nat_info.schema, nat_info.matcher)
+
+    assert MatcherType.indexed_from_descriptor(nat_descriptor) ==
+             {:error, {:not_indexed_matcher_type, :nat}}
+
+    assert MatcherType.indexed_value_from_descriptor(nat_descriptor) ==
+             {:error, {:not_indexed_matcher_value, :nat}}
+  end
+
   test "matcher type shape validation rejects corrupted indexed plans" do
     shape = vec_matcher_shape!()
     [nil_alt, cons_alt] = shape.alternatives
@@ -1039,7 +1065,7 @@ defmodule Theoria.EquationTest do
     assert_lams(cons_case, [:x, :xs, :ih], Term.bvar(0))
   end
 
-  defp vec_matcher_shape! do
+  defp vec_matcher_descriptor! do
     {:ok, env} = Prelude.env()
 
     vec_schema =
@@ -1056,7 +1082,11 @@ defmodule Theoria.EquationTest do
       ])
 
     {:ok, descriptor} = MatcherDescriptor.from_env(env, vec_schema, matcher)
-    {:ok, shape} = MatcherType.shape_from_descriptor(descriptor)
+    descriptor
+  end
+
+  defp vec_matcher_shape! do
+    {:ok, shape} = MatcherType.shape_from_descriptor(vec_matcher_descriptor!())
     shape
   end
 
@@ -1081,4 +1111,11 @@ defmodule Theoria.EquationTest do
   end
 
   defp collect_lams(body), do: {[], body}
+
+  defp collect_foralls(%Term.Forall{name: name, body: body}) do
+    {names, body} = collect_foralls(body)
+    {[name | names], body}
+  end
+
+  defp collect_foralls(body), do: {[], body}
 end

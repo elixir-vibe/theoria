@@ -163,6 +163,28 @@ defmodule Theoria.Equation.Matcher.Type do
     end
   end
 
+  @doc "Experimentally emits an indexed matcher type term without enabling checked matcher declarations."
+  @spec indexed_from_descriptor(MatcherDescriptor.t()) :: {:ok, Term.t()} | {:error, term()}
+  def indexed_from_descriptor(%MatcherDescriptor{indexed?: false, family: family}),
+    do: {:error, {:not_indexed_matcher_type, family}}
+
+  def indexed_from_descriptor(%MatcherDescriptor{} = descriptor) do
+    with {:ok, shape} <- shape_from_descriptor(descriptor) do
+      {:ok, forall_telescope(binders(shape), shape.result)}
+    end
+  end
+
+  @doc "Experimentally emits an indexed matcher value term without enabling checked matcher declarations."
+  @spec indexed_value_from_descriptor(MatcherDescriptor.t()) :: {:ok, Term.t()} | {:error, term()}
+  def indexed_value_from_descriptor(%MatcherDescriptor{indexed?: false, family: family}),
+    do: {:error, {:not_indexed_matcher_value, family}}
+
+  def indexed_value_from_descriptor(%MatcherDescriptor{} = descriptor) do
+    with {:ok, shape} <- shape_from_descriptor(descriptor) do
+      {:ok, lam_telescope(binders(shape), shape.body)}
+    end
+  end
+
   @doc "Plans matcher declaration binders and body from a descriptor."
   @spec shape_from_descriptor(MatcherDescriptor.t()) :: {:ok, Shape.t()} | {:error, term()}
   def shape_from_descriptor(%MatcherDescriptor{} = descriptor) do

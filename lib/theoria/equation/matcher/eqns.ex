@@ -7,6 +7,8 @@ defmodule Theoria.Equation.Matcher.Eqns do
   alias Theoria.Equation.Lemma
   alias Theoria.Equation.Matcher.Descriptor, as: MatcherDescriptor
   alias Theoria.Equation.Matcher.Equation, as: MatcherEquation
+  alias Theoria.Equation.Matcher.Indexed.Package, as: IndexedPackage
+  alias Theoria.Equation.Matcher.Indexed.Realization, as: IndexedRealization
   alias Theoria.Equation.Matcher.Statement, as: MatcherStatement
   alias Theoria.Equation.Matcher.Type, as: MatcherType
   alias Theoria.Term
@@ -95,16 +97,20 @@ defmodule Theoria.Equation.Matcher.Eqns do
     end
   end
 
-  @doc "Returns the explicit non-realization result for a planned indexed matcher equation."
-  @spec indexed_realize(Info.t(), Env.t(), atom()) :: {:error, term()}
+  @doc "Realizes a planned indexed matcher equation theorem without installing it."
+  @spec indexed_realize(Info.t(), Env.t(), atom()) ::
+          {:ok, Theoria.Theorem.t()} | {:error, term()}
   def indexed_realize(%Info{} = info, %Env{} = env, theorem_name) when is_atom(theorem_name) do
-    with {:ok, equations} <- indexed_generated(info, env),
-         %MatcherEquation{} <-
-           Enum.find(equations, &(&1.name == theorem_name)) ||
-             {:error, {:unknown_indexed_matcher_equation, theorem_name}} do
-      {:error, {:indexed_matcher_equation_not_realized, theorem_name}}
-    else
-      {:error, _reason} = error -> error
+    with {:ok, package} <- IndexedPackage.build(info, env) do
+      IndexedRealization.realize(package, theorem_name)
+    end
+  end
+
+  @doc "Realizes all planned indexed matcher equation theorems without installing them."
+  @spec indexed_realize_all(Info.t(), Env.t()) :: {:ok, [Theoria.Theorem.t()]} | {:error, term()}
+  def indexed_realize_all(%Info{} = info, %Env{} = env) do
+    with {:ok, package} <- IndexedPackage.build(info, env) do
+      IndexedRealization.realize_all(package)
     end
   end
 

@@ -26,8 +26,7 @@ defmodule Theoria.Equation.Matcher.Indexed.Package do
   @spec build(Info.t(), Env.t()) :: {:ok, t()} | {:error, term()}
   def build(%Info{} = info, %Env{} = env) do
     with {:ok, spec} <- MatcherSpec.indexed_from_info(info, env: env),
-         {:ok, env} <- Kernel.add_matcher(env, spec),
-         {:ok, matcher} <- Env.fetch_matcher(env, spec.name),
+         {:ok, env, matcher} <- admit_matcher(env, spec),
          {:ok, equations} <- MatcherEqns.indexed_generated(info, env),
          {:ok, statements} <- MatcherEqns.indexed_statements(info, env),
          {:ok, lemmas} <- MatcherEqns.indexed_lemmas(info, env) do
@@ -55,6 +54,19 @@ defmodule Theoria.Equation.Matcher.Indexed.Package do
          :ok <- validate_realization_boundary(package),
          {:ok, _env} <- Kernel.validate_env(package.env) do
       :ok
+    end
+  end
+
+  defp admit_matcher(env, spec) do
+    case Env.fetch_matcher(env, spec.name) do
+      {:ok, matcher} ->
+        {:ok, env, matcher}
+
+      :error ->
+        with {:ok, env} <- Kernel.add_matcher(env, spec),
+             {:ok, matcher} <- Env.fetch_matcher(env, spec.name) do
+          {:ok, env, matcher}
+        end
     end
   end
 
@@ -143,7 +155,7 @@ defmodule Theoria.Equation.Matcher.Indexed.Package do
 
   defp validate_realization_plan(package) do
     case Realization.plan(package) do
-      {:ok, %Realization.Plan{realizable?: false, blockers: [_blocker | _rest]}} ->
+      {:ok, %Realization.Plan{realizable?: true, blockers: []}} ->
         :ok
 
       {:ok, %Realization.Plan{} = plan} ->
@@ -151,10 +163,10 @@ defmodule Theoria.Equation.Matcher.Indexed.Package do
     end
   end
 
-  defp validate_realization_boundary(%__MODULE__{info: info, env: env, equations: equations}) do
+  defp validate_realization_boundary(%__MODULE__{equations: equations} = package) do
     Enum.reduce_while(equations, :ok, fn equation, :ok ->
-      case MatcherEqns.indexed_realize(info, env, equation.name) do
-        {:error, {:indexed_matcher_equation_not_realized, _name}} -> {:cont, :ok}
+      case Realization.realize(package, equation.name) do
+        {:ok, %Theoria.Theorem{name: name}} when name == equation.name -> {:cont, :ok}
         other -> {:halt, {:error, {:indexed_matcher_realization_boundary, equation.name, other}}}
       end
     end)

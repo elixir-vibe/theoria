@@ -5,6 +5,7 @@ defmodule Theoria.Validation do
   alias Theoria.Equation.{Eqns, Extension, Info, Lemma}
   alias Theoria.Equation.Matcher.Eqns, as: MatcherEqns
   alias Theoria.Equation.Matcher.Equation, as: MatcherEquation
+  alias Theoria.Equation.Matcher.Indexed.Realization, as: IndexedRealization
   alias Theoria.Prelude
   alias Theoria.Theorem
   alias Theoria.Validation.{Checkable, Corpus, Report}
@@ -22,8 +23,8 @@ defmodule Theoria.Validation do
          {:ok, _env, generated_equations} <- Eqns.install_all(env),
          {:ok, matcher_equation_count} <- check_matcher_equations(env),
          {:ok, indexed_matcher_count, indexed_matcher_equation_count,
-          indexed_matcher_statement_count, indexed_matcher_lemma_count} <-
-           check_indexed_matchers(env),
+          indexed_matcher_statement_count, indexed_matcher_lemma_count,
+          indexed_matcher_realization_count} <- check_indexed_matchers(env),
          {:ok, theorem_count, axioms} <- theorem_summary(env, corpus.theorem_modules) do
       {:ok,
        %Report{
@@ -38,6 +39,7 @@ defmodule Theoria.Validation do
          indexed_matcher_equation_count: indexed_matcher_equation_count,
          indexed_matcher_statement_count: indexed_matcher_statement_count,
          indexed_matcher_lemma_count: indexed_matcher_lemma_count,
+         indexed_matcher_realization_count: indexed_matcher_realization_count,
          matcher_equation_count: matcher_equation_count,
          axioms: axioms
        }}
@@ -226,7 +228,10 @@ defmodule Theoria.Validation do
   defp check_indexed_matchers(env) do
     case IndexedMatchers.check(env) do
       {:ok, package} ->
-        {:ok, 1, length(package.equations), length(package.statements), length(package.lemmas)}
+        {:ok, theorems} = IndexedRealization.realize_all(package)
+
+        {:ok, 1, length(package.equations), length(package.statements), length(package.lemmas),
+         length(theorems)}
 
       other ->
         {:error, {:indexed_matcher, other}}

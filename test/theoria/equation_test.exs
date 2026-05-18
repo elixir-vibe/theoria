@@ -464,9 +464,17 @@ defmodule Theoria.EquationTest do
     assert Enum.all?(lemmas, &(&1.source == nil))
     assert Enum.all?(lemmas, &match?({:ok, %Term.Sort{}}, Kernel.infer(env, &1.equality_type)))
 
-    assert MatcherEqns.indexed_realize(info, env, :"vec_validation_match.eq_vec_cons") ==
-             {:error,
-              {:indexed_matcher_equation_not_realized, :"vec_validation_match.eq_vec_cons"}}
+    assert {:ok, theorem} =
+             MatcherEqns.indexed_realize(info, env, :"vec_validation_match.eq_vec_cons")
+
+    assert theorem.name == :"vec_validation_match.eq_vec_cons"
+
+    assert {:ok, theorems} = MatcherEqns.indexed_realize_all(info, env)
+
+    assert Enum.map(theorems, & &1.name) == [
+             :"vec_validation_match.eq_vec_nil",
+             :"vec_validation_match.eq_vec_cons"
+           ]
 
     assert MatcherEqns.indexed_realize(info, env, :"vec_validation_match.eq_vec_snoc") ==
              {:error, {:unknown_indexed_matcher_equation, :"vec_validation_match.eq_vec_snoc"}}

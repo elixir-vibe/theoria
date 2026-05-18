@@ -66,6 +66,7 @@ defmodule Theoria.MixProject do
       extras: [
         "README.md",
         "CHANGELOG.md",
+        "docs/release_0_4.md",
         "docs/release_0_3.md",
         "docs/release_0_2.md",
         "docs/design.md",
@@ -76,6 +77,7 @@ defmodule Theoria.MixProject do
         "docs/lean_alignment.md",
         "docs/lean_roadmap.md",
         "docs/theorem_modules.md",
+        "docs/trusted_boundary.md",
         "LICENSE"
       ],
       groups_for_extras: [Guides: ~r/docs\//],

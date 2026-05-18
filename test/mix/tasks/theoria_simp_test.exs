@@ -20,6 +20,31 @@ defmodule Mix.Tasks.Theoria.SimpTest do
     assert output =~ "nat_add.eq_zero"
   end
 
+  test "lists built-in examples" do
+    Mix.Task.clear()
+
+    output =
+      capture_io(fn ->
+        Simp.run(["--list"])
+      end)
+
+    assert output =~ "bool_not_true"
+    assert output =~ "nat_add_zero"
+  end
+
+  test "runs a selected example" do
+    Mix.Task.clear()
+
+    output =
+      capture_io(fn ->
+        Simp.run(["nat_add_zero", "--prove"])
+      end)
+
+    assert output =~ "nat_add_zero"
+    refute output =~ "bool_not_true"
+    assert output =~ "proof: checked simp.normalize"
+  end
+
   test "runs examples with checked simp artifacts" do
     Mix.Task.clear()
 

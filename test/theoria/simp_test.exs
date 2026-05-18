@@ -34,7 +34,8 @@ defmodule Theoria.SimpTest do
              steps: [
                %Step{
                  rule: %Identity{kind: :equation, owner: :nat_add, target: :zero},
-                 after: ^one
+                 after: ^one,
+                 path: []
                }
              ],
              stopped: :normal
@@ -77,7 +78,7 @@ defmodule Theoria.SimpTest do
     assert %Theoria.Equation.Realized{identity: %Identity{kind: :simp}} = result.realized
     assert result.proof == result.realized.proof
     assert :ok = Kernel.check(env, result.realized.proof, result.realized.type)
-    assert [%Step{proof: %Term.Refl{}}] = result.steps
+    assert [%Step{proof: %Term.Refl{}, path: []}] = result.steps
   end
 
   test "realizes and installs simp equality under a user theorem name" do

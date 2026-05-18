@@ -23,6 +23,8 @@ The equation and simp Mix tasks expose checked artifact paths:
 ```bash
 mix theoria.equations --realize nat_add
 mix theoria.simp --examples --prove
+mix theoria.simp --list
+mix theoria.simp nat_add_zero --prove
 ```
 
 These commands do not make rewrite/simp search trusted. They surface the kernel-checked artifact produced after untrusted planning.
@@ -47,6 +49,17 @@ Theoria.Rewrite.Database.from_env_all_equations(env, realize: true)
 ```
 
 The resulting `%Theoria.Rewrite.Rule{}` values carry the checked proof and `%Theoria.Equation.Realized{}` source artifact when realization succeeds. Rewrite search itself remains untrusted; these fields are proof inputs for checked downstream artifacts.
+
+## Rewrite-step paths
+
+Rewrite can now return structural step metadata with the rewritten path:
+
+```elixir
+Theoria.Rewrite.once_with_step(term, rule)
+Theoria.Rewrite.Database.once_with_step(database, term)
+```
+
+Paths such as `[:arg]` or `[:fun, :arg]` are the groundwork for future congruence lifting of local equation proofs into whole-term proofs.
 
 ## Equality chain groundwork
 

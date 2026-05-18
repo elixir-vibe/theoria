@@ -19,9 +19,9 @@ defmodule Theoria.Simp do
   def once(%Env{} = env, term, opts \\ []) do
     env
     |> database(opts)
-    |> Database.once(term)
+    |> Database.once_with_step(term)
     |> case do
-      {:ok, next, rule} -> {:ok, next, step(env, rule, term, next, opts)}
+      {:ok, rewrite_step, rule} -> {:ok, rewrite_step.after, step(env, rule, rewrite_step, opts)}
       :not_found -> :not_found
     end
   end
@@ -68,15 +68,15 @@ defmodule Theoria.Simp do
   end
 
   defp normalize_with_database(database, env, input, term, remaining, steps, opts) do
-    case Database.once(database, term) do
-      {:ok, next, rule} ->
+    case Database.once_with_step(database, term) do
+      {:ok, rewrite_step, rule} ->
         normalize_with_database(
           database,
           env,
           input,
-          next,
+          rewrite_step.after,
           remaining - 1,
-          [step(env, rule, term, next, opts) | steps],
+          [step(env, rule, rewrite_step, opts) | steps],
           opts
         )
 
@@ -119,12 +119,13 @@ defmodule Theoria.Simp do
     end)
   end
 
-  defp step(env, rule, before, after_term, opts) do
+  defp step(env, rule, rewrite_step, opts) do
     %Step{
       rule: rule.rewrite.name,
-      before: before,
-      after: after_term,
-      proof: step_proof(env, before, after_term, opts),
+      before: rewrite_step.before,
+      after: rewrite_step.after,
+      proof: rewrite_step.proof || step_proof(env, rewrite_step.before, rewrite_step.after, opts),
+      path: rewrite_step.path,
       source: rule.source
     }
   end

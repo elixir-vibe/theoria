@@ -17,20 +17,31 @@ defmodule Mix.Tasks.Theoria.Simp do
   def run(args) do
     Mix.Task.run("app.start")
 
-    case OptionParser.parse(args, strict: [examples: :boolean, prove: :boolean]) do
+    case OptionParser.parse(args, strict: [examples: :boolean, list: :boolean, prove: :boolean]) do
       {opts, [], []} ->
-        run_examples(opts)
+        if Keyword.get(opts, :list, false),
+          do: list_examples(),
+          else: run_examples(opts, examples())
+
+      {opts, names, []} ->
+        run_examples(opts, select_examples(names))
 
       {_opts, _args, invalid} ->
         Mix.raise("invalid option(s): #{format_invalid_options(invalid)}")
     end
   end
 
-  defp run_examples(opts) do
+  defp list_examples do
+    examples()
+    |> Keyword.keys()
+    |> Enum.each(&Mix.shell().info(to_string(&1)))
+  end
+
+  defp run_examples(opts, examples) do
     {:ok, env} = Prelude.env()
     Mix.shell().info("simplification examples:")
 
-    Enum.each(examples(), fn {name, term} ->
+    Enum.each(examples, fn {name, term} ->
       result = Simp.normalize(env, term, prove: Keyword.get(opts, :prove, false))
       Mix.shell().info("  #{name}: #{Pretty.term(term)} ↦ #{Pretty.term(result.term)}")
 
@@ -42,6 +53,17 @@ defmodule Mix.Tasks.Theoria.Simp do
         Mix.shell().info("    proof: checked #{Identity.format(result.realized.identity)}")
       end
     end)
+  end
+
+  defp select_examples(names) do
+    available = Map.new(examples())
+
+    Enum.map(names, fn name ->
+      key = String.to_atom(name)
+      {key, Map.fetch!(available, key)}
+    end)
+  rescue
+    KeyError -> Mix.raise("unknown simplification example")
   end
 
   defp examples do

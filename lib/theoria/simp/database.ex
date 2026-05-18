@@ -57,10 +57,19 @@ defmodule Theoria.Simp.Database do
 
   @doc "Applies the first matching simplifier rule."
   @spec once(t(), Term.t()) :: {:ok, Term.t(), Rule.t()} | :not_found
-  def once(%__MODULE__{rules: rules}, term) do
+  def once(%__MODULE__{} = database, term) do
+    case once_with_step(database, term) do
+      {:ok, step, rule} -> {:ok, step.after, rule}
+      :not_found -> :not_found
+    end
+  end
+
+  @doc "Applies the first matching simplifier rule and returns rewrite-step metadata."
+  @spec once_with_step(t(), Term.t()) :: {:ok, Theoria.Rewrite.Step.t(), Rule.t()} | :not_found
+  def once_with_step(%__MODULE__{rules: rules}, term) do
     Enum.find_value(rules, :not_found, fn rule ->
-      case Rewrite.once_rule(term, rule.rewrite) do
-        {:ok, term} -> {:ok, term, rule}
+      case Rewrite.once_with_step(term, rule.rewrite) do
+        {:ok, step} -> {:ok, step, rule}
         :not_found -> false
       end
     end)

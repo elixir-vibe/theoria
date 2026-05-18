@@ -30,6 +30,22 @@ defmodule Theoria.RewriteTest do
     assert Rewrite.once(Term.const(:two), equality) == :not_found
   end
 
+  test "returns rewrite-step paths" do
+    zero = Term.const(:zero)
+    one = Term.const(:one)
+    succ_one = Term.app(Term.const(:succ), one)
+    lemma = Lemma.new(:zero_to_one, zero, one)
+    rule = Rule.from_lemma(lemma, Term.const(:Nat))
+
+    assert {:ok, %Theoria.Rewrite.Step{path: [], after: ^one}} =
+             Rewrite.once_with_step(zero, rule)
+
+    term = Term.app(Term.const(:succ), zero)
+
+    assert {:ok, %Theoria.Rewrite.Step{path: [:arg], after: ^succ_one}} =
+             Rewrite.once_with_step(term, rule)
+  end
+
   test "database applies the first matching equation rule" do
     lemma = Lemma.new(:zero_to_one, Term.const(:zero), Term.const(:one))
     rule = Rule.from_lemma(lemma, Term.const(:Nat))

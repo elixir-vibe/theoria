@@ -246,6 +246,7 @@ Guides included with the package:
 - [`docs/design.md`](docs/design.md) — kernel and environment design notes
 - [`docs/inductives.md`](docs/inductives.md) — inductive specifications and recursor generation
 - [`docs/theorem_modules.md`](docs/theorem_modules.md) — theorem module workflow
+- [`docs/trusted_boundary.md`](docs/trusted_boundary.md) — what is trusted versus automation
 - [`docs/validation.md`](docs/validation.md) — native validation corpus
 - [`docs/lean_validation.md`](docs/lean_validation.md) — contributor-only Lean oracle validation
 - [`docs/equations.md`](docs/equations.md) — internal equation, matcher, rewrite, and simp groundwork

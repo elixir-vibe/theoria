@@ -4,6 +4,20 @@ defmodule Theoria.Equation.Recursor.Application do
   alias Theoria.Level
   alias Theoria.Term
 
+  @doc "Builds a recursor application from a recursor name and positional arguments."
+  @spec build(atom(), [Term.t()]) :: {:ok, Term.t()} | {:error, term()}
+  def build(:bool_rec, [motive, on_true, on_false, major]),
+    do: {:ok, bool_rec(motive, on_true, on_false, major)}
+
+  def build(:nat_rec, [motive, zero_case, succ_case, major]),
+    do: {:ok, nat_rec(motive, zero_case, succ_case, major)}
+
+  def build(:list_rec, [element_type, motive, nil_case, cons_case, major]),
+    do: {:ok, list_rec(element_type, motive, nil_case, cons_case, major)}
+
+  def build(recursor, arguments),
+    do: {:error, {:unsupported_recursor_application, recursor, length(arguments)}}
+
   @doc "Builds a Bool recursor application from the two constructor equations."
   @spec bool_rec(Term.t(), Term.t(), Term.t(), Term.t()) :: Term.t()
   def bool_rec(motive, on_true, on_false, major) do

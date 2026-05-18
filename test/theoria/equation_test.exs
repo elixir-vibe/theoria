@@ -360,12 +360,27 @@ defmodule Theoria.EquationTest do
     assert [_, %{binder_type: %Term.Forall{domain: %Term.Const{name: :Nat}}}] =
              nat_shape.alternatives
 
+    assert nat_shape.recursor_arguments == [
+             Term.bvar(3),
+             Term.bvar(1),
+             Term.bvar(0),
+             Term.bvar(2)
+           ]
+
     {:ok, list_info} = Info.fetch(env, :list_append)
     {:ok, list_descriptor} = MatcherDescriptor.from_env(env, list_info.schema, list_info.matcher)
     {:ok, list_shape} = MatcherType.shape_from_descriptor(list_descriptor)
 
     assert [_, %{binder_type: %Term.Forall{body: %Term.Forall{body: %Term.Forall{}}}}] =
              list_shape.alternatives
+
+    assert list_shape.recursor_arguments == [
+             Term.bvar(4),
+             Term.bvar(3),
+             Term.bvar(1),
+             Term.bvar(0),
+             Term.bvar(2)
+           ]
   end
 
   test "matcher type builds real Bool, Nat, and List matcher shapes" do

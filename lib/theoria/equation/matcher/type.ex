@@ -40,6 +40,7 @@ defmodule Theoria.Equation.Matcher.Type do
       :alternatives,
       :alternative_binders,
       :result,
+      :recursor_arguments,
       :body,
       :recursor
     ]
@@ -54,6 +55,7 @@ defmodule Theoria.Equation.Matcher.Type do
       :alternatives,
       :alternative_binders,
       :result,
+      :recursor_arguments,
       :body,
       :recursor
     ]
@@ -69,6 +71,7 @@ defmodule Theoria.Equation.Matcher.Type do
             alternatives: [Alternative.t()],
             alternative_binders: keyword(),
             result: Term.t(),
+            recursor_arguments: [Term.t()],
             body: Term.t(),
             recursor: atom()
           }
@@ -142,21 +145,31 @@ defmodule Theoria.Equation.Matcher.Type do
     alternatives = alternatives_from_descriptor(descriptor)
 
     with {:ok, plan} <- simple_shape_plan(descriptor) do
-      {:ok,
-       %Shape{
-         family: descriptor.family,
-         parameters: descriptor.parameters,
-         indexed?: descriptor.indexed?,
-         motive_name: :motive,
-         motive_type: Keyword.fetch!(plan, :motive_type),
-         discriminants: descriptor.discriminants,
-         discriminant_binders: Keyword.fetch!(plan, :discriminant_binders),
-         alternatives: alternatives,
-         alternative_binders: Enum.map(alternatives, &{&1.binder_name, &1.binder_type}),
-         result: Keyword.fetch!(plan, :result),
-         body: Keyword.fetch!(plan, :body),
-         recursor: descriptor.recursor
-       }}
+      shape = %Shape{
+        family: descriptor.family,
+        parameters: descriptor.parameters,
+        indexed?: descriptor.indexed?,
+        motive_name: :motive,
+        motive_type: Keyword.fetch!(plan, :motive_type),
+        discriminants: descriptor.discriminants,
+        discriminant_binders: Keyword.fetch!(plan, :discriminant_binders),
+        alternatives: alternatives,
+        alternative_binders: Enum.map(alternatives, &{&1.binder_name, &1.binder_type}),
+        result: Keyword.fetch!(plan, :result),
+        recursor_arguments: [],
+        body: Term.const(:unplanned_matcher_body),
+        recursor: descriptor.recursor
+      }
+
+      recursor_arguments = recursor_arguments(shape)
+
+      shape = %{
+        shape
+        | recursor_arguments: recursor_arguments,
+          body: body_from_shape(%{shape | recursor_arguments: recursor_arguments})
+      }
+
+      {:ok, shape}
     end
   end
 
@@ -187,8 +200,7 @@ defmodule Theoria.Equation.Matcher.Type do
      [
        motive_type: Term.sort(1),
        discriminant_binders: [a: Term.const(:Bool), b: Term.const(:Bool)],
-       result: Term.bvar(6),
-       body: bool_binary_body()
+       result: Term.bvar(6)
      ]}
   end
 
@@ -199,33 +211,18 @@ defmodule Theoria.Equation.Matcher.Type do
      [
        motive_type: Term.sort(1),
        discriminant_binders: [b: Term.const(:Bool)],
-       result: result,
-       body:
-         RecursorApplication.bool_rec(
-           result,
-           Term.bvar(1),
-           Term.bvar(0),
-           Term.bvar(2)
-         )
+       result: result
      ]}
   end
 
   defp simple_shape_plan(%MatcherDescriptor{family: :nat}) do
     result = Term.bvar(3)
-    on_zero = Term.bvar(1)
 
     {:ok,
      [
        motive_type: Term.sort(1),
        discriminant_binders: [n: Term.const(:Nat)],
-       result: result,
-       body:
-         RecursorApplication.nat_rec(
-           result,
-           on_zero,
-           Term.bvar(0),
-           Term.bvar(2)
-         )
+       result: result
      ]}
   end
 
@@ -236,15 +233,7 @@ defmodule Theoria.Equation.Matcher.Type do
      [
        motive_type: Term.sort(1),
        discriminant_binders: [xs: list_of(motive)],
-       result: Term.bvar(3),
-       body:
-         RecursorApplication.list_rec(
-           Term.bvar(4),
-           Term.bvar(3),
-           Term.bvar(1),
-           Term.bvar(0),
-           Term.bvar(2)
-         )
+       result: Term.bvar(3)
      ]}
   end
 
@@ -302,7 +291,75 @@ defmodule Theoria.Equation.Matcher.Type do
     |> forall_telescope(result)
   end
 
-  defp binders(%Shape{} = shape) do
+  defp recursor_arguments(%Shape{family: :bool, discriminants: [_, _]} = shape) do
+    [
+      binder_ref(shape, :motive),
+      binder_ref(shape, :a),
+      binder_ref(shape, :b),
+      binder_ref(shape, :on_true_true),
+      binder_ref(shape, :on_true_false),
+      binder_ref(shape, :on_false_true),
+      binder_ref(shape, :on_false_false)
+    ]
+  end
+
+  defp recursor_arguments(%Shape{family: :bool} = shape) do
+    [
+      binder_ref(shape, :motive),
+      binder_ref(shape, :on_true),
+      binder_ref(shape, :on_false),
+      binder_ref(shape, :b)
+    ]
+  end
+
+  defp recursor_arguments(%Shape{family: :nat} = shape) do
+    [
+      binder_ref(shape, :motive),
+      binder_ref(shape, :on_zero),
+      binder_ref(shape, :on_succ),
+      binder_ref(shape, :n)
+    ]
+  end
+
+  defp recursor_arguments(%Shape{family: :list} = shape) do
+    [
+      binder_ref(shape, :a),
+      binder_ref(shape, :motive),
+      binder_ref(shape, :on_nil),
+      binder_ref(shape, :on_cons),
+      binder_ref(shape, :xs)
+    ]
+  end
+
+  defp body_from_shape(%Shape{family: :bool, discriminants: [_, _]} = shape) do
+    bool_binary_body(shape)
+  end
+
+  defp body_from_shape(%Shape{} = shape) do
+    apply_recursor!(shape.recursor, shape.recursor_arguments)
+  end
+
+  defp apply_recursor!(recursor, arguments) do
+    case RecursorApplication.build(recursor, arguments) do
+      {:ok, term} -> term
+      {:error, reason} -> raise ArgumentError, "invalid recursor application: #{inspect(reason)}"
+    end
+  end
+
+  defp binder_ref(%Shape{} = shape, name) do
+    binders = shape_binders(shape)
+    index = Enum.find_index(binders, &(elem(&1, 0) == name))
+
+    if is_nil(index) do
+      raise ArgumentError, "unknown matcher binder #{inspect(name)}"
+    end
+
+    Term.bvar(length(binders) - index - 1)
+  end
+
+  defp binders(%Shape{} = shape), do: shape_binders(shape)
+
+  defp shape_binders(%Shape{} = shape) do
     shape.parameters ++
       [{shape.motive_name, shape.motive_type}] ++
       shape.discriminant_binders ++ shape.alternative_binders
@@ -320,25 +377,25 @@ defmodule Theoria.Equation.Matcher.Type do
     end)
   end
 
-  defp bool_binary_body do
-    motive = Term.bvar(6)
-    second_discriminant = Term.bvar(4)
+  defp bool_binary_body(%Shape{} = shape) do
+    motive = binder_ref(shape, :motive)
+    second_discriminant = binder_ref(shape, :b)
 
     RecursorApplication.bool_rec(
       motive,
       RecursorApplication.bool_rec(
         motive,
-        Term.bvar(3),
-        Term.bvar(2),
+        binder_ref(shape, :on_true_true),
+        binder_ref(shape, :on_true_false),
         second_discriminant
       ),
       RecursorApplication.bool_rec(
         motive,
-        Term.bvar(1),
-        Term.bvar(0),
+        binder_ref(shape, :on_false_true),
+        binder_ref(shape, :on_false_false),
         second_discriminant
       ),
-      Term.bvar(5)
+      binder_ref(shape, :a)
     )
   end
 

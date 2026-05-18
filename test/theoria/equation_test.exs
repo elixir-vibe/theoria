@@ -6,8 +6,10 @@ defmodule Theoria.EquationTest do
   alias Theoria.Equation.Case.Template, as: CaseTemplate
   alias Theoria.Equation.Matcher.Descriptor, as: MatcherDescriptor
   alias Theoria.Equation.Matcher.Eqns, as: MatcherEqns
+  alias Theoria.Equation.Matcher.Equation, as: MatcherEquation
   alias Theoria.Equation.Matcher.Info, as: MatcherInfo
   alias Theoria.Equation.Matcher.Spec, as: MatcherSpec
+  alias Theoria.Equation.Matcher.Statement, as: MatcherStatement
   alias Theoria.Equation.Matcher.Type, as: MatcherType
   alias Theoria.Equation.Recursor.Descriptor, as: RecursorDescriptor
   alias Theoria.Equation.Schema.Builder, as: SchemaBuilder
@@ -407,6 +409,34 @@ defmodule Theoria.EquationTest do
             ]} = TermApplication.collect(ih)
 
     assert ih_fun == Term.const(:vec_validation_match, [1])
+  end
+
+  test "indexed matcher statement planning reports unsupported constructors" do
+    shape = vec_matcher_shape!()
+    equation = MatcherEquation.indexed(:vec_validation_match, :vec_snoc, [])
+
+    assert MatcherStatement.indexed(shape, equation) ==
+             {:error, {:unknown_indexed_matcher_statement_constructor, :vec_snoc}}
+  end
+
+  test "indexed matcher statement planning reports unsupported known constructors" do
+    shape = %{vec_matcher_shape!() | family: :UnsupportedVec}
+    equation = MatcherEquation.indexed(:vec_validation_match, :vec_nil, [Term.const(:zero)])
+
+    assert MatcherStatement.indexed(shape, equation) ==
+             {:error, {:unsupported_indexed_matcher_statement, :UnsupportedVec, :vec_nil}}
+  end
+
+  test "indexed matcher statement planning short-circuits unsupported batches" do
+    shape = vec_matcher_shape!()
+
+    equations = [
+      MatcherEquation.indexed(:vec_validation_match, :vec_nil, [Term.const(:zero)]),
+      MatcherEquation.indexed(:vec_validation_match, :vec_snoc, [])
+    ]
+
+    assert MatcherStatement.indexed_all(shape, equations) ==
+             {:error, {:unknown_indexed_matcher_statement_constructor, :vec_snoc}}
   end
 
   test "explicit indexed matcher specs are kernel-admitted without prelude installation" do

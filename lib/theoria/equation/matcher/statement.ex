@@ -45,22 +45,32 @@ defmodule Theoria.Equation.Matcher.Statement do
   end
 
   @doc "Builds an indexed matcher equation theorem statement."
-  @spec indexed(term(), MatcherEquation.t()) :: Term.t()
+  @spec indexed(term(), MatcherEquation.t()) :: {:ok, Term.t()} | {:error, term()}
   def indexed(shape, %MatcherEquation{} = equation) do
     case find_alternative(shape, equation.constructor) do
-      nil -> equation.equality_type
+      nil -> {:error, {:unknown_indexed_matcher_statement_constructor, equation.constructor}}
       alternative -> indexed_for_alternative(shape, equation, alternative)
     end
   end
 
   @doc "Builds indexed matcher equation statements for every equation."
-  @spec indexed_all(term(), [MatcherEquation.t()]) :: [MatcherEquation.t()]
+  @spec indexed_all(term(), [MatcherEquation.t()]) ::
+          {:ok, [MatcherEquation.t()]} | {:error, term()}
   def indexed_all(shape, equations) do
-    Enum.map(equations, &%{&1 | statement_type: indexed(shape, &1)})
+    Enum.reduce_while(equations, {:ok, []}, fn equation, {:ok, statements} ->
+      case indexed(shape, equation) do
+        {:ok, statement} -> {:cont, {:ok, [%{equation | statement_type: statement} | statements]}}
+        {:error, _reason} = error -> {:halt, error}
+      end
+    end)
+    |> case do
+      {:ok, statements} -> {:ok, Enum.reverse(statements)}
+      {:error, _reason} = error -> error
+    end
   end
 
   defp indexed_for_alternative(
-         shape,
+         %{family: :Vec} = shape,
          %MatcherEquation{constructor: :vec_nil} = equation,
          alternative
        ) do
@@ -72,11 +82,11 @@ defmodule Theoria.Equation.Matcher.Statement do
     lhs = matcher_application(shape, equation.matcher, frame, [index, major])
     rhs = Frame.ref(frame, alternative.binder_name)
 
-    Frame.forall(frame, Term.eq(result_type, lhs, rhs))
+    {:ok, Frame.forall(frame, Term.eq(result_type, lhs, rhs))}
   end
 
   defp indexed_for_alternative(
-         shape,
+         %{family: :Vec} = shape,
          %MatcherEquation{constructor: :vec_cons} = equation,
          alternative
        ) do
@@ -90,11 +100,11 @@ defmodule Theoria.Equation.Matcher.Statement do
     lhs = matcher_application(shape, equation.matcher, frame, [index, major])
     rhs = alternative_application(shape, equation.matcher, frame, alternative)
 
-    Frame.forall(frame, Term.eq(result_type, lhs, rhs))
+    {:ok, Frame.forall(frame, Term.eq(result_type, lhs, rhs))}
   end
 
-  defp indexed_for_alternative(_shape, %MatcherEquation{} = equation, _alternative),
-    do: equation.equality_type
+  defp indexed_for_alternative(shape, %MatcherEquation{} = equation, _alternative),
+    do: {:error, {:unsupported_indexed_matcher_statement, shape.family, equation.constructor}}
 
   defp base_frame(shape), do: Frame.new(statement_binders(shape))
 
@@ -121,9 +131,6 @@ defmodule Theoria.Equation.Matcher.Statement do
 
     Enum.reverse(binders)
   end
-
-  defp constructor_field_binders(_shape, alternative, _frame),
-    do: Enum.take(case_binders(alternative), length(alternative.fields))
 
   defp vec_field_type(%{position: 0}, frame), do: Frame.ref(frame, :a)
   defp vec_field_type(%{position: 1}, _frame), do: Term.const(:Nat)

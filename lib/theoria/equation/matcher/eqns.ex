@@ -71,7 +71,7 @@ defmodule Theoria.Equation.Matcher.Eqns do
              {:error, {:unknown_indexed_matcher_equation, equation_name}},
          {:ok, descriptor} <- MatcherDescriptor.from_env(env, info.schema, info.matcher),
          {:ok, shape} <- MatcherType.shape_from_descriptor(descriptor) do
-      {:ok, MatcherStatement.indexed(shape, equation)}
+      MatcherStatement.indexed(shape, equation)
     else
       {:error, _reason} = error -> error
     end
@@ -83,7 +83,7 @@ defmodule Theoria.Equation.Matcher.Eqns do
     with {:ok, equations} <- indexed_generated(info, env),
          {:ok, descriptor} <- MatcherDescriptor.from_env(env, info.schema, info.matcher),
          {:ok, shape} <- MatcherType.shape_from_descriptor(descriptor) do
-      {:ok, MatcherStatement.indexed_all(shape, equations)}
+      MatcherStatement.indexed_all(shape, equations)
     end
   end
 

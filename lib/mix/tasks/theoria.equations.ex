@@ -31,6 +31,10 @@ defmodule Mix.Tasks.Theoria.Equations do
       equations = select_equations(env, names)
       print_equations(env, equations)
 
+      if Keyword.get(opts, :realize, false) do
+        realize_equations(env, equations)
+      end
+
       if Keyword.get(opts, :install, false) do
         install_equations(env, equations)
       end
@@ -44,7 +48,7 @@ defmodule Mix.Tasks.Theoria.Equations do
   end
 
   defp parse_args(args) do
-    case OptionParser.parse(args, strict: [install: :boolean]) do
+    case OptionParser.parse(args, strict: [install: :boolean, realize: :boolean]) do
       {opts, names, []} ->
         {:ok, opts, Enum.map(names, &String.to_atom/1)}
 
@@ -195,6 +199,18 @@ defmodule Mix.Tasks.Theoria.Equations do
 
   defp format_equation_name(%{identity: %Identity{} = identity}), do: Identity.format(identity)
   defp format_equation_name(%{name: name}), do: Identity.format_declaration(name)
+
+  defp realize_equations(env, equations) do
+    equations
+    |> Enum.reduce(0, fn info, count ->
+      case Eqns.realize(env, info.name) do
+        {:ok, artifacts} when is_list(artifacts) -> count + length(artifacts)
+        {:ok, _artifact} -> count + 1
+        {:error, reason} -> Mix.raise("failed to realize #{info.name}: #{inspect(reason)}")
+      end
+    end)
+    |> then(&Mix.shell().info("\nRealized #{&1} equation artifact(s)."))
+  end
 
   defp install_equations(env, equations) do
     equations

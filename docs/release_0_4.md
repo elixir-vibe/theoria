@@ -16,6 +16,17 @@ result.realized
 
 The artifact is a `%Theoria.Equation.Realized{}` with an identity such as `Theoria.Equation.Identity.simp()`. It is checked by the native kernel and remains separate from theorem installation.
 
+## CLI artifact checks
+
+The equation and simp Mix tasks expose checked artifact paths:
+
+```bash
+mix theoria.equations --realize nat_add
+mix theoria.simp --examples --prove
+```
+
+These commands do not make rewrite/simp search trusted. They surface the kernel-checked artifact produced after untrusted planning.
+
 ## Theorem installation remains explicit
 
 Use a user-provided declaration name when installing a simplification result:

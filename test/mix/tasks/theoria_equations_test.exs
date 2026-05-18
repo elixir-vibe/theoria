@@ -60,6 +60,18 @@ defmodule Mix.Tasks.Theoria.EquationsTest do
     assert output =~ "false_false fields=0"
   end
 
+  test "realizes generated equations on request" do
+    Mix.Task.clear()
+
+    output =
+      capture_io(fn ->
+        Equations.run(["--realize", "nat_add"])
+      end)
+
+    assert output =~ "nat_add.eq_succ"
+    assert output =~ "Realized 2 equation artifact(s)."
+  end
+
   test "installs generated equations on request" do
     Mix.Task.clear()
 

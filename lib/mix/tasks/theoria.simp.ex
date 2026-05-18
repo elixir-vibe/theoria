@@ -17,7 +17,7 @@ defmodule Mix.Tasks.Theoria.Simp do
   def run(args) do
     Mix.Task.run("app.start")
 
-    case OptionParser.parse(args, strict: [examples: :boolean]) do
+    case OptionParser.parse(args, strict: [examples: :boolean, prove: :boolean]) do
       {opts, [], []} ->
         run_examples(opts)
 
@@ -26,17 +26,21 @@ defmodule Mix.Tasks.Theoria.Simp do
     end
   end
 
-  defp run_examples(_opts) do
+  defp run_examples(opts) do
     {:ok, env} = Prelude.env()
     Mix.shell().info("simplification examples:")
 
     Enum.each(examples(), fn {name, term} ->
-      result = Simp.normalize(env, term)
+      result = Simp.normalize(env, term, prove: Keyword.get(opts, :prove, false))
       Mix.shell().info("  #{name}: #{Pretty.term(term)} ↦ #{Pretty.term(result.term)}")
 
       Mix.shell().info(
         "    steps: #{Enum.map_join(result.steps, ", ", &Identity.format_declaration(&1.rule))}"
       )
+
+      if result.realized do
+        Mix.shell().info("    proof: checked #{Identity.format(result.realized.identity)}")
+      end
     end)
   end
 

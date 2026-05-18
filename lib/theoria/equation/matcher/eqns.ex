@@ -5,6 +5,7 @@ defmodule Theoria.Equation.Matcher.Eqns do
   alias Theoria.Env.Matcher, as: EnvMatcher
   alias Theoria.Equation.Info
   alias Theoria.Equation.Lemma
+  alias Theoria.Equation.Matcher.Descriptor, as: MatcherDescriptor
   alias Theoria.Equation.Matcher.Equation, as: MatcherEquation
 
   @doc "Returns generated matcher equation theorem names for a matcher."
@@ -38,6 +39,23 @@ defmodule Theoria.Equation.Matcher.Eqns do
       value: info.value,
       info: info.matcher
     })
+  end
+
+  @doc "Returns planned indexed matcher equation metadata for an indexed matcher info package."
+  @spec indexed_generated(Info.t(), Env.t()) :: {:ok, [MatcherEquation.t()]} | {:error, term()}
+  def indexed_generated(%Info{matcher: nil}, _env), do: {:ok, []}
+
+  def indexed_generated(%Info{} = info, %Env{} = env) do
+    with {:ok, descriptor} <- MatcherDescriptor.from_env(env, info.schema, info.matcher),
+         true <-
+           descriptor.indexed? || {:error, {:not_indexed_matcher_equations, info.matcher.name}} do
+      {:ok,
+       Enum.map(descriptor.alternatives, fn alternative ->
+         MatcherEquation.indexed(info.matcher.name, alternative.name, alternative.index_patterns)
+       end)}
+    else
+      {:error, _reason} = error -> error
+    end
   end
 
   @doc "Returns all generated matcher equation metadata in declaration order."

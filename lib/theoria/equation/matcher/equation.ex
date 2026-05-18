@@ -13,7 +13,9 @@ defmodule Theoria.Equation.Matcher.Equation do
     :right,
     :equality_type,
     binders: [],
-    source: nil
+    source: nil,
+    indexed?: false,
+    index_patterns: []
   ]
 
   @type t :: %__MODULE__{
@@ -24,7 +26,9 @@ defmodule Theoria.Equation.Matcher.Equation do
           right: Term.t(),
           equality_type: Term.t(),
           binders: [Lemma.binder()],
-          source: Lemma.t() | nil
+          source: Lemma.t() | nil,
+          indexed?: boolean(),
+          index_patterns: [Term.t()]
         }
 
   @doc "Builds matcher-equation metadata from an ordinary equation lemma."
@@ -39,6 +43,21 @@ defmodule Theoria.Equation.Matcher.Equation do
       equality_type: lemma.equality_type,
       binders: lemma.binders,
       source: lemma
+    }
+  end
+
+  @doc "Builds indexed matcher-equation metadata from a matcher alternative."
+  @spec indexed(atom(), atom(), [Term.t()]) :: t()
+  def indexed(matcher, constructor, index_patterns) when is_atom(matcher) do
+    %__MODULE__{
+      matcher: matcher,
+      name: :"#{matcher}.eq_#{suffix_name(constructor)}",
+      constructor: constructor,
+      left: Term.const(matcher),
+      right: Term.const(constructor),
+      equality_type: Term.const(:unsupported_indexed_matcher_equation),
+      indexed?: true,
+      index_patterns: index_patterns
     }
   end
 

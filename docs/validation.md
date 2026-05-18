@@ -35,7 +35,7 @@ mix theoria.validate --axioms
 | Inductive specs | `%Theoria.Validation.InductiveCheck{}` | `Theoria.Validation.Checkable` / `Theoria.Inductive.check_spec/2` and `Theoria.Inductive.verify_env/2` |
 | Explicit indexed matcher spec | Internal Vec matcher validation | `Theoria.Equation.Matcher.Spec.indexed_from_info/2`, `Theoria.Kernel.add_matcher/2`, and `Theoria.Kernel.validate_env/1` |
 
-The default corpus covers Logic, Equality, Bool, Nat, List, and Vec theorem modules, built-in reduction checks, deterministic small normalized Bool/Nat/List/Vec terms, the built-in inductive specs, equation metadata, generated equation theorem realization, matcher equation realization, and one explicit indexed Vec matcher spec. The indexed matcher validation constructs and admits the matcher inside validation only; it is not installed by `Prelude.env/0` and does not yet generate matcher equations.
+The default corpus covers Logic, Equality, Bool, Nat, List, and Vec theorem modules, built-in reduction checks, deterministic small normalized Bool/Nat/List/Vec terms, the built-in inductive specs, equation metadata, generated equation theorem realization, matcher equation realization, one explicit indexed Vec matcher spec, and indexed matcher equation metadata planning. The indexed matcher validation constructs and admits the matcher inside validation only; it is not installed by `Prelude.env/0`, and indexed matcher equations are metadata-only until theorem realization is implemented.
 
 ## Defeq checks
 

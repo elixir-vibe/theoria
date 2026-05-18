@@ -345,6 +345,22 @@ defmodule Theoria.EquationTest do
              {:error, {:not_indexed_matcher_value, :nat}}
   end
 
+  test "indexed matcher equation metadata is planned but not realized" do
+    {:ok, env} = Prelude.env()
+    info = vec_matcher_info!(:vec_validation_source, :vec_validation_match)
+
+    assert {:ok, equations} = MatcherEqns.indexed_generated(info, env)
+
+    assert Enum.map(equations, & &1.name) == [
+             :"vec_validation_match.eq_vec_nil",
+             :"vec_validation_match.eq_vec_cons"
+           ]
+
+    assert Enum.map(equations, & &1.constructor) == [:vec_nil, :vec_cons]
+    assert Enum.all?(equations, & &1.indexed?)
+    assert [[%Term.Const{name: :zero}], [%Term.App{}]] = Enum.map(equations, & &1.index_patterns)
+  end
+
   test "explicit indexed matcher specs are kernel-admitted without prelude installation" do
     {:ok, env} = Prelude.env()
     info = vec_matcher_info!(:vec_experimental_source, :vec_experimental_match)

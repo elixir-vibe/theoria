@@ -111,7 +111,7 @@ defmodule Mix.Tasks.Theoria.Equations do
 
   defp print_matcher(env, %Info{} = info) do
     Mix.shell().info("    matcher: #{info.matcher.name} #{matcher_details(env, info)}")
-    print_descriptor(info)
+    print_descriptor(env, info)
 
     if info.matcher.discriminants != [] do
       Mix.shell().info("    discriminants:")
@@ -135,13 +135,18 @@ defmodule Mix.Tasks.Theoria.Equations do
     end)
   end
 
-  defp print_descriptor(%Info{schema: nil}), do: :ok
+  defp print_descriptor(_env, %Info{schema: nil}), do: :ok
 
-  defp print_descriptor(%Info{} = info) do
-    case MatcherDescriptor.from_schema(info.schema, info.matcher) do
+  defp print_descriptor(env, %Info{} = info) do
+    case MatcherDescriptor.from_env(env, info.schema, info.matcher) do
       {:ok, descriptor} ->
+        indexed =
+          if descriptor.indexed?,
+            do: " indexed=true indices=#{length(descriptor.indices)}",
+            else: ""
+
         Mix.shell().info(
-          "    descriptor: family=#{descriptor.family} discrs=#{length(descriptor.discriminants)} alts=#{length(descriptor.alternatives)} recursor=#{descriptor.recursor}"
+          "    descriptor: family=#{descriptor.family}#{indexed} discrs=#{length(descriptor.discriminants)} alts=#{length(descriptor.alternatives)} recursor=#{descriptor.recursor}"
         )
 
       {:error, _reason} ->

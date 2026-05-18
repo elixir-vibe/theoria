@@ -13,23 +13,48 @@ defmodule Theoria.Equation.Matcher.Descriptor do
     alias Theoria.Term
 
     @enforce_keys [:name, :pattern, :fields, :result]
-    defstruct [:name, :pattern, :fields, :result, recursive_hypotheses: []]
+    defstruct [
+      :name,
+      :pattern,
+      :fields,
+      :result,
+      recursive_fields: [],
+      recursive_hypotheses: [],
+      index_patterns: []
+    ]
+
+    @type field :: {atom(), Term.t()} | Theoria.Equation.Recursor.Descriptor.Rule.Field.t()
 
     @type t :: %__MODULE__{
             name: atom() | boolean(),
             pattern: [atom() | boolean()],
-            fields: [{atom(), Term.t()}],
+            fields: [field()],
+            recursive_fields: [field()],
             recursive_hypotheses: [{atom(), Term.t()}],
+            index_patterns: [Term.t()],
             result: Term.t()
           }
   end
 
   @enforce_keys [:family, :parameters, :discriminants, :alternatives, :result, :recursor]
-  defstruct [:family, :parameters, :discriminants, :alternatives, :result, :recursor]
+  defstruct [
+    :family,
+    :parameters,
+    :discriminants,
+    :alternatives,
+    :result,
+    :recursor,
+    indexed?: false,
+    indices: [],
+    recursive?: false
+  ]
 
   @type t :: %__MODULE__{
           family: atom(),
           parameters: [{atom(), Term.t()}],
+          indices: [{atom(), Term.t()}],
+          indexed?: boolean(),
+          recursive?: boolean(),
           discriminants: [MatcherInfo.Discriminant.t()],
           alternatives: [Alternative.t()],
           result: Term.t(),
@@ -48,8 +73,15 @@ defmodule Theoria.Equation.Matcher.Descriptor do
           {:ok, t()} | {:error, term()}
   def from_env(%Env{} = env, %Schema{} = schema, %MatcherInfo{} = info) do
     with {:ok, recursor} <- RecursorDescriptor.from_schema(env, schema) do
-      build(schema, info, recursor)
+      from_recursor(schema, info, recursor)
     end
+  end
+
+  @doc "Builds a matcher descriptor from schema, matcher metadata, and recursor shape metadata."
+  @spec from_recursor(Schema.t(), MatcherInfo.t(), RecursorDescriptor.t()) ::
+          {:ok, t()} | {:error, term()}
+  def from_recursor(%Schema{} = schema, %MatcherInfo{} = info, %RecursorDescriptor{} = recursor) do
+    build(schema, info, recursor)
   end
 
   @doc "Validates descriptor consistency against matcher metadata."
@@ -65,8 +97,14 @@ defmodule Theoria.Equation.Matcher.Descriptor do
       duplicate_alternative?(descriptor.alternatives) ->
         {:error, :duplicate_alternative}
 
-      descriptor.recursor not in [:bool_rec, :nat_rec, :list_rec] ->
+      descriptor.recursor not in [:bool_rec, :nat_rec, :list_rec, :vec_ind] ->
         {:error, {:unsupported_recursor, descriptor.recursor}}
+
+      invalid_indexed_alternative?(descriptor) ->
+        {:error, {:index_pattern_count_mismatch, length(descriptor.indices)}}
+
+      invalid_recursive_fields?(descriptor) ->
+        {:error, :invalid_recursive_fields}
 
       true ->
         :ok
@@ -78,11 +116,31 @@ defmodule Theoria.Equation.Matcher.Descriptor do
     length(names) != MapSet.size(MapSet.new(names))
   end
 
+  defp invalid_indexed_alternative?(%__MODULE__{indexed?: false}), do: false
+
+  defp invalid_indexed_alternative?(%__MODULE__{} = descriptor) do
+    Enum.any?(descriptor.alternatives, &(length(&1.index_patterns) != length(descriptor.indices)))
+  end
+
+  defp invalid_recursive_fields?(%__MODULE__{} = descriptor) do
+    Enum.any?(descriptor.alternatives, fn alternative ->
+      fields = MapSet.new(Enum.map(alternative.fields, &field_name/1))
+      recursive_fields = MapSet.new(Enum.map(alternative.recursive_fields, &field_name/1))
+      not MapSet.subset?(recursive_fields, fields)
+    end)
+  end
+
+  defp field_name({name, _type}), do: name
+  defp field_name(%{name: name}), do: name
+
   defp build(%Schema{} = schema, %MatcherInfo{} = info, recursor_descriptor) do
     with :ok <- validate_recursor_shape(schema.family, info, recursor_descriptor) do
       descriptor = %__MODULE__{
         family: schema.family,
         parameters: schema.parameter_binders,
+        indices: indices(recursor_descriptor),
+        indexed?: indexed?(recursor_descriptor),
+        recursive?: recursive?(recursor_descriptor),
         discriminants: info.discriminants,
         alternatives: alternatives(schema.family, info, recursor_descriptor),
         result: result(schema.family),
@@ -142,7 +200,41 @@ defmodule Theoria.Equation.Matcher.Descriptor do
     end)
   end
 
+  defp alternatives(:Vec, %MatcherInfo{} = info, %RecursorDescriptor{} = recursor_descriptor) do
+    rules = rules_by_constructor(recursor_descriptor)
+
+    Enum.map(info.alternatives, fn alternative ->
+      rule = Map.fetch!(rules, alternative.constructor)
+
+      %Alternative{
+        name: alternative.constructor,
+        pattern: alternative.pattern || [alternative.constructor],
+        fields: rule.fields,
+        recursive_fields: rule.recursive_fields,
+        recursive_hypotheses: recursive_hypotheses(rule),
+        index_patterns: rule.index_patterns,
+        result: Term.bvar(0)
+      }
+    end)
+  end
+
   defp result(_family), do: Term.bvar(0)
+
+  defp indices(%RecursorDescriptor{} = descriptor), do: descriptor.indices
+  defp indices(nil), do: []
+
+  defp indexed?(%RecursorDescriptor{} = descriptor), do: descriptor.indexed?
+  defp indexed?(nil), do: false
+
+  defp recursive?(%RecursorDescriptor{} = descriptor) do
+    Enum.any?(descriptor.rules, &(&1.recursive_fields != []))
+  end
+
+  defp recursive?(nil), do: false
+
+  defp recursive_hypotheses(%RecursorDescriptor.Rule{} = rule) do
+    Enum.map(rule.recursive_fields, &{String.to_atom("#{&1.name}_ih"), Term.bvar(0)})
+  end
 
   defp validate_recursor_shape(_family, _info, nil), do: :ok
 
@@ -181,6 +273,9 @@ defmodule Theoria.Equation.Matcher.Descriptor do
 
   defp validate_family_field_counts(:list, rules),
     do: validate_field_counts(rules, list_nil: 0, list_cons: 2)
+
+  defp validate_family_field_counts(:Vec, rules),
+    do: validate_field_counts(rules, vec_nil: 0, vec_cons: 3)
 
   defp validate_family_field_counts(family, _rules), do: {:error, {:unsupported_family, family}}
 

@@ -209,10 +209,24 @@ defmodule Theoria.EquationTest do
              cons_rule.recursive_fields
 
     matcher =
-      MatcherInfo.new(:vec_match, 0, 1, [%Alternative{constructor: :vec_nil, num_fields: 0}])
+      MatcherInfo.new(:vec_match, 1, 1, [
+        %Alternative{constructor: :vec_nil, num_fields: 0},
+        %Alternative{constructor: :vec_cons, num_fields: 3}
+      ])
 
-    assert MatcherDescriptor.from_env(env, vec_schema, matcher) ==
-             {:error, {:unsupported_family, :Vec}}
+    assert {:ok, matcher_descriptor} = MatcherDescriptor.from_env(env, vec_schema, matcher)
+    assert matcher_descriptor.family == :Vec
+    assert matcher_descriptor.indexed?
+    assert matcher_descriptor.recursive?
+    assert Enum.map(matcher_descriptor.alternatives, & &1.name) == [:vec_nil, :vec_cons]
+
+    vec_cons = List.last(matcher_descriptor.alternatives)
+    assert Enum.map(vec_cons.fields, & &1.name) == [:field0, :field1, :field2]
+    assert Enum.map(vec_cons.recursive_fields, & &1.name) == [:field2]
+    assert [%Term.App{}] = vec_cons.index_patterns
+
+    assert MatcherType.from_descriptor(matcher_descriptor) ==
+             {:error, {:unsupported_matcher_type, :Vec}}
   end
 
   test "matcher descriptor validation rejects corrupted shapes" do

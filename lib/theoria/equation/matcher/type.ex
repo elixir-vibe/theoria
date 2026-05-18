@@ -440,15 +440,20 @@ defmodule Theoria.Equation.Matcher.Type do
 
   defp indexed_shape_plan(%MatcherDescriptor{family: :Vec}) do
     index_type = Term.const(:Nat)
-    index = Term.bvar(0)
-    parameter = Term.bvar(2)
-    vec_at_index = Term.const(:Vec) |> Term.app(parameter) |> Term.app(index)
+    motive_index = Term.bvar(0)
+    motive_parameter = Term.bvar(1)
+    motive_vec = Term.const(:Vec, [1]) |> Term.app(motive_parameter) |> Term.app(motive_index)
+    discriminant_index = Term.bvar(0)
+    discriminant_parameter = Term.bvar(2)
+
+    discriminant_vec =
+      Term.const(:Vec, [1]) |> Term.app(discriminant_parameter) |> Term.app(discriminant_index)
 
     {:ok,
      [
-       motive_type: Term.sort(1),
-       motive_binders: [n: index_type, xs: vec_at_index],
-       discriminant_binders: [xs: vec_at_index],
+       motive_type: Term.forall(:n, index_type, Term.forall(:_, motive_vec, Term.sort(1))),
+       motive_binders: [n: index_type, xs: discriminant_vec],
+       discriminant_binders: [xs: discriminant_vec],
        result: Term.const(:unsupported_indexed_matcher_result)
      ]}
   end
@@ -542,9 +547,17 @@ defmodule Theoria.Equation.Matcher.Type do
 
   defp plan_indexed_alternatives(%Shape{indexed?: true} = shape) do
     alternatives =
-      Enum.map(shape.alternatives, fn alternative ->
-        motive_arguments = alternative.index_patterns ++ [constructor_application(alternative)]
-        case_result = apply_motive(binder_ref(shape, shape.motive_name), motive_arguments)
+      shape.alternatives
+      |> Enum.with_index()
+      |> Enum.map(fn {alternative, position} ->
+        previous_binders = indexed_binders_before_alternative(shape, position)
+        fields = Enum.map(alternative.fields, &{:_, &1.type})
+        motive = binder_ref_in(previous_binders ++ fields, shape.motive_name)
+
+        motive_arguments =
+          alternative_motive_arguments(shape, alternative, previous_binders, fields)
+
+        case_result = apply_motive(motive, motive_arguments)
 
         %{
           alternative
@@ -559,6 +572,52 @@ defmodule Theoria.Equation.Matcher.Type do
       | alternatives: alternatives,
         alternative_binders: Enum.map(alternatives, &{&1.binder_name, &1.binder_type})
     }
+  end
+
+  defp indexed_binders_before_alternative(%Shape{} = shape, position) do
+    shape.parameters ++
+      [{shape.motive_name, shape.motive_type}] ++
+      shape.index_binders ++
+      shape.discriminant_binders ++
+      (shape.alternatives
+       |> Enum.take(position)
+       |> Enum.map(&{&1.binder_name, &1.binder_type}))
+  end
+
+  defp alternative_motive_arguments(
+         %Shape{family: :Vec},
+         %Alternative{constructor: :vec_nil},
+         binders,
+         fields
+       ) do
+    [
+      Term.const(:zero),
+      Term.const(:vec_nil, [1]) |> Term.app(binder_ref_in(binders ++ fields, :a))
+    ]
+  end
+
+  defp alternative_motive_arguments(
+         %Shape{family: :Vec},
+         %Alternative{constructor: :vec_cons} = alternative,
+         binders,
+         fields
+       ) do
+    alternative.index_patterns ++ [constructor_application(alternative, binders, fields)]
+  end
+
+  defp alternative_motive_arguments(_shape, alternative, _binders, _fields) do
+    alternative.index_patterns ++ [constructor_application(alternative)]
+  end
+
+  defp constructor_application(%Alternative{} = alternative, binders, fields) do
+    field_count = length(fields)
+    parameter = Term.shift(binder_ref_in(binders, :a), field_count)
+    field_arguments = Enum.map(alternative.fields, &Term.bvar(field_count - &1.position - 1))
+
+    [parameter | field_arguments]
+    |> Enum.reduce(Term.const(alternative.constructor, [1]), fn argument, term ->
+      Term.app(term, argument)
+    end)
   end
 
   defp constructor_application(%Alternative{} = alternative) do
@@ -645,8 +704,9 @@ defmodule Theoria.Equation.Matcher.Type do
     end
   end
 
-  defp binder_ref(%Shape{} = shape, name) do
-    binders = shape_binders(shape)
+  defp binder_ref(%Shape{} = shape, name), do: binder_ref_in(shape_binders(shape), name)
+
+  defp binder_ref_in(binders, name) do
     index = Enum.find_index(binders, &(elem(&1, 0) == name))
 
     if is_nil(index) do

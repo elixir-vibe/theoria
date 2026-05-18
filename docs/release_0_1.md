@@ -1,6 +1,6 @@
 # Theoria 0.1 release boundary
 
-Theoria 0.1 is an experimental first release of the Elixir-native proof/spec kernel. The goal is to publish a small, auditable foundation for checked proof terms and validation workflows, not a complete Lean-compatible proof assistant.
+Theoria 0.1 is the experimental first release line of the Elixir-native proof/spec kernel. The goal is to publish and maintain a small, auditable foundation for checked proof terms and validation workflows, not a complete Lean-compatible proof assistant.
 
 ## Included in 0.1
 
@@ -70,7 +70,7 @@ Experimental modules are documented for auditability, but their APIs may change 
 
 ## Release checklist
 
-Before publishing 0.1, run:
+Before publishing any 0.1.x patch release, run:
 
 ```bash
 mix deps.unlock --check-unused

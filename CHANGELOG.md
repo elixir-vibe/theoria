@@ -1,6 +1,16 @@
 # Changelog
 
-## 0.1.0 - unreleased
+## 0.1.1 - unreleased
+
+Patch release after the initial Hex publication.
+
+- Hardened equation/matcher metadata validation and registry checks.
+- Added in-memory equation registry snapshots and centralized generated-theorem realization.
+- Derived matcher descriptors from checked recursor metadata for the supported Bool/Nat/List fragment.
+- Added architecture regression tests for equation/matcher layering.
+- Added release-boundary documentation and clearer experimental/internal API labels.
+
+## 0.1.0
 
 Initial experimental release.
 

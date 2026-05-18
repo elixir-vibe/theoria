@@ -44,7 +44,7 @@ defmodule Theoria.Rewrite.Database do
     env
     |> MatcherEqns.all()
     |> Enum.reject(& &1.indexed?)
-    |> Enum.map(&(&1 |> MatcherEquation.to_lemma() |> Rule.from_lemma(opts)))
+    |> Enum.map(&matcher_rule(env, &1, opts))
     |> new()
   end
 
@@ -78,11 +78,29 @@ defmodule Theoria.Rewrite.Database do
   defp indexed_matcher_rules(env, matcher, opts) do
     with {:ok, info} <- indexed_matcher_info(matcher),
          {:ok, lemmas} <- MatcherEqns.indexed_lemmas(info, env) do
-      Enum.map(lemmas, &Rule.from_lemma(&1, opts))
+      Enum.map(lemmas, &indexed_rule(env, &1, opts))
     else
       {:error, _reason} -> []
     end
   end
+
+  defp matcher_rule(env, equation, opts) do
+    lemma = MatcherEquation.to_lemma(equation)
+
+    if Keyword.get(opts, :realize, false) do
+      case MatcherEqns.realize(env, equation.identity) do
+        {:ok, realized} ->
+          Rule.from_lemma(lemma, Keyword.merge(opts, proof: realized.proof, realized: realized))
+
+        {:error, _reason} ->
+          Rule.from_lemma(lemma, opts)
+      end
+    else
+      Rule.from_lemma(lemma, opts)
+    end
+  end
+
+  defp indexed_rule(env, lemma, opts), do: Rule.from_realizing_lemma(env, lemma, opts)
 
   defp indexed_matcher_info(%{schema: nil}), do: {:error, :missing_indexed_matcher_schema}
 

@@ -1,6 +1,7 @@
 defmodule Theoria.Rewrite.Rule do
   @moduledoc "Experimental/internal API for 0.2; subject to change before 0.3. A theorem-like rewrite rule over a core equality term."
 
+  alias Theoria.Env
   alias Theoria.Equation.Identity
   alias Theoria.Equation.Lemma
   alias Theoria.Equation.Realized
@@ -49,6 +50,22 @@ defmodule Theoria.Rewrite.Rule do
     new(identity, equality, proof: realized.proof, realized: realized)
   end
 
+  @doc "Builds a rewrite rule from equation-lemma metadata, realizing it first when requested."
+  @spec from_realizing_lemma(Env.t(), Lemma.t(), keyword()) :: t()
+  def from_realizing_lemma(%Env{} = env, %Lemma{} = lemma, opts \\ []) do
+    if Keyword.get(opts, :realize, false) do
+      case Lemma.realize(env, lemma, opts) do
+        {:ok, realized} ->
+          from_lemma(lemma, Keyword.merge(opts, proof: realized.proof, realized: realized))
+
+        {:error, _reason} ->
+          from_lemma(lemma, opts)
+      end
+    else
+      from_lemma(lemma, opts)
+    end
+  end
+
   @doc "Builds a rewrite rule from equation-lemma metadata."
   @spec from_lemma(Lemma.t(), Term.t() | keyword(), keyword()) :: t()
   def from_lemma(%Lemma{} = lemma, equality_or_opts \\ [], opts \\ []) do
@@ -56,7 +73,9 @@ defmodule Theoria.Rewrite.Rule do
 
     new(lemma.identity || lemma.name, Term.eq(equality_type, lemma.left, lemma.right),
       binders: lemma.binders,
-      direction: Keyword.get(opts, :direction, :forward)
+      direction: Keyword.get(opts, :direction, :forward),
+      proof: Keyword.get(opts, :proof),
+      realized: Keyword.get(opts, :realized)
     )
   end
 

@@ -69,6 +69,30 @@ defmodule Theoria.RewriteTest do
              Database.once(database, add_zero)
   end
 
+  test "database can realize generated equation rules as proof-backed artifacts" do
+    {:ok, env} = Prelude.env()
+    database = Database.from_env_equations(env, realize: true)
+
+    one = Term.app(Term.const(:succ), zero())
+    add_zero = Term.const(:nat_add) |> Term.app(zero()) |> Term.app(one)
+
+    assert {:ok, ^one, %Rule{proof: %Term.Lam{}, realized: %Theoria.Equation.Realized{}}} =
+             Database.once(database, add_zero)
+  end
+
+  test "database can realize generated matcher equations as proof-backed artifacts" do
+    {:ok, env} = Prelude.env()
+    database = Database.from_env_all_equations(env, realize: true)
+    matcher_equation = Identity.matcher_equation(:bool_not_match_1, true)
+
+    assert {:ok, rewritten,
+            %Rule{name: ^matcher_equation, proof: %Term.Refl{}, realized: realized}} =
+             Database.once(database, Term.app(Term.const(:bool_not), Term.const(true)))
+
+    assert rewritten == Term.const(false)
+    assert %Theoria.Equation.Realized{identity: ^matcher_equation} = realized
+  end
+
   test "database can include generated matcher equations without indexed metadata" do
     {:ok, env} = Prelude.env()
     database = Database.from_env_all_equations(env)

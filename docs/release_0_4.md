@@ -26,6 +26,17 @@ Theoria.Simp.add_theorem(env, :my_simp_theorem, term)
 
 Generated equation identities remain proof sources and trace identities; public theorem names are explicit user choices.
 
+## Proof-backed rewrite databases
+
+Generated equation databases can realize their source artifacts while constructing rules:
+
+```elixir
+Theoria.Rewrite.Database.from_env_equations(env, realize: true)
+Theoria.Rewrite.Database.from_env_all_equations(env, realize: true)
+```
+
+The resulting `%Theoria.Rewrite.Rule{}` values carry the checked proof and `%Theoria.Equation.Realized{}` source artifact when realization succeeds. Rewrite search itself remains untrusted; these fields are proof inputs for checked downstream artifacts.
+
 ## Equality chain groundwork
 
 `Theoria.Equality.Chain` records the shape needed for multi-step equality traces. The current implementation realizes chains by checking definitional equality with `refl`; future work can replace that with explicit transitivity/congruence proof terms without changing the simp result boundary.

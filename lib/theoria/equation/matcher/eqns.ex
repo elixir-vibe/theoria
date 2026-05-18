@@ -100,9 +100,9 @@ defmodule Theoria.Equation.Matcher.Eqns do
     end
   end
 
-  @doc "Realizes a planned indexed matcher equation theorem without installing it."
+  @doc "Realizes a planned indexed matcher equation artifact without installing it."
   @spec indexed_realize(Info.t(), Env.t(), Identity.t() | keyword()) ::
-          {:ok, Theoria.Theorem.t()} | {:error, term()}
+          {:ok, Theoria.Equation.Realized.t()} | {:error, term()}
   def indexed_realize(%Info{} = info, %Env{} = env, selector) do
     with {:ok, theorem_name} <-
            Identity.cast(selector, info.matcher.name, :indexed_matcher_equation),
@@ -111,8 +111,9 @@ defmodule Theoria.Equation.Matcher.Eqns do
     end
   end
 
-  @doc "Realizes all planned indexed matcher equation theorems without installing them."
-  @spec indexed_realize_all(Info.t(), Env.t()) :: {:ok, [Theoria.Theorem.t()]} | {:error, term()}
+  @doc "Realizes all planned indexed matcher equation artifacts without installing them."
+  @spec indexed_realize_all(Info.t(), Env.t()) ::
+          {:ok, [Theoria.Equation.Realized.t()]} | {:error, term()}
   def indexed_realize_all(%Info{} = info, %Env{} = env) do
     with {:ok, package} <- IndexedPackage.build(info, env) do
       IndexedRealization.realize_all(package)

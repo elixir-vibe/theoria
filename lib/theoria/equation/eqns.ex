@@ -150,7 +150,7 @@ defmodule Theoria.Equation.Eqns do
     |> Enum.flat_map(fn info ->
       info
       |> Lemma.generated_for(opts)
-      |> Enum.map(&Rule.from_lemma(&1, opts))
+      |> Enum.map(&Rule.from_realizing_lemma(env, &1, opts))
     end)
     |> Database.new()
   end

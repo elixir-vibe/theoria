@@ -11,7 +11,7 @@ Elixir 1.19+. The package is experimental: the kernel and validation flow are th
 ```elixir
 def deps do
   [
-    {:theoria, "~> 0.1.0"}
+    {:theoria, "~> 0.2.0"}
   ]
 end
 ```
@@ -77,19 +77,17 @@ defmodule MyProofs do
 
   theorem :identity do
     type do
-      term do
-        forall :a, type(0) do
-          a ~> a
+      forall :a, type(0) do
+        forall :x, var(:a) do
+          var(:a)
         end
       end
     end
 
     proof do
-      term do
-        lam :a, type(0) do
-          lam :x, a do
-            x
-          end
+      lam :a, type(0) do
+        lam :x, var(:a) do
+          var(:x)
         end
       end
     end

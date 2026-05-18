@@ -59,10 +59,7 @@ defmodule Theoria.Equation.Matcher.Statement do
       |> Term.app(arg2)
       |> Term.app(ih)
 
-    result = Term.eq(Term.const(:Nat), Term.const(:zero), Term.const(:zero))
-
-    _planned_equality =
-      Term.eq(Term.shift(motive, 3) |> Term.app(succ_index) |> Term.app(major), lhs, rhs)
+    result = Term.eq(Term.shift(motive, 3) |> Term.app(succ_index) |> Term.app(major), lhs, rhs)
 
     binders
     |> Kernel.++(

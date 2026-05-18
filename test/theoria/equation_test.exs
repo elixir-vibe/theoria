@@ -361,6 +361,54 @@ defmodule Theoria.EquationTest do
     assert [[%Term.Const{name: :zero}], [%Term.App{}]] = Enum.map(equations, & &1.index_patterns)
   end
 
+  test "indexed matcher equation statements are kernel-checkable and non-placeholder" do
+    {:ok, env} = Prelude.env()
+    info = vec_matcher_info!(:vec_validation_source, :vec_validation_match)
+    {:ok, spec} = MatcherSpec.indexed_from_info(info, env: env)
+    {:ok, env} = Kernel.add_matcher(env, spec)
+
+    assert {:ok, statements} = MatcherEqns.indexed_statements(info, env)
+    by_name = Map.new(statements, &{&1.name, &1.statement_type})
+
+    assert {:ok, %Term.Sort{}} = Kernel.infer(env, by_name[:"vec_validation_match.eq_vec_nil"])
+    assert {:ok, %Term.Sort{}} = Kernel.infer(env, by_name[:"vec_validation_match.eq_vec_cons"])
+
+    assert {_nil_binders, %Term.Eq{right: %Term.BVar{index: 1}}} =
+             collect_foralls(by_name[:"vec_validation_match.eq_vec_nil"])
+
+    assert {cons_binders, cons_body} =
+             collect_foralls(by_name[:"vec_validation_match.eq_vec_cons"])
+
+    assert cons_binders == [:a, :motive, :n, :xs, :on_vec_nil, :on_vec_cons, :arg0, :n, :arg2]
+    refute cons_body == Term.eq(Term.const(:Nat), Term.const(:zero), Term.const(:zero))
+    assert %Term.Eq{left: lhs, right: rhs} = cons_body
+
+    assert {lhs_fun, [_a, _motive, _index, _major, _on_nil, _on_cons]} =
+             TermApplication.collect(lhs)
+
+    assert lhs_fun == Term.const(:vec_validation_match, [1])
+
+    assert {%Term.BVar{index: 3},
+            [
+              %Term.BVar{index: 2},
+              %Term.BVar{index: 1},
+              %Term.BVar{index: 0},
+              ih
+            ]} = TermApplication.collect(rhs)
+
+    assert {ih_fun,
+            [
+              _a,
+              _motive,
+              %Term.BVar{index: 1},
+              %Term.BVar{index: 0},
+              _on_nil,
+              _on_cons
+            ]} = TermApplication.collect(ih)
+
+    assert ih_fun == Term.const(:vec_validation_match, [1])
+  end
+
   test "explicit indexed matcher specs are kernel-admitted without prelude installation" do
     {:ok, env} = Prelude.env()
     info = vec_matcher_info!(:vec_experimental_source, :vec_experimental_match)

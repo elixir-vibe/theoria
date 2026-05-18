@@ -600,9 +600,9 @@ defmodule Theoria.Equation.Matcher.Type do
     binder_type =
       forall_telescope(
         [
-          _: Term.bvar(4),
-          _: Term.const(:Nat),
-          _: Term.const(:Vec, [1]) |> Term.app(Term.bvar(6)) |> Term.app(Term.bvar(0)),
+          arg0: Term.bvar(4),
+          n: Term.const(:Nat),
+          arg2: Term.const(:Vec, [1]) |> Term.app(Term.bvar(6)) |> Term.app(Term.bvar(0)),
           _: motive_n_arg2
         ],
         case_result

@@ -344,14 +344,14 @@ defmodule Theoria.EquationTest do
              {:error, {:not_indexed_matcher_value, :nat}}
   end
 
-  test "experimental indexed matcher type is well-formed but value is not admitted yet" do
+  test "experimental indexed matcher type and value are kernel-checkable" do
     {:ok, env} = Prelude.env()
     descriptor = vec_matcher_descriptor!()
     assert {:ok, type} = MatcherType.indexed_from_descriptor(descriptor)
     assert {:ok, value} = MatcherType.indexed_value_from_descriptor(descriptor)
 
     assert {:ok, %Term.Sort{}} = Kernel.infer(env, type)
-    assert {:error, _reason} = Kernel.check(env, value, type)
+    assert :ok = Kernel.check(env, value, type)
   end
 
   test "matcher type shape validation rejects corrupted indexed plans" do

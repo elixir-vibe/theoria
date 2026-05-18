@@ -233,7 +233,7 @@ Theoria.Theorem.add_all_to_env(MyProofs, env)
 
 Guides included with the package:
 
-- [`docs/release_0_1.md`](docs/release_0_1.md) — release boundary and API stability notes
+- [`docs/release_0_2.md`](docs/release_0_2.md) — 0.2 release boundary and API stability notes
 - [`docs/design.md`](docs/design.md) — kernel and environment design notes
 - [`docs/inductives.md`](docs/inductives.md) — inductive specifications and recursor generation
 - [`docs/theorem_modules.md`](docs/theorem_modules.md) — theorem module workflow

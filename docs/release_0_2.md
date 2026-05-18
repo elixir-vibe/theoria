@@ -1,8 +1,10 @@
-# Theoria 0.1 release boundary
+# Theoria 0.2 release boundary
 
-Theoria 0.1 is the experimental first release line of the Elixir-native proof/spec kernel. The goal is to publish and maintain a small, auditable foundation for checked proof terms and validation workflows, not a complete Lean-compatible proof assistant.
+Theoria 0.2 is the second experimental release line of the Elixir-native proof/spec kernel. The goal is to publish and maintain a small, auditable foundation for checked proof terms and validation workflows, not a complete Lean-compatible proof assistant.
 
-## Included in 0.1
+## Included in 0.2
+
+0.2 includes the 0.1 foundation plus the post-0.1 equation/matcher hardening work.
 
 - A small dependent term kernel with explicit environments and checked declarations.
 - De Bruijn-indexed core terms with named syntax and DSL helpers on top.
@@ -15,10 +17,13 @@ Theoria 0.1 is the experimental first release line of the Elixir-native proof/sp
 - Contributor-only Lean oracle validation through generated Lean source.
 - Internal equation/matcher metadata for the current Bool/Nat/List fragment.
 - Checked matcher declarations, generated ordinary equations, matcher equations, and unfold equations.
+- In-memory equation registry snapshots, registry validation, and centralized generated-theorem realization.
+- Recursor-informed matcher descriptors for the supported non-indexed Bool/Nat/List fragment.
+- Architecture regression tests for equation/matcher layering.
 - Experimental rewrite/simp groundwork that consumes generated equation metadata.
 - ExDoc guides and release-facing README documentation.
 
-## Explicitly outside 0.1
+## Explicitly outside 0.2
 
 - Stable public equation-definition syntax.
 - Stable tactic API.
@@ -28,7 +33,7 @@ Theoria 0.1 is the experimental first release line of the Elixir-native proof/sp
 - Dependent/indexed matcher descriptors such as Vec matchers.
 - Full Lean-style fixed-parameter permutations or mutual recursion support.
 - Persistent Lean-style theorem/matcher equation environment extensions.
-- A commitment that internal equation, rewrite, simp, or Lean-oracle modules are stable before 0.2.
+- A commitment that internal equation, rewrite, simp, or Lean-oracle modules are stable before 0.3.
 
 ## Trusted boundary
 
@@ -42,7 +47,7 @@ Everything else is untrusted convenience or tooling. DSLs, theorem macros, equat
 
 The Lean oracle is contributor confidence only. Lean is not a runtime dependency, source of truth, or trusted component of Theoria.
 
-## API stability for 0.1
+## API stability for 0.2
 
 Stable-ish entrypoints:
 
@@ -66,11 +71,11 @@ Experimental/internal entrypoints:
 - `Theoria.Lean.*`
 - elaborator and syntax internals not shown in README examples
 
-Experimental modules are documented for auditability, but their APIs may change before 0.2.
+Experimental modules are documented for auditability, but their APIs may change before 0.3.
 
 ## Release checklist
 
-Before publishing any 0.1.x patch release, run:
+Before publishing the 0.2.0 release, run:
 
 ```bash
 mix deps.unlock --check-unused

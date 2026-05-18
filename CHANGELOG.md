@@ -1,8 +1,8 @@
 # Changelog
 
-## 0.1.1 - unreleased
+## 0.2.0 - unreleased
 
-Patch release after the initial Hex publication.
+Second experimental release after the initial Hex publication.
 
 - Hardened equation/matcher metadata validation and registry checks.
 - Added in-memory equation registry snapshots and centralized generated-theorem realization.

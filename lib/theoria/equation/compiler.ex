@@ -6,7 +6,7 @@ defmodule Theoria.Equation.Compiler do
   alias Theoria.Equation.Compiled
   alias Theoria.Equation.Context
   alias Theoria.Equation.Pattern.Constructor
-  alias Theoria.Equation.Recursor.Builders, as: RecursorBuilders
+  alias Theoria.Equation.Recursor.Application, as: RecursorApplication
   alias Theoria.Equation.Schema.Builder, as: SchemaBuilder
   alias Theoria.Equation.Signature
   alias Theoria.Equation.Validator
@@ -62,7 +62,7 @@ defmodule Theoria.Equation.Compiler do
     with :ok <- Validator.validate_clauses(clauses, expected),
          {:ok, on_true} <- constructor_body(clauses, true, context),
          {:ok, on_false} <- constructor_body(clauses, false, context) do
-      {:ok, RecursorBuilders.bool_rec(motive, on_true, on_false, major)}
+      {:ok, RecursorApplication.bool_rec(motive, on_true, on_false, major)}
     end
   end
 
@@ -75,7 +75,7 @@ defmodule Theoria.Equation.Compiler do
          {:ok, zero_case} <- constructor_body(clauses, :zero, Context.new()),
          {:ok, succ_clause} <- constructor_clause(clauses, :succ) do
       {:ok,
-       RecursorBuilders.nat_rec(
+       RecursorApplication.nat_rec(
          motive,
          zero_case,
          nat_succ_case(succ_clause),
@@ -94,7 +94,7 @@ defmodule Theoria.Equation.Compiler do
          {:ok, nil_case} <- constructor_body(clauses, :list_nil, Context.new()),
          {:ok, cons_clause} <- constructor_clause(clauses, :list_cons) do
       {:ok,
-       RecursorBuilders.list_rec(
+       RecursorApplication.list_rec(
          element_type,
          motive,
          nil_case,

@@ -6,6 +6,7 @@ defmodule Theoria.Equation.Recursor.Descriptor do
   alias Theoria.Env.RecursorRule
   alias Theoria.Equation.Schema
   alias Theoria.Term
+  alias Theoria.Term.Application
 
   defmodule Rule do
     @moduledoc "Recursor rule shape used by matcher descriptor generation."
@@ -14,12 +15,31 @@ defmodule Theoria.Equation.Recursor.Descriptor do
     alias Theoria.Env.RecursorRule
     alias Theoria.Term
 
+    defmodule Field do
+      @moduledoc "Constructor field shape in a recursor rule."
+
+      alias Theoria.Term
+
+      @enforce_keys [:name, :type, :position]
+      defstruct [:name, :type, :position, recursive?: false, recursive_indices: []]
+
+      @type t :: %__MODULE__{
+              name: atom(),
+              type: Term.t(),
+              position: non_neg_integer(),
+              recursive?: boolean(),
+              recursive_indices: [Term.t()]
+            }
+    end
+
     @enforce_keys [:constructor, :field_count, :rhs]
     defstruct [
       :constructor,
       :constructor_metadata,
       :field_count,
       :rhs,
+      fields: [],
+      recursive_fields: [],
       index_patterns: []
     ]
 
@@ -28,16 +48,20 @@ defmodule Theoria.Equation.Recursor.Descriptor do
             constructor_metadata: EnvConstructor.t() | nil,
             field_count: non_neg_integer(),
             rhs: Term.t(),
+            fields: [Field.t()],
+            recursive_fields: [Field.t()],
             index_patterns: [Term.t()]
           }
 
-    @spec from_recursor_rule(RecursorRule.t(), EnvConstructor.t() | nil) :: t()
-    def from_recursor_rule(%RecursorRule{} = rule, constructor_metadata) do
+    @spec from_recursor_rule(RecursorRule.t(), EnvConstructor.t() | nil, [Field.t()]) :: t()
+    def from_recursor_rule(%RecursorRule{} = rule, constructor_metadata, fields) do
       %__MODULE__{
         constructor: rule.constructor,
         constructor_metadata: constructor_metadata,
         field_count: rule.field_count,
         rhs: rule.rhs,
+        fields: fields,
+        recursive_fields: Enum.filter(fields, & &1.recursive?),
         index_patterns: rule.index_patterns
       }
     end
@@ -123,8 +147,10 @@ defmodule Theoria.Equation.Recursor.Descriptor do
     Enum.reduce_while(recursor.rules, {:ok, []}, fn %RecursorRule{} = rule, {:ok, rules} ->
       constructor = constructor_metadata(env, rule.constructor)
 
-      case validate_rule(rule, constructor) do
-        :ok -> {:cont, {:ok, [Rule.from_recursor_rule(rule, constructor) | rules]}}
+      with :ok <- validate_rule(rule, constructor),
+           {:ok, fields} <- fields_for_rule(rule, constructor, recursor) do
+        {:cont, {:ok, [Rule.from_recursor_rule(rule, constructor, fields) | rules]}}
+      else
         {:error, reason} -> {:halt, {:error, reason}}
       end
     end)
@@ -153,6 +179,64 @@ defmodule Theoria.Equation.Recursor.Descriptor do
         rule.field_count}}
     end
   end
+
+  defp fields_for_rule(%RecursorRule{}, nil, %Recursor{}), do: {:ok, []}
+
+  defp fields_for_rule(%RecursorRule{}, constructor, %Recursor{} = recursor) do
+    constructor.type
+    |> field_types(constructor.num_params, constructor.num_fields)
+    |> case do
+      {:ok, field_types} ->
+        fields =
+          field_types
+          |> Enum.with_index()
+          |> Enum.map(fn {type, position} ->
+            recursive_indices = recursive_indices(type, recursor)
+
+            %Rule.Field{
+              name: field_name(type, position),
+              type: type,
+              position: position,
+              recursive?: recursive_indices != [],
+              recursive_indices: recursive_indices
+            }
+          end)
+
+        {:ok, fields}
+
+      {:error, _reason} = error ->
+        error
+    end
+  end
+
+  defp field_types(type, num_params, field_count) do
+    type
+    |> forall_domains()
+    |> Enum.drop(num_params)
+    |> case do
+      domains when length(domains) >= field_count -> {:ok, Enum.take(domains, field_count)}
+      domains -> {:error, {:constructor_field_telescope_too_short, length(domains), field_count}}
+    end
+  end
+
+  defp forall_domains(%Term.Forall{domain: domain, body: body}),
+    do: [domain | forall_domains(body)]
+
+  defp forall_domains(_term), do: []
+
+  defp recursive_indices(type, %Recursor{inductives: [inductive], num_params: num_params}) do
+    {head, args} = Application.collect(type)
+
+    case head do
+      %Term.Const{name: ^inductive} -> Enum.drop(args, num_params)
+      _other -> []
+    end
+  end
+
+  defp recursive_indices(_type, _recursor), do: []
+
+  defp field_name(%Term.Forall{name: name}, _position), do: name
+  defp field_name(_type, position), do: String.to_atom("field#{position}")
 
   defp index_binders(%Schema{argument_binders: binders}, %Recursor{num_indices: count})
        when count > 0 do

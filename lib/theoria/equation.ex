@@ -11,14 +11,14 @@ defmodule Theoria.Equation do
   """
 
   alias Theoria.Equation.Compiler
-  alias Theoria.Equation.Recursor.Builders, as: RecursorBuilders
+  alias Theoria.Equation.Recursor.Application, as: RecursorApplication
 
-  defdelegate bool_rec(motive, on_true, on_false, major), to: RecursorBuilders
-  defdelegate nat_rec(motive, zero_case, succ_case, major), to: RecursorBuilders
-  defdelegate list_rec(element_type, motive, nil_case, cons_case, major), to: RecursorBuilders
+  defdelegate bool_rec(motive, on_true, on_false, major), to: RecursorApplication
+  defdelegate nat_rec(motive, zero_case, succ_case, major), to: RecursorApplication
+  defdelegate list_rec(element_type, motive, nil_case, cons_case, major), to: RecursorApplication
 
   defdelegate list_rec(element_type, motive, nil_case, cons_case, major, levels),
-    to: RecursorBuilders
+    to: RecursorApplication
 
   defdelegate compile(kind, motive, clauses, major), to: Compiler
   defdelegate compile_definition(kind, signature, motive, clauses, major, opts), to: Compiler

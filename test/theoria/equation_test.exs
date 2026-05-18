@@ -197,6 +197,17 @@ defmodule Theoria.EquationTest do
     assert [%Term.Const{name: :zero}] = hd(descriptor.rules).index_patterns
     assert [%Term.App{}] = List.last(descriptor.rules).index_patterns
 
+    cons_rule = List.last(descriptor.rules)
+
+    assert Enum.map(cons_rule.fields, &{&1.name, &1.position, &1.recursive?}) == [
+             {:field0, 0, false},
+             {:field1, 1, false},
+             {:field2, 2, true}
+           ]
+
+    assert [%{name: :field2, recursive_indices: [%Term.BVar{index: 0}]}] =
+             cons_rule.recursive_fields
+
     matcher =
       MatcherInfo.new(:vec_match, 0, 1, [%Alternative{constructor: :vec_nil, num_fields: 0}])
 

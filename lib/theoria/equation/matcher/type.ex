@@ -3,7 +3,7 @@ defmodule Theoria.Equation.Matcher.Type do
 
   alias Theoria.Equation.Matcher.Descriptor, as: MatcherDescriptor
   alias Theoria.Equation.Matcher.Info, as: MatcherInfo
-  alias Theoria.Equation.Recursor.Builders, as: RecursorBuilders
+  alias Theoria.Equation.Recursor.Application, as: RecursorApplication
   alias Theoria.Equation.Schema
   alias Theoria.Term
 
@@ -114,7 +114,7 @@ defmodule Theoria.Equation.Matcher.Type do
           Term.lam(
             :on_false,
             Term.bvar(2),
-            RecursorBuilders.bool_rec(
+            RecursorApplication.bool_rec(
               Term.bvar(3),
               Term.bvar(1),
               Term.bvar(0),
@@ -193,15 +193,15 @@ defmodule Theoria.Equation.Matcher.Type do
     motive = Term.bvar(6)
     second_discriminant = Term.bvar(4)
 
-    RecursorBuilders.bool_rec(
+    RecursorApplication.bool_rec(
       motive,
-      RecursorBuilders.bool_rec(
+      RecursorApplication.bool_rec(
         motive,
         Term.bvar(3),
         Term.bvar(2),
         second_discriminant
       ),
-      RecursorBuilders.bool_rec(
+      RecursorApplication.bool_rec(
         motive,
         Term.bvar(1),
         Term.bvar(0),
@@ -242,7 +242,7 @@ defmodule Theoria.Equation.Matcher.Type do
           Term.lam(
             :on_succ,
             succ_case_type,
-            RecursorBuilders.nat_rec(
+            RecursorApplication.nat_rec(
               Term.bvar(3),
               Term.bvar(1),
               Term.bvar(0),
@@ -292,7 +292,7 @@ defmodule Theoria.Equation.Matcher.Type do
             Term.lam(
               :on_cons,
               list_cons_case_type(),
-              RecursorBuilders.list_rec(
+              RecursorApplication.list_rec(
                 Term.bvar(4),
                 Term.bvar(3),
                 Term.bvar(1),

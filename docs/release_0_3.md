@@ -4,18 +4,18 @@ The 0.3 development line makes generated equation artifacts explicit domain data
 
 ## Equation identities
 
-`Theoria.Equation.Name` is the canonical identity for generated equation artifacts:
+`Theoria.Equation.Identity` is the canonical identity for generated equation artifacts:
 
 ```elixir
-alias Theoria.Equation.Name
+alias Theoria.Equation.Identity
 
-Name.equation(:nat_add, :succ)
-Name.unfold(:nat_add)
-Name.matcher_equation(:nat_add_match_1, :succ)
-Name.indexed_matcher_equation(:vec_match, :vec_cons)
+Identity.equation(:nat_add, :succ)
+Identity.unfold(:nat_add)
+Identity.matcher_equation(:nat_add_match_1, :succ)
+Identity.indexed_matcher_equation(:vec_match, :vec_cons)
 ```
 
-Friendly output still renders familiar labels such as `nat_add.eq_succ`, but those labels are display strings. When generated equation theorems are installed, the structured `Name` value itself is used as the environment key; generated atom encodings are not part of the model.
+Friendly output still renders familiar labels such as `nat_add.eq_succ`, but those labels are display strings. When generated equation theorems are installed, the structured `Identity` value itself is used as the environment key; generated atom encodings are not part of the model.
 
 ## Matcher names
 

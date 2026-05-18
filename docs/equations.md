@@ -30,18 +30,18 @@ The metadata is Theoria-owned data. It is checked by native validation and can b
 
 ## Equation identities
 
-Generated equation artifacts use `Theoria.Equation.Name` as their canonical domain identity. The struct records the owner, kind, and target of an equation:
+Generated equation artifacts use `Theoria.Equation.Identity` as their canonical domain identity. The struct records the owner, kind, and target of an equation:
 
 ```elixir
-alias Theoria.Equation.Name
+alias Theoria.Equation.Identity
 
-Name.equation(:nat_add, :succ)
-Name.unfold(:nat_add)
-Name.matcher_equation(:nat_add_match_1, :succ)
-Name.indexed_matcher_equation(:vec_match, :vec_cons)
+Identity.equation(:nat_add, :succ)
+Identity.unfold(:nat_add)
+Identity.matcher_equation(:nat_add_match_1, :succ)
+Identity.indexed_matcher_equation(:vec_match, :vec_cons)
 ```
 
-`Name.format/1` is the human display form used by Mix tasks and docs, for example `nat_add.eq_succ` or `vec_match.eq_vec_cons`. When generated equation theorems are installed, the same struct is used as the environment key; no generated atom encoding is needed.
+`Identity.format/1` is the human display form used by Mix tasks and docs, for example `nat_add.eq_succ` or `vec_match.eq_vec_cons`. When generated equation theorems are installed, the same struct is used as the environment key; no generated atom encoding is needed.
 
 Selector-based APIs accept structured names or explicit selectors where that is clearer:
 
@@ -78,7 +78,7 @@ Theoria.Equation.Info.all(env)
 Theoria.Equation.Info.equation?(env, :nat_add)
 ```
 
-`Theoria.Equation.Signature` summarizes the function telescope, recursive argument, result type, and fixed parameters. Fixed parameters are derived from the signature's parameter telescope by default, with explicit overrides still available for future edge cases. `Theoria.Equation.Case.Template` describes schematic constructor equations without tying schema generation to concrete library definition names. `Theoria.Equation.Schema.Builder` turns those inputs into validated schemas and matcher metadata, including discriminant names/positions/types and simple overlap records. The compiler returns `Theoria.Equation.Compiled`, which contains the recursor body plus generated clause/schema/matcher metadata. `Theoria.Equation.Definition.Spec` wraps that compiler result with the final checked definition type/value before installation. `Theoria.Equation.Recursor.Descriptor` reads checked `Env.Recursor` / `Env.RecursorRule` metadata, including indexed rule patterns, constructor fields, and recursive field indices. `Theoria.Equation.Matcher.Descriptor` can represent indexed Vec-like matcher shapes with normalized matcher-owned fields, but matcher type/body generation currently consumes descriptors fully only for the supported non-indexed families. `Theoria.Equation.Matcher.Descriptor` combines that recursor-derived shape with schema/matcher metadata into a structural matcher description with discriminants, alternatives, result, and recursor. `Theoria.Equation.Matcher.Type` first plans a descriptor-derived `Matcher.Type.Shape` containing parameters, motive, discriminants, alternatives, alternative case binders, result, recursor arguments, recursor metadata when available, and body, then generates checked matcher type/body packages by folding that telescope for supported simple shapes. Alternative case binders and recursor arguments are derived from planned binders and normalized descriptor fields for the current simple families; indexed descriptors are planned into validated shapes with major motive arguments/results, per-constructor case results, recursor metadata-backed arity/count checks, and a recursor application body. Experimental indexed emitters can fold those shapes into terms for inspection only. The emitted indexed type and value are kernel-checkable in the experimental path; checked matcher declaration emission remains disabled until indexed matcher integration with `Matcher.Spec`, validation, and generated equations is complete. Indexed matcher equation statements are dispatched by `Theoria.Equation.Matcher.Statement`; the current indexed Vec fragment lives in `Theoria.Equation.Matcher.Statement.Vec`. `Matcher.Eqns` exposes lookup/planning APIs while theorem realization remains separate. The current indexed Vec statement planner builds kernel-checkable constructor equations for `vec_nil` and `vec_cons`, including the recursive matcher call used by the `vec_cons` case. The indexed Vec planner uses `Theoria.Equation.Matcher.Statement.Frame` for explicit binder-frame operations and derives constructor fields, constructor applications, index patterns, and recursive hypotheses from planned matcher shapes where the indexed Vec fragment currently supports them. Recursive hypotheses use recursive field metadata instead of fixed Vec field names, so renamed case binders still produce kernel-checkable statements. Statement constants derive their current universe levels from the planned shape parameters, and recursive index instantiation reports tagged errors instead of using bang-style frame lookups. Planned statements can be converted to metadata-only indexed equation lemmas; these lemmas are validated as types and can be realized in the validation-only package with telescope-folded `refl` proof terms when the planned sides are definitionally equal. `Theoria.Equation.Matcher.Indexed.Realization` records the current proof strategy (`:recursor_iota_refl`) and realizes those theorem objects without installing them into Prelude or rewrite/simp databases. Unsupported indexed statement shapes now return tagged errors instead of silently falling back to placeholder equality metadata. `Theoria.Equation.Matcher.Spec` installs those packages as `Theoria.Env.Matcher` metadata. Stored metadata records the definition name, checked type/value, recursive argument position, fixed parameters, level parameters, original clause metadata, Lean-shaped matcher alternatives, matcher discriminants, matcher declaration names, matcher mode, and a validated schema that drives schematic theorem generation.
+`Theoria.Equation.Signature` summarizes the function telescope, recursive argument, result type, and fixed parameters. Fixed parameters are derived from the signature's parameter telescope by default, with explicit overrides still available for future edge cases. `Theoria.Equation.Case.Template` describes schematic constructor equations without tying schema generation to concrete library definition names. `Theoria.Equation.Schema.Builder` turns those inputs into validated schemas and matcher metadata, including discriminant names/positions/types and simple overlap records. The compiler returns `Theoria.Equation.Compiled`, which contains the recursor body plus generated clause/schema/matcher metadata. `Theoria.Equation.Definition.Spec` wraps that compiler result with the final checked definition type/value before installation. `Theoria.Equation.Recursor.Descriptor` reads checked `Env.Recursor` / `Env.RecursorRule` metadata, including indexed rule patterns, constructor fields, and recursive field indices. `Theoria.Equation.Matcher.Descriptor` can represent indexed Vec-like matcher shapes with normalized matcher-owned fields, but matcher type/body generation currently consumes descriptors fully only for the supported non-indexed families. `Theoria.Equation.Matcher.Descriptor` combines that recursor-derived shape with schema/matcher metadata into a structural matcher description with discriminants, alternatives, result, and recursor. `Theoria.Equation.Matcher.Type` first plans a descriptor-derived `Matcher.Type.Shape` containing parameters, motive, discriminants, alternatives, alternative case binders, result, recursor arguments, recursor metadata when available, and body, then generates checked matcher type/body packages by folding that telescope for supported simple shapes. Alternative case binders and recursor arguments are derived from planned binders and normalized descriptor fields for the current simple families; indexed descriptors are planned into validated shapes with major motive arguments/results, per-constructor case results, recursor metadata-backed arity/count checks, and a recursor application body. Experimental indexed emitters can fold those shapes into terms for inspection only. The emitted indexed type and value are kernel-checkable in the experimental path; checked matcher declaration emission remains disabled until indexed matcher integration with `Matcher.Spec`, validation, and generated equations is complete. Indexed matcher equation statements are dispatched by `Theoria.Equation.Matcher.Statement`; the current indexed Vec fragment lives in `Theoria.Equation.Matcher.Statement.Vec`. `Matcher.Eqns` exposes lookup/planning APIs while theorem realization remains separate. The current indexed Vec statement planner builds kernel-checkable constructor equations for `vec_nil` and `vec_cons`, including the recursive matcher call used by the `vec_cons` case. The indexed Vec planner uses `Theoria.Equation.Matcher.Statement.Frame` for explicit binder-frame operations and derives constructor fields, constructor applications, index patterns, and recursive hypotheses from planned matcher shapes where the indexed Vec fragment currently supports them. Recursive hypotheses use recursive field metadata instead of fixed Vec field names, so renamed case binders still produce kernel-checkable statements. Statement constants derive their current universe levels from the planned shape parameters, and recursive index instantiation reports tagged errors instead of using bang-style frame lookups. Planned statements can be converted to metadata-only indexed equation lemmas; these lemmas are validated as types and can be realized in the validation-only package with telescope-folded `refl` proof terms when the planned sides are definitionally equal. `Theoria.Equation.Matcher.Indexed.Realization` records the current proof strategy (`:recursor_iota_refl`) and realizes those checked equation artifacts without installing them into Prelude or rewrite/simp databases. Unsupported indexed statement shapes now return tagged errors instead of silently falling back to placeholder equality metadata. `Theoria.Equation.Matcher.Spec` installs those packages as `Theoria.Env.Matcher` metadata. Stored metadata records the definition name, checked type/value, recursive argument position, fixed parameters, level parameters, original clause metadata, Lean-shaped matcher alternatives, matcher discriminants, matcher declaration names, matcher mode, and a validated schema that drives schematic theorem generation.
 
 ## Generated equation lemmas
 
@@ -112,14 +112,14 @@ The prelude does not install generated equation theorems by default yet.
 `Theoria.Equation.Eqns` is the small Theoria equivalent of Lean's equation-theorem lookup layer:
 
 ```elixir
-alias Theoria.Equation.Name
+alias Theoria.Equation.Identity
 
 Theoria.Equation.Eqns.get(env, :nat_add)
-#=> {:ok, [Name.equation(:nat_add, :zero), Name.equation(:nat_add, :succ)]}
+#=> {:ok, [Identity.equation(:nat_add, :zero), Identity.equation(:nat_add, :succ)]}
 
 Theoria.Equation.Eqns.generated(env, :nat_add)
 Theoria.Equation.Eqns.unfold(env, :nat_add)
-Theoria.Equation.Eqns.source(env, Name.equation(:nat_add, :succ))
+Theoria.Equation.Eqns.source(env, Identity.equation(:nat_add, :succ))
 Theoria.Equation.Eqns.installed?(env, :nat_add)
 ```
 
@@ -127,22 +127,22 @@ Theoria.Equation.Eqns.installed?(env, :nat_add)
 
 ```elixir
 Theoria.Equation.Matcher.Eqns.get(env, :nat_add_match_1)
-#=> {:ok, [Name.matcher_equation(:nat_add_match_1, :zero), Name.matcher_equation(:nat_add_match_1, :succ)]}
+#=> {:ok, [Identity.matcher_equation(:nat_add_match_1, :zero), Identity.matcher_equation(:nat_add_match_1, :succ)]}
 
-Theoria.Equation.Matcher.Eqns.source(env, Name.matcher_equation(:nat_add_match_1, :succ))
+Theoria.Equation.Matcher.Eqns.source(env, Identity.matcher_equation(:nat_add_match_1, :succ))
 #=> {:ok, :nat_add_match_1}
 ```
 
-Generated theorem metadata can also be realized without installing declarations:
+Generated metadata can also be realized as checked `Theoria.Equation.Realized` artifacts without installing declarations:
 
 ```elixir
 Theoria.Equation.Eqns.realize(env, :nat_add)
-Theoria.Equation.Eqns.realize(env, Name.equation(:nat_add, :succ))
-Theoria.Equation.Eqns.realize(env, Name.unfold(:nat_add))
-Theoria.Equation.Matcher.Eqns.realize(env, Name.matcher_equation(:nat_add_match_1, :succ))
+Theoria.Equation.Eqns.realize(env, Identity.equation(:nat_add, :succ))
+Theoria.Equation.Eqns.realize(env, Identity.unfold(:nat_add))
+Theoria.Equation.Matcher.Eqns.realize(env, Identity.matcher_equation(:nat_add_match_1, :succ))
 ```
 
-`Theoria.Equation.Extension` provides typed registry helpers for source lookup, matcher lookup, unfold names, generated theorem-name enumeration, structured theorem identities (`theorem_ids/1`, `equation_ids/1`, `matcher_equation_ids/2`, `unfold_id/2`), and an in-memory `Extension.Registry` snapshot. It is currently rebuilt from environment metadata rather than stored as a persistent disk-backed extension.
+`Theoria.Equation.Extension` provides typed registry helpers for source lookup, matcher lookup, unfold identities, generated identity enumeration, structured theorem identities (`theorem_ids/1`, `equation_ids/1`, `matcher_equation_ids/2`, `unfold_id/2`), and an in-memory `Extension.Registry` snapshot. It is currently rebuilt from environment metadata rather than stored as a persistent disk-backed extension.
 
 ## Matcher maturity
 
@@ -219,8 +219,8 @@ Native validation kernel-checks generated equation theorems, matcher declaration
 
 ```text
 ✓ matcher declarations: 6 checked matcher(s)
-✓ generated equations: 16 theorem(s)
-✓ matcher equations: 16 theorem(s)
+✓ generated equations: 16 artifact(s)
+✓ matcher equations: 16 artifact(s)
 ```
 
 It can also show equation metadata:
@@ -241,7 +241,7 @@ The verbose form prints generated lemma names under each stored equation definit
 | Recursor.Descriptor | Describes non-indexed and indexed recursor rules, including Vec index patterns, constructor fields, and recursive field indices; it is not yet a full dependent telescope analyzer. |
 | Matcher.Descriptor | Recursor-informed Bool/Nat/List descriptors plus indexed Vec-like descriptor shape with normalized matcher-owned fields; dependent/indexed matcher type/body generation is still unsupported. |
 | Matcher.Type | Plans and validates descriptor-derived `Matcher.Type.Shape` values with parameters, indices, motive binders/results, discriminants, alternatives, derived case binders, index patterns, constructor applications, per-constructor case results, recursor metadata-backed counts, recursor arguments, and recursor application bodies, then folds simple non-indexed telescopes. Experimental indexed emitters are term-planning only; not a general dependent matcher compiler. |
-| Eqns / Matcher.Eqns | Generated theorem metadata and realization helpers, not a persistent Lean-style environment extension. Indexed statement construction lives in `Matcher.Statement`; realization remains separate. |
+| Eqns / Matcher.Eqns | Generated equation metadata and `Realized` artifact helpers, not a persistent Lean-style environment extension. Indexed statement construction lives in `Matcher.Statement`; realization remains separate from optional theorem installation. |
 | Extension.Registry | In-memory snapshot rebuilt from environment metadata; not persisted to disk. |
 | Structural recursion | No general structural recursion checker and no `brecOn`/below dictionaries. |
 | Rewrite / Simp | Untrusted first-order rewriting with no proof terms and no attribute/prioritized simp database. |

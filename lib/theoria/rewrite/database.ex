@@ -53,7 +53,7 @@ defmodule Theoria.Rewrite.Database do
   def from_env_indexed_matcher_equations(%Env{} = env, opts \\ []) do
     env
     |> Env.matchers()
-    |> Enum.filter(&(&1.mode == :indexed_matcher and &1.equation_names != []))
+    |> Enum.filter(&(&1.mode == :indexed_matcher and &1.equation_identities != []))
     |> Enum.flat_map(&indexed_matcher_rules(env, &1, opts))
     |> new()
   end

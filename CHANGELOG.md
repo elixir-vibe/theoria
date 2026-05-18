@@ -4,11 +4,14 @@
 
 Post-0.2 development toward the next experimental API boundary.
 
-- Introduced structured `Theoria.Equation.Name` identities for ordinary, unfold, matcher, and indexed matcher equations.
-- Removed generated equation declaration atoms; installed generated equations now use structured `Theoria.Equation.Name` values as environment keys.
+- Introduced structured `Theoria.Equation.Identity` identities for ordinary, unfold, matcher, and indexed matcher equations.
+- Removed generated equation declaration atoms; installed generated equations now use structured `Theoria.Equation.Identity` values as environment keys.
+- Added `Theoria.Equation.Realized` so generated equation checking is an anonymous artifact phase before optional theorem installation.
 - Added selector-based indexed matcher equation lookup/realization and opt-in Vec indexed equation theorem installation.
-- Added indexed matcher equation metadata recording in opt-in Vec environments.
+- Added indexed matcher equation identity metadata recording in opt-in Vec environments.
 - Carried structured equation identities through rewrite/simp rule metadata and friendly CLI/Lean labels.
+- Added proof-aware rewrite rule fields for future proof-producing simp traces.
+- Split indexed matcher packages into explicit statement, lemma, realization, and installation phases.
 - Added explicit indexed matcher rewrite/simp database constructors behind opt-in policy.
 - Generated the Lean oracle mirror declaration for the validation Vec matcher from the checked matcher type.
 

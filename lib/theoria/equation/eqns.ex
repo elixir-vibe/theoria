@@ -3,17 +3,17 @@ defmodule Theoria.Equation.Eqns do
 
   alias Theoria.Env
   alias Theoria.Equation.Extension
+  alias Theoria.Equation.Identity
   alias Theoria.Equation.Info
   alias Theoria.Equation.Lemma
-  alias Theoria.Equation.Name
   alias Theoria.Rewrite.Database
   alias Theoria.Rewrite.Rule
 
   @doc "Returns generated equation theorem names for a definition."
-  @spec get(Env.t(), atom()) :: {:ok, [Name.t()]} | {:error, term()}
+  @spec get(Env.t(), atom()) :: {:ok, [Identity.t()]} | {:error, term()}
   def get(%Env{} = env, name) when is_atom(name) do
     with {:ok, lemmas} <- generated(env, name) do
-      {:ok, Enum.map(lemmas, & &1.id)}
+      {:ok, Enum.map(lemmas, & &1.identity)}
     end
   end
 
@@ -34,7 +34,7 @@ defmodule Theoria.Equation.Eqns do
   end
 
   @doc "Finds the source definition for a generated equation theorem name."
-  @spec source(Env.t(), Name.t() | atom()) :: {:ok, atom()} | :error
+  @spec source(Env.t(), Identity.t() | atom()) :: {:ok, atom()} | :error
   def source(%Env{} = env, theorem_name),
     do: source_declaration(env, declaration_name(theorem_name))
 
@@ -46,9 +46,11 @@ defmodule Theoria.Equation.Eqns do
   end
 
   @doc "Realizes generated equation theorem metadata without installing it."
-  @spec realize(Env.t(), atom() | Name.t()) ::
-          {:ok, Theoria.Theorem.t()} | {:ok, [Theoria.Theorem.t()]} | {:error, term()}
-  def realize(%Env{} = env, %Name{} = name), do: realize_theorem(env, name)
+  @spec realize(Env.t(), atom() | Identity.t()) ::
+          {:ok, Theoria.Equation.Realized.t()}
+          | {:ok, [Theoria.Equation.Realized.t()]}
+          | {:error, term()}
+  def realize(%Env{} = env, %Identity{} = name), do: realize_theorem(env, name)
 
   def realize(%Env{} = env, name) when is_atom(name) do
     case Info.fetch(env, name) do
@@ -82,14 +84,14 @@ defmodule Theoria.Equation.Eqns do
     end
   end
 
-  defp declaration_name(%Name{} = name), do: name
+  defp declaration_name(%Identity{} = name), do: name
   defp declaration_name(name) when is_atom(name), do: name
 
   defp realize_all(env, info) do
     info
     |> Lemma.generated_for()
     |> Enum.reduce_while({:ok, []}, fn lemma, {:ok, theorems} ->
-      case Lemma.to_theorem(env, lemma) do
+      case Lemma.realize(env, lemma) do
         {:ok, theorem} -> {:cont, {:ok, [theorem | theorems]}}
         {:error, reason} -> {:halt, {:error, reason}}
       end
@@ -113,10 +115,10 @@ defmodule Theoria.Equation.Eqns do
 
     cond do
       unfold.name == theorem_name ->
-        Lemma.to_theorem(env, unfold)
+        Lemma.realize(env, unfold)
 
       lemma = Enum.find(Lemma.generated_for(info), &(&1.name == theorem_name)) ->
-        Lemma.to_theorem(env, lemma)
+        Lemma.realize(env, lemma)
 
       true ->
         false

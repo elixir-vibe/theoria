@@ -49,7 +49,7 @@ defmodule Theoria.Simp.Database do
     |> new()
   end
 
-  defp equation_source(%{id: %{kind: kind}})
+  defp equation_source(%{identity: %{kind: kind}})
        when kind in [:matcher_equation, :indexed_matcher_equation],
        do: :matcher_equation
 

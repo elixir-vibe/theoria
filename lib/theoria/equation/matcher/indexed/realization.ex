@@ -1,11 +1,11 @@
 defmodule Theoria.Equation.Matcher.Indexed.Realization do
   @moduledoc "Experimental/internal API for 0.2; subject to change before 0.3. Realization planning for indexed matcher equations."
 
+  alias Theoria.Equation.Identity
   alias Theoria.Equation.Matcher.Indexed.Package
-  alias Theoria.Equation.Name
+  alias Theoria.Equation.Realized
   alias Theoria.Kernel
   alias Theoria.Term
-  alias Theoria.Theorem
 
   defmodule EquationPlan do
     @moduledoc "Realization plan for one indexed matcher equation."
@@ -78,31 +78,25 @@ defmodule Theoria.Equation.Matcher.Indexed.Realization do
   @spec blockers(Plan.t()) :: [atom()]
   def blockers(%Plan{blockers: blockers}), do: blockers
 
-  @doc "Realizes one indexed matcher equation theorem without installing it."
-  @spec realize(Package.t(), Name.t()) :: {:ok, Theorem.t()} | {:error, term()}
-  def realize(%Package{} = package, %Name{} = equation_name) do
+  @doc "Realizes one indexed matcher equation artifact without installing it."
+  @spec realize(Package.t(), Identity.t()) :: {:ok, Realized.t()} | {:error, term()}
+  def realize(%Package{} = package, %Identity{} = equation_name) do
     with {:ok, plan} <- plan(package),
          %EquationPlan{} = equation_plan <- find_plan(plan, equation_name),
-         {:ok, proof} <- proof_for(package, equation_plan),
-         theorem = %Theorem{
-           name: equation_plan.name,
-           type: equation_plan.statement_type,
-           proof: proof
-         },
-         :ok <- Kernel.check(package.env, theorem.proof, theorem.type) do
-      {:ok, theorem}
+         {:ok, proof} <- proof_for(package, equation_plan) do
+      Realized.check(package.env, equation_plan.name, equation_plan.statement_type, proof)
     else
       nil -> {:error, {:unknown_indexed_matcher_equation, equation_name}}
       {:error, _reason} = error -> error
     end
   end
 
-  @doc "Realizes every indexed matcher equation theorem without installing it."
-  @spec realize_all(Package.t()) :: {:ok, [Theorem.t()]} | {:error, term()}
+  @doc "Realizes every indexed matcher equation artifact without installing it."
+  @spec realize_all(Package.t()) :: {:ok, [Realized.t()]} | {:error, term()}
   def realize_all(%Package{} = package) do
     package.statements
     |> Enum.reduce_while({:ok, []}, fn equation, {:ok, theorems} ->
-      case realize(package, equation.id) do
+      case realize(package, equation.identity) do
         {:ok, theorem} -> {:cont, {:ok, [theorem | theorems]}}
         {:error, _reason} = error -> {:halt, error}
       end

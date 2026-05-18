@@ -1,7 +1,7 @@
 defmodule Theoria.SimpTest do
   use ExUnit.Case, async: true
 
-  alias Theoria.Equation.Name
+  alias Theoria.Equation.Identity
   alias Theoria.Prelude
   alias Theoria.Simp
   alias Theoria.Simp.Database
@@ -16,7 +16,7 @@ defmodule Theoria.SimpTest do
 
     assert {:ok, ^one,
             %Step{
-              rule: %Name{kind: :equation, owner: :nat_add, target: :zero},
+              rule: %Identity{kind: :equation, owner: :nat_add, target: :zero},
               before: ^term,
               after: ^one
             }} =
@@ -31,7 +31,10 @@ defmodule Theoria.SimpTest do
     assert %{
              term: ^one,
              steps: [
-               %Step{rule: %Name{kind: :equation, owner: :nat_add, target: :zero}, after: ^one}
+               %Step{
+                 rule: %Identity{kind: :equation, owner: :nat_add, target: :zero},
+                 after: ^one
+               }
              ],
              stopped: :normal
            } =
@@ -52,7 +55,7 @@ defmodule Theoria.SimpTest do
     equation_rules = Database.from_env_equations(env).rules
     all_rules = Database.from_env_all_equations(env).rules
 
-    matcher_equation = Name.matcher_equation(:bool_not_match_1, true)
+    matcher_equation = Identity.matcher_equation(:bool_not_match_1, true)
 
     refute Enum.any?(equation_rules, &match?(%Rule{rewrite: %{name: ^matcher_equation}}, &1))
 

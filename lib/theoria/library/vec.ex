@@ -7,6 +7,7 @@ defmodule Theoria.Library.Vec do
   alias Theoria.Equation.Matcher.Indexed.Package, as: IndexedPackage
   alias Theoria.Equation.Matcher.Indexed.Realization, as: IndexedRealization
   alias Theoria.Equation.Matcher.Indexed.Vec, as: IndexedVec
+  alias Theoria.Equation.Realized
   alias Theoria.Inductive
   alias Theoria.Inductive.Spec
   alias Theoria.Kernel
@@ -57,7 +58,7 @@ defmodule Theoria.Library.Vec do
   def install_indexed_matcher_equations(%IndexedPackage{} = package) do
     with {:ok, theorems} <- IndexedRealization.realize_all(package),
          {:ok, env, installed} <- install_theorems(package.env, theorems) do
-      {:ok, record_indexed_equation_names(env, package, installed), installed}
+      {:ok, record_indexed_equation_identities(env, package, installed), installed}
     end
   end
 
@@ -89,6 +90,13 @@ defmodule Theoria.Library.Vec do
     end
   end
 
+  defp install_theorem(%Realized{} = realized, {:ok, env, installed}) do
+    case Realized.install(env, realized) do
+      {:ok, env, theorem} -> {:cont, {:ok, env, [theorem | installed]}}
+      {:error, _reason} = error -> {:halt, error}
+    end
+  end
+
   defp install_theorem(theorem, {:ok, env, installed}) do
     case Theorem.add_to_env(env, theorem) do
       {:ok, env} -> {:cont, {:ok, env, [theorem | installed]}}
@@ -96,17 +104,20 @@ defmodule Theoria.Library.Vec do
     end
   end
 
-  defp record_indexed_equation_names(%Env{constants: constants} = env, package, theorems) do
+  defp record_indexed_equation_identities(%Env{constants: constants} = env, package, theorems) do
     names = Enum.map(theorems, & &1.name)
 
     constants =
-      Map.update!(constants, package.matcher.name, &put_indexed_equation_names(&1, names))
+      Map.update!(constants, package.matcher.name, &put_indexed_equation_identities(&1, names))
 
     %{env | constants: constants}
   end
 
-  defp put_indexed_equation_names(%Constant{metadata: %EnvMatcher{} = matcher} = constant, names),
-    do: %{constant | metadata: %{matcher | equation_names: names}}
+  defp put_indexed_equation_identities(
+         %Constant{metadata: %EnvMatcher{} = matcher} = constant,
+         names
+       ),
+       do: %{constant | metadata: %{matcher | equation_identities: names}}
 
   defp maybe_install_indexed_equations(package, opts) do
     if Keyword.get(opts, :install_equations, false) do

@@ -23,9 +23,9 @@ defmodule Mix.Tasks.Theoria.CheckTest do
     assert output =~ "✓ indexed matcher equations: 2 metadata entrie(s)"
     assert output =~ "✓ indexed matcher equation statements: 2 type(s)"
     assert output =~ "✓ indexed matcher equation lemmas: 2 metadata entrie(s)"
-    assert output =~ "✓ indexed matcher equation realization: 2 theorem(s)"
-    assert output =~ "✓ generated equations: 16 theorem(s)"
-    assert output =~ "✓ matcher equations: 16 theorem(s)"
+    assert output =~ "✓ indexed matcher equation realization: 2 artifact(s)"
+    assert output =~ "✓ generated equations: 16 artifact(s)"
+    assert output =~ "✓ matcher equations: 16 artifact(s)"
   end
 
   test "passes options through to validation" do
@@ -45,8 +45,8 @@ defmodule Mix.Tasks.Theoria.CheckTest do
     assert output =~ "✓ indexed matcher equations: 2 metadata entrie(s)"
     assert output =~ "✓ indexed matcher equation statements: 2 type(s)"
     assert output =~ "✓ indexed matcher equation lemmas: 2 metadata entrie(s)"
-    assert output =~ "✓ indexed matcher equation realization: 2 theorem(s)"
-    assert output =~ "✓ generated equations: 16 theorem(s)"
-    assert output =~ "✓ matcher equations: 16 theorem(s)"
+    assert output =~ "✓ indexed matcher equation realization: 2 artifact(s)"
+    assert output =~ "✓ generated equations: 16 artifact(s)"
+    assert output =~ "✓ matcher equations: 16 artifact(s)"
   end
 end

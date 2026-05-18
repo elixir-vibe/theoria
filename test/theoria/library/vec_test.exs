@@ -2,10 +2,10 @@ defmodule Theoria.Library.VecTest do
   use ExUnit.Case, async: true
 
   alias Theoria.Env
+  alias Theoria.Equation.Identity
   alias Theoria.Equation.Matcher.Eqns, as: MatcherEqns
   alias Theoria.Equation.Matcher.Indexed.Package, as: IndexedPackage
   alias Theoria.Equation.Matcher.Indexed.Realization, as: IndexedRealization
-  alias Theoria.Equation.Name
   alias Theoria.Inductive
   alias Theoria.Kernel
   alias Theoria.Library.Vec
@@ -105,7 +105,7 @@ defmodule Theoria.Library.VecTest do
     {:ok, env} = Vec.env_with_indexed_matcher()
     assert {:ok, matcher} = Env.fetch_matcher(env, :vec_match)
     assert matcher.mode == :indexed_matcher
-    assert matcher.equation_names == []
+    assert matcher.equation_identities == []
     assert {:ok, _replayed} = Kernel.validate_env(env)
 
     info = Vec.indexed_matcher_info(:vec_match)
@@ -113,9 +113,9 @@ defmodule Theoria.Library.VecTest do
     assert :ok = IndexedPackage.validate(package)
     assert {:ok, theorems} = IndexedRealization.realize_all(package)
 
-    assert Enum.map(theorems, & &1.name) == [
-             Name.indexed_matcher_equation(:vec_match, :vec_nil),
-             Name.indexed_matcher_equation(:vec_match, :vec_cons)
+    assert Enum.map(theorems, & &1.identity) == [
+             Identity.indexed_matcher_equation(:vec_match, :vec_nil),
+             Identity.indexed_matcher_equation(:vec_match, :vec_cons)
            ]
 
     assert {:ok, [nil_equation, cons_equation]} = MatcherEqns.indexed_statements(info, env)
@@ -126,14 +126,14 @@ defmodule Theoria.Library.VecTest do
   test "Vec indexed matcher equation theorems can be installed opt-in" do
     {:ok, env} = Vec.env_with_indexed_matcher(install_equations: true)
 
-    nil_equation = Name.indexed_matcher_equation(:vec_match, :vec_nil)
-    cons_equation = Name.indexed_matcher_equation(:vec_match, :vec_cons)
+    nil_equation = Identity.indexed_matcher_equation(:vec_match, :vec_nil)
+    cons_equation = Identity.indexed_matcher_equation(:vec_match, :vec_cons)
 
     assert {:ok, _constant} = Env.fetch(env, nil_equation)
     assert {:ok, _constant} = Env.fetch(env, cons_equation)
     assert {:ok, matcher} = Env.fetch_matcher(env, :vec_match)
 
-    assert matcher.equation_names == [nil_equation, cons_equation]
+    assert matcher.equation_identities == [nil_equation, cons_equation]
 
     assert length(RewriteDatabase.from_env_indexed_matcher_equations(env).rules) == 2
     assert length(SimpDatabase.from_env_indexed_matcher_equations(env).rules) == 2
@@ -144,8 +144,8 @@ defmodule Theoria.Library.VecTest do
       RewriteDatabase.from_env_all_equations(env, include_indexed_matchers: true).rules
 
     assert length(indexed_rules) == length(default_rules) + 2
-    refute Enum.any?(default_rules, &match?(%{id: %{kind: :indexed_matcher_equation}}, &1))
-    assert Enum.any?(indexed_rules, &match?(%{id: %{kind: :indexed_matcher_equation}}, &1))
+    refute Enum.any?(default_rules, &match?(%{identity: %{kind: :indexed_matcher_equation}}, &1))
+    assert Enum.any?(indexed_rules, &match?(%{identity: %{kind: :indexed_matcher_equation}}, &1))
     assert {:ok, _replayed} = Kernel.validate_env(env)
   end
 

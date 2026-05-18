@@ -5,7 +5,7 @@ defmodule Mix.Tasks.Theoria.Validate do
 
   use Mix.Task
 
-  alias Theoria.Equation.{Info, Lemma, Name}
+  alias Theoria.Equation.{Identity, Info, Lemma}
   alias Theoria.Validation
   alias Theoria.Validation.{Corpus, Options, Report}
 
@@ -50,11 +50,11 @@ defmodule Mix.Tasks.Theoria.Validate do
         )
 
         Mix.shell().info(
-          "✓ indexed matcher equation realization: #{result.indexed_matcher_realization_count} theorem(s)"
+          "✓ indexed matcher equation realization: #{result.indexed_matcher_realization_count} artifact(s)"
         )
 
-        Mix.shell().info("✓ generated equations: #{result.generated_equation_count} theorem(s)")
-        Mix.shell().info("✓ matcher equations: #{result.matcher_equation_count} theorem(s)")
+        Mix.shell().info("✓ generated equations: #{result.generated_equation_count} artifact(s)")
+        Mix.shell().info("✓ matcher equations: #{result.matcher_equation_count} artifact(s)")
 
         print_equations(result, opts)
 
@@ -98,7 +98,7 @@ defmodule Mix.Tasks.Theoria.Validate do
 
     if Keyword.get(opts, :verbose, false) do
       Enum.each(Lemma.generated_for(equation), fn lemma ->
-        Mix.shell().info("    #{Name.format(lemma.id)}")
+        Mix.shell().info("    #{Identity.format(lemma.identity)}")
       end)
     end
   end

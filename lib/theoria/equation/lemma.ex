@@ -3,34 +3,34 @@ defmodule Theoria.Equation.Lemma do
 
   alias Theoria.Env
   alias Theoria.Equation.Clause
+  alias Theoria.Equation.Identity
   alias Theoria.Equation.Info
-  alias Theoria.Equation.Name
-  alias Theoria.Kernel
+  alias Theoria.Equation.Realized
   alias Theoria.Term
   alias Theoria.Theorem
   alias Theoria.Validation.DefeqCheck
 
   @enforce_keys [:name, :left, :right]
-  defstruct [:name, :left, :right, :source, :id, binders: [], equality_type: nil]
+  defstruct [:name, :left, :right, :source, :identity, binders: [], equality_type: nil]
 
   @type binder :: {atom(), Term.t()}
 
   @type t :: %__MODULE__{
-          name: atom() | Name.t(),
+          name: atom() | Identity.t(),
           left: Term.t(),
           right: Term.t(),
           source: Clause.t() | nil,
-          id: Name.t() | nil,
+          identity: Identity.t() | nil,
           binders: [binder()],
           equality_type: Term.t() | nil
         }
 
   @doc "Builds equation-lemma metadata."
-  @spec new(atom() | Name.t(), Term.t(), Term.t(), keyword()) :: t()
+  @spec new(atom() | Identity.t(), Term.t(), Term.t(), keyword()) :: t()
   def new(name_or_id, left, right, opts \\ [])
 
-  def new(%Name{} = id, left, right, opts) do
-    new_with_name(id, left, right, Keyword.put(opts, :id, id))
+  def new(%Identity{} = identity, left, right, opts) do
+    new_with_name(identity, left, right, Keyword.put(opts, :identity, identity))
   end
 
   def new(name, left, right, opts) when is_atom(name) do
@@ -43,16 +43,16 @@ defmodule Theoria.Equation.Lemma do
       left: left,
       right: right,
       source: Keyword.get(opts, :source),
-      id: Keyword.get(opts, :id),
+      identity: Keyword.get(opts, :identity),
       binders: Keyword.get(opts, :binders, []),
       equality_type: Keyword.get(opts, :equality_type)
     }
   end
 
   @doc "Returns the Lean-style theorem name for a definition equation."
-  @spec theorem_name(atom(), atom()) :: Name.t()
+  @spec theorem_name(atom(), atom()) :: Identity.t()
   def theorem_name(definition_name, suffix) when is_atom(definition_name) do
-    Name.equation(definition_name, if(suffix == :"", do: nil, else: suffix))
+    Identity.equation(definition_name, if(suffix == :"", do: nil, else: suffix))
   end
 
   @doc "Builds equation-lemma metadata named after a compiled definition."
@@ -71,7 +71,7 @@ defmodule Theoria.Equation.Lemma do
     left = apply_binders(Term.const(info.name, levels), binder_count)
     equality_type = result_type(info.type, binder_count)
 
-    new(Name.unfold(info.name), left, body,
+    new(Identity.unfold(info.name), left, body,
       binders: binders,
       equality_type: equality_type
     )
@@ -125,23 +125,28 @@ defmodule Theoria.Equation.Lemma do
   def defeq_checks(category, lemmas) when is_atom(category),
     do: Enum.map(lemmas, &defeq_check(&1, category))
 
+  @doc "Kernel-checks equation-lemma metadata as an anonymous generated equation artifact."
+  @spec realize(Env.t(), t(), Term.t() | keyword(), keyword()) ::
+          {:ok, Realized.t()} | {:error, Theoria.Error.t()}
+  def realize(
+        %Env{} = env,
+        %__MODULE__{identity: %Identity{} = identity} = lemma,
+        equality_or_opts \\ [],
+        opts \\ []
+      ) do
+    {equality_type, opts} = equality_type_and_opts(lemma, equality_or_opts, opts)
+    theorem_type = forall_many(lemma.binders, Term.eq(equality_type, lemma.left, lemma.right))
+    proof = lam_many(lemma.binders, Term.refl(lemma.left))
+
+    Realized.check(env, identity, theorem_type, proof, opts)
+  end
+
   @doc "Kernel-checks equation-lemma metadata as a theorem using reflexivity."
   @spec to_theorem(Env.t(), t(), Term.t() | keyword(), keyword()) ::
           {:ok, Theorem.t()} | {:error, Theoria.Error.t()}
   def to_theorem(%Env{} = env, %__MODULE__{} = lemma, equality_or_opts \\ [], opts \\ []) do
-    {equality_type, opts} = equality_type_and_opts(lemma, equality_or_opts, opts)
-    theorem_type = forall_many(lemma.binders, Term.eq(equality_type, lemma.left, lemma.right))
-    proof = lam_many(lemma.binders, Term.refl(lemma.left))
-    universe_params = Keyword.get(opts, :universe_params, [])
-
-    with :ok <- Kernel.check(env, proof, theorem_type) do
-      {:ok,
-       %Theorem{
-         name: lemma.name,
-         type: theorem_type,
-         proof: proof,
-         universe_params: universe_params
-       }}
+    with {:ok, realized} <- realize(env, lemma, equality_or_opts, opts) do
+      {:ok, Realized.to_theorem(realized)}
     end
   end
 
@@ -190,7 +195,9 @@ defmodule Theoria.Equation.Lemma do
 
   defp result_type(type, _count), do: type
 
-  defp defeq_check_name(%__MODULE__{id: %Name{} = id}), do: Name.format(id)
+  defp defeq_check_name(%__MODULE__{identity: %Identity{} = identity}),
+    do: Identity.format(identity)
+
   defp defeq_check_name(%__MODULE__{name: name}), do: Atom.to_string(name)
 
   defp equality_type_and_opts(%__MODULE__{} = lemma, opts, []) when is_list(opts) do

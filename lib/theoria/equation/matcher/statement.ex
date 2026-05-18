@@ -3,7 +3,7 @@ defmodule Theoria.Equation.Matcher.Statement do
 
   alias Theoria.Equation.Lemma
   alias Theoria.Equation.Matcher.Equation, as: MatcherEquation
-  alias Theoria.Equation.Matcher.Statement.Vec, as: VecStatement
+  alias Theoria.Equation.Matcher.Statement.Dispatch
   alias Theoria.Term
 
   @doc "Builds an indexed matcher equation theorem statement."
@@ -25,7 +25,9 @@ defmodule Theoria.Equation.Matcher.Statement do
 
   def indexed_to_lemma(%MatcherEquation{} = equation) do
     {:ok,
-     Lemma.new(equation.id, equation.left, equation.right, equality_type: equation.statement_type)}
+     Lemma.new(equation.identity, equation.left, equation.right,
+       equality_type: equation.statement_type
+     )}
   end
 
   @doc "Builds indexed matcher equation statements for every equation."
@@ -49,15 +51,8 @@ defmodule Theoria.Equation.Matcher.Statement do
     end
   end
 
-  defp indexed_for_alternative(
-         %{family: :Vec} = shape,
-         %MatcherEquation{} = equation,
-         alternative
-       ),
-       do: VecStatement.indexed(shape, equation, alternative)
-
-  defp indexed_for_alternative(shape, %MatcherEquation{} = equation, _alternative),
-    do: {:error, {:unsupported_indexed_matcher_statement, shape.family, equation.constructor}}
+  defp indexed_for_alternative(shape, %MatcherEquation{} = equation, alternative),
+    do: Dispatch.indexed(shape, equation, alternative)
 
   defp find_alternative(shape, constructor),
     do: Enum.find(shape.alternatives, &(&1.constructor == constructor))

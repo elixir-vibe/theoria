@@ -179,13 +179,13 @@ Theoria already compiles a small internal Bool/Nat/List equation fragment into a
 ```elixir
 {:ok, env} = Theoria.Prelude.env()
 Theoria.Equation.Info.fetch(env, :nat_add)
-alias Theoria.Equation.Name
+alias Theoria.Equation.Identity
 
 Theoria.Equation.Eqns.get(env, :nat_add)
-Theoria.Equation.Eqns.realize(env, Name.equation(:nat_add, :succ))
+Theoria.Equation.Eqns.realize(env, Identity.equation(:nat_add, :succ))
 ```
 
-Generated ordinary equations, matcher equations, unfold equations, and checked matcher declarations are validated natively. Equation artifacts are identified by `Theoria.Equation.Name` structs and can be checked or installed directly under those structured keys. This is internal groundwork rather than stable public equation-definition syntax.
+Generated ordinary equations, matcher equations, unfold equations, and checked matcher declarations are validated natively. Equation artifacts are identified by `Theoria.Equation.Identity` structs and can be checked or installed directly under those structured keys. This is internal groundwork rather than stable public equation-definition syntax.
 
 Inspect them from Mix:
 

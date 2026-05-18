@@ -3,6 +3,7 @@ defmodule Theoria.Equation.Matcher.Eqns do
 
   alias Theoria.Env
   alias Theoria.Env.Matcher, as: EnvMatcher
+  alias Theoria.Equation.Identity
   alias Theoria.Equation.Info
   alias Theoria.Equation.Lemma
   alias Theoria.Equation.Matcher.Descriptor, as: MatcherDescriptor
@@ -11,14 +12,13 @@ defmodule Theoria.Equation.Matcher.Eqns do
   alias Theoria.Equation.Matcher.Indexed.Realization, as: IndexedRealization
   alias Theoria.Equation.Matcher.Statement, as: MatcherStatement
   alias Theoria.Equation.Matcher.Type, as: MatcherType
-  alias Theoria.Equation.Name
   alias Theoria.Term
 
   @doc "Returns generated matcher equation theorem names for a matcher."
-  @spec get(Env.t(), atom()) :: {:ok, [Name.t()]} | {:error, term()}
+  @spec get(Env.t(), atom()) :: {:ok, [Identity.t()]} | {:error, term()}
   def get(%Env{} = env, matcher_name) when is_atom(matcher_name) do
     case generated(env, matcher_name) do
-      {:ok, equations} -> {:ok, Enum.map(equations, & &1.id)}
+      {:ok, equations} -> {:ok, Enum.map(equations, & &1.identity)}
       {:error, _reason} = error -> error
     end
   end
@@ -65,13 +65,14 @@ defmodule Theoria.Equation.Matcher.Eqns do
   end
 
   @doc "Returns a planned indexed matcher equation theorem statement."
-  @spec indexed_statement(Info.t(), Env.t(), Name.t() | keyword()) ::
+  @spec indexed_statement(Info.t(), Env.t(), Identity.t() | keyword()) ::
           {:ok, Term.t()} | {:error, term()}
   def indexed_statement(%Info{} = info, %Env{} = env, selector) do
     with {:ok, equations} <- indexed_generated(info, env),
-         {:ok, equation_name} <- Name.cast(selector, info.matcher.name, :indexed_matcher_equation),
+         {:ok, equation_name} <-
+           Identity.cast(selector, info.matcher.name, :indexed_matcher_equation),
          %MatcherEquation{} = equation <-
-           Enum.find(equations, &(&1.id == equation_name)) ||
+           Enum.find(equations, &(&1.identity == equation_name)) ||
              {:error, {:unknown_indexed_matcher_equation, equation_name}},
          {:ok, descriptor} <- MatcherDescriptor.from_env(env, info.schema, info.matcher),
          {:ok, shape} <- MatcherType.shape_from_descriptor(descriptor) do
@@ -100,10 +101,11 @@ defmodule Theoria.Equation.Matcher.Eqns do
   end
 
   @doc "Realizes a planned indexed matcher equation theorem without installing it."
-  @spec indexed_realize(Info.t(), Env.t(), Name.t() | keyword()) ::
+  @spec indexed_realize(Info.t(), Env.t(), Identity.t() | keyword()) ::
           {:ok, Theoria.Theorem.t()} | {:error, term()}
   def indexed_realize(%Info{} = info, %Env{} = env, selector) do
-    with {:ok, theorem_name} <- Name.cast(selector, info.matcher.name, :indexed_matcher_equation),
+    with {:ok, theorem_name} <-
+           Identity.cast(selector, info.matcher.name, :indexed_matcher_equation),
          {:ok, package} <- IndexedPackage.build(info, env) do
       IndexedRealization.realize(package, theorem_name)
     end
@@ -131,7 +133,7 @@ defmodule Theoria.Equation.Matcher.Eqns do
   end
 
   @doc "Finds the matcher that generated a matcher equation theorem."
-  @spec source(Env.t(), Name.t() | atom()) :: {:ok, atom()} | :error
+  @spec source(Env.t(), Identity.t() | atom()) :: {:ok, atom()} | :error
   def source(%Env{} = env, theorem_name),
     do: source_declaration(env, declaration_name(theorem_name))
 
@@ -151,9 +153,10 @@ defmodule Theoria.Equation.Matcher.Eqns do
   @spec lemmas(Env.t()) :: [Lemma.t()]
   def lemmas(%Env{} = env), do: Enum.map(all(env), &MatcherEquation.to_lemma/1)
 
-  @doc "Realizes a generated matcher equation theorem without installing it."
-  @spec realize(Env.t(), Name.t() | atom()) :: {:ok, Theoria.Theorem.t()} | {:error, term()}
-  def realize(%Env{} = env, %Name{} = theorem_name) do
+  @doc "Realizes a generated matcher equation artifact without installing it."
+  @spec realize(Env.t(), Identity.t() | atom()) ::
+          {:ok, Theoria.Equation.Realized.t()} | {:error, term()}
+  def realize(%Env{} = env, %Identity{} = theorem_name) do
     realize_declaration(env, theorem_name)
   end
 
@@ -166,14 +169,14 @@ defmodule Theoria.Equation.Matcher.Eqns do
     |> all()
     |> Enum.find_value({:error, {:unknown_matcher_equation, theorem_name}}, fn equation ->
       if equation.name == theorem_name do
-        Lemma.to_theorem(env, MatcherEquation.to_lemma(equation))
+        Lemma.realize(env, MatcherEquation.to_lemma(equation))
       else
         false
       end
     end)
   end
 
-  defp declaration_name(%Name{} = name), do: name
+  defp declaration_name(%Identity{} = name), do: name
   defp declaration_name(name) when is_atom(name), do: name
 
   defp indexed_lemmas_for(statements) do

@@ -1,8 +1,8 @@
 defmodule Theoria.Equation.Matcher.Indexed.RealizationTest do
   use ExUnit.Case, async: true
 
+  alias Theoria.Equation.Identity
   alias Theoria.Equation.Matcher.Indexed.Realization
-  alias Theoria.Equation.Name
   alias Theoria.Kernel
   alias Theoria.Prelude
   alias Theoria.Validation.IndexedMatchers
@@ -16,9 +16,9 @@ defmodule Theoria.Equation.Matcher.Indexed.RealizationTest do
     assert Realization.blockers(plan) == []
     assert plan.matcher == :vec_validation_match
 
-    assert Enum.map(plan.equations, & &1.lemma.id) == [
-             Name.indexed_matcher_equation(:vec_validation_match, :vec_nil),
-             Name.indexed_matcher_equation(:vec_validation_match, :vec_cons)
+    assert Enum.map(plan.equations, & &1.lemma.identity) == [
+             Identity.indexed_matcher_equation(:vec_validation_match, :vec_nil),
+             Identity.indexed_matcher_equation(:vec_validation_match, :vec_cons)
            ]
 
     assert Enum.all?(plan.equations, &(&1.proof_strategy == :recursor_iota_refl))
@@ -34,17 +34,17 @@ defmodule Theoria.Equation.Matcher.Indexed.RealizationTest do
     assert {:ok, theorem} =
              Realization.realize(
                package,
-               Name.indexed_matcher_equation(:vec_validation_match, :vec_cons)
+               Identity.indexed_matcher_equation(:vec_validation_match, :vec_cons)
              )
 
-    assert theorem.name == Name.indexed_matcher_equation(:vec_validation_match, :vec_cons)
+    assert theorem.identity == Identity.indexed_matcher_equation(:vec_validation_match, :vec_cons)
     assert :ok = Kernel.check(package.env, theorem.proof, theorem.type)
 
     assert {:ok, theorems} = Realization.realize_all(package)
 
-    assert Enum.map(theorems, & &1.name) == [
-             Name.indexed_matcher_equation(:vec_validation_match, :vec_nil),
-             Name.indexed_matcher_equation(:vec_validation_match, :vec_cons)
+    assert Enum.map(theorems, & &1.identity) == [
+             Identity.indexed_matcher_equation(:vec_validation_match, :vec_nil),
+             Identity.indexed_matcher_equation(:vec_validation_match, :vec_cons)
            ]
   end
 end

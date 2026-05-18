@@ -3,11 +3,11 @@ defmodule Theoria.Equation.Extension do
 
   alias Theoria.Env
   alias Theoria.Env.Matcher, as: EnvMatcher
+  alias Theoria.Equation.Identity
   alias Theoria.Equation.Info
   alias Theoria.Equation.Lemma
   alias Theoria.Equation.Matcher.Eqns, as: MatcherEqns
   alias Theoria.Equation.Matcher.Equation, as: MatcherEquation
-  alias Theoria.Equation.Name
 
   defmodule Registry do
     @moduledoc "In-memory registry snapshot for generated equation metadata."
@@ -19,18 +19,18 @@ defmodule Theoria.Equation.Extension do
               matchers: %{},
               matchers_by_source: %{},
               theorem_sources: %{},
-              equation_names: %{},
-              matcher_equation_names: %{},
-              unfold_names: %{}
+              equation_identities: %{},
+              matcher_equation_identities: %{},
+              unfold_identities: %{}
 
     @type t :: %__MODULE__{
             definitions: %{optional(atom()) => Info.t()},
             matchers: %{optional(atom()) => EnvMatcher.t()},
             matchers_by_source: %{optional(atom()) => [atom()]},
             theorem_sources: %{optional(atom()) => atom()},
-            equation_names: %{optional(atom()) => [atom()]},
-            matcher_equation_names: %{optional(atom()) => [atom()]},
-            unfold_names: %{optional(atom()) => atom()}
+            equation_identities: %{optional(atom()) => [atom()]},
+            matcher_equation_identities: %{optional(atom()) => [atom()]},
+            unfold_identities: %{optional(atom()) => atom()}
           }
   end
 
@@ -88,20 +88,20 @@ defmodule Theoria.Equation.Extension do
   end
 
   @doc "Returns all generated theorem identities known to the registry."
-  @spec theorem_ids(Env.t() | Registry.t()) :: [Name.t()]
+  @spec theorem_ids(Env.t() | Registry.t()) :: [Identity.t()]
   def theorem_ids(%Env{} = env), do: env |> build() |> theorem_ids()
 
   def theorem_ids(%Registry{} = registry) do
     registry
-    |> theorem_names()
+    |> theorem_identities()
     |> Enum.flat_map(&declaration_id(registry, &1))
   end
 
   @doc "Returns all generated theorem names known to the registry."
-  @spec theorem_names(Env.t() | Registry.t()) :: [atom()]
-  def theorem_names(%Env{} = env), do: env |> build() |> theorem_names()
+  @spec theorem_identities(Env.t() | Registry.t()) :: [atom()]
+  def theorem_identities(%Env{} = env), do: env |> build() |> theorem_identities()
 
-  def theorem_names(%Registry{} = registry) do
+  def theorem_identities(%Registry{} = registry) do
     Map.keys(registry.theorem_sources)
   end
 
@@ -113,9 +113,9 @@ defmodule Theoria.Equation.Extension do
     %{
       definitions: map_size(registry.definitions),
       matchers: map_size(registry.matchers),
-      ordinary_equations: count_names(registry.equation_names),
-      matcher_equations: count_names(registry.matcher_equation_names),
-      unfolds: map_size(registry.unfold_names),
+      ordinary_equations: count_identities(registry.equation_identities),
+      matcher_equations: count_identities(registry.matcher_equation_identities),
+      unfolds: map_size(registry.unfold_identities),
       theorems: map_size(registry.theorem_sources)
     }
   end
@@ -126,7 +126,7 @@ defmodule Theoria.Equation.Extension do
     registry = build(env)
 
     with :ok <- validate_matcher_sources(registry),
-         :ok <- validate_matcher_equation_names(env, registry),
+         :ok <- validate_matcher_equation_identities(env, registry),
          :ok <- validate_source_roundtrip(registry) do
       validate_realization(env, registry)
     end
@@ -153,7 +153,7 @@ defmodule Theoria.Equation.Extension do
   @spec realize_all(Env.t()) :: {:ok, [Theoria.Theorem.t()]} | {:error, term()}
   def realize_all(%Env{} = env) do
     env
-    |> theorem_names()
+    |> theorem_identities()
     |> Enum.reduce_while({:ok, []}, fn theorem_name, {:ok, theorems} ->
       case realize(env, theorem_name) do
         {:ok, theorem} -> {:cont, {:ok, [theorem | theorems]}}
@@ -167,50 +167,50 @@ defmodule Theoria.Equation.Extension do
   end
 
   @doc "Returns generated ordinary equation identities for a source definition."
-  @spec equation_ids(Info.t()) :: [Name.t()]
-  def equation_ids(%Info{} = info), do: Enum.map(Lemma.generated_for(info), & &1.id)
+  @spec equation_ids(Info.t()) :: [Identity.t()]
+  def equation_ids(%Info{} = info), do: Enum.map(Lemma.generated_for(info), & &1.identity)
 
   @doc "Returns generated ordinary equation identities for a source definition in an environment."
-  @spec equation_ids(Env.t(), atom()) :: {:ok, [Name.t()]} | {:error, term()}
+  @spec equation_ids(Env.t(), atom()) :: {:ok, [Identity.t()]} | {:error, term()}
   def equation_ids(%Env{} = env, source) when is_atom(source) do
-    with {:ok, names} <- equation_names(env, source) do
+    with {:ok, names} <- equation_identities(env, source) do
       {:ok, Enum.flat_map(names, &declaration_id(build(env), &1))}
     end
   end
 
   @doc "Returns generated ordinary equation names for a source definition."
-  @spec equation_names(Info.t()) :: [atom()]
-  def equation_names(%Info{} = info), do: Enum.map(Lemma.generated_for(info), & &1.name)
+  @spec equation_identities(Info.t()) :: [atom()]
+  def equation_identities(%Info{} = info), do: Enum.map(Lemma.generated_for(info), & &1.name)
 
   @doc "Returns generated ordinary equation names for a source definition in an environment."
-  @spec equation_names(Env.t(), atom()) :: {:ok, [atom()]} | {:error, term()}
-  def equation_names(%Env{} = env, source) when is_atom(source) do
-    case Map.fetch(build(env).equation_names, source) do
+  @spec equation_identities(Env.t(), atom()) :: {:ok, [atom()]} | {:error, term()}
+  def equation_identities(%Env{} = env, source) when is_atom(source) do
+    case Map.fetch(build(env).equation_identities, source) do
       {:ok, names} -> {:ok, names}
       :error -> {:error, {:unknown_equation_definition, source}}
     end
   end
 
   @doc "Returns generated matcher equation identities for a matcher declaration."
-  @spec matcher_equation_ids(Env.t(), EnvMatcher.t()) :: [Name.t()]
+  @spec matcher_equation_ids(Env.t(), EnvMatcher.t()) :: [Identity.t()]
   def matcher_equation_ids(%Env{} = env, %EnvMatcher{} = matcher) do
     env
     |> matcher_equations_for(matcher)
-    |> Enum.map(& &1.id)
+    |> Enum.map(& &1.identity)
   end
 
   @doc "Returns generated matcher equation names for a matcher declaration."
-  @spec matcher_equation_names(Env.t(), EnvMatcher.t()) :: [atom()]
-  def matcher_equation_names(%Env{} = env, %EnvMatcher{} = matcher) do
+  @spec matcher_equation_identities(Env.t(), EnvMatcher.t()) :: [atom()]
+  def matcher_equation_identities(%Env{} = env, %EnvMatcher{} = matcher) do
     env
     |> matcher_equations_for(matcher)
     |> Enum.map(& &1.name)
   end
 
   @doc "Returns the unfold theorem identity for a source definition."
-  @spec unfold_id(Env.t(), atom()) :: {:ok, Name.t()} | {:error, term()}
+  @spec unfold_id(Env.t(), atom()) :: {:ok, Identity.t()} | {:error, term()}
   def unfold_id(%Env{} = env, source) when is_atom(source) do
-    with {:ok, name} <- unfold_name(env, source) do
+    with {:ok, name} <- unfold_identity(env, source) do
       case declaration_id(build(env), name) do
         [id] -> {:ok, id}
         [] -> {:error, {:unknown_equation_definition, source}}
@@ -219,9 +219,9 @@ defmodule Theoria.Equation.Extension do
   end
 
   @doc "Returns the unfold theorem name for a source definition."
-  @spec unfold_name(Env.t(), atom()) :: {:ok, atom()} | {:error, term()}
-  def unfold_name(%Env{} = env, source) when is_atom(source) do
-    case Map.fetch(build(env).unfold_names, source) do
+  @spec unfold_identity(Env.t(), atom()) :: {:ok, atom()} | {:error, term()}
+  def unfold_identity(%Env{} = env, source) when is_atom(source) do
+    case Map.fetch(build(env).unfold_identities, source) do
       {:ok, name} -> {:ok, name}
       :error -> {:error, {:unknown_equation_definition, source}}
     end
@@ -242,7 +242,7 @@ defmodule Theoria.Equation.Extension do
   defp source_equation_ids(%Registry{} = registry, source) do
     cond do
       info = Map.get(registry.definitions, source) ->
-        [Lemma.unfold_for(info).id | equation_ids(info)]
+        [Lemma.unfold_for(info).identity | equation_ids(info)]
 
       matcher = Map.get(registry.matchers, source) ->
         matcher_equation_ids_from_names(registry, matcher)
@@ -253,18 +253,18 @@ defmodule Theoria.Equation.Extension do
   end
 
   defp matcher_equation_ids_from_names(%Registry{} = registry, %EnvMatcher{} = matcher) do
-    registry.matcher_equation_names
+    registry.matcher_equation_identities
     |> Map.get(matcher.name, [])
     |> Enum.map(&matcher_equation_id(matcher, &1))
   end
 
-  defp matcher_equation_id(_matcher, %Name{} = name), do: name
+  defp matcher_equation_id(_matcher, %Identity{} = name), do: name
 
   defp matcher_equation_id(%EnvMatcher{mode: :indexed_matcher, name: matcher}, name),
-    do: Name.indexed_matcher_equation(matcher, matcher_equation_target(name))
+    do: Identity.indexed_matcher_equation(matcher, matcher_equation_target(name))
 
   defp matcher_equation_id(%EnvMatcher{name: matcher}, name),
-    do: Name.matcher_equation(matcher, matcher_equation_target(name))
+    do: Identity.matcher_equation(matcher, matcher_equation_target(name))
 
   defp matcher_equation_target(name) do
     name
@@ -276,13 +276,13 @@ defmodule Theoria.Equation.Extension do
 
   defp matcher_equations_for(
          _env,
-         %EnvMatcher{mode: :indexed_matcher, equation_names: names} = matcher
+         %EnvMatcher{mode: :indexed_matcher, equation_identities: names} = matcher
        )
        when names != [] do
     Enum.map(names, fn name ->
       %MatcherEquation{
         matcher: matcher.name,
-        id: matcher_equation_id(matcher, name),
+        identity: matcher_equation_id(matcher, name),
         name: name,
         constructor: matcher_equation_target(name),
         left: nil,
@@ -300,7 +300,7 @@ defmodule Theoria.Equation.Extension do
     end
   end
 
-  defp count_names(names_by_source) do
+  defp count_identities(names_by_source) do
     Enum.reduce(names_by_source, 0, fn {_source, names}, count -> count + length(names) end)
   end
 
@@ -315,16 +315,17 @@ defmodule Theoria.Equation.Extension do
     end)
   end
 
-  defp validate_matcher_equation_names(env, %Registry{} = registry) do
+  defp validate_matcher_equation_identities(env, %Registry{} = registry) do
     registry.matchers
     |> Enum.reduce_while(:ok, fn {_name, matcher}, :ok ->
-      names = Map.get(registry.matcher_equation_names, matcher.name, [])
+      names = Map.get(registry.matcher_equation_identities, matcher.name, [])
 
-      if matcher.equation_names == names do
+      if matcher.equation_identities == names do
         {:cont, :ok}
       else
         {:halt,
-         {:error, {:matcher_equation_name_mismatch, matcher.name, matcher.equation_names, names}}}
+         {:error,
+          {:matcher_equation_identity_mismatch, matcher.name, matcher.equation_identities, names}}}
       end
     end)
     |> case do
@@ -336,8 +337,8 @@ defmodule Theoria.Equation.Extension do
   defp validate_matcher_name_generation(env, %Registry{} = registry) do
     registry.matchers
     |> Enum.reduce_while(:ok, fn {_name, matcher}, :ok ->
-      generated = matcher_equation_names(env, matcher)
-      names = Map.get(registry.matcher_equation_names, matcher.name, [])
+      generated = matcher_equation_identities(env, matcher)
+      names = Map.get(registry.matcher_equation_identities, matcher.name, [])
 
       if generated == names do
         {:cont, :ok}
@@ -359,7 +360,7 @@ defmodule Theoria.Equation.Extension do
 
   defp validate_realization(env, %Registry{} = registry) do
     registry
-    |> theorem_names()
+    |> theorem_identities()
     |> Enum.reduce_while(:ok, fn theorem_name, :ok ->
       case realize(env, theorem_name) do
         {:ok, _theorem} -> {:cont, :ok}
@@ -414,14 +415,14 @@ defmodule Theoria.Equation.Extension do
   end
 
   defp register_definition(%Info{} = info, %Registry{} = registry) do
-    equations = equation_names(info)
+    equations = equation_identities(info)
     unfold = Lemma.unfold_for(info).name
 
     %Registry{
       registry
       | definitions: Map.put(registry.definitions, info.name, info),
-        equation_names: Map.put(registry.equation_names, info.name, equations),
-        unfold_names: Map.put(registry.unfold_names, info.name, unfold),
+        equation_identities: Map.put(registry.equation_identities, info.name, equations),
+        unfold_identities: Map.put(registry.unfold_identities, info.name, unfold),
         theorem_sources:
           registry.theorem_sources
           |> put_sources(info.name, equations)
@@ -430,7 +431,7 @@ defmodule Theoria.Equation.Extension do
   end
 
   defp register_matcher(env, %EnvMatcher{} = matcher, %Registry{} = registry) do
-    equations = matcher_equation_names(env, matcher)
+    equations = matcher_equation_identities(env, matcher)
 
     %Registry{
       registry
@@ -442,7 +443,8 @@ defmodule Theoria.Equation.Extension do
             [matcher.name],
             &(&1 ++ [matcher.name])
           ),
-        matcher_equation_names: Map.put(registry.matcher_equation_names, matcher.name, equations),
+        matcher_equation_identities:
+          Map.put(registry.matcher_equation_identities, matcher.name, equations),
         theorem_sources: put_sources(registry.theorem_sources, matcher.name, equations)
     }
   end

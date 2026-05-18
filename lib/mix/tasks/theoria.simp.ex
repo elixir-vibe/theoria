@@ -5,7 +5,7 @@ defmodule Mix.Tasks.Theoria.Simp do
 
   use Mix.Task
 
-  alias Theoria.Equation.Name
+  alias Theoria.Equation.Identity
   alias Theoria.Prelude
   alias Theoria.Pretty
   alias Theoria.Simp
@@ -35,7 +35,7 @@ defmodule Mix.Tasks.Theoria.Simp do
       Mix.shell().info("  #{name}: #{Pretty.term(term)} ↦ #{Pretty.term(result.term)}")
 
       Mix.shell().info(
-        "    steps: #{Enum.map_join(result.steps, ", ", &Name.format_declaration(&1.rule))}"
+        "    steps: #{Enum.map_join(result.steps, ", ", &Identity.format_declaration(&1.rule))}"
       )
     end)
   end

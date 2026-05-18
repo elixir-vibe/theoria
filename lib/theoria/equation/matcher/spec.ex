@@ -22,7 +22,7 @@ defmodule Theoria.Equation.Matcher.Spec do
     :schema,
     mode: :source_aligned,
     level_params: [],
-    equation_names: []
+    equation_identities: []
   ]
 
   @type t :: %__MODULE__{
@@ -34,7 +34,7 @@ defmodule Theoria.Equation.Matcher.Spec do
           schema: Schema.t() | nil,
           mode: mode(),
           level_params: [atom()],
-          equation_names: [atom()]
+          equation_identities: [atom()]
         }
 
   @doc "Builds a checked matcher declaration spec from equation metadata."
@@ -58,7 +58,7 @@ defmodule Theoria.Equation.Matcher.Spec do
          schema: info.schema,
          mode: mode,
          level_params: info.level_params,
-         equation_names: info |> MatcherEqns.generated() |> Enum.map(& &1.name)
+         equation_identities: info |> MatcherEqns.generated() |> Enum.map(& &1.name)
        }}
     end
   end
@@ -84,7 +84,7 @@ defmodule Theoria.Equation.Matcher.Spec do
          schema: info.schema,
          mode: :indexed_matcher,
          level_params: info.level_params,
-         equation_names: []
+         equation_identities: []
        }}
     else
       :error -> {:error, :missing_env}
@@ -128,7 +128,7 @@ defmodule Theoria.Equation.Matcher.Spec do
       mode: spec.mode,
       schema: spec.schema,
       level_params: spec.level_params,
-      equation_names: spec.equation_names
+      equation_identities: spec.equation_identities
     )
   end
 

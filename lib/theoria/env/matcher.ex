@@ -15,7 +15,7 @@ defmodule Theoria.Env.Matcher do
     :schema,
     mode: :source_aligned,
     level_params: [],
-    equation_names: []
+    equation_identities: []
   ]
 
   @type t :: %__MODULE__{
@@ -27,7 +27,7 @@ defmodule Theoria.Env.Matcher do
           schema: Schema.t() | nil,
           mode: :source_aligned | :matcher | :indexed_matcher,
           level_params: [atom()],
-          equation_names: [atom()]
+          equation_identities: [atom()]
         }
 
   @doc "Builds matcher declaration metadata from a source equation definition."
@@ -43,7 +43,7 @@ defmodule Theoria.Env.Matcher do
       schema: Keyword.get(opts, :schema),
       mode: Keyword.get(opts, :mode, :source_aligned),
       level_params: Keyword.get(opts, :level_params, []),
-      equation_names: Keyword.get(opts, :equation_names, [])
+      equation_identities: Keyword.get(opts, :equation_identities, [])
     }
   end
 end

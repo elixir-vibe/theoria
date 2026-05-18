@@ -526,7 +526,7 @@ defmodule Theoria.Kernel do
           mode: metadata.mode,
           schema: metadata.schema,
           level_params: params,
-          equation_names: metadata.equation_names
+          equation_identities: metadata.equation_identities
         })
 
       {:ok,

@@ -1,14 +1,14 @@
 defmodule Theoria.Equation.Matcher.Equation do
   @moduledoc "Experimental/internal API for 0.2; subject to change before 0.3. Metadata for an equation generated for a matcher alternative."
 
+  alias Theoria.Equation.Identity
   alias Theoria.Equation.Lemma
-  alias Theoria.Equation.Name
   alias Theoria.Term
 
   @enforce_keys [:matcher, :name, :constructor, :left, :right, :equality_type]
   defstruct [
     :matcher,
-    :id,
+    :identity,
     :name,
     :constructor,
     :left,
@@ -27,8 +27,8 @@ defmodule Theoria.Equation.Matcher.Equation do
 
   @type t :: %__MODULE__{
           matcher: atom(),
-          id: Name.t() | nil,
-          name: atom() | Name.t(),
+          identity: Identity.t() | nil,
+          name: atom() | Identity.t(),
           constructor: atom(),
           left: Term.t(),
           right: Term.t(),
@@ -37,7 +37,7 @@ defmodule Theoria.Equation.Matcher.Equation do
           source: Lemma.t() | nil,
           indexed?: boolean(),
           index_patterns: [Term.t()],
-          statement_name: atom() | Name.t() | nil,
+          statement_name: atom() | Identity.t() | nil,
           statement_type: Term.t() | nil,
           statement_status: :planned | :realizable | :realized | :unsupported,
           proof: Term.t() | nil,
@@ -47,11 +47,11 @@ defmodule Theoria.Equation.Matcher.Equation do
   @doc "Builds matcher-equation metadata from an ordinary equation lemma."
   @spec from_lemma(atom(), atom(), Lemma.t()) :: t()
   def from_lemma(matcher, constructor, %Lemma{} = lemma) when is_atom(matcher) do
-    id = Name.matcher_equation(matcher, constructor)
+    id = Identity.matcher_equation(matcher, constructor)
 
     %__MODULE__{
       matcher: matcher,
-      id: id,
+      identity: id,
       name: id,
       constructor: constructor,
       left: lemma.left,
@@ -65,11 +65,11 @@ defmodule Theoria.Equation.Matcher.Equation do
   @doc "Builds indexed matcher-equation metadata from a matcher alternative."
   @spec indexed(atom(), atom(), [Term.t()]) :: t()
   def indexed(matcher, constructor, index_patterns) when is_atom(matcher) do
-    id = Name.indexed_matcher_equation(matcher, constructor)
+    id = Identity.indexed_matcher_equation(matcher, constructor)
 
     %__MODULE__{
       matcher: matcher,
-      id: id,
+      identity: id,
       name: id,
       constructor: constructor,
       left: Term.const(matcher),
@@ -86,7 +86,7 @@ defmodule Theoria.Equation.Matcher.Equation do
   @doc "Converts matcher-equation metadata to theorem-like equation lemma metadata."
   @spec to_lemma(t()) :: Lemma.t()
   def to_lemma(%__MODULE__{} = equation) do
-    Lemma.new(equation.id || equation.name, equation.left, equation.right,
+    Lemma.new(equation.identity || equation.name, equation.left, equation.right,
       binders: equation.binders,
       equality_type: equation.equality_type,
       source: equation.source && equation.source.source

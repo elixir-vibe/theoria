@@ -13,9 +13,9 @@ defmodule Mix.Tasks.Theoria.Equations do
   alias Theoria.Equation.{
     Eqns,
     Extension,
+    Identity,
     Info,
-    Lemma,
-    Name
+    Lemma
   }
 
   alias Theoria.Prelude
@@ -172,14 +172,14 @@ defmodule Mix.Tasks.Theoria.Equations do
   defp registry_entry_count(env, equations) do
     ordinary_count =
       Enum.reduce(equations, 0, fn info, count ->
-        count + 1 + length(Extension.equation_names(info))
+        count + 1 + length(Extension.equation_identities(info))
       end)
 
     matcher_count =
       env
       |> selected_matchers(equations)
       |> Enum.reduce(0, fn matcher, count ->
-        count + length(Extension.matcher_equation_names(env, matcher))
+        count + length(Extension.matcher_equation_identities(env, matcher))
       end)
 
     ordinary_count + matcher_count
@@ -193,8 +193,8 @@ defmodule Mix.Tasks.Theoria.Equations do
     |> Enum.filter(&MapSet.member?(source_names, &1.source))
   end
 
-  defp format_equation_name(%{id: %Name{} = id}), do: Name.format(id)
-  defp format_equation_name(%{name: name}), do: Name.format_declaration(name)
+  defp format_equation_name(%{identity: %Identity{} = identity}), do: Identity.format(identity)
+  defp format_equation_name(%{name: name}), do: Identity.format_declaration(name)
 
   defp install_equations(env, equations) do
     equations

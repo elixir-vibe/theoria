@@ -6,6 +6,7 @@ defmodule Theoria.Equation.Matcher.Indexed.Package do
   alias Theoria.Equation.Matcher.Eqns, as: MatcherEqns
   alias Theoria.Equation.Matcher.Indexed.Realization
   alias Theoria.Equation.Matcher.Spec, as: MatcherSpec
+  alias Theoria.Equation.Realized
   alias Theoria.Kernel
   alias Theoria.Term
 
@@ -43,6 +44,30 @@ defmodule Theoria.Equation.Matcher.Indexed.Package do
     end
   end
 
+  @doc "Returns the checked indexed statement metadata for the package."
+  @spec plan_statements(t()) :: [Theoria.Equation.Matcher.Equation.t()]
+  def plan_statements(%__MODULE__{statements: statements}), do: statements
+
+  @doc "Returns the metadata-only lemmas planned for the package."
+  @spec plan_lemmas(t()) :: [Theoria.Equation.Lemma.t()]
+  def plan_lemmas(%__MODULE__{lemmas: lemmas}), do: lemmas
+
+  @doc "Builds the recursor-informed realization plan for the package."
+  @spec plan_realization(t()) :: {:ok, Realization.Plan.t()}
+  def plan_realization(%__MODULE__{} = package), do: Realization.plan(package)
+
+  @doc "Kernel-checks all generated indexed matcher equation artifacts."
+  @spec realize(t()) :: {:ok, [Theoria.Equation.Realized.t()]} | {:error, term()}
+  def realize(%__MODULE__{} = package), do: Realization.realize_all(package)
+
+  @doc "Installs realized indexed matcher equation artifacts into the package environment."
+  @spec install(t()) :: {:ok, Env.t(), [Theoria.Theorem.t()]} | {:error, term()}
+  def install(%__MODULE__{} = package) do
+    with {:ok, realized} <- realize(package) do
+      install_theorems(package.env, realized)
+    end
+  end
+
   @doc "Validates the indexed matcher equation package without realizing theorem proofs."
   @spec validate(t()) :: :ok | {:error, term()}
   def validate(%__MODULE__{} = package) do
@@ -54,6 +79,20 @@ defmodule Theoria.Equation.Matcher.Indexed.Package do
          :ok <- validate_realization_boundary(package),
          {:ok, _env} <- Kernel.validate_env(package.env) do
       :ok
+    end
+  end
+
+  defp install_theorems(env, realized) do
+    realized
+    |> Enum.reduce_while({:ok, env, []}, fn realized, {:ok, env, installed} ->
+      case Realized.install(env, realized) do
+        {:ok, env, theorem} -> {:cont, {:ok, env, [theorem | installed]}}
+        {:error, _reason} = error -> {:halt, error}
+      end
+    end)
+    |> case do
+      {:ok, env, installed} -> {:ok, env, Enum.reverse(installed)}
+      {:error, _reason} = error -> error
     end
   end
 
@@ -75,7 +114,7 @@ defmodule Theoria.Equation.Matcher.Indexed.Package do
       package.matcher.mode != :indexed_matcher ->
         {:error, {:indexed_matcher_mode_mismatch, package.matcher.name}}
 
-      package.matcher.equation_names not in [[], Enum.map(package.equations, & &1.name)] ->
+      package.matcher.equation_identities not in [[], Enum.map(package.equations, & &1.name)] ->
         {:error, {:indexed_matcher_equation_name_mismatch, package.matcher.name}}
 
       true ->
@@ -90,7 +129,7 @@ defmodule Theoria.Equation.Matcher.Indexed.Package do
     |> Enum.reduce_while({:ok, MapSet.new()}, fn equation, {:ok, names} ->
       cond do
         MapSet.member?(names, equation.name) ->
-          {:halt, {:error, :duplicate_indexed_matcher_equation_names}}
+          {:halt, {:error, :duplicate_indexed_matcher_equation_identities}}
 
         equation.matcher != info.matcher.name ->
           {:halt, {:error, :indexed_matcher_equation_matcher_mismatch}}
@@ -165,9 +204,12 @@ defmodule Theoria.Equation.Matcher.Indexed.Package do
 
   defp validate_realization_boundary(%__MODULE__{equations: equations} = package) do
     Enum.reduce_while(equations, :ok, fn equation, :ok ->
-      case Realization.realize(package, equation.id) do
-        {:ok, %Theoria.Theorem{name: name}} when name == equation.name -> {:cont, :ok}
-        other -> {:halt, {:error, {:indexed_matcher_realization_boundary, equation.name, other}}}
+      case Realization.realize(package, equation.identity) do
+        {:ok, %Theoria.Equation.Realized{identity: identity}} when identity == equation.name ->
+          {:cont, :ok}
+
+        other ->
+          {:halt, {:error, {:indexed_matcher_realization_boundary, equation.name, other}}}
       end
     end)
   end

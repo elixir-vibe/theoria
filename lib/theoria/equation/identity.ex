@@ -1,4 +1,4 @@
-defmodule Theoria.Equation.Name do
+defmodule Theoria.Equation.Identity do
   @moduledoc "Structured identity for generated equation artifacts."
 
   @enforce_keys [:owner, :kind, :target]
@@ -72,9 +72,9 @@ defmodule Theoria.Equation.Name do
   defp target_segment(target), do: Atom.to_string(target)
 end
 
-defimpl Inspect, for: Theoria.Equation.Name do
+defimpl Inspect, for: Theoria.Equation.Identity do
   import Inspect.Algebra
 
   def inspect(name, _opts),
-    do: concat(["#Theoria.EquationName<", Theoria.Equation.Name.format(name), ">"])
+    do: concat(["#Theoria.EquationIdentity<", Theoria.Equation.Identity.format(name), ">"])
 end

@@ -2,10 +2,10 @@ defmodule Theoria.Lean.Module do
   @moduledoc "Experimental/internal API for 0.2; subject to change before 0.3. Builds Lean oracle source files from encoded checks."
 
   alias Theoria.Elaborator
+  alias Theoria.Equation.Identity
   alias Theoria.Equation.{Info, Lemma}
   alias Theoria.Equation.Matcher.Eqns, as: MatcherEqns
   alias Theoria.Equation.Matcher.Equation, as: MatcherEquation
-  alias Theoria.Equation.Name
   alias Theoria.Lean.Encode
   alias Theoria.Lean.MirrorPrelude
   alias Theoria.Prelude
@@ -151,7 +151,11 @@ defmodule Theoria.Lean.Module do
   defp add_indexed_type_checks(module, statements) do
     Enum.reduce(statements, {:ok, module}, fn equation, {:ok, module} ->
       {:ok,
-       add_type_check(module, "indexed.#{Name.format(equation.id)}", equation.statement_type)}
+       add_type_check(
+         module,
+         "indexed.#{Identity.format(equation.identity)}",
+         equation.statement_type
+       )}
     end)
   end
 
@@ -172,8 +176,7 @@ defmodule Theoria.Lean.Module do
     end
   end
 
-  defp equation_lemma_label(%{id: %Name{} = id}), do: Name.format(id)
-  defp equation_lemma_label(%{name: name}), do: Name.format_declaration(name)
+  defp equation_lemma_label(%{identity: %Identity{} = identity}), do: Identity.format(identity)
 
   defp equation_category_enabled?(info, categories),
     do: equation_category(info.name) in categories

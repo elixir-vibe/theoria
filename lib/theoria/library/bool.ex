@@ -8,13 +8,13 @@ defmodule Theoria.Library.Bool do
 
   alias Theoria.Env
   alias Theoria.Equation
+  alias Theoria.Equation.Case.Template, as: CaseTemplate
+  alias Theoria.Equation.Definition.Spec, as: DefinitionSpec
 
   alias Theoria.Equation.{
-    CaseTemplate,
     Clause,
     Context,
     Definition,
-    DefinitionSpec,
     Pattern,
     Signature
   }
@@ -129,7 +129,8 @@ defmodule Theoria.Library.Bool do
              cases: bool_cases(name),
              context: Keyword.get(opts, :context, Context.new())
            ),
-         {:ok, spec} <- DefinitionSpec.from_compiled(name, type, value, compiled) do
+         {:ok, spec} <-
+           DefinitionSpec.from_compiled(name, type, value, compiled) do
       DefinitionSpec.add_to_env(env, spec)
     end
   end
@@ -175,9 +176,21 @@ defmodule Theoria.Library.Bool do
 
   defp bool_cases(:bool_and) do
     [
-      CaseTemplate.new(:true_true, bool_app(:bool_and, bool_true(), bool_true()), bool_true()),
-      CaseTemplate.new(:true_false, bool_app(:bool_and, bool_true(), bool_false()), bool_false()),
-      CaseTemplate.new(:false_true, bool_app(:bool_and, bool_false(), bool_true()), bool_false()),
+      CaseTemplate.new(
+        :true_true,
+        bool_app(:bool_and, bool_true(), bool_true()),
+        bool_true()
+      ),
+      CaseTemplate.new(
+        :true_false,
+        bool_app(:bool_and, bool_true(), bool_false()),
+        bool_false()
+      ),
+      CaseTemplate.new(
+        :false_true,
+        bool_app(:bool_and, bool_false(), bool_true()),
+        bool_false()
+      ),
       CaseTemplate.new(
         :false_false,
         bool_app(:bool_and, bool_false(), bool_false()),
@@ -188,10 +201,26 @@ defmodule Theoria.Library.Bool do
 
   defp bool_cases(:bool_or) do
     [
-      CaseTemplate.new(:true_true, bool_app(:bool_or, bool_true(), bool_true()), bool_true()),
-      CaseTemplate.new(:true_false, bool_app(:bool_or, bool_true(), bool_false()), bool_true()),
-      CaseTemplate.new(:false_true, bool_app(:bool_or, bool_false(), bool_true()), bool_true()),
-      CaseTemplate.new(:false_false, bool_app(:bool_or, bool_false(), bool_false()), bool_false())
+      CaseTemplate.new(
+        :true_true,
+        bool_app(:bool_or, bool_true(), bool_true()),
+        bool_true()
+      ),
+      CaseTemplate.new(
+        :true_false,
+        bool_app(:bool_or, bool_true(), bool_false()),
+        bool_true()
+      ),
+      CaseTemplate.new(
+        :false_true,
+        bool_app(:bool_or, bool_false(), bool_true()),
+        bool_true()
+      ),
+      CaseTemplate.new(
+        :false_false,
+        bool_app(:bool_or, bool_false(), bool_false()),
+        bool_false()
+      )
     ]
   end
 

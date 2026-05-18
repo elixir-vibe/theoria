@@ -1,8 +1,10 @@
-defmodule Theoria.Equation.DefinitionSpec do
+defmodule Theoria.Equation.Definition.Spec do
   @moduledoc "Experimental/internal API for 0.2; subject to change before 0.3. Complete metadata package for a compiled equation definition."
 
   alias Theoria.Env
-  alias Theoria.Equation.{FixedParams, Info, MatcherInfo, MatcherSpec, Schema}
+  alias Theoria.Equation.{FixedParams, Info, Schema}
+  alias Theoria.Equation.Matcher.Info, as: MatcherInfo
+  alias Theoria.Equation.Matcher.Spec, as: MatcherSpec
   alias Theoria.Kernel
   alias Theoria.Term
 
@@ -93,13 +95,16 @@ defmodule Theoria.Equation.DefinitionSpec do
   defp add_matcher_to_env(env, %__MODULE__{matcher: nil}), do: {:ok, env}
 
   defp add_matcher_to_env(env, %__MODULE__{} = spec) do
-    with {:ok, matcher_spec} <- spec |> info() |> MatcherSpec.from_info(env: env) do
+    with {:ok, matcher_spec} <-
+           spec |> info() |> MatcherSpec.from_info(env: env) do
       Kernel.add_matcher(env, matcher_spec)
     end
   end
 
   defp matcher_for(_name, nil), do: nil
-  defp matcher_for(name, %Schema{} = schema), do: MatcherInfo.for_schema(name, schema)
+
+  defp matcher_for(name, %Schema{} = schema),
+    do: MatcherInfo.for_schema(name, schema)
 
   defp validate_schema(nil), do: :ok
 

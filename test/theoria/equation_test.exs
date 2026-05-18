@@ -3,10 +3,16 @@ defmodule Theoria.EquationTest do
 
   alias Theoria.Env.RecursorRule
   alias Theoria.Equation
+  alias Theoria.Equation.Case.Template, as: CaseTemplate
+  alias Theoria.Equation.Matcher.Descriptor, as: MatcherDescriptor
+  alias Theoria.Equation.Matcher.Eqns, as: MatcherEqns
+  alias Theoria.Equation.Matcher.Info, as: MatcherInfo
+  alias Theoria.Equation.Matcher.Type, as: MatcherType
+  alias Theoria.Equation.Recursor.Descriptor, as: RecursorDescriptor
+  alias Theoria.Equation.Schema.Builder, as: SchemaBuilder
 
   alias Theoria.Equation.{
     Branch,
-    CaseTemplate,
     Clause,
     Context,
     Eqns,
@@ -14,18 +20,12 @@ defmodule Theoria.EquationTest do
     FixedParams,
     Info,
     Lemma,
-    MatcherDescriptor,
-    MatcherEqns,
-    MatcherInfo,
-    MatcherType,
     Pattern,
-    RecursorDescriptor,
     Schema,
-    SchemaBuilder,
     Signature
   }
 
-  alias Theoria.Equation.MatcherInfo.Alternative
+  alias Theoria.Equation.Matcher.Info.Alternative
   alias Theoria.Library.Nat
   alias Theoria.Prelude
   alias Theoria.Term
@@ -275,7 +275,8 @@ defmodule Theoria.EquationTest do
              }
            } = bool_type
 
-    assert [_true_alt, _false_alt] = MatcherType.alternatives(bool_info.schema, bool_info.matcher)
+    assert [_true_alt, _false_alt] =
+             MatcherType.alternatives(bool_info.schema, bool_info.matcher)
 
     assert {:ok, binary_bool_type} =
              MatcherType.build(binary_bool_info.schema, binary_bool_info.matcher)

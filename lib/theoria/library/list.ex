@@ -5,12 +5,12 @@ defmodule Theoria.Library.List do
 
   alias Theoria.Env
   alias Theoria.Equation
+  alias Theoria.Equation.Case.Template, as: CaseTemplate
+  alias Theoria.Equation.Definition.Spec, as: DefinitionSpec
 
   alias Theoria.Equation.{
-    CaseTemplate,
     Clause,
     Definition,
-    DefinitionSpec,
     Pattern,
     Signature
   }

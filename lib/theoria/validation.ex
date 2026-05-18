@@ -2,7 +2,9 @@ defmodule Theoria.Validation do
   @moduledoc "Runs Theoria-owned validation corpora."
 
   alias Theoria.Env
-  alias Theoria.Equation.{Eqns, Extension, Info, Lemma, MatcherEqns, MatcherEquation}
+  alias Theoria.Equation.{Eqns, Extension, Info, Lemma}
+  alias Theoria.Equation.Matcher.Eqns, as: MatcherEqns
+  alias Theoria.Equation.Matcher.Equation, as: MatcherEquation
   alias Theoria.Prelude
   alias Theoria.Theorem
   alias Theoria.Validation.{Checkable, Corpus, Report}

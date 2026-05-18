@@ -5,21 +5,21 @@ Theoria's equation compiler is still internal groundwork, but compiled library d
 Current flow:
 
 ```text
-Signature + CaseTemplate + Clause/Pattern
-  → Theoria.Equation.SchemaBuilder
+Signature + Case.Template + Clause/Pattern
+  → Theoria.Equation.Schema.Builder
   → Theoria.Equation.Compiler
   → Theoria.Equation.Compiled
-  → Theoria.Equation.DefinitionSpec package
-  → Theoria.Equation.RecursorDescriptor package
-  → Theoria.Equation.MatcherDescriptor package
-  → Theoria.Equation.MatcherType package
-  → Theoria.Equation.MatcherSpec package
+  → Theoria.Equation.Definition.Spec package
+  → Theoria.Equation.Recursor.Descriptor package
+  → Theoria.Equation.Matcher.Descriptor package
+  → Theoria.Equation.Matcher.Type package
+  → Theoria.Equation.Matcher.Spec package
   → Theoria.Equation.Info metadata in the environment
   → generated Theoria.Equation.Lemma metadata
-  → generated Theoria.Equation.MatcherEquation metadata
+  → generated Theoria.Equation.Matcher.Equation metadata
   → Theoria.Env.Matcher declarations
   → Theoria.Equation.Extension registry helpers
-  → Theoria.Equation.Eqns / MatcherEqns lookup
+  → Theoria.Equation.Eqns / Matcher.Eqns lookup
   → optional/lazy theorem realization
   → optional opaque theorem declarations
   → rewrite rules/databases
@@ -39,8 +39,8 @@ Trusted:
 
 Untrusted helpers:
 
-- `Theoria.Equation.Compiler`, `SchemaBuilder`, `MatcherDescriptor`, `MatcherType`, and `MatcherSpec`;
-- `Theoria.Equation.Eqns`, `MatcherEqns`, and `Extension.Registry` lookup/realization helpers;
+- `Theoria.Equation.Compiler`, `Schema.Builder`, `Matcher.Descriptor`, `Matcher.Type`, and `Matcher.Spec`;
+- `Theoria.Equation.Eqns`, `Matcher.Eqns`, and `Extension.Registry` lookup/realization helpers;
 - `Theoria.Rewrite` and `Theoria.Simp`;
 - `Theoria.Lean.*` encoding and the external Lean oracle.
 
@@ -56,7 +56,7 @@ Theoria.Equation.Info.all(env)
 Theoria.Equation.Info.equation?(env, :nat_add)
 ```
 
-`Theoria.Equation.Signature` summarizes the function telescope, recursive argument, result type, and fixed parameters. Fixed parameters are derived from the signature's parameter telescope by default, with explicit overrides still available for future edge cases. `Theoria.Equation.CaseTemplate` describes schematic constructor equations without tying schema generation to concrete library definition names. `Theoria.Equation.SchemaBuilder` turns those inputs into validated schemas and matcher metadata, including discriminant names/positions/types and simple overlap records. The compiler returns `Theoria.Equation.Compiled`, which contains the recursor body plus generated clause/schema/matcher metadata. `Theoria.Equation.DefinitionSpec` wraps that compiler result with the final checked definition type/value before installation. `Theoria.Equation.RecursorDescriptor` reads checked `Env.Recursor` / `Env.RecursorRule` metadata, including indexed rule patterns. Matcher generation currently consumes this fully only for the supported non-indexed families. `Theoria.Equation.MatcherDescriptor` combines that recursor-derived shape with schema/matcher metadata into a structural matcher description with discriminants, alternatives, result, and recursor. `Theoria.Equation.MatcherType` consumes descriptors to generate checked matcher type/body packages. `Theoria.Equation.MatcherSpec` installs those packages as `Theoria.Env.Matcher` metadata. Stored metadata records the definition name, checked type/value, recursive argument position, fixed parameters, level parameters, original clause metadata, Lean-shaped matcher alternatives, matcher discriminants, matcher declaration names, matcher mode, and a validated schema that drives schematic theorem generation.
+`Theoria.Equation.Signature` summarizes the function telescope, recursive argument, result type, and fixed parameters. Fixed parameters are derived from the signature's parameter telescope by default, with explicit overrides still available for future edge cases. `Theoria.Equation.Case.Template` describes schematic constructor equations without tying schema generation to concrete library definition names. `Theoria.Equation.Schema.Builder` turns those inputs into validated schemas and matcher metadata, including discriminant names/positions/types and simple overlap records. The compiler returns `Theoria.Equation.Compiled`, which contains the recursor body plus generated clause/schema/matcher metadata. `Theoria.Equation.Definition.Spec` wraps that compiler result with the final checked definition type/value before installation. `Theoria.Equation.Recursor.Descriptor` reads checked `Env.Recursor` / `Env.RecursorRule` metadata, including indexed rule patterns. Matcher generation currently consumes this fully only for the supported non-indexed families. `Theoria.Equation.Matcher.Descriptor` combines that recursor-derived shape with schema/matcher metadata into a structural matcher description with discriminants, alternatives, result, and recursor. `Theoria.Equation.Matcher.Type` consumes descriptors to generate checked matcher type/body packages. `Theoria.Equation.Matcher.Spec` installs those packages as `Theoria.Env.Matcher` metadata. Stored metadata records the definition name, checked type/value, recursive argument position, fixed parameters, level parameters, original clause metadata, Lean-shaped matcher alternatives, matcher discriminants, matcher declaration names, matcher mode, and a validated schema that drives schematic theorem generation.
 
 ## Generated equation lemmas
 
@@ -99,13 +99,13 @@ Theoria.Equation.Eqns.source(env, :"nat_add.eq_succ")
 Theoria.Equation.Eqns.installed?(env, :nat_add)
 ```
 
-`Theoria.Equation.MatcherEqns` is the matcher-equation side of the same groundwork and reads first-class matcher declarations from the environment:
+`Theoria.Equation.Matcher.Eqns` is the matcher-equation side of the same groundwork and reads first-class matcher declarations from the environment:
 
 ```elixir
-Theoria.Equation.MatcherEqns.get(env, :"nat_add.match_1")
+Theoria.Equation.Matcher.Eqns.get(env, :"nat_add.match_1")
 #=> {:ok, [:"nat_add.match_1.eq_zero", :"nat_add.match_1.eq_succ"]}
 
-Theoria.Equation.MatcherEqns.source(env, :"nat_add.match_1.eq_succ")
+Theoria.Equation.Matcher.Eqns.source(env, :"nat_add.match_1.eq_succ")
 #=> {:ok, :"nat_add.match_1"}
 ```
 
@@ -115,7 +115,7 @@ Generated theorem metadata can also be realized without installing declarations:
 Theoria.Equation.Eqns.realize(env, :nat_add)
 Theoria.Equation.Eqns.realize(env, :"nat_add.eq_succ")
 Theoria.Equation.Eqns.realize(env, :"nat_add.eq_def")
-Theoria.Equation.MatcherEqns.realize(env, :"nat_add.match_1.eq_succ")
+Theoria.Equation.Matcher.Eqns.realize(env, :"nat_add.match_1.eq_succ")
 ```
 
 `Theoria.Equation.Extension` provides typed registry helpers for source lookup, matcher lookup, unfold names, generated theorem-name enumeration, and an in-memory `Extension.Registry` snapshot. It is currently rebuilt from environment metadata rather than stored as a persistent disk-backed extension.
@@ -202,10 +202,10 @@ The verbose form prints generated lemma names under each stored equation definit
 | --- | --- |
 | Public syntax | No public equation-definition syntax yet. Library definitions feed the internal compiler directly. |
 | Fixed parameters | Signature-derived fixed parameters only; no mutual-recursive permutation/dependency analysis yet. |
-| RecursorDescriptor | Describes non-indexed and indexed recursor rules, including Vec index patterns; it is not yet a full dependent telescope analyzer. |
-| MatcherDescriptor | Recursor-informed simple nondependent Bool/Nat/List descriptors; dependent/indexed matcher descriptors such as Vec are still unsupported. |
-| MatcherType | Generated from the current simple recursor shapes; not a general dependent matcher compiler. |
-| Eqns / MatcherEqns | Generated theorem metadata and realization helpers, not a persistent Lean-style environment extension. |
+| Recursor.Descriptor | Describes non-indexed and indexed recursor rules, including Vec index patterns; it is not yet a full dependent telescope analyzer. |
+| Matcher.Descriptor | Recursor-informed simple nondependent Bool/Nat/List descriptors; dependent/indexed matcher descriptors such as Vec are still unsupported. |
+| Matcher.Type | Generated from the current simple recursor shapes; not a general dependent matcher compiler. |
+| Eqns / Matcher.Eqns | Generated theorem metadata and realization helpers, not a persistent Lean-style environment extension. |
 | Extension.Registry | In-memory snapshot rebuilt from environment metadata; not persisted to disk. |
 | Structural recursion | No general structural recursion checker and no `brecOn`/below dictionaries. |
 | Rewrite / Simp | Untrusted first-order rewriting with no proof terms and no attribute/prioritized simp database. |

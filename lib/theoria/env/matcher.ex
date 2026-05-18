@@ -1,7 +1,7 @@
 defmodule Theoria.Env.Matcher do
   @moduledoc "Environment metadata for a generated matcher declaration."
 
-  alias Theoria.Equation.MatcherInfo
+  alias Theoria.Equation.Matcher.Info, as: MatcherInfo
   alias Theoria.Term
 
   @enforce_keys [:name, :source, :type, :value, :info]

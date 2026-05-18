@@ -5,12 +5,12 @@ defmodule Theoria.Library.Nat do
 
   alias Theoria.Env
   alias Theoria.Equation
+  alias Theoria.Equation.Case.Template, as: CaseTemplate
+  alias Theoria.Equation.Definition.Spec, as: DefinitionSpec
 
   alias Theoria.Equation.{
-    CaseTemplate,
     Clause,
     Definition,
-    DefinitionSpec,
     Pattern,
     Signature
   }
@@ -40,7 +40,8 @@ defmodule Theoria.Library.Nat do
                Term.bvar(1),
                cases: nat_add_cases()
              ),
-           {:ok, spec} <- DefinitionSpec.from_compiled(:nat_add, type, value, compiled) do
+           {:ok, spec} <-
+             DefinitionSpec.from_compiled(:nat_add, type, value, compiled) do
         DefinitionSpec.add_to_env(env, spec)
       end
     end
@@ -102,7 +103,10 @@ defmodule Theoria.Library.Nat do
 
     [
       CaseTemplate.new(:zero, app(:nat_add, zero(), n), n, binders: [{:n, nat()}]),
-      CaseTemplate.new(:succ, app(:nat_add, succ(m), n), succ(app(:nat_add, m, n)),
+      CaseTemplate.new(
+        :succ,
+        app(:nat_add, succ(m), n),
+        succ(app(:nat_add, m, n)),
         binders: [{:m, nat()}, {:n, nat()}]
       )
     ]

@@ -3,7 +3,8 @@ defmodule Theoria.Equation.Info do
 
   alias Theoria.Env
   alias Theoria.Env.Constant
-  alias Theoria.Equation.{Clause, FixedParams, MatcherInfo, Schema}
+  alias Theoria.Equation.{Clause, FixedParams, Schema}
+  alias Theoria.Equation.Matcher.Info, as: MatcherInfo
   alias Theoria.Term
 
   @enforce_keys [:name, :type, :value]

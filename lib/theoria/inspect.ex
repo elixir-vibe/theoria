@@ -156,7 +156,7 @@ defimpl Inspect, for: Theoria.Equation.Extension.Registry do
   end
 end
 
-defimpl Inspect, for: Theoria.Equation.MatcherDescriptor do
+defimpl Inspect, for: Theoria.Equation.Matcher.Descriptor do
   import Inspect.Algebra
 
   def inspect(descriptor, _opts) do
@@ -170,7 +170,7 @@ defimpl Inspect, for: Theoria.Equation.MatcherDescriptor do
   end
 end
 
-defimpl Inspect, for: Theoria.Equation.MatcherDescriptor.Alternative do
+defimpl Inspect, for: Theoria.Equation.Matcher.Descriptor.Alternative do
   import Inspect.Algebra
 
   def inspect(alternative, _opts) do
@@ -178,7 +178,7 @@ defimpl Inspect, for: Theoria.Equation.MatcherDescriptor.Alternative do
   end
 end
 
-defimpl Inspect, for: Theoria.Equation.MatcherEquation do
+defimpl Inspect, for: Theoria.Equation.Matcher.Equation do
   import Inspect.Algebra
 
   def inspect(equation, _opts) do
@@ -207,7 +207,7 @@ defimpl Inspect, for: Theoria.Equation.Signature do
   end
 end
 
-defimpl Inspect, for: Theoria.Equation.CaseTemplate do
+defimpl Inspect, for: Theoria.Equation.Case.Template do
   import Inspect.Algebra
 
   def inspect(template, _opts) do
@@ -254,7 +254,7 @@ defimpl Inspect, for: Theoria.Equation.Schema.Equation do
   end
 end
 
-defimpl Inspect, for: Theoria.Equation.MatcherInfo do
+defimpl Inspect, for: Theoria.Equation.Matcher.Info do
   import Inspect.Algebra
 
   def inspect(info, _opts) do
@@ -267,7 +267,7 @@ defimpl Inspect, for: Theoria.Equation.MatcherInfo do
   end
 end
 
-defimpl Inspect, for: Theoria.Equation.MatcherInfo.Alternative do
+defimpl Inspect, for: Theoria.Equation.Matcher.Info.Alternative do
   import Inspect.Algebra
 
   def inspect(alternative, _opts) do
@@ -280,7 +280,7 @@ defimpl Inspect, for: Theoria.Equation.MatcherInfo.Alternative do
   end
 end
 
-defimpl Inspect, for: Theoria.Equation.MatcherInfo.Discriminant do
+defimpl Inspect, for: Theoria.Equation.Matcher.Info.Discriminant do
   import Inspect.Algebra
 
   def inspect(discriminant, _opts) do

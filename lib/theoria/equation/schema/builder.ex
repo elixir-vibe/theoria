@@ -1,14 +1,15 @@
-defmodule Theoria.Equation.SchemaBuilder do
+defmodule Theoria.Equation.Schema.Builder do
   @moduledoc "Experimental/internal API for 0.2; subject to change before 0.3. Internal builder for equation schemas and matcher metadata from signatures and case templates."
 
-  alias Theoria.Equation.CaseTemplate
-  alias Theoria.Equation.MatcherInfo
-  alias Theoria.Equation.MatcherInfo.Discriminant
+  alias Theoria.Equation.Case.Template, as: CaseTemplate
+  alias Theoria.Equation.Matcher.Info, as: MatcherInfo
+  alias Theoria.Equation.Matcher.Info.Discriminant
   alias Theoria.Equation.Schema
   alias Theoria.Equation.Signature
 
   @doc "Builds and validates a schema from a signature and schematic case templates."
-  @spec build(Signature.t(), [CaseTemplate.t()]) :: {:ok, Schema.t()} | {:error, term()}
+  @spec build(Signature.t(), [CaseTemplate.t()]) ::
+          {:ok, Schema.t()} | {:error, term()}
   def build(%Signature{} = signature, templates) when is_list(templates) do
     schema = %Schema{
       family: signature.family,

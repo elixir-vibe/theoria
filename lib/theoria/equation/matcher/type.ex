@@ -1,9 +1,9 @@
-defmodule Theoria.Equation.MatcherType do
+defmodule Theoria.Equation.Matcher.Type do
   @moduledoc "Experimental/internal API for 0.2; subject to change before 0.3. Internal builder for checked matcher declaration types and bodies for supported fragments."
 
-  alias Theoria.Equation.MatcherDescriptor
-  alias Theoria.Equation.MatcherInfo
-  alias Theoria.Equation.Recursors
+  alias Theoria.Equation.Matcher.Descriptor, as: MatcherDescriptor
+  alias Theoria.Equation.Matcher.Info, as: MatcherInfo
+  alias Theoria.Equation.Recursor.Builders, as: RecursorBuilders
   alias Theoria.Equation.Schema
   alias Theoria.Term
 
@@ -40,7 +40,8 @@ defmodule Theoria.Equation.MatcherType do
   end
 
   @doc "Builds a matcher type from a descriptor."
-  @spec from_descriptor(MatcherDescriptor.t()) :: {:ok, Term.t()} | {:error, term()}
+  @spec from_descriptor(MatcherDescriptor.t()) ::
+          {:ok, Term.t()} | {:error, term()}
   def from_descriptor(%MatcherDescriptor{family: :bool, discriminants: [_, _]}),
     do: {:ok, bool_binary_type()}
 
@@ -60,13 +61,22 @@ defmodule Theoria.Equation.MatcherType do
   end
 
   @doc "Builds a matcher body from a descriptor."
-  @spec value_from_descriptor(MatcherDescriptor.t()) :: {:ok, Term.t()} | {:error, term()}
-  def value_from_descriptor(%MatcherDescriptor{family: :bool, discriminants: [_, _]}),
-    do: {:ok, bool_binary_value()}
+  @spec value_from_descriptor(MatcherDescriptor.t()) ::
+          {:ok, Term.t()} | {:error, term()}
+  def value_from_descriptor(%MatcherDescriptor{
+        family: :bool,
+        discriminants: [_, _]
+      }),
+      do: {:ok, bool_binary_value()}
 
-  def value_from_descriptor(%MatcherDescriptor{family: :bool}), do: {:ok, bool_value()}
-  def value_from_descriptor(%MatcherDescriptor{family: :nat}), do: {:ok, nat_value()}
-  def value_from_descriptor(%MatcherDescriptor{family: :list}), do: {:ok, list_value()}
+  def value_from_descriptor(%MatcherDescriptor{family: :bool}),
+    do: {:ok, bool_value()}
+
+  def value_from_descriptor(%MatcherDescriptor{family: :nat}),
+    do: {:ok, nat_value()}
+
+  def value_from_descriptor(%MatcherDescriptor{family: :list}),
+    do: {:ok, list_value()}
 
   def value_from_descriptor(%MatcherDescriptor{family: family}),
     do: {:error, {:unsupported_matcher_value, family}}
@@ -104,7 +114,12 @@ defmodule Theoria.Equation.MatcherType do
           Term.lam(
             :on_false,
             Term.bvar(2),
-            Recursors.bool_rec(Term.bvar(3), Term.bvar(1), Term.bvar(0), Term.bvar(2))
+            RecursorBuilders.bool_rec(
+              Term.bvar(3),
+              Term.bvar(1),
+              Term.bvar(0),
+              Term.bvar(2)
+            )
           )
         )
       )
@@ -178,10 +193,20 @@ defmodule Theoria.Equation.MatcherType do
     motive = Term.bvar(6)
     second_discriminant = Term.bvar(4)
 
-    Recursors.bool_rec(
+    RecursorBuilders.bool_rec(
       motive,
-      Recursors.bool_rec(motive, Term.bvar(3), Term.bvar(2), second_discriminant),
-      Recursors.bool_rec(motive, Term.bvar(1), Term.bvar(0), second_discriminant),
+      RecursorBuilders.bool_rec(
+        motive,
+        Term.bvar(3),
+        Term.bvar(2),
+        second_discriminant
+      ),
+      RecursorBuilders.bool_rec(
+        motive,
+        Term.bvar(1),
+        Term.bvar(0),
+        second_discriminant
+      ),
       Term.bvar(5)
     )
   end
@@ -217,7 +242,12 @@ defmodule Theoria.Equation.MatcherType do
           Term.lam(
             :on_succ,
             succ_case_type,
-            Recursors.nat_rec(Term.bvar(3), Term.bvar(1), Term.bvar(0), Term.bvar(2))
+            RecursorBuilders.nat_rec(
+              Term.bvar(3),
+              Term.bvar(1),
+              Term.bvar(0),
+              Term.bvar(2)
+            )
           )
         )
       )
@@ -262,7 +292,7 @@ defmodule Theoria.Equation.MatcherType do
             Term.lam(
               :on_cons,
               list_cons_case_type(),
-              Recursors.list_rec(
+              RecursorBuilders.list_rec(
                 Term.bvar(4),
                 Term.bvar(3),
                 Term.bvar(1),

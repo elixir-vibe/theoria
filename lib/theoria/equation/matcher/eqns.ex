@@ -1,11 +1,11 @@
-defmodule Theoria.Equation.MatcherEqns do
+defmodule Theoria.Equation.Matcher.Eqns do
   @moduledoc "Experimental/internal API for 0.2; subject to change before 0.3. Lookup helpers for generated matcher equation metadata."
 
   alias Theoria.Env
   alias Theoria.Env.Matcher, as: EnvMatcher
   alias Theoria.Equation.Info
   alias Theoria.Equation.Lemma
-  alias Theoria.Equation.MatcherEquation
+  alias Theoria.Equation.Matcher.Equation, as: MatcherEquation
 
   @doc "Returns generated matcher equation theorem names for a matcher."
   @spec get(Env.t(), atom()) :: {:ok, [atom()]} | {:error, term()}
@@ -17,7 +17,8 @@ defmodule Theoria.Equation.MatcherEqns do
   end
 
   @doc "Returns generated matcher equation metadata for a matcher declaration."
-  @spec generated(Env.t(), atom()) :: {:ok, [MatcherEquation.t()]} | {:error, term()}
+  @spec generated(Env.t(), atom()) ::
+          {:ok, [MatcherEquation.t()]} | {:error, term()}
   def generated(%Env{} = env, matcher_name) when is_atom(matcher_name) do
     with {:ok, matcher} <- fetch_matcher(env, matcher_name),
          {:ok, info} <- Info.fetch(env, matcher.source) do

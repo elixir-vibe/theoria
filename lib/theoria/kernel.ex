@@ -14,7 +14,7 @@ defmodule Theoria.Kernel do
   alias Theoria.Env.Matcher, as: EnvMatcher
   alias Theoria.Env.Recursor, as: EnvRecursor
   alias Theoria.Env.Reduction
-  alias Theoria.Equation.MatcherSpec
+  alias Theoria.Equation.Matcher.Spec, as: MatcherSpec
   alias Theoria.Error
   alias Theoria.Inductive.Admission
   alias Theoria.Inductive.Spec

@@ -5,8 +5,8 @@ defmodule Theoria.Equation.Extension do
   alias Theoria.Env.Matcher, as: EnvMatcher
   alias Theoria.Equation.Info
   alias Theoria.Equation.Lemma
-  alias Theoria.Equation.MatcherEqns
-  alias Theoria.Equation.MatcherEquation
+  alias Theoria.Equation.Matcher.Eqns, as: MatcherEqns
+  alias Theoria.Equation.Matcher.Equation, as: MatcherEquation
 
   defmodule Registry do
     @moduledoc "In-memory registry snapshot for generated equation metadata."

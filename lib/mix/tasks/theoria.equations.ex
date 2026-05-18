@@ -6,15 +6,15 @@ defmodule Mix.Tasks.Theoria.Equations do
   use Mix.Task
 
   alias Theoria.Env
+  alias Theoria.Equation.Matcher.Descriptor, as: MatcherDescriptor
+  alias Theoria.Equation.Matcher.Eqns, as: MatcherEqns
+  alias Theoria.Equation.Matcher.Info, as: MatcherMetadata
 
   alias Theoria.Equation.{
     Eqns,
     Extension,
     Info,
-    Lemma,
-    MatcherDescriptor,
-    MatcherEqns,
-    MatcherInfo
+    Lemma
   }
 
   alias Theoria.Prelude
@@ -156,7 +156,7 @@ defmodule Mix.Tasks.Theoria.Equations do
         :error -> :unknown
       end
 
-    "mode=#{mode} arity=#{MatcherInfo.arity(info.matcher)}"
+    "mode=#{mode} arity=#{MatcherMetadata.arity(info.matcher)}"
   end
 
   defp print_unfold(%Info{} = info) do

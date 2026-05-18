@@ -1,12 +1,12 @@
-defmodule Theoria.Equation.MatcherSpec do
+defmodule Theoria.Equation.Matcher.Spec do
   @moduledoc "Experimental/internal API for 0.2; subject to change before 0.3. Checked declaration package for a generated matcher."
 
   alias Theoria.Env.Matcher, as: EnvMatcher
   alias Theoria.Equation.Info
-  alias Theoria.Equation.MatcherDescriptor
-  alias Theoria.Equation.MatcherEqns
-  alias Theoria.Equation.MatcherInfo
-  alias Theoria.Equation.MatcherType
+  alias Theoria.Equation.Matcher.Descriptor, as: MatcherDescriptor
+  alias Theoria.Equation.Matcher.Eqns, as: MatcherEqns
+  alias Theoria.Equation.Matcher.Info, as: MatcherInfo
+  alias Theoria.Equation.Matcher.Type, as: MatcherType
   alias Theoria.Equation.Schema
   alias Theoria.Term
 
@@ -63,18 +63,30 @@ defmodule Theoria.Equation.MatcherSpec do
   @doc "Returns the matcher type for supported equation fragments."
   @spec type_for(MatcherInfo.t(), Schema.t() | nil, Term.t(), mode()) ::
           {:ok, Term.t()} | {:error, term()}
-  def type_for(%MatcherInfo{}, _schema, source_type, :source_aligned), do: {:ok, source_type}
+  def type_for(%MatcherInfo{}, _schema, source_type, :source_aligned),
+    do: {:ok, source_type}
 
-  def type_for(%MatcherInfo{} = info, %Schema{} = schema, _source_type, :matcher),
-    do: MatcherType.build(schema, info)
+  def type_for(
+        %MatcherInfo{} = info,
+        %Schema{} = schema,
+        _source_type,
+        :matcher
+      ),
+      do: MatcherType.build(schema, info)
 
   @doc "Returns the matcher value for supported equation fragments."
   @spec value_for(MatcherInfo.t(), Schema.t() | nil, Term.t(), mode()) ::
           {:ok, Term.t()} | {:error, term()}
-  def value_for(%MatcherInfo{}, _schema, source_value, :source_aligned), do: {:ok, source_value}
+  def value_for(%MatcherInfo{}, _schema, source_value, :source_aligned),
+    do: {:ok, source_value}
 
-  def value_for(%MatcherInfo{} = info, %Schema{} = schema, _source_value, :matcher),
-    do: MatcherType.value(schema, info)
+  def value_for(
+        %MatcherInfo{} = info,
+        %Schema{} = schema,
+        _source_value,
+        :matcher
+      ),
+      do: MatcherType.value(schema, info)
 
   @doc "Converts the matcher spec to environment metadata."
   @spec metadata(t()) :: EnvMatcher.t()
@@ -97,8 +109,14 @@ defmodule Theoria.Equation.MatcherSpec do
     MatcherDescriptor.from_env(env, info.schema, info.matcher)
   end
 
-  defp type_for(%MatcherInfo{}, _schema, source_type, :source_aligned, _descriptor),
-    do: {:ok, source_type}
+  defp type_for(
+         %MatcherInfo{},
+         _schema,
+         source_type,
+         :source_aligned,
+         _descriptor
+       ),
+       do: {:ok, source_type}
 
   defp type_for(
          %MatcherInfo{},
@@ -109,8 +127,14 @@ defmodule Theoria.Equation.MatcherSpec do
        ),
        do: MatcherType.from_descriptor(descriptor)
 
-  defp value_for(%MatcherInfo{}, _schema, source_value, :source_aligned, _descriptor),
-    do: {:ok, source_value}
+  defp value_for(
+         %MatcherInfo{},
+         _schema,
+         source_value,
+         :source_aligned,
+         _descriptor
+       ),
+       do: {:ok, source_value}
 
   defp value_for(
          %MatcherInfo{},

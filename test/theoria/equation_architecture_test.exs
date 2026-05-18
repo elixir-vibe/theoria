@@ -15,6 +15,7 @@ defmodule Theoria.EquationArchitectureTest do
       "bool_matcher",
       "nat_matcher",
       "list_matcher",
+      "Matcher.Info.new",
       "MatcherInfo.new",
       "Schema.new"
     ]
@@ -26,13 +27,17 @@ defmodule Theoria.EquationArchitectureTest do
 
   test "equation registry and descriptor layers stay family-policy free where required" do
     assert_no_source("extension.ex", [":bool", ":nat", ":list", "Theoria.Library"])
-    assert_no_source("eqns.ex", ["compile_definition", "SchemaBuilder", "Theoria.Library"])
+    assert_no_source("eqns.ex", ["compile_definition", "Schema.Builder", "Theoria.Library"])
 
-    assert_no_source("matcher_eqns.ex", ["compile_definition", "SchemaBuilder", "Theoria.Library"])
+    assert_no_source("matcher/eqns.ex", [
+      "compile_definition",
+      "Schema.Builder",
+      "Theoria.Library"
+    ])
   end
 
   test "matcher generation layers do not depend on kernel or libraries" do
-    for file <- ["matcher_descriptor.ex", "matcher_type.ex", "matcher_spec.ex"] do
+    for file <- ["matcher/descriptor.ex", "matcher/type.ex", "matcher/spec.ex"] do
       assert_no_source(file, ["Theoria.Kernel", "Theoria.Library"])
     end
   end

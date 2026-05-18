@@ -2,21 +2,21 @@ defmodule Theoria.PrettyTest do
   use ExUnit.Case, async: true
 
   alias Theoria.Env.Matcher, as: EnvMatcher
+  alias Theoria.Equation.Case.Template, as: CaseTemplate
   alias Theoria.Equation.Extension.Registry
+  alias Theoria.Equation.Matcher.Descriptor, as: MatcherDescriptor
+  alias Theoria.Equation.Matcher.Equation, as: MatcherEquation
+  alias Theoria.Equation.Matcher.Info, as: MatcherInfo
 
   alias Theoria.Equation.{
-    CaseTemplate,
     FixedParams,
     Info,
     Lemma,
-    MatcherDescriptor,
-    MatcherEquation,
-    MatcherInfo,
     Schema,
     Signature
   }
 
-  alias Theoria.Equation.MatcherInfo.Alternative
+  alias Theoria.Equation.Matcher.Info.Alternative
   alias Theoria.Kernel
   alias Theoria.Level
   alias Theoria.Library.Logic

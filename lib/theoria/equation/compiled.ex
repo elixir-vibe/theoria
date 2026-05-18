@@ -1,7 +1,8 @@
 defmodule Theoria.Equation.Compiled do
   @moduledoc "Experimental/internal API for 0.2; subject to change before 0.3. Result of compiling constructor equations, including generated metadata."
 
-  alias Theoria.Equation.{Clause, FixedParams, MatcherInfo, Schema}
+  alias Theoria.Equation.{Clause, FixedParams, Schema}
+  alias Theoria.Equation.Matcher.Info, as: MatcherInfo
   alias Theoria.Term
 
   @enforce_keys [:body, :clauses, :schema, :matcher, :rec_arg_pos, :fixed_params]

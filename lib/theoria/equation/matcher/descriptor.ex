@@ -1,9 +1,9 @@
-defmodule Theoria.Equation.MatcherDescriptor do
+defmodule Theoria.Equation.Matcher.Descriptor do
   @moduledoc "Experimental/internal API for 0.2; subject to change before 0.3. Internal descriptor-driven matcher generation metadata."
 
   alias Theoria.Env
-  alias Theoria.Equation.MatcherInfo
-  alias Theoria.Equation.RecursorDescriptor
+  alias Theoria.Equation.Matcher.Info, as: MatcherInfo
+  alias Theoria.Equation.Recursor.Descriptor, as: RecursorDescriptor
   alias Theoria.Equation.Schema
   alias Theoria.Term
 
@@ -37,13 +37,15 @@ defmodule Theoria.Equation.MatcherDescriptor do
         }
 
   @doc "Builds a matcher descriptor from schema and matcher metadata."
-  @spec from_schema(Schema.t(), MatcherInfo.t()) :: {:ok, t()} | {:error, term()}
+  @spec from_schema(Schema.t(), MatcherInfo.t()) ::
+          {:ok, t()} | {:error, term()}
   def from_schema(%Schema{} = schema, %MatcherInfo{} = info) do
     build(schema, info, nil)
   end
 
   @doc "Builds a matcher descriptor from checked recursor metadata when an environment is available."
-  @spec from_env(Env.t(), Schema.t(), MatcherInfo.t()) :: {:ok, t()} | {:error, term()}
+  @spec from_env(Env.t(), Schema.t(), MatcherInfo.t()) ::
+          {:ok, t()} | {:error, term()}
   def from_env(%Env{} = env, %Schema{} = schema, %MatcherInfo{} = info) do
     with {:ok, recursor} <- RecursorDescriptor.from_schema(env, schema) do
       build(schema, info, recursor)
@@ -144,7 +146,11 @@ defmodule Theoria.Equation.MatcherDescriptor do
 
   defp validate_recursor_shape(_family, _info, nil), do: :ok
 
-  defp validate_recursor_shape(family, %MatcherInfo{} = info, %RecursorDescriptor{} = recursor) do
+  defp validate_recursor_shape(
+         family,
+         %MatcherInfo{} = info,
+         %RecursorDescriptor{} = recursor
+       ) do
     rules = rules_by_constructor(recursor)
 
     with :ok <- validate_info_alternatives(info, rules) do
@@ -194,7 +200,9 @@ defmodule Theoria.Equation.MatcherDescriptor do
     end)
   end
 
-  defp recursor_name(_family, %RecursorDescriptor{recursor: recursor}), do: recursor.name
+  defp recursor_name(_family, %RecursorDescriptor{recursor: recursor}),
+    do: recursor.name
+
   defp recursor_name(family, nil), do: RecursorDescriptor.recursor_name(family)
 
   defp rules_by_constructor(%RecursorDescriptor{} = descriptor) do

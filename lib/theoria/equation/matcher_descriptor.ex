@@ -1,7 +1,9 @@
 defmodule Theoria.Equation.MatcherDescriptor do
   @moduledoc "Internal descriptor-driven matcher generation metadata."
 
+  alias Theoria.Env
   alias Theoria.Equation.MatcherInfo
+  alias Theoria.Equation.RecursorDescriptor
   alias Theoria.Equation.Schema
   alias Theoria.Term
 
@@ -37,17 +39,14 @@ defmodule Theoria.Equation.MatcherDescriptor do
   @doc "Builds a matcher descriptor from schema and matcher metadata."
   @spec from_schema(Schema.t(), MatcherInfo.t()) :: {:ok, t()} | {:error, term()}
   def from_schema(%Schema{} = schema, %MatcherInfo{} = info) do
-    descriptor = %__MODULE__{
-      family: schema.family,
-      parameters: schema.parameter_binders,
-      discriminants: info.discriminants,
-      alternatives: alternatives(schema.family, info),
-      result: result(schema.family),
-      recursor: recursor(schema.family)
-    }
+    build(schema, info, nil)
+  end
 
-    with :ok <- validate(descriptor, info) do
-      {:ok, descriptor}
+  @doc "Builds a matcher descriptor from checked recursor metadata when an environment is available."
+  @spec from_env(Env.t(), Schema.t(), MatcherInfo.t()) :: {:ok, t()} | {:error, term()}
+  def from_env(%Env{} = env, %Schema{} = schema, %MatcherInfo{} = info) do
+    with {:ok, recursor} <- RecursorDescriptor.from_schema(env, schema) do
+      build(schema, info, recursor)
     end
   end
 
@@ -77,7 +76,26 @@ defmodule Theoria.Equation.MatcherDescriptor do
     length(names) != MapSet.size(MapSet.new(names))
   end
 
-  defp alternatives(:bool, %MatcherInfo{} = info) do
+  defp build(%Schema{} = schema, %MatcherInfo{} = info, recursor_descriptor) do
+    with :ok <- validate_recursor_shape(schema.family, info, recursor_descriptor) do
+      descriptor = %__MODULE__{
+        family: schema.family,
+        parameters: schema.parameter_binders,
+        discriminants: info.discriminants,
+        alternatives: alternatives(schema.family, info, recursor_descriptor),
+        result: result(schema.family),
+        recursor: recursor_name(schema.family, recursor_descriptor)
+      }
+
+      validate(descriptor, info)
+      |> case do
+        :ok -> {:ok, descriptor}
+        {:error, _reason} = error -> error
+      end
+    end
+  end
+
+  defp alternatives(:bool, %MatcherInfo{} = info, _recursor_descriptor) do
     Enum.map(info.alternatives, fn alternative ->
       %Alternative{
         name: alternative.constructor,
@@ -88,7 +106,7 @@ defmodule Theoria.Equation.MatcherDescriptor do
     end)
   end
 
-  defp alternatives(:nat, %MatcherInfo{} = info) do
+  defp alternatives(:nat, %MatcherInfo{} = info, _recursor_descriptor) do
     Enum.map(info.alternatives, fn
       %{constructor: :zero} ->
         %Alternative{name: :zero, pattern: [:zero], fields: [], result: Term.bvar(1)}
@@ -104,7 +122,7 @@ defmodule Theoria.Equation.MatcherDescriptor do
     end)
   end
 
-  defp alternatives(:list, %MatcherInfo{} = info) do
+  defp alternatives(:list, %MatcherInfo{} = info, _recursor_descriptor) do
     Enum.map(info.alternatives, fn
       %{constructor: :list_nil} ->
         %Alternative{name: :list_nil, pattern: [:list_nil], fields: [], result: Term.bvar(1)}
@@ -124,9 +142,64 @@ defmodule Theoria.Equation.MatcherDescriptor do
 
   defp result(_family), do: Term.bvar(0)
 
-  defp recursor(:bool), do: :bool_rec
-  defp recursor(:nat), do: :nat_rec
-  defp recursor(:list), do: :list_rec
+  defp validate_recursor_shape(_family, _info, nil), do: :ok
+
+  defp validate_recursor_shape(family, %MatcherInfo{} = info, %RecursorDescriptor{} = recursor) do
+    rules = rules_by_constructor(recursor)
+
+    with :ok <- validate_info_alternatives(info, rules) do
+      validate_family_field_counts(family, rules)
+    end
+  end
+
+  defp validate_info_alternatives(%MatcherInfo{} = info, rules) do
+    constructors = MapSet.new(Map.keys(rules))
+
+    alternatives =
+      info.alternatives
+      |> Enum.flat_map(&(&1.pattern || [&1.constructor]))
+      |> MapSet.new()
+
+    if MapSet.subset?(alternatives, constructors) do
+      :ok
+    else
+      {:error, {:unknown_recursor_alternative, MapSet.difference(alternatives, constructors)}}
+    end
+  end
+
+  defp validate_family_field_counts(:bool, rules),
+    do: validate_field_counts(rules, true: 0, false: 0)
+
+  defp validate_family_field_counts(:nat, rules),
+    do: validate_field_counts(rules, zero: 0, succ: 1)
+
+  defp validate_family_field_counts(:list, rules),
+    do: validate_field_counts(rules, list_nil: 0, list_cons: 2)
+
+  defp validate_family_field_counts(family, _rules), do: {:error, {:unsupported_family, family}}
+
+  defp validate_field_counts(rules, expected) do
+    Enum.reduce_while(expected, :ok, fn {constructor, field_count}, :ok ->
+      case Map.fetch(rules, constructor) do
+        {:ok, %{field_count: ^field_count}} ->
+          {:cont, :ok}
+
+        {:ok, rule} ->
+          {:halt,
+           {:error, {:recursor_field_count_mismatch, constructor, field_count, rule.field_count}}}
+
+        :error ->
+          {:halt, {:error, {:missing_recursor_rule, constructor}}}
+      end
+    end)
+  end
+
+  defp recursor_name(_family, %RecursorDescriptor{recursor: recursor}), do: recursor.name
+  defp recursor_name(family, nil), do: RecursorDescriptor.recursor_name(family)
+
+  defp rules_by_constructor(%RecursorDescriptor{} = descriptor) do
+    Map.new(descriptor.rules, &{&1.constructor, &1})
+  end
 
   defp list_of(element_type), do: Term.app(Term.const(:List, [1]), element_type)
 end

@@ -10,6 +10,7 @@ Signature + CaseTemplate + Clause/Pattern
   → Theoria.Equation.Compiler
   → Theoria.Equation.Compiled
   → Theoria.Equation.DefinitionSpec package
+  → Theoria.Equation.RecursorDescriptor package
   → Theoria.Equation.MatcherDescriptor package
   → Theoria.Equation.MatcherType package
   → Theoria.Equation.MatcherSpec package
@@ -55,7 +56,7 @@ Theoria.Equation.Info.all(env)
 Theoria.Equation.Info.equation?(env, :nat_add)
 ```
 
-`Theoria.Equation.Signature` summarizes the function telescope, recursive argument, result type, and fixed parameters. Fixed parameters are derived from the signature's parameter telescope by default, with explicit overrides still available for future edge cases. `Theoria.Equation.CaseTemplate` describes schematic constructor equations without tying schema generation to concrete library definition names. `Theoria.Equation.SchemaBuilder` turns those inputs into validated schemas and matcher metadata, including discriminant names/positions/types and simple overlap records. The compiler returns `Theoria.Equation.Compiled`, which contains the recursor body plus generated clause/schema/matcher metadata. `Theoria.Equation.DefinitionSpec` wraps that compiler result with the final checked definition type/value before installation. `Theoria.Equation.MatcherDescriptor` turns schema/matcher metadata into a structural matcher description with discriminants, alternatives, result, and recursor. `Theoria.Equation.MatcherType` consumes descriptors to generate checked matcher type/body packages. `Theoria.Equation.MatcherSpec` installs those packages as `Theoria.Env.Matcher` metadata. Stored metadata records the definition name, checked type/value, recursive argument position, fixed parameters, level parameters, original clause metadata, Lean-shaped matcher alternatives, matcher discriminants, matcher declaration names, matcher mode, and a validated schema that drives schematic theorem generation.
+`Theoria.Equation.Signature` summarizes the function telescope, recursive argument, result type, and fixed parameters. Fixed parameters are derived from the signature's parameter telescope by default, with explicit overrides still available for future edge cases. `Theoria.Equation.CaseTemplate` describes schematic constructor equations without tying schema generation to concrete library definition names. `Theoria.Equation.SchemaBuilder` turns those inputs into validated schemas and matcher metadata, including discriminant names/positions/types and simple overlap records. The compiler returns `Theoria.Equation.Compiled`, which contains the recursor body plus generated clause/schema/matcher metadata. `Theoria.Equation.DefinitionSpec` wraps that compiler result with the final checked definition type/value before installation. `Theoria.Equation.RecursorDescriptor` reads checked `Env.Recursor` / `Env.RecursorRule` metadata for the supported non-indexed families. `Theoria.Equation.MatcherDescriptor` combines that recursor-derived shape with schema/matcher metadata into a structural matcher description with discriminants, alternatives, result, and recursor. `Theoria.Equation.MatcherType` consumes descriptors to generate checked matcher type/body packages. `Theoria.Equation.MatcherSpec` installs those packages as `Theoria.Env.Matcher` metadata. Stored metadata records the definition name, checked type/value, recursive argument position, fixed parameters, level parameters, original clause metadata, Lean-shaped matcher alternatives, matcher discriminants, matcher declaration names, matcher mode, and a validated schema that drives schematic theorem generation.
 
 ## Generated equation lemmas
 
@@ -201,7 +202,7 @@ The verbose form prints generated lemma names under each stored equation definit
 | --- | --- |
 | Public syntax | No public equation-definition syntax yet. Library definitions feed the internal compiler directly. |
 | Fixed parameters | Signature-derived fixed parameters only; no mutual-recursive permutation/dependency analysis yet. |
-| MatcherDescriptor | Simple nondependent Bool/Nat/List descriptors; no recursor-info extraction from `Env.Recursor` yet. |
+| MatcherDescriptor | Recursor-informed simple nondependent Bool/Nat/List descriptors; dependent/indexed descriptors such as Vec are still unsupported. |
 | MatcherType | Generated from the current simple recursor shapes; not a general dependent matcher compiler. |
 | Eqns / MatcherEqns | Generated theorem metadata and realization helpers, not a persistent Lean-style environment extension. |
 | Extension.Registry | In-memory snapshot rebuilt from environment metadata; not persisted to disk. |

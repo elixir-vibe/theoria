@@ -19,6 +19,7 @@ defmodule Theoria.EquationTest do
     MatcherInfo,
     MatcherType,
     Pattern,
+    RecursorDescriptor,
     Schema,
     SchemaBuilder,
     Signature
@@ -158,6 +159,36 @@ defmodule Theoria.EquationTest do
 
     assert Extension.realize(env, :"missing.eq") ==
              {:error, {:unknown_generated_theorem, :"missing.eq"}}
+  end
+
+  test "matcher descriptors can be derived from checked recursor metadata" do
+    {:ok, env} = Prelude.env()
+
+    for definition <- [:bool_not, :bool_and, :nat_add, :list_append] do
+      {:ok, info} = Info.fetch(env, definition)
+      assert {:ok, fallback} = MatcherDescriptor.from_schema(info.schema, info.matcher)
+      assert {:ok, derived} = MatcherDescriptor.from_env(env, info.schema, info.matcher)
+      assert derived == fallback
+    end
+  end
+
+  test "recursor descriptor rejects unsupported indexed or missing recursors" do
+    {:ok, env} = Prelude.env()
+    {:ok, vec_recursor} = Theoria.Env.fetch_recursor(env, :vec_ind)
+    vec_schema = Schema.new(:Vec, [])
+    vec_schema = %{vec_schema | recursive_argument: 0}
+
+    env_with_vec_rec = %{
+      env
+      | constants:
+          Map.put(env.constants, :Vec_rec, %{env.constants.vec_ind | metadata: vec_recursor})
+    }
+
+    assert RecursorDescriptor.from_schema(env, vec_schema) ==
+             {:error, {:missing_recursor, :Vec_rec}}
+
+    assert RecursorDescriptor.from_schema(env_with_vec_rec, vec_schema) ==
+             {:error, {:unsupported_indexed_recursor, :vec_ind}}
   end
 
   test "matcher descriptor validation rejects corrupted shapes" do

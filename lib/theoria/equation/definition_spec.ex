@@ -93,7 +93,7 @@ defmodule Theoria.Equation.DefinitionSpec do
   defp add_matcher_to_env(env, %__MODULE__{matcher: nil}), do: {:ok, env}
 
   defp add_matcher_to_env(env, %__MODULE__{} = spec) do
-    with {:ok, matcher_spec} <- spec |> info() |> MatcherSpec.from_info() do
+    with {:ok, matcher_spec} <- spec |> info() |> MatcherSpec.from_info(env: env) do
       Kernel.add_matcher(env, matcher_spec)
     end
   end

@@ -43,9 +43,9 @@ defmodule Theoria.Equation.MatcherSpec do
   def from_info(%Info{} = info, opts) do
     mode = Keyword.get(opts, :mode, default_mode(info))
 
-    with :ok <- validate_descriptor(info, mode),
-         {:ok, type} <- type_for(info.matcher, info.schema, info.type, mode),
-         {:ok, value} <- value_for(info.matcher, info.schema, info.value, mode) do
+    with {:ok, descriptor} <- descriptor_for(info, mode, Keyword.get(opts, :env)),
+         {:ok, type} <- type_for(info.matcher, info.schema, info.type, mode, descriptor),
+         {:ok, value} <- value_for(info.matcher, info.schema, info.value, mode, descriptor) do
       {:ok,
        %__MODULE__{
          name: info.matcher.name,
@@ -87,13 +87,39 @@ defmodule Theoria.Equation.MatcherSpec do
     )
   end
 
-  defp validate_descriptor(_info, :source_aligned), do: :ok
+  defp descriptor_for(_info, :source_aligned, _env), do: {:ok, nil}
 
-  defp validate_descriptor(%Info{} = info, :matcher) do
-    with {:ok, descriptor} <- MatcherDescriptor.from_schema(info.schema, info.matcher) do
-      MatcherDescriptor.validate(descriptor, info.matcher)
-    end
+  defp descriptor_for(%Info{} = info, :matcher, nil) do
+    MatcherDescriptor.from_schema(info.schema, info.matcher)
   end
+
+  defp descriptor_for(%Info{} = info, :matcher, env) do
+    MatcherDescriptor.from_env(env, info.schema, info.matcher)
+  end
+
+  defp type_for(%MatcherInfo{}, _schema, source_type, :source_aligned, _descriptor),
+    do: {:ok, source_type}
+
+  defp type_for(
+         %MatcherInfo{},
+         %Schema{},
+         _source_type,
+         :matcher,
+         %MatcherDescriptor{} = descriptor
+       ),
+       do: MatcherType.from_descriptor(descriptor)
+
+  defp value_for(%MatcherInfo{}, _schema, source_value, :source_aligned, _descriptor),
+    do: {:ok, source_value}
+
+  defp value_for(
+         %MatcherInfo{},
+         %Schema{},
+         _source_value,
+         :matcher,
+         %MatcherDescriptor{} = descriptor
+       ),
+       do: MatcherType.value_from_descriptor(descriptor)
 
   defp default_mode(%Info{schema: %Schema{family: :bool}}), do: :matcher
 

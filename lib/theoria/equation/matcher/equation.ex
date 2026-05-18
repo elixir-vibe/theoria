@@ -28,7 +28,7 @@ defmodule Theoria.Equation.Matcher.Equation do
   @type t :: %__MODULE__{
           matcher: atom(),
           id: Name.t() | nil,
-          name: atom(),
+          name: atom() | Name.t(),
           constructor: atom(),
           left: Term.t(),
           right: Term.t(),
@@ -37,7 +37,7 @@ defmodule Theoria.Equation.Matcher.Equation do
           source: Lemma.t() | nil,
           indexed?: boolean(),
           index_patterns: [Term.t()],
-          statement_name: atom() | nil,
+          statement_name: atom() | Name.t() | nil,
           statement_type: Term.t() | nil,
           statement_status: :planned | :realizable | :realized | :unsupported,
           proof: Term.t() | nil,
@@ -52,7 +52,7 @@ defmodule Theoria.Equation.Matcher.Equation do
     %__MODULE__{
       matcher: matcher,
       id: id,
-      name: Name.to_declaration(id),
+      name: id,
       constructor: constructor,
       left: lemma.left,
       right: lemma.right,
@@ -66,19 +66,18 @@ defmodule Theoria.Equation.Matcher.Equation do
   @spec indexed(atom(), atom(), [Term.t()]) :: t()
   def indexed(matcher, constructor, index_patterns) when is_atom(matcher) do
     id = Name.indexed_matcher_equation(matcher, constructor)
-    declaration_name = Name.to_declaration(id)
 
     %__MODULE__{
       matcher: matcher,
       id: id,
-      name: declaration_name,
+      name: id,
       constructor: constructor,
       left: Term.const(matcher),
       right: Term.const(constructor),
       equality_type: Term.const(:unsupported_indexed_matcher_equation),
       indexed?: true,
       index_patterns: index_patterns,
-      statement_name: declaration_name,
+      statement_name: id,
       statement_status: :unsupported,
       realizable?: false
     }

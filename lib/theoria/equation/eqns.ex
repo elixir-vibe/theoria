@@ -48,7 +48,7 @@ defmodule Theoria.Equation.Eqns do
   @doc "Realizes generated equation theorem metadata without installing it."
   @spec realize(Env.t(), atom() | Name.t()) ::
           {:ok, Theoria.Theorem.t()} | {:ok, [Theoria.Theorem.t()]} | {:error, term()}
-  def realize(%Env{} = env, %Name{} = name), do: realize_theorem(env, Name.to_declaration(name))
+  def realize(%Env{} = env, %Name{} = name), do: realize_theorem(env, name)
 
   def realize(%Env{} = env, name) when is_atom(name) do
     case Info.fetch(env, name) do
@@ -82,7 +82,7 @@ defmodule Theoria.Equation.Eqns do
     end
   end
 
-  defp declaration_name(%Name{} = name), do: Name.to_declaration(name)
+  defp declaration_name(%Name{} = name), do: name
   defp declaration_name(name) when is_atom(name), do: name
 
   defp realize_all(env, info) do
@@ -158,7 +158,7 @@ defmodule Theoria.Equation.Eqns do
   def installed?(%Env{} = env, name) when is_atom(name) do
     case get(env, name) do
       {:ok, names} ->
-        Enum.all?(names, &match?({:ok, _constant}, Env.fetch(env, Name.to_declaration(&1))))
+        Enum.all?(names, &match?({:ok, _constant}, Env.fetch(env, &1)))
 
       {:error, _reason} ->
         false

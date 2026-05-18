@@ -147,7 +147,7 @@ defmodule Theoria.Equation.Matcher.Indexed.Realization do
   defp proof_term(%Term.Eq{left: left}), do: Term.refl(left)
 
   defp find_plan(%Plan{equations: equations}, equation_name),
-    do: Enum.find(equations, &(&1.name == Name.to_declaration(equation_name)))
+    do: Enum.find(equations, &(&1.name == equation_name))
 
   defp package_blockers(equations) do
     equations

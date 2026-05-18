@@ -132,7 +132,7 @@ defmodule Theoria.Kernel do
   end
 
   def add_constant(%Env{} = env, name, type, universe_params \\ [], opts \\ [])
-      when is_atom(name) and is_list(universe_params) and is_list(opts) do
+      when is_list(universe_params) and is_list(opts) do
     with :ok <- ensure_fresh_declaration(env, name),
          :ok <- ensure_universe_params(universe_params),
          :ok <-
@@ -155,7 +155,7 @@ defmodule Theoria.Kernel do
   end
 
   def add_axiom(%Env{} = env, name, type, universe_params \\ [])
-      when is_atom(name) and is_list(universe_params) do
+      when is_list(universe_params) do
     with :ok <- ensure_fresh_declaration(env, name),
          :ok <- ensure_universe_params(universe_params),
          :ok <- ensure_level_params(type, universe_params),
@@ -165,7 +165,7 @@ defmodule Theoria.Kernel do
   end
 
   def add_definition(%Env{} = env, name, type, value, universe_params \\ [], opts \\ [])
-      when is_atom(name) and is_list(universe_params) and is_list(opts) do
+      when is_list(universe_params) and is_list(opts) do
     with :ok <- ensure_fresh_declaration(env, name),
          :ok <- ensure_universe_params(universe_params),
          :ok <- ensure_definition_metadata(Keyword.get(opts, :metadata), name, type, value),
@@ -192,7 +192,7 @@ defmodule Theoria.Kernel do
   end
 
   def add_theorem(%Env{} = env, name, type, proof, universe_params \\ [])
-      when is_atom(name) and is_list(universe_params) do
+      when is_list(universe_params) do
     with :ok <- ensure_fresh_declaration(env, name),
          :ok <- ensure_universe_params(universe_params),
          :ok <- ensure_level_params(type, universe_params),
@@ -205,26 +205,26 @@ defmodule Theoria.Kernel do
 
   def add_inductive(%Env{} = env, %Spec{} = spec), do: Admission.install(env, spec)
 
-  def dependencies(%Env{} = env, name) when is_atom(name) do
+  def dependencies(%Env{} = env, name) do
     case Env.fetch(env, name) do
       {:ok, constant} -> {:ok, declaration_dependencies(constant)}
       :error -> error(:unknown_constant, name: name)
     end
   end
 
-  def transitive_dependencies(%Env{} = env, name) when is_atom(name) do
+  def transitive_dependencies(%Env{} = env, name) do
     with {:ok, _constant} <- fetch_constant(env, name) do
       {:ok, collect_transitive_dependencies(env, [name], MapSet.new())}
     end
   end
 
-  def axioms(%Env{} = env, name) when is_atom(name) do
+  def axioms(%Env{} = env, name) do
     with {:ok, dependencies} <- transitive_dependencies(env, name) do
       {:ok, filter_dependencies(env, dependencies, :axiom)}
     end
   end
 
-  def trust_report(%Env{} = env, name) when is_atom(name) do
+  def trust_report(%Env{} = env, name) do
     with {:ok, constant} <- fetch_constant(env, name),
          {:ok, direct_dependencies} <- dependencies(env, name),
          {:ok, transitive_dependencies} <- transitive_dependencies(env, name),

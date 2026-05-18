@@ -49,25 +49,10 @@ defmodule Theoria.Equation.Name do
     end
   end
 
-  @doc "Returns the internal kernel declaration atom for a structured equation name."
-  @spec to_declaration(t()) :: atom()
-  def to_declaration(%__MODULE__{} = name) do
-    ["theoria", kind_segment(name.kind), Atom.to_string(name.owner), target_segment(name.target)]
-    |> Enum.join("__")
-    |> String.to_atom()
-  end
-
-  @doc "Formats a kernel declaration atom when it is an equation declaration."
-  @spec format_declaration(atom()) :: String.t()
-  def format_declaration(name) when is_atom(name) do
-    case Atom.to_string(name) do
-      "theoria__eq__" <> rest -> format_declaration_parts(rest)
-      "theoria__unfold__" <> rest -> format_declaration_parts(rest)
-      "theoria__matcher_eq__" <> rest -> format_declaration_parts(rest)
-      "theoria__indexed_matcher_eq__" <> rest -> format_declaration_parts(rest)
-      other -> other
-    end
-  end
+  @doc "Formats a declaration key for humans."
+  @spec format_declaration(atom() | t()) :: String.t()
+  def format_declaration(%__MODULE__{} = name), do: format(name)
+  def format_declaration(name) when is_atom(name), do: Atom.to_string(name)
 
   @doc "Formats a structured equation name for humans."
   @spec format(t()) :: String.t()
@@ -83,21 +68,8 @@ defmodule Theoria.Equation.Name do
   def format(%__MODULE__{owner: owner, kind: :indexed_matcher_equation, target: target}),
     do: "#{owner}.eq_#{target_segment(target)}"
 
-  defp format_declaration_parts(rest) do
-    case String.split(rest, "__", parts: 2) do
-      [owner, "def"] -> "#{owner}.eq_def"
-      [owner, target] -> "#{owner}.eq_#{target}"
-      [name] -> name
-    end
-  end
-
   defp target_segment(nil), do: "nil"
   defp target_segment(target), do: Atom.to_string(target)
-
-  defp kind_segment(:equation), do: "eq"
-  defp kind_segment(:unfold), do: "unfold"
-  defp kind_segment(:matcher_equation), do: "matcher_eq"
-  defp kind_segment(:indexed_matcher_equation), do: "indexed_matcher_eq"
 end
 
 defimpl Inspect, for: Theoria.Equation.Name do

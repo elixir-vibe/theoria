@@ -9,7 +9,7 @@ defmodule Theoria.Rewrite.Rule do
   defstruct [:name, :equality, :id, direction: :forward, binders: []]
 
   @type t :: %__MODULE__{
-          name: atom(),
+          name: atom() | Name.t(),
           equality: Term.Eq.t(),
           id: Name.t() | nil,
           direction: :forward | :backward,
@@ -21,10 +21,14 @@ defmodule Theoria.Rewrite.Rule do
   def new(name_or_id, equality, opts \\ [])
 
   def new(%Name{} = id, %Term.Eq{} = equality, opts) do
-    new(Name.to_declaration(id), equality, Keyword.put(opts, :id, id))
+    new_with_name(id, equality, Keyword.put(opts, :id, id))
   end
 
   def new(name, %Term.Eq{} = equality, opts) when is_atom(name) do
+    new_with_name(name, equality, opts)
+  end
+
+  defp new_with_name(name, %Term.Eq{} = equality, opts) do
     %__MODULE__{
       name: name,
       equality: equality,

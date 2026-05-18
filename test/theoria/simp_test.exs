@@ -1,6 +1,7 @@
 defmodule Theoria.SimpTest do
   use ExUnit.Case, async: true
 
+  alias Theoria.Equation.Name
   alias Theoria.Prelude
   alias Theoria.Simp
   alias Theoria.Simp.Database
@@ -13,7 +14,12 @@ defmodule Theoria.SimpTest do
     one = Term.app(Term.const(:succ), zero())
     term = Term.const(:nat_add) |> Term.app(zero()) |> Term.app(one)
 
-    assert {:ok, ^one, %Step{rule: :theoria__eq__nat_add__zero, before: ^term, after: ^one}} =
+    assert {:ok, ^one,
+            %Step{
+              rule: %Name{kind: :equation, owner: :nat_add, target: :zero},
+              before: ^term,
+              after: ^one
+            }} =
              Simp.once(env, term)
   end
 
@@ -24,7 +30,9 @@ defmodule Theoria.SimpTest do
 
     assert %{
              term: ^one,
-             steps: [%Step{rule: :theoria__eq__nat_add__zero, after: ^one}],
+             steps: [
+               %Step{rule: %Name{kind: :equation, owner: :nat_add, target: :zero}, after: ^one}
+             ],
              stopped: :normal
            } =
              Simp.normalize(env, term)
@@ -44,20 +52,13 @@ defmodule Theoria.SimpTest do
     equation_rules = Database.from_env_equations(env).rules
     all_rules = Database.from_env_all_equations(env).rules
 
-    refute Enum.any?(
-             equation_rules,
-             &match?(%Rule{rewrite: %{name: :theoria__matcher_eq__bool_not_match_1__true}}, &1)
-           )
+    matcher_equation = Name.matcher_equation(:bool_not_match_1, true)
+
+    refute Enum.any?(equation_rules, &match?(%Rule{rewrite: %{name: ^matcher_equation}}, &1))
 
     assert Enum.any?(
              all_rules,
-             &match?(
-               %Rule{
-                 rewrite: %{name: :theoria__matcher_eq__bool_not_match_1__true},
-                 source: :matcher_equation
-               },
-               &1
-             )
+             &match?(%Rule{rewrite: %{name: ^matcher_equation}, source: :matcher_equation}, &1)
            )
   end
 

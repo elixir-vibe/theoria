@@ -71,16 +71,16 @@ defmodule Theoria.Equation.Extension do
   end
 
   @doc "Returns the source definition or matcher for a generated theorem name."
-  @spec source_for(Env.t() | Registry.t(), atom()) :: {:ok, atom()} | :error
+  @spec source_for(Env.t() | Registry.t(), term()) :: {:ok, atom()} | :error
   def source_for(env_or_registry, theorem_name)
 
-  def source_for(%Env{} = env, theorem_name) when is_atom(theorem_name) do
+  def source_for(%Env{} = env, theorem_name) do
     env
     |> build()
     |> source_for(theorem_name)
   end
 
-  def source_for(%Registry{} = registry, theorem_name) when is_atom(theorem_name) do
+  def source_for(%Registry{} = registry, theorem_name) do
     case Map.fetch(registry.theorem_sources, theorem_name) do
       {:ok, source} -> {:ok, source}
       :error -> :error
@@ -133,14 +133,14 @@ defmodule Theoria.Equation.Extension do
   end
 
   @doc "Returns whether a generated theorem can be realized from registry metadata."
-  @spec realizable?(Env.t(), atom()) :: boolean()
-  def realizable?(%Env{} = env, theorem_name) when is_atom(theorem_name) do
+  @spec realizable?(Env.t(), term()) :: boolean()
+  def realizable?(%Env{} = env, theorem_name) do
     match?({:ok, _theorem}, realize(env, theorem_name))
   end
 
   @doc "Realizes any generated ordinary, unfold, or matcher equation theorem without installing it."
-  @spec realize(Env.t(), atom()) :: {:ok, Theoria.Theorem.t()} | {:error, term()}
-  def realize(%Env{} = env, theorem_name) when is_atom(theorem_name) do
+  @spec realize(Env.t(), term()) :: {:ok, Theoria.Theorem.t()} | {:error, term()}
+  def realize(%Env{} = env, theorem_name) do
     registry = build(env)
 
     case source_for(registry, theorem_name) do
@@ -232,7 +232,7 @@ defmodule Theoria.Equation.Extension do
       {:ok, source} ->
         registry
         |> source_equation_ids(source)
-        |> Enum.filter(&(Name.to_declaration(&1) == theorem_name))
+        |> Enum.filter(&(&1 == theorem_name))
 
       :error ->
         []
@@ -257,6 +257,8 @@ defmodule Theoria.Equation.Extension do
     |> Map.get(matcher.name, [])
     |> Enum.map(&matcher_equation_id(matcher, &1))
   end
+
+  defp matcher_equation_id(_matcher, %Name{} = name), do: name
 
   defp matcher_equation_id(%EnvMatcher{mode: :indexed_matcher, name: matcher}, name),
     do: Name.indexed_matcher_equation(matcher, matcher_equation_target(name))

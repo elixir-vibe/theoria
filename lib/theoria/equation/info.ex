@@ -93,12 +93,15 @@ defmodule Theoria.Equation.Info do
   def all(%Env{} = env) do
     env
     |> Env.declarations()
-    |> Enum.flat_map(fn name ->
-      case fetch(env, name) do
-        {:ok, metadata} -> [metadata]
-        {:error, _reason} -> []
-      end
-    end)
+    |> Enum.filter(&is_atom/1)
+    |> Enum.flat_map(&fetch_metadata(env, &1))
+  end
+
+  defp fetch_metadata(env, name) do
+    case fetch(env, name) do
+      {:ok, metadata} -> [metadata]
+      {:error, _reason} -> []
+    end
   end
 
   @doc "Builds equation metadata from a checked environment definition or theorem."

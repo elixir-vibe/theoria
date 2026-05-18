@@ -5,6 +5,7 @@ defmodule Theoria.Library.VecTest do
   alias Theoria.Equation.Matcher.Eqns, as: MatcherEqns
   alias Theoria.Equation.Matcher.Indexed.Package, as: IndexedPackage
   alias Theoria.Equation.Matcher.Indexed.Realization, as: IndexedRealization
+  alias Theoria.Equation.Name
   alias Theoria.Inductive
   alias Theoria.Kernel
   alias Theoria.Library.Vec
@@ -113,8 +114,8 @@ defmodule Theoria.Library.VecTest do
     assert {:ok, theorems} = IndexedRealization.realize_all(package)
 
     assert Enum.map(theorems, & &1.name) == [
-             :theoria__indexed_matcher_eq__vec_match__vec_nil,
-             :theoria__indexed_matcher_eq__vec_match__vec_cons
+             Name.indexed_matcher_equation(:vec_match, :vec_nil),
+             Name.indexed_matcher_equation(:vec_match, :vec_cons)
            ]
 
     assert {:ok, [nil_equation, cons_equation]} = MatcherEqns.indexed_statements(info, env)
@@ -125,14 +126,14 @@ defmodule Theoria.Library.VecTest do
   test "Vec indexed matcher equation theorems can be installed opt-in" do
     {:ok, env} = Vec.env_with_indexed_matcher(install_equations: true)
 
-    assert {:ok, _constant} = Env.fetch(env, :theoria__indexed_matcher_eq__vec_match__vec_nil)
-    assert {:ok, _constant} = Env.fetch(env, :theoria__indexed_matcher_eq__vec_match__vec_cons)
+    nil_equation = Name.indexed_matcher_equation(:vec_match, :vec_nil)
+    cons_equation = Name.indexed_matcher_equation(:vec_match, :vec_cons)
+
+    assert {:ok, _constant} = Env.fetch(env, nil_equation)
+    assert {:ok, _constant} = Env.fetch(env, cons_equation)
     assert {:ok, matcher} = Env.fetch_matcher(env, :vec_match)
 
-    assert matcher.equation_names == [
-             :theoria__indexed_matcher_eq__vec_match__vec_nil,
-             :theoria__indexed_matcher_eq__vec_match__vec_cons
-           ]
+    assert matcher.equation_names == [nil_equation, cons_equation]
 
     assert length(RewriteDatabase.from_env_indexed_matcher_equations(env).rules) == 2
     assert length(SimpDatabase.from_env_indexed_matcher_equations(env).rules) == 2

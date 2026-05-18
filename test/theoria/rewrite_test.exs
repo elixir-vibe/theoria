@@ -2,6 +2,7 @@ defmodule Theoria.RewriteTest do
   use ExUnit.Case, async: true
 
   alias Theoria.Equation.Lemma
+  alias Theoria.Equation.Name
   alias Theoria.Prelude
   alias Theoria.Rewrite
   alias Theoria.Rewrite.{Database, Rule}
@@ -45,7 +46,7 @@ defmodule Theoria.RewriteTest do
 
     bool_false = Term.const(false)
 
-    assert {:ok, ^bool_false, %Rule{name: :theoria__eq__bool_not__true}} =
+    assert {:ok, ^bool_false, %Rule{name: %Name{kind: :equation, owner: :bool_not, target: true}}} =
              Database.once(database, Term.app(Term.const(:bool_not), Term.const(true)))
 
     singleton = list_cons(nat(), zero(), list_nil())
@@ -56,13 +57,14 @@ defmodule Theoria.RewriteTest do
       |> Term.app(list_nil())
       |> Term.app(singleton)
 
-    assert {:ok, ^singleton, %Rule{name: :theoria__eq__list_append__nil}} =
+    assert {:ok, ^singleton,
+            %Rule{name: %Name{kind: :equation, owner: :list_append, target: nil}}} =
              Database.once(database, append_nil)
 
     one = Term.app(Term.const(:succ), zero())
     add_zero = Term.const(:nat_add) |> Term.app(zero()) |> Term.app(one)
 
-    assert {:ok, ^one, %Rule{name: :theoria__eq__nat_add__zero}} =
+    assert {:ok, ^one, %Rule{name: %Name{kind: :equation, owner: :nat_add, target: :zero}}} =
              Database.once(database, add_zero)
   end
 
@@ -70,14 +72,13 @@ defmodule Theoria.RewriteTest do
     {:ok, env} = Prelude.env()
     database = Database.from_env_all_equations(env)
 
-    assert Enum.any?(database.rules, &(&1.name == :theoria__matcher_eq__bool_not_match_1__true))
+    matcher_equation = Name.matcher_equation(:bool_not_match_1, true)
 
-    refute Enum.any?(
-             database.rules,
-             &(&1.name == :theoria__indexed_matcher_eq__vec_validation_match__vec_nil)
-           )
+    assert Enum.any?(database.rules, &(&1.name == matcher_equation))
 
-    assert {:ok, rewritten, %Rule{name: :theoria__matcher_eq__bool_not_match_1__true}} =
+    refute Enum.any?(database.rules, &match?(%{name: %Name{kind: :indexed_matcher_equation}}, &1))
+
+    assert {:ok, rewritten, %Rule{name: ^matcher_equation}} =
              Database.once(database, Term.app(Term.const(:bool_not), Term.const(true)))
 
     assert rewritten == Term.const(false)

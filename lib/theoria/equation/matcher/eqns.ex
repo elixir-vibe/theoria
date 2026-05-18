@@ -154,7 +154,7 @@ defmodule Theoria.Equation.Matcher.Eqns do
   @doc "Realizes a generated matcher equation theorem without installing it."
   @spec realize(Env.t(), Name.t() | atom()) :: {:ok, Theoria.Theorem.t()} | {:error, term()}
   def realize(%Env{} = env, %Name{} = theorem_name) do
-    realize_declaration(env, Name.to_declaration(theorem_name))
+    realize_declaration(env, theorem_name)
   end
 
   def realize(%Env{} = env, theorem_name) when is_atom(theorem_name) do
@@ -173,7 +173,7 @@ defmodule Theoria.Equation.Matcher.Eqns do
     end)
   end
 
-  defp declaration_name(%Name{} = name), do: Name.to_declaration(name)
+  defp declaration_name(%Name{} = name), do: name
   defp declaration_name(name) when is_atom(name), do: name
 
   defp indexed_lemmas_for(statements) do

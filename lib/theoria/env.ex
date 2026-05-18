@@ -12,13 +12,14 @@ defmodule Theoria.Env do
 
   defstruct constants: %{}, declarations: []
 
-  @type t :: %__MODULE__{constants: %{atom() => Constant.t()}, declarations: [atom()]}
+  @type name :: atom() | struct()
+  @type t :: %__MODULE__{constants: %{name() => Constant.t()}, declarations: [name()]}
 
   @spec new() :: t()
   def new, do: %__MODULE__{}
 
-  @spec fetch(t(), atom()) :: {:ok, Constant.t()} | :error
-  def fetch(%__MODULE__{constants: constants}, name) when is_atom(name) do
+  @spec fetch(t(), name()) :: {:ok, Constant.t()} | :error
+  def fetch(%__MODULE__{constants: constants}, name) do
     Map.fetch(constants, name)
   end
 
@@ -30,7 +31,7 @@ defmodule Theoria.Env do
         universe_params \\ [],
         opts \\ []
       )
-      when is_atom(name) and is_list(universe_params) and is_list(opts) do
+      when is_list(universe_params) and is_list(opts) do
     %{
       env
       | constants:
@@ -47,7 +48,7 @@ defmodule Theoria.Env do
 
   @spec put_axiom(t(), atom(), Term.t(), [atom()]) :: t()
   def put_axiom(%__MODULE__{constants: constants} = env, name, type, universe_params \\ [])
-      when is_atom(name) and is_list(universe_params) do
+      when is_list(universe_params) do
     %{
       env
       | constants:
@@ -70,7 +71,7 @@ defmodule Theoria.Env do
         universe_params \\ [],
         opts \\ []
       )
-      when is_atom(name) and is_list(universe_params) and is_list(opts) do
+      when is_list(universe_params) and is_list(opts) do
     %{
       env
       | constants:
@@ -95,7 +96,7 @@ defmodule Theoria.Env do
         universe_params \\ [],
         %EnvMatcher{} = metadata
       )
-      when is_atom(name) and is_list(universe_params) do
+      when is_list(universe_params) do
     %{
       env
       | constants:
@@ -119,7 +120,7 @@ defmodule Theoria.Env do
         proof,
         universe_params \\ []
       )
-      when is_atom(name) and is_list(universe_params) do
+      when is_list(universe_params) do
     %{
       env
       | constants:
@@ -176,7 +177,7 @@ defmodule Theoria.Env do
   end
 
   @doc "Returns declaration names in insertion order."
-  @spec declarations(t()) :: [atom()]
+  @spec declarations(t()) :: [name()]
   def declarations(%__MODULE__{declarations: declarations}), do: declarations
 
   defp fetch_metadata(%__MODULE__{} = env, name, module) do

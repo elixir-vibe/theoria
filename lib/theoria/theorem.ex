@@ -10,7 +10,7 @@ defmodule Theoria.Theorem do
   defstruct [:name, :type, :proof, universe_params: []]
 
   @type t :: %__MODULE__{
-          name: atom(),
+          name: Env.name(),
           type: Term.t(),
           proof: Term.t(),
           universe_params: [atom()]

@@ -16,7 +16,7 @@ defmodule Theoria.Equation.Lemma do
   @type binder :: {atom(), Term.t()}
 
   @type t :: %__MODULE__{
-          name: atom(),
+          name: atom() | Name.t(),
           left: Term.t(),
           right: Term.t(),
           source: Clause.t() | nil,
@@ -30,10 +30,14 @@ defmodule Theoria.Equation.Lemma do
   def new(name_or_id, left, right, opts \\ [])
 
   def new(%Name{} = id, left, right, opts) do
-    new(Name.to_declaration(id), left, right, Keyword.put(opts, :id, id))
+    new_with_name(id, left, right, Keyword.put(opts, :id, id))
   end
 
   def new(name, left, right, opts) when is_atom(name) do
+    new_with_name(name, left, right, opts)
+  end
+
+  defp new_with_name(name, left, right, opts) do
     %__MODULE__{
       name: name,
       left: left,

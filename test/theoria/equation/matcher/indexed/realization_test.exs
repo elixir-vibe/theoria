@@ -37,14 +37,14 @@ defmodule Theoria.Equation.Matcher.Indexed.RealizationTest do
                Name.indexed_matcher_equation(:vec_validation_match, :vec_cons)
              )
 
-    assert theorem.name == :theoria__indexed_matcher_eq__vec_validation_match__vec_cons
+    assert theorem.name == Name.indexed_matcher_equation(:vec_validation_match, :vec_cons)
     assert :ok = Kernel.check(package.env, theorem.proof, theorem.type)
 
     assert {:ok, theorems} = Realization.realize_all(package)
 
     assert Enum.map(theorems, & &1.name) == [
-             Name.to_declaration(Name.indexed_matcher_equation(:vec_validation_match, :vec_nil)),
-             Name.to_declaration(Name.indexed_matcher_equation(:vec_validation_match, :vec_cons))
+             Name.indexed_matcher_equation(:vec_validation_match, :vec_nil),
+             Name.indexed_matcher_equation(:vec_validation_match, :vec_cons)
            ]
   end
 end

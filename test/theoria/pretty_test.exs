@@ -7,6 +7,7 @@ defmodule Theoria.PrettyTest do
   alias Theoria.Equation.Matcher.Descriptor, as: MatcherDescriptor
   alias Theoria.Equation.Matcher.Equation, as: MatcherEquation
   alias Theoria.Equation.Matcher.Info, as: MatcherInfo
+  alias Theoria.Equation.Name
 
   alias Theoria.Equation.{
     FixedParams,
@@ -65,7 +66,7 @@ defmodule Theoria.PrettyTest do
         fixed_params: FixedParams.new([0])
       )
 
-    lemma = Lemma.new(:theoria__eq__list_append__nil, const(:zero), const(:zero))
+    lemma = Lemma.new(Name.equation(:list_append, nil), const(:zero), const(:zero))
     alternative = %Alternative{constructor: :list_nil, num_fields: 0}
     matcher = MatcherInfo.new(:match_list, 1, 1, [alternative])
     matcher_equation = MatcherEquation.from_lemma(:match_list, :list_nil, lemma)
@@ -84,7 +85,7 @@ defmodule Theoria.PrettyTest do
     env_matcher =
       EnvMatcher.new(:match_list, :list_append, const(:Nat), matcher,
         value: const(:zero),
-        equation_names: [:theoria__matcher_eq__match_list__list_nil]
+        equation_names: [Name.matcher_equation(:match_list, :list_nil)]
       )
 
     signature = Signature.new(:list_append, :list, [m: const(:Nat)], const(:Nat), rec_arg_pos: 0)

@@ -19,6 +19,7 @@ defmodule Mix.Tasks.Theoria.ValidateTest do
     assert output =~ "✓ inductive specs: 4 check(s)"
     assert output =~ "✓ equation metadata: 6 definition(s)"
     assert output =~ "✓ matcher declarations: 6 checked matcher(s)"
+    assert output =~ "✓ indexed matchers: 1 checked matcher(s)"
     assert output =~ "✓ generated equations: 16 theorem(s)"
     assert output =~ "✓ matcher equations: 16 theorem(s)"
   end
@@ -74,6 +75,7 @@ defmodule Mix.Tasks.Theoria.ValidateTest do
     assert output =~ "✓ inductive specs: 1 check(s)"
     assert output =~ "✓ equation metadata: 6 definition(s)"
     assert output =~ "✓ matcher declarations: 6 checked matcher(s)"
+    assert output =~ "✓ indexed matchers: 1 checked matcher(s)"
     assert output =~ "✓ generated equations: 16 theorem(s)"
     assert output =~ "✓ matcher equations: 16 theorem(s)"
   end

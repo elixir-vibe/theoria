@@ -2,9 +2,13 @@ defmodule Theoria.Validation do
   @moduledoc "Runs Theoria-owned validation corpora."
 
   alias Theoria.Env
-  alias Theoria.Equation.{Eqns, Extension, Info, Lemma}
+  alias Theoria.Equation.{Eqns, Extension, Info, Lemma, Schema}
   alias Theoria.Equation.Matcher.Eqns, as: MatcherEqns
   alias Theoria.Equation.Matcher.Equation, as: MatcherEquation
+  alias Theoria.Equation.Matcher.Info, as: MatcherInfo
+  alias Theoria.Equation.Matcher.Info.Alternative
+  alias Theoria.Equation.Matcher.Spec, as: MatcherSpec
+  alias Theoria.Kernel
   alias Theoria.Prelude
   alias Theoria.Theorem
   alias Theoria.Validation.{Checkable, Corpus, Report}
@@ -20,6 +24,7 @@ defmodule Theoria.Validation do
          :ok <- check_equation_registry(env),
          {:ok, _env, generated_equations} <- Eqns.install_all(env),
          {:ok, matcher_equation_count} <- check_matcher_equations(env),
+         {:ok, indexed_matcher_count} <- check_indexed_matchers(env),
          {:ok, theorem_count, axioms} <- theorem_summary(env, corpus.theorem_modules) do
       {:ok,
        %Report{
@@ -30,6 +35,7 @@ defmodule Theoria.Validation do
          equations: Info.all(env),
          generated_equation_count: length(generated_equations),
          matcher_metadata_count: length(Env.matchers(env)),
+         indexed_matcher_count: indexed_matcher_count,
          matcher_equation_count: matcher_equation_count,
          axioms: axioms
        }}
@@ -213,6 +219,42 @@ defmodule Theoria.Validation do
         {:error, error} -> {:halt, {:error, {:matcher_equation, equation.name, error}}}
       end
     end)
+  end
+
+  defp check_indexed_matchers(env) do
+    info = indexed_vec_matcher_info()
+
+    with {:ok, spec} <- MatcherSpec.indexed_from_info(info, env: env),
+         {:ok, env} <- Kernel.add_matcher(env, spec),
+         {:ok, matcher} <- Env.fetch_matcher(env, spec.name),
+         :indexed_matcher <- matcher.mode,
+         [] <- matcher.equation_names,
+         {:ok, _replayed_env} <- Kernel.validate_env(env) do
+      {:ok, 1}
+    else
+      other -> {:error, {:indexed_matcher, other}}
+    end
+  end
+
+  defp indexed_vec_matcher_info do
+    schema =
+      Schema.new(:Vec, [],
+        recursive_argument: 1,
+        parameter_binders: [a: Theoria.Term.sort(1)],
+        argument_binders: [n: Theoria.Term.const(:Nat), xs: Theoria.Term.const(:Vec)]
+      )
+
+    matcher =
+      MatcherInfo.new(:vec_validation_match, 1, 1, [
+        %Alternative{constructor: :vec_nil, num_fields: 0},
+        %Alternative{constructor: :vec_cons, num_fields: 3}
+      ])
+
+    Info.new(:vec_validation_source, Theoria.Term.const(:Vec), Theoria.Term.const(:Vec),
+      matcher: matcher,
+      schema: schema,
+      level_params: [:u]
+    )
   end
 
   defp theorem_summary(env, modules) do

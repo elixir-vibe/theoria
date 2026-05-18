@@ -347,7 +347,25 @@ defmodule Theoria.EquationTest do
       assert shape.motive_name == :motive
       assert Enum.map(shape.discriminant_binders, &elem(&1, 0)) == discriminants
       assert Enum.map(shape.alternative_binders, &elem(&1, 0)) == alternatives
+      assert Enum.map(shape.alternatives, & &1.binder_name) == alternatives
+
+      assert Enum.map(shape.alternatives, & &1.binder_type) ==
+               Enum.map(shape.alternative_binders, &elem(&1, 1))
     end
+
+    {:ok, nat_info} = Info.fetch(env, :nat_add)
+    {:ok, nat_descriptor} = MatcherDescriptor.from_env(env, nat_info.schema, nat_info.matcher)
+    {:ok, nat_shape} = MatcherType.shape_from_descriptor(nat_descriptor)
+
+    assert [_, %{binder_type: %Term.Forall{domain: %Term.Const{name: :Nat}}}] =
+             nat_shape.alternatives
+
+    {:ok, list_info} = Info.fetch(env, :list_append)
+    {:ok, list_descriptor} = MatcherDescriptor.from_env(env, list_info.schema, list_info.matcher)
+    {:ok, list_shape} = MatcherType.shape_from_descriptor(list_descriptor)
+
+    assert [_, %{binder_type: %Term.Forall{body: %Term.Forall{body: %Term.Forall{}}}}] =
+             list_shape.alternatives
   end
 
   test "matcher type builds real Bool, Nat, and List matcher shapes" do

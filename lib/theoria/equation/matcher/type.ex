@@ -14,13 +14,15 @@ defmodule Theoria.Equation.Matcher.Type do
 
     alias Theoria.Equation.Matcher.Descriptor
 
-    @enforce_keys [:constructor, :fields, :result_type]
-    defstruct [:constructor, :fields, :result_type]
+    @enforce_keys [:constructor, :fields, :result_type, :binder_name, :binder_type]
+    defstruct [:constructor, :fields, :result_type, :binder_name, :binder_type]
 
     @type t :: %__MODULE__{
             constructor: atom() | boolean(),
             fields: [Descriptor.Field.t()],
-            result_type: Term.t()
+            result_type: Term.t(),
+            binder_name: atom(),
+            binder_type: Term.t()
           }
   end
 
@@ -84,7 +86,11 @@ defmodule Theoria.Equation.Matcher.Type do
   @doc "Returns branch descriptors from a matcher descriptor."
   @spec alternatives_from_descriptor(MatcherDescriptor.t()) :: [Alternative.t()]
   def alternatives_from_descriptor(%MatcherDescriptor{} = descriptor) do
-    Enum.map(descriptor.alternatives, &alternative_from_descriptor/1)
+    descriptor.alternatives
+    |> Enum.with_index()
+    |> Enum.map(fn {alternative, position} ->
+      alternative_from_descriptor(descriptor, alternative, position)
+    end)
   end
 
   @doc "Builds a matcher type for supported schemas."
@@ -133,6 +139,8 @@ defmodule Theoria.Equation.Matcher.Type do
     do: {:error, {:unsupported_indexed_matcher_shape, family}}
 
   def shape_from_descriptor(%MatcherDescriptor{} = descriptor) do
+    alternatives = alternatives_from_descriptor(descriptor)
+
     with {:ok, plan} <- simple_shape_plan(descriptor) do
       {:ok,
        %Shape{
@@ -143,8 +151,8 @@ defmodule Theoria.Equation.Matcher.Type do
          motive_type: Keyword.fetch!(plan, :motive_type),
          discriminants: descriptor.discriminants,
          discriminant_binders: Keyword.fetch!(plan, :discriminant_binders),
-         alternatives: alternatives_from_descriptor(descriptor),
-         alternative_binders: Keyword.fetch!(plan, :alternative_binders),
+         alternatives: alternatives,
+         alternative_binders: Enum.map(alternatives, &{&1.binder_name, &1.binder_type}),
          result: Keyword.fetch!(plan, :result),
          body: Keyword.fetch!(plan, :body),
          recursor: descriptor.recursor
@@ -160,11 +168,17 @@ defmodule Theoria.Equation.Matcher.Type do
     {:ok, lam_telescope(binders(shape), shape.body)}
   end
 
-  defp alternative_from_descriptor(%MatcherDescriptor.Alternative{} = alternative) do
+  defp alternative_from_descriptor(
+         %MatcherDescriptor{} = descriptor,
+         %MatcherDescriptor.Alternative{} = alternative,
+         position
+       ) do
     %Alternative{
       constructor: alternative.name,
       fields: alternative.fields,
-      result_type: alternative.result
+      result_type: alternative.result,
+      binder_name: alternative_binder_name(alternative),
+      binder_type: alternative_binder_type(descriptor, alternative, position)
     }
   end
 
@@ -173,12 +187,6 @@ defmodule Theoria.Equation.Matcher.Type do
      [
        motive_type: Term.sort(1),
        discriminant_binders: [a: Term.const(:Bool), b: Term.const(:Bool)],
-       alternative_binders: [
-         on_true_true: Term.bvar(2),
-         on_true_false: Term.bvar(3),
-         on_false_true: Term.bvar(4),
-         on_false_false: Term.bvar(5)
-       ],
        result: Term.bvar(6),
        body: bool_binary_body()
      ]}
@@ -191,7 +199,6 @@ defmodule Theoria.Equation.Matcher.Type do
      [
        motive_type: Term.sort(1),
        discriminant_binders: [b: Term.const(:Bool)],
-       alternative_binders: [on_true: Term.bvar(1), on_false: Term.bvar(2)],
        result: result,
        body:
          RecursorApplication.bool_rec(
@@ -211,7 +218,6 @@ defmodule Theoria.Equation.Matcher.Type do
      [
        motive_type: Term.sort(1),
        discriminant_binders: [n: Term.const(:Nat)],
-       alternative_binders: [on_zero: on_zero, on_succ: nat_succ_case_type()],
        result: result,
        body:
          RecursorApplication.nat_rec(
@@ -230,7 +236,6 @@ defmodule Theoria.Equation.Matcher.Type do
      [
        motive_type: Term.sort(1),
        discriminant_binders: [xs: list_of(motive)],
-       alternative_binders: [on_nil: motive, on_cons: list_cons_case_type()],
        result: Term.bvar(3),
        body:
          RecursorApplication.list_rec(
@@ -245,6 +250,57 @@ defmodule Theoria.Equation.Matcher.Type do
 
   defp simple_shape_plan(%MatcherDescriptor{family: family}),
     do: {:error, {:unsupported_matcher_shape, family}}
+
+  defp alternative_binder_name(%MatcherDescriptor.Alternative{name: true}), do: :on_true
+  defp alternative_binder_name(%MatcherDescriptor.Alternative{name: false}), do: :on_false
+  defp alternative_binder_name(%MatcherDescriptor.Alternative{name: :zero}), do: :on_zero
+  defp alternative_binder_name(%MatcherDescriptor.Alternative{name: :succ}), do: :on_succ
+  defp alternative_binder_name(%MatcherDescriptor.Alternative{name: :list_nil}), do: :on_nil
+  defp alternative_binder_name(%MatcherDescriptor.Alternative{name: :list_cons}), do: :on_cons
+
+  defp alternative_binder_name(%MatcherDescriptor.Alternative{name: name}) when is_atom(name),
+    do: String.to_atom("on_#{name}")
+
+  defp alternative_binder_type(
+         %MatcherDescriptor{family: :bool, discriminants: [_, _]},
+         _alternative,
+         position
+       ),
+       do: Term.bvar(position + 2)
+
+  defp alternative_binder_type(%MatcherDescriptor{family: :bool}, _alternative, position),
+    do: Term.bvar(position + 1)
+
+  defp alternative_binder_type(%MatcherDescriptor{family: :nat}, %{name: :zero}, _position),
+    do: Term.bvar(1)
+
+  defp alternative_binder_type(
+         %MatcherDescriptor{family: :nat},
+         %{name: :succ} = alternative,
+         _position
+       ),
+       do: simple_case_telescope(alternative, Term.bvar(3), Term.bvar(4))
+
+  defp alternative_binder_type(%MatcherDescriptor{family: :list}, %{name: :list_nil}, _position),
+    do: Term.bvar(1)
+
+  defp alternative_binder_type(%MatcherDescriptor{family: :list}, %{name: :list_cons}, _position),
+    do: list_cons_case_type()
+
+  defp alternative_binder_type(_descriptor, alternative, _position), do: alternative.result
+
+  defp simple_case_telescope(alternative, recursive_type, result) do
+    recursive_fields =
+      case alternative.recursive_fields do
+        [] -> Enum.map(alternative.recursive_hypotheses, fn {name, _type} -> %{name: name} end)
+        fields -> fields
+      end
+
+    alternative.fields
+    |> Enum.map(&{:_, &1.type})
+    |> Kernel.++(Enum.map(recursive_fields, fn _field -> {:_, recursive_type} end))
+    |> forall_telescope(result)
+  end
 
   defp binders(%Shape{} = shape) do
     shape.parameters ++
@@ -262,10 +318,6 @@ defmodule Theoria.Equation.Matcher.Type do
     Enum.reduce(Enum.reverse(binders), body, fn {name, type}, acc ->
       Term.lam(name, type, acc)
     end)
-  end
-
-  defp nat_succ_case_type do
-    Term.forall(:_, Term.const(:Nat), Term.forall(:_, Term.bvar(3), Term.bvar(4)))
   end
 
   defp bool_binary_body do

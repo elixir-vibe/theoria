@@ -4,12 +4,13 @@ defmodule Theoria.Simp.Step do
   alias Theoria.Term
 
   @enforce_keys [:rule, :before, :after]
-  defstruct [:rule, :before, :after, source: :equation]
+  defstruct [:rule, :before, :after, :proof, source: :equation]
 
   @type t :: %__MODULE__{
           rule: atom(),
           before: Term.t(),
           after: Term.t(),
+          proof: Term.t() | nil,
           source: atom()
         }
 end

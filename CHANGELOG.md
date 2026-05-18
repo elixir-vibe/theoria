@@ -2,7 +2,16 @@
 
 ## Unreleased
 
-Post-0.2 development toward the next experimental API boundary.
+Post-0.3 development toward proof-producing rewrite/simp automation.
+
+- Bumped development version to `0.4.0-dev`.
+- Added `Theoria.Equality.Chain` as equality trace realization groundwork.
+- Added `Theoria.Simp.Result` and proof-aware `Theoria.Simp.Step` metadata.
+- Added `Simp.normalize(..., prove: true)`, `Simp.realize/3`, and `Simp.add_theorem/4` for checked simplification artifacts and explicit theorem installation.
+
+## 0.3.0
+
+Released 2026-05-18.
 
 - Introduced structured `Theoria.Equation.Identity` identities for ordinary, unfold, matcher, and indexed matcher equations.
 - Removed generated equation declaration atoms; installed generated equations now use structured `Theoria.Equation.Identity` values as environment keys.

@@ -187,6 +187,15 @@ Theoria.Equation.Eqns.realize(env, Identity.equation(:nat_add, :succ))
 
 Generated ordinary equations, matcher equations, unfold equations, and checked matcher declarations are validated natively. Equation artifacts are identified by `Theoria.Equation.Identity` structs and can be checked or installed directly under those structured keys. This is internal groundwork rather than stable public equation-definition syntax.
 
+The 0.4 development line also starts proof-producing simplification:
+
+```elixir
+result = Theoria.Simp.normalize(env, term, prove: true)
+result.realized
+
+Theoria.Simp.add_theorem(env, :my_simp_theorem, term)
+```
+
 Inspect them from Mix:
 
 ```bash

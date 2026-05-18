@@ -2,6 +2,7 @@ defmodule Theoria.SimpTest do
   use ExUnit.Case, async: true
 
   alias Theoria.Equation.Identity
+  alias Theoria.Kernel
   alias Theoria.Prelude
   alias Theoria.Simp
   alias Theoria.Simp.Database
@@ -63,6 +64,33 @@ defmodule Theoria.SimpTest do
              all_rules,
              &match?(%Rule{rewrite: %{name: ^matcher_equation}, source: :matcher_equation}, &1)
            )
+  end
+
+  test "normalizes with checked proof artifact when requested" do
+    {:ok, env} = Prelude.env()
+    one = Term.app(Term.const(:succ), zero())
+    term = Term.const(:nat_add) |> Term.app(zero()) |> Term.app(one)
+
+    result = Simp.normalize(env, term, prove: true)
+
+    assert result.term == one
+    assert %Theoria.Equation.Realized{identity: %Identity{kind: :simp}} = result.realized
+    assert result.proof == result.realized.proof
+    assert :ok = Kernel.check(env, result.realized.proof, result.realized.type)
+    assert [%Step{proof: %Term.Refl{}}] = result.steps
+  end
+
+  test "realizes and installs simp equality under a user theorem name" do
+    {:ok, env} = Prelude.env()
+    one = Term.app(Term.const(:succ), zero())
+    term = Term.const(:nat_add) |> Term.app(zero()) |> Term.app(one)
+
+    assert {:ok, realized} = Simp.realize(env, term)
+    assert %Identity{kind: :simp} = realized.identity
+
+    assert {:ok, env, theorem} = Simp.add_theorem(env, :nat_add_zero_simp, term)
+    assert theorem.name == :nat_add_zero_simp
+    assert {:ok, _constant} = Theoria.Env.fetch(env, :nat_add_zero_simp)
   end
 
   test "stops when fuel is exhausted" do

@@ -4,7 +4,7 @@ defmodule Theoria.Equation.Identity do
   @enforce_keys [:owner, :kind, :target]
   defstruct [:owner, :kind, :target, namespace: nil]
 
-  @type kind :: :equation | :unfold | :matcher_equation | :indexed_matcher_equation
+  @type kind :: :equation | :unfold | :matcher_equation | :indexed_matcher_equation | :simp
   @type t :: %__MODULE__{owner: atom(), kind: kind(), target: atom(), namespace: atom() | nil}
   @type selector :: t() | keyword()
 
@@ -27,6 +27,11 @@ defmodule Theoria.Equation.Identity do
   @spec indexed_matcher_equation(atom(), atom()) :: t()
   def indexed_matcher_equation(owner, target) when is_atom(owner) and is_atom(target),
     do: %__MODULE__{owner: owner, kind: :indexed_matcher_equation, target: target}
+
+  @doc "Builds an identity for a simplifier-produced equality artifact."
+  @spec simp(atom(), atom()) :: t()
+  def simp(owner \\ :simp, target \\ :normalize) when is_atom(owner) and is_atom(target),
+    do: %__MODULE__{owner: owner, kind: :simp, target: target}
 
   @doc "Casts API selectors to structured names."
   @spec cast(selector(), atom() | nil, kind() | nil) :: {:ok, t()} | {:error, term()}
@@ -67,6 +72,9 @@ defmodule Theoria.Equation.Identity do
 
   def format(%__MODULE__{owner: owner, kind: :indexed_matcher_equation, target: target}),
     do: "#{owner}.eq_#{target_segment(target)}"
+
+  def format(%__MODULE__{owner: owner, kind: :simp, target: target}),
+    do: "#{owner}.#{target_segment(target)}"
 
   defp target_segment(nil), do: "nil"
   defp target_segment(target), do: Atom.to_string(target)

@@ -16,7 +16,9 @@ defmodule Theoria.Equation.Matcher.Equation do
     source: nil,
     indexed?: false,
     index_patterns: [],
+    statement_name: nil,
     statement_type: nil,
+    statement_status: :planned,
     proof: nil,
     realizable?: true
   ]
@@ -32,7 +34,9 @@ defmodule Theoria.Equation.Matcher.Equation do
           source: Lemma.t() | nil,
           indexed?: boolean(),
           index_patterns: [Term.t()],
+          statement_name: atom() | nil,
           statement_type: Term.t() | nil,
+          statement_status: :planned | :realizable | :realized | :unsupported,
           proof: Term.t() | nil,
           realizable?: boolean()
         }
@@ -55,15 +59,19 @@ defmodule Theoria.Equation.Matcher.Equation do
   @doc "Builds indexed matcher-equation metadata from a matcher alternative."
   @spec indexed(atom(), atom(), [Term.t()]) :: t()
   def indexed(matcher, constructor, index_patterns) when is_atom(matcher) do
+    name = :"#{matcher}.eq_#{suffix_name(constructor)}"
+
     %__MODULE__{
       matcher: matcher,
-      name: :"#{matcher}.eq_#{suffix_name(constructor)}",
+      name: name,
       constructor: constructor,
       left: Term.const(matcher),
       right: Term.const(constructor),
       equality_type: Term.const(:unsupported_indexed_matcher_equation),
       indexed?: true,
       index_patterns: index_patterns,
+      statement_name: name,
+      statement_status: :unsupported,
       realizable?: false
     }
   end

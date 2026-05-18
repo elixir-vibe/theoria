@@ -360,6 +360,8 @@ defmodule Theoria.EquationTest do
 
     assert Enum.map(equations, & &1.constructor) == [:vec_nil, :vec_cons]
     assert Enum.all?(equations, & &1.indexed?)
+    assert Enum.all?(equations, &(&1.statement_status == :unsupported))
+    assert Enum.map(equations, & &1.statement_name) == Enum.map(equations, & &1.name)
     assert [[%Term.Const{name: :zero}], [%Term.App{}]] = Enum.map(equations, & &1.index_patterns)
   end
 
@@ -444,6 +446,47 @@ defmodule Theoria.EquationTest do
 
     assert {_ih_fun, [_a, _motive, %Term.BVar{index: 1}, %Term.BVar{index: 0}, _on_nil, _on_cons]} =
              TermApplication.collect(ih)
+  end
+
+  test "indexed matcher statements use shape-derived levels" do
+    {:ok, env} = Prelude.env()
+    info = vec_matcher_info!(:vec_validation_source, :vec_validation_match)
+    {:ok, spec} = MatcherSpec.indexed_from_info(info, env: env)
+    {:ok, env} = Kernel.add_matcher(env, spec)
+    assert {:ok, statements} = MatcherEqns.indexed_statements(info, env)
+    assert Enum.all?(statements, &(&1.statement_status == :planned))
+
+    statement =
+      Enum.find_value(
+        statements,
+        &(&1.name == :"vec_validation_match.eq_vec_cons" && &1.statement_type)
+      )
+
+    constants = collect_consts(statement)
+
+    assert Term.const(:Vec, [1]) in constants
+    assert Term.const(:vec_cons, [1]) in constants
+    assert Term.const(:vec_validation_match, [1]) in constants
+  end
+
+  test "indexed matcher statement planning reports invalid recursive field indices" do
+    shape = vec_matcher_shape!()
+    [nil_alternative, cons_alternative] = shape.alternatives
+
+    fields =
+      Enum.map(cons_alternative.fields, fn
+        %{recursive?: true} = field -> %{field | recursive_indices: [Term.bvar(9)]}
+        field -> field
+      end)
+
+    cons_alternative = %{cons_alternative | fields: fields}
+    shape = %{shape | alternatives: [nil_alternative, cons_alternative]}
+
+    equation =
+      MatcherEquation.indexed(:vec_validation_match, :vec_cons, cons_alternative.index_patterns)
+
+    assert MatcherStatement.indexed(shape, equation) ==
+             {:error, {:unknown_indexed_matcher_statement_field_index, 9}}
   end
 
   test "indexed matcher statement planning reports unsupported constructors" do
@@ -1318,4 +1361,38 @@ defmodule Theoria.EquationTest do
   end
 
   defp collect_foralls(body), do: {[], body}
+
+  defp collect_consts(term), do: collect_consts(term, [])
+  defp collect_consts(%Term.Const{} = term, constants), do: [term | constants]
+  defp collect_consts(%Term.Sort{}, constants), do: constants
+  defp collect_consts(%Term.BVar{}, constants), do: constants
+
+  defp collect_consts(%Term.App{fun: fun, arg: arg}, constants),
+    do: fun |> collect_consts(constants) |> then(&collect_consts(arg, &1))
+
+  defp collect_consts(%Term.Lam{domain: domain, body: body}, constants),
+    do: domain |> collect_consts(constants) |> then(&collect_consts(body, &1))
+
+  defp collect_consts(%Term.Forall{domain: domain, body: body}, constants),
+    do: domain |> collect_consts(constants) |> then(&collect_consts(body, &1))
+
+  defp collect_consts(%Term.Eq{type: type, left: left, right: right}, constants),
+    do:
+      type
+      |> collect_consts(constants)
+      |> then(&collect_consts(left, &1))
+      |> then(&collect_consts(right, &1))
+
+  defp collect_consts(%Term.Refl{value: value}, constants), do: collect_consts(value, constants)
+
+  defp collect_consts(
+         %Term.EqRec{type: type, motive: motive, base: base, proof: proof},
+         constants
+       ) do
+    type
+    |> collect_consts(constants)
+    |> then(&collect_consts(motive, &1))
+    |> then(&collect_consts(base, &1))
+    |> then(&collect_consts(proof, &1))
+  end
 end

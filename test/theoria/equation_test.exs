@@ -229,6 +229,9 @@ defmodule Theoria.EquationTest do
     assert Enum.map(vec_cons.recursive_fields, & &1.name) == [:field2]
     assert [%Term.App{}] = vec_cons.index_patterns
 
+    assert MatcherType.shape_from_descriptor(matcher_descriptor) ==
+             {:error, {:unsupported_indexed_matcher_shape, :Vec}}
+
     assert MatcherType.from_descriptor(matcher_descriptor) ==
              {:error, {:unsupported_indexed_matcher_type, :Vec}}
 
@@ -325,6 +328,26 @@ defmodule Theoria.EquationTest do
     assert [%{name: :list_nil, fields: []}, cons_alt] = list_descriptor.alternatives
     assert Enum.map(cons_alt.fields, & &1.name) == [:field0, :field1]
     assert Enum.map(cons_alt.recursive_fields, & &1.name) == [:field1]
+  end
+
+  test "matcher type shapes plan simple matcher telescopes" do
+    {:ok, env} = Prelude.env()
+
+    cases = [
+      bool_not: {[:b], [:on_true, :on_false]},
+      bool_and: {[:a, :b], [:on_true_true, :on_true_false, :on_false_true, :on_false_false]},
+      nat_add: {[:n], [:on_zero, :on_succ]},
+      list_append: {[:xs], [:on_nil, :on_cons]}
+    ]
+
+    for {definition, {discriminants, alternatives}} <- cases do
+      {:ok, info} = Info.fetch(env, definition)
+      {:ok, descriptor} = MatcherDescriptor.from_env(env, info.schema, info.matcher)
+      assert {:ok, shape} = MatcherType.shape_from_descriptor(descriptor)
+      assert shape.motive_name == :motive
+      assert Enum.map(shape.discriminant_binders, &elem(&1, 0)) == discriminants
+      assert Enum.map(shape.alternative_binders, &elem(&1, 0)) == alternatives
+    end
   end
 
   test "matcher type builds real Bool, Nat, and List matcher shapes" do

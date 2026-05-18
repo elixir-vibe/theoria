@@ -27,15 +27,47 @@ defmodule Theoria.Equation.Matcher.Type do
   defmodule Shape do
     @moduledoc "Planned matcher declaration shape derived from a matcher descriptor."
 
-    @enforce_keys [:family, :parameters, :discriminants, :alternatives, :result, :recursor]
-    defstruct [:family, :parameters, :discriminants, :alternatives, :result, :recursor]
+    @enforce_keys [
+      :family,
+      :parameters,
+      :indexed?,
+      :motive_name,
+      :motive_type,
+      :discriminants,
+      :discriminant_binders,
+      :alternatives,
+      :alternative_binders,
+      :result,
+      :body,
+      :recursor
+    ]
+    defstruct [
+      :family,
+      :parameters,
+      :indexed?,
+      :motive_name,
+      :motive_type,
+      :discriminants,
+      :discriminant_binders,
+      :alternatives,
+      :alternative_binders,
+      :result,
+      :body,
+      :recursor
+    ]
 
     @type t :: %__MODULE__{
             family: atom(),
             parameters: keyword(),
+            indexed?: boolean(),
+            motive_name: atom(),
+            motive_type: Term.t(),
             discriminants: [MatcherInfo.Discriminant.t()],
+            discriminant_binders: keyword(),
             alternatives: [Alternative.t()],
+            alternative_binders: keyword(),
             result: Term.t(),
+            body: Term.t(),
             recursor: atom()
           }
   end
@@ -95,37 +127,38 @@ defmodule Theoria.Equation.Matcher.Type do
     end
   end
 
-  defp shape_from_descriptor(%MatcherDescriptor{} = descriptor) do
-    {:ok,
-     %Shape{
-       family: descriptor.family,
-       parameters: descriptor.parameters,
-       discriminants: descriptor.discriminants,
-       alternatives: alternatives_from_descriptor(descriptor),
-       result: descriptor.result,
-       recursor: descriptor.recursor
-     }}
+  @doc "Plans matcher declaration binders and body from a descriptor."
+  @spec shape_from_descriptor(MatcherDescriptor.t()) :: {:ok, Shape.t()} | {:error, term()}
+  def shape_from_descriptor(%MatcherDescriptor{indexed?: true, family: family}),
+    do: {:error, {:unsupported_indexed_matcher_shape, family}}
+
+  def shape_from_descriptor(%MatcherDescriptor{} = descriptor) do
+    with {:ok, plan} <- simple_shape_plan(descriptor) do
+      {:ok,
+       %Shape{
+         family: descriptor.family,
+         parameters: descriptor.parameters,
+         indexed?: descriptor.indexed?,
+         motive_name: :motive,
+         motive_type: Keyword.fetch!(plan, :motive_type),
+         discriminants: descriptor.discriminants,
+         discriminant_binders: Keyword.fetch!(plan, :discriminant_binders),
+         alternatives: alternatives_from_descriptor(descriptor),
+         alternative_binders: Keyword.fetch!(plan, :alternative_binders),
+         result: Keyword.fetch!(plan, :result),
+         body: Keyword.fetch!(plan, :body),
+         recursor: descriptor.recursor
+       }}
+    end
   end
 
-  defp simple_type_from_shape(%Shape{family: :bool, discriminants: [_, _]}),
-    do: {:ok, bool_binary_type()}
+  defp simple_type_from_shape(%Shape{} = shape) do
+    {:ok, forall_telescope(binders(shape), shape.result)}
+  end
 
-  defp simple_type_from_shape(%Shape{family: :bool}), do: {:ok, bool_type()}
-  defp simple_type_from_shape(%Shape{family: :nat}), do: {:ok, nat_type()}
-  defp simple_type_from_shape(%Shape{family: :list}), do: {:ok, list_type()}
-
-  defp simple_type_from_shape(%Shape{family: family}),
-    do: {:error, {:unsupported_matcher_type, family}}
-
-  defp simple_value_from_shape(%Shape{family: :bool, discriminants: [_, _]}),
-    do: {:ok, bool_binary_value()}
-
-  defp simple_value_from_shape(%Shape{family: :bool}), do: {:ok, bool_value()}
-  defp simple_value_from_shape(%Shape{family: :nat}), do: {:ok, nat_value()}
-  defp simple_value_from_shape(%Shape{family: :list}), do: {:ok, list_value()}
-
-  defp simple_value_from_shape(%Shape{family: family}),
-    do: {:error, {:unsupported_matcher_value, family}}
+  defp simple_value_from_shape(%Shape{} = shape) do
+    {:ok, lam_telescope(binders(shape), shape.body)}
+  end
 
   defp alternative_from_descriptor(%MatcherDescriptor.Alternative{} = alternative) do
     %Alternative{
@@ -135,104 +168,104 @@ defmodule Theoria.Equation.Matcher.Type do
     }
   end
 
-  defp bool_type do
-    Term.forall(
-      :motive,
-      Term.sort(1),
-      Term.forall(
-        :b,
-        Term.const(:Bool),
-        Term.forall(:on_true, Term.bvar(1), Term.forall(:on_false, Term.bvar(2), Term.bvar(3)))
-      )
-    )
+  defp simple_shape_plan(%MatcherDescriptor{family: :bool, discriminants: [_, _]}) do
+    {:ok,
+     [
+       motive_type: Term.sort(1),
+       discriminant_binders: [a: Term.const(:Bool), b: Term.const(:Bool)],
+       alternative_binders: [
+         on_true_true: Term.bvar(2),
+         on_true_false: Term.bvar(3),
+         on_false_true: Term.bvar(4),
+         on_false_false: Term.bvar(5)
+       ],
+       result: Term.bvar(6),
+       body: bool_binary_body()
+     ]}
   end
 
-  defp bool_value do
-    Term.lam(
-      :motive,
-      Term.sort(1),
-      Term.lam(
-        :b,
-        Term.const(:Bool),
-        Term.lam(
-          :on_true,
-          Term.bvar(1),
-          Term.lam(
-            :on_false,
-            Term.bvar(2),
-            RecursorApplication.bool_rec(
-              Term.bvar(3),
-              Term.bvar(1),
-              Term.bvar(0),
-              Term.bvar(2)
-            )
-          )
-        )
-      )
-    )
+  defp simple_shape_plan(%MatcherDescriptor{family: :bool}) do
+    result = Term.bvar(3)
+
+    {:ok,
+     [
+       motive_type: Term.sort(1),
+       discriminant_binders: [b: Term.const(:Bool)],
+       alternative_binders: [on_true: Term.bvar(1), on_false: Term.bvar(2)],
+       result: result,
+       body:
+         RecursorApplication.bool_rec(
+           result,
+           Term.bvar(1),
+           Term.bvar(0),
+           Term.bvar(2)
+         )
+     ]}
   end
 
-  defp bool_binary_type do
-    motive = Term.sort(1)
-    result = Term.bvar(6)
+  defp simple_shape_plan(%MatcherDescriptor{family: :nat}) do
+    result = Term.bvar(3)
+    on_zero = Term.bvar(1)
 
-    Term.forall(
-      :motive,
-      motive,
-      Term.forall(
-        :a,
-        Term.const(:Bool),
-        Term.forall(
-          :b,
-          Term.const(:Bool),
-          Term.forall(
-            :on_true_true,
-            Term.bvar(2),
-            Term.forall(
-              :on_true_false,
-              Term.bvar(3),
-              Term.forall(
-                :on_false_true,
-                Term.bvar(4),
-                Term.forall(:on_false_false, Term.bvar(5), result)
-              )
-            )
-          )
-        )
-      )
-    )
+    {:ok,
+     [
+       motive_type: Term.sort(1),
+       discriminant_binders: [n: Term.const(:Nat)],
+       alternative_binders: [on_zero: on_zero, on_succ: nat_succ_case_type()],
+       result: result,
+       body:
+         RecursorApplication.nat_rec(
+           result,
+           on_zero,
+           Term.bvar(0),
+           Term.bvar(2)
+         )
+     ]}
   end
 
-  defp bool_binary_value do
-    Term.lam(
-      :motive,
-      Term.sort(1),
-      Term.lam(
-        :a,
-        Term.const(:Bool),
-        Term.lam(
-          :b,
-          Term.const(:Bool),
-          Term.lam(
-            :on_true_true,
-            Term.bvar(2),
-            Term.lam(
-              :on_true_false,
-              Term.bvar(3),
-              Term.lam(
-                :on_false_true,
-                Term.bvar(4),
-                Term.lam(
-                  :on_false_false,
-                  Term.bvar(5),
-                  bool_binary_body()
-                )
-              )
-            )
-          )
-        )
-      )
-    )
+  defp simple_shape_plan(%MatcherDescriptor{family: :list}) do
+    motive = Term.bvar(1)
+
+    {:ok,
+     [
+       motive_type: Term.sort(1),
+       discriminant_binders: [xs: list_of(motive)],
+       alternative_binders: [on_nil: motive, on_cons: list_cons_case_type()],
+       result: Term.bvar(3),
+       body:
+         RecursorApplication.list_rec(
+           Term.bvar(4),
+           Term.bvar(3),
+           Term.bvar(1),
+           Term.bvar(0),
+           Term.bvar(2)
+         )
+     ]}
+  end
+
+  defp simple_shape_plan(%MatcherDescriptor{family: family}),
+    do: {:error, {:unsupported_matcher_shape, family}}
+
+  defp binders(%Shape{} = shape) do
+    shape.parameters ++
+      [{shape.motive_name, shape.motive_type}] ++
+      shape.discriminant_binders ++ shape.alternative_binders
+  end
+
+  defp forall_telescope(binders, result) do
+    Enum.reduce(Enum.reverse(binders), result, fn {name, type}, body ->
+      Term.forall(name, type, body)
+    end)
+  end
+
+  defp lam_telescope(binders, body) do
+    Enum.reduce(Enum.reverse(binders), body, fn {name, type}, acc ->
+      Term.lam(name, type, acc)
+    end)
+  end
+
+  defp nat_succ_case_type do
+    Term.forall(:_, Term.const(:Nat), Term.forall(:_, Term.bvar(3), Term.bvar(4)))
   end
 
   defp bool_binary_body do
@@ -254,101 +287,6 @@ defmodule Theoria.Equation.Matcher.Type do
         second_discriminant
       ),
       Term.bvar(5)
-    )
-  end
-
-  defp nat_type do
-    succ_case_type =
-      Term.forall(:_, Term.const(:Nat), Term.forall(:_, Term.bvar(3), Term.bvar(4)))
-
-    Term.forall(
-      :motive,
-      Term.sort(1),
-      Term.forall(
-        :n,
-        Term.const(:Nat),
-        Term.forall(:on_zero, Term.bvar(1), Term.forall(:on_succ, succ_case_type, Term.bvar(3)))
-      )
-    )
-  end
-
-  defp nat_value do
-    succ_case_type =
-      Term.forall(:_, Term.const(:Nat), Term.forall(:_, Term.bvar(3), Term.bvar(4)))
-
-    Term.lam(
-      :motive,
-      Term.sort(1),
-      Term.lam(
-        :n,
-        Term.const(:Nat),
-        Term.lam(
-          :on_zero,
-          Term.bvar(1),
-          Term.lam(
-            :on_succ,
-            succ_case_type,
-            RecursorApplication.nat_rec(
-              Term.bvar(3),
-              Term.bvar(1),
-              Term.bvar(0),
-              Term.bvar(2)
-            )
-          )
-        )
-      )
-    )
-  end
-
-  defp list_type do
-    type = Term.sort(1)
-    motive = Term.bvar(1)
-
-    Term.forall(
-      :a,
-      type,
-      Term.forall(
-        :motive,
-        type,
-        Term.forall(
-          :xs,
-          list_of(motive),
-          Term.forall(:on_nil, motive, Term.forall(:on_cons, list_cons_case_type(), Term.bvar(3)))
-        )
-      )
-    )
-  end
-
-  defp list_value do
-    type = Term.sort(1)
-    motive = Term.bvar(1)
-
-    Term.lam(
-      :a,
-      type,
-      Term.lam(
-        :motive,
-        type,
-        Term.lam(
-          :xs,
-          list_of(motive),
-          Term.lam(
-            :on_nil,
-            motive,
-            Term.lam(
-              :on_cons,
-              list_cons_case_type(),
-              RecursorApplication.list_rec(
-                Term.bvar(4),
-                Term.bvar(3),
-                Term.bvar(1),
-                Term.bvar(0),
-                Term.bvar(2)
-              )
-            )
-          )
-        )
-      )
     )
   end
 

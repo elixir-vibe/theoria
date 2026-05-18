@@ -11,6 +11,7 @@ defmodule Theoria.Validation.Report do
     :matcher_metadata_count,
     :indexed_matcher_count,
     :indexed_matcher_equation_count,
+    :indexed_matcher_statement_count,
     :matcher_equation_count,
     :axioms
   ]
@@ -24,6 +25,7 @@ defmodule Theoria.Validation.Report do
     :matcher_metadata_count,
     :indexed_matcher_count,
     :indexed_matcher_equation_count,
+    :indexed_matcher_statement_count,
     :matcher_equation_count,
     :axioms
   ]
@@ -38,6 +40,7 @@ defmodule Theoria.Validation.Report do
           matcher_metadata_count: non_neg_integer(),
           indexed_matcher_count: non_neg_integer(),
           indexed_matcher_equation_count: non_neg_integer(),
+          indexed_matcher_statement_count: non_neg_integer(),
           matcher_equation_count: non_neg_integer(),
           axioms: MapSet.t(atom())
         }

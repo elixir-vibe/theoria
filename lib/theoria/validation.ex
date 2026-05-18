@@ -24,8 +24,8 @@ defmodule Theoria.Validation do
          :ok <- check_equation_registry(env),
          {:ok, _env, generated_equations} <- Eqns.install_all(env),
          {:ok, matcher_equation_count} <- check_matcher_equations(env),
-         {:ok, indexed_matcher_count, indexed_matcher_equation_count} <-
-           check_indexed_matchers(env),
+         {:ok, indexed_matcher_count, indexed_matcher_equation_count,
+          indexed_matcher_statement_count} <- check_indexed_matchers(env),
          {:ok, theorem_count, axioms} <- theorem_summary(env, corpus.theorem_modules) do
       {:ok,
        %Report{
@@ -38,6 +38,7 @@ defmodule Theoria.Validation do
          matcher_metadata_count: length(Env.matchers(env)),
          indexed_matcher_count: indexed_matcher_count,
          indexed_matcher_equation_count: indexed_matcher_equation_count,
+         indexed_matcher_statement_count: indexed_matcher_statement_count,
          matcher_equation_count: matcher_equation_count,
          axioms: axioms
        }}
@@ -233,8 +234,10 @@ defmodule Theoria.Validation do
          [] <- matcher.equation_names,
          {:ok, equations} <- MatcherEqns.indexed_generated(info, env),
          :ok <- validate_indexed_matcher_equations(equations, info),
+         {:ok, statements} <- MatcherEqns.indexed_statements(info, env),
+         :ok <- validate_indexed_matcher_statements(env, statements),
          {:ok, _replayed_env} <- Kernel.validate_env(env) do
-      {:ok, 1, length(equations)}
+      {:ok, 1, length(equations), length(statements)}
     else
       other -> {:error, {:indexed_matcher, other}}
     end
@@ -266,6 +269,18 @@ defmodule Theoria.Validation do
       {:ok, _names} -> :ok
       {:error, _reason} = error -> error
     end
+  end
+
+  defp validate_indexed_matcher_statements(env, statements) do
+    Enum.reduce_while(statements, :ok, fn equation, :ok ->
+      case Kernel.infer(env, equation.statement_type) do
+        {:ok, %Theoria.Term.Sort{}} ->
+          {:cont, :ok}
+
+        {:error, reason} ->
+          {:halt, {:error, {:indexed_matcher_equation_statement, equation.name, reason}}}
+      end
+    end)
   end
 
   defp indexed_vec_matcher_info do

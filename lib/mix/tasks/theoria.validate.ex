@@ -41,6 +41,10 @@ defmodule Mix.Tasks.Theoria.Validate do
           "✓ indexed matcher equations: #{result.indexed_matcher_equation_count} metadata entrie(s)"
         )
 
+        Mix.shell().info(
+          "✓ indexed matcher equation statements: #{result.indexed_matcher_statement_count} type(s)"
+        )
+
         Mix.shell().info("✓ generated equations: #{result.generated_equation_count} theorem(s)")
         Mix.shell().info("✓ matcher equations: #{result.matcher_equation_count} theorem(s)")
 

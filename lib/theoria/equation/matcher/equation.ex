@@ -15,7 +15,10 @@ defmodule Theoria.Equation.Matcher.Equation do
     binders: [],
     source: nil,
     indexed?: false,
-    index_patterns: []
+    index_patterns: [],
+    statement_type: nil,
+    proof: nil,
+    realizable?: true
   ]
 
   @type t :: %__MODULE__{
@@ -28,7 +31,10 @@ defmodule Theoria.Equation.Matcher.Equation do
           binders: [Lemma.binder()],
           source: Lemma.t() | nil,
           indexed?: boolean(),
-          index_patterns: [Term.t()]
+          index_patterns: [Term.t()],
+          statement_type: Term.t() | nil,
+          proof: Term.t() | nil,
+          realizable?: boolean()
         }
 
   @doc "Builds matcher-equation metadata from an ordinary equation lemma."
@@ -57,7 +63,8 @@ defmodule Theoria.Equation.Matcher.Equation do
       right: Term.const(constructor),
       equality_type: Term.const(:unsupported_indexed_matcher_equation),
       indexed?: true,
-      index_patterns: index_patterns
+      index_patterns: index_patterns,
+      realizable?: false
     }
   end
 

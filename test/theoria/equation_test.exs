@@ -168,7 +168,11 @@ defmodule Theoria.EquationTest do
       {:ok, info} = Info.fetch(env, definition)
       assert {:ok, fallback} = MatcherDescriptor.from_schema(info.schema, info.matcher)
       assert {:ok, derived} = MatcherDescriptor.from_env(env, info.schema, info.matcher)
-      assert derived == fallback
+      assert derived.family == fallback.family
+      assert derived.recursor == fallback.recursor
+
+      assert Enum.map(derived.alternatives, & &1.name) ==
+               Enum.map(fallback.alternatives, & &1.name)
     end
   end
 
@@ -271,7 +275,7 @@ defmodule Theoria.EquationTest do
 
     for definition <- [:bool_not, :bool_and, :nat_add, :list_append] do
       {:ok, info} = Info.fetch(env, definition)
-      {:ok, descriptor} = MatcherDescriptor.from_schema(info.schema, info.matcher)
+      {:ok, descriptor} = MatcherDescriptor.from_env(env, info.schema, info.matcher)
       {:ok, matcher} = Theoria.Env.fetch_matcher(env, info.matcher.name)
 
       assert descriptor.family == info.schema.family
@@ -281,6 +285,26 @@ defmodule Theoria.EquationTest do
       assert type == matcher.type
       assert value == matcher.value
     end
+  end
+
+  test "environment matcher descriptors reuse checked recursor rule fields" do
+    {:ok, env} = Prelude.env()
+    {:ok, nat_info} = Info.fetch(env, :nat_add)
+    {:ok, list_info} = Info.fetch(env, :list_append)
+
+    assert {:ok, nat_descriptor} =
+             MatcherDescriptor.from_env(env, nat_info.schema, nat_info.matcher)
+
+    assert [%{name: :zero, fields: []}, succ_alt] = nat_descriptor.alternatives
+    assert Enum.map(succ_alt.fields, & &1.name) == [:field0]
+    assert Enum.map(succ_alt.recursive_fields, & &1.name) == [:field0]
+
+    assert {:ok, list_descriptor} =
+             MatcherDescriptor.from_env(env, list_info.schema, list_info.matcher)
+
+    assert [%{name: :list_nil, fields: []}, cons_alt] = list_descriptor.alternatives
+    assert Enum.map(cons_alt.fields, & &1.name) == [:field0, :field1]
+    assert Enum.map(cons_alt.recursive_fields, & &1.name) == [:field1]
   end
 
   test "matcher type builds real Bool, Nat, and List matcher shapes" do

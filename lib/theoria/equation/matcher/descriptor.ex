@@ -166,7 +166,14 @@ defmodule Theoria.Equation.Matcher.Descriptor do
     end)
   end
 
-  defp alternatives(:nat, %MatcherInfo{} = info, _recursor_descriptor) do
+  defp alternatives(:nat, %MatcherInfo{} = info, %RecursorDescriptor{} = recursor_descriptor) do
+    alternatives_from_recursor(info, recursor_descriptor, fn
+      :zero -> Term.bvar(1)
+      :succ -> Term.bvar(2)
+    end)
+  end
+
+  defp alternatives(:nat, %MatcherInfo{} = info, nil) do
     Enum.map(info.alternatives, fn
       %{constructor: :zero} ->
         %Alternative{name: :zero, pattern: [:zero], fields: [], result: Term.bvar(1)}
@@ -182,7 +189,14 @@ defmodule Theoria.Equation.Matcher.Descriptor do
     end)
   end
 
-  defp alternatives(:list, %MatcherInfo{} = info, _recursor_descriptor) do
+  defp alternatives(:list, %MatcherInfo{} = info, %RecursorDescriptor{} = recursor_descriptor) do
+    alternatives_from_recursor(info, recursor_descriptor, fn
+      :list_nil -> Term.bvar(1)
+      :list_cons -> Term.bvar(2)
+    end)
+  end
+
+  defp alternatives(:list, %MatcherInfo{} = info, nil) do
     Enum.map(info.alternatives, fn
       %{constructor: :list_nil} ->
         %Alternative{name: :list_nil, pattern: [:list_nil], fields: [], result: Term.bvar(1)}
@@ -201,6 +215,14 @@ defmodule Theoria.Equation.Matcher.Descriptor do
   end
 
   defp alternatives(:Vec, %MatcherInfo{} = info, %RecursorDescriptor{} = recursor_descriptor) do
+    alternatives_from_recursor(info, recursor_descriptor, fn _constructor -> Term.bvar(0) end)
+  end
+
+  defp alternatives_from_recursor(
+         %MatcherInfo{} = info,
+         %RecursorDescriptor{} = recursor_descriptor,
+         result_fun
+       ) do
     rules = rules_by_constructor(recursor_descriptor)
 
     Enum.map(info.alternatives, fn alternative ->
@@ -213,7 +235,7 @@ defmodule Theoria.Equation.Matcher.Descriptor do
         recursive_fields: rule.recursive_fields,
         recursive_hypotheses: recursive_hypotheses(rule),
         index_patterns: rule.index_patterns,
-        result: Term.bvar(0)
+        result: result_fun.(alternative.constructor)
       }
     end)
   end
@@ -245,7 +267,8 @@ defmodule Theoria.Equation.Matcher.Descriptor do
        ) do
     rules = rules_by_constructor(recursor)
 
-    with :ok <- validate_info_alternatives(info, rules) do
+    with :ok <- validate_info_alternatives(info, rules),
+         :ok <- validate_alternative_field_counts(info, rules) do
       validate_family_field_counts(family, rules)
     end
   end
@@ -263,6 +286,34 @@ defmodule Theoria.Equation.Matcher.Descriptor do
     else
       {:error, {:unknown_recursor_alternative, MapSet.difference(alternatives, constructors)}}
     end
+  end
+
+  defp validate_alternative_field_counts(%MatcherInfo{} = info, rules) do
+    Enum.reduce_while(info.alternatives, :ok, fn alternative, :ok ->
+      constructors = alternative.pattern || [alternative.constructor]
+
+      actual_field_count =
+        constructors
+        |> Enum.map(&Map.fetch(rules, &1))
+        |> Enum.reduce_while(0, fn
+          {:ok, rule}, count -> {:cont, count + rule.field_count}
+          :error, _count -> {:halt, :missing}
+        end)
+
+      cond do
+        actual_field_count == :missing ->
+          {:halt, {:error, {:missing_recursor_rule, alternative.constructor}}}
+
+        actual_field_count == alternative.num_fields ->
+          {:cont, :ok}
+
+        true ->
+          {:halt,
+           {:error,
+            {:alternative_field_count_mismatch, alternative.constructor, alternative.num_fields,
+             actual_field_count}}}
+      end
+    end)
   end
 
   defp validate_family_field_counts(:bool, rules),

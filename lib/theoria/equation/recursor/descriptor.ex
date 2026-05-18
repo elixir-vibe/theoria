@@ -191,14 +191,14 @@ defmodule Theoria.Equation.Recursor.Descriptor do
           field_types
           |> Enum.with_index()
           |> Enum.map(fn {type, position} ->
-            recursive_indices = recursive_indices(type, recursor)
+            recursive_indices = recursive_field_indices(type, recursor)
 
             %Rule.Field{
               name: field_name(type, position),
               type: type,
               position: position,
-              recursive?: recursive_indices != [],
-              recursive_indices: recursive_indices
+              recursive?: recursive_indices != nil,
+              recursive_indices: recursive_indices || []
             }
           end)
 
@@ -224,16 +224,16 @@ defmodule Theoria.Equation.Recursor.Descriptor do
 
   defp forall_domains(_term), do: []
 
-  defp recursive_indices(type, %Recursor{inductives: [inductive], num_params: num_params}) do
+  defp recursive_field_indices(type, %Recursor{inductives: [inductive], num_params: num_params}) do
     {head, args} = Application.collect(type)
 
     case head do
       %Term.Const{name: ^inductive} -> Enum.drop(args, num_params)
-      _other -> []
+      _other -> nil
     end
   end
 
-  defp recursive_indices(_type, _recursor), do: []
+  defp recursive_field_indices(_type, _recursor), do: nil
 
   defp field_name(%Term.Forall{name: name}, _position), do: name
   defp field_name(_type, position), do: String.to_atom("field#{position}")

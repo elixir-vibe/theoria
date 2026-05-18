@@ -1,5 +1,5 @@
 defmodule Theoria.Equation.Schema do
-  @moduledoc "Schema metadata for generating equation lemmas from compiled definitions."
+  @moduledoc "Experimental/internal API for 0.1; subject to change before 0.2. Schema metadata for generating equation lemmas from compiled definitions."
 
   alias Theoria.Term
 

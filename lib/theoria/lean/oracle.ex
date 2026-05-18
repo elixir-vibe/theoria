@@ -1,5 +1,5 @@
 defmodule Theoria.Lean.Oracle do
-  @moduledoc "Runs generated Lean oracle files for contributor validation."
+  @moduledoc "Experimental/internal API for 0.1; subject to change before 0.2. Runs generated Lean oracle files for contributor validation."
 
   @default_output Path.join(["_build", "theoria_lean", "oracle.lean"])
 

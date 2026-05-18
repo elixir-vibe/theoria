@@ -1,5 +1,7 @@
 defmodule Theoria.Equation do
   @moduledoc """
+  Experimental/internal API for 0.1; subject to change before 0.2.
+
   Internal constructor-equation compiler facade.
 
   `Theoria.Equation` supports the current Bool/Nat/List recursor fragment. It is

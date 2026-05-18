@@ -65,6 +65,8 @@ defmodule Theoria.MixProject do
       source_url: @source_url,
       extras: [
         "README.md",
+        "CHANGELOG.md",
+        "docs/release_0_1.md",
         "docs/design.md",
         "docs/inductives.md",
         "docs/validation.md",
@@ -80,10 +82,12 @@ defmodule Theoria.MixProject do
         Kernel: [Theoria.Kernel, Theoria.Env, Theoria.Context, Theoria.Error],
         Syntax: [Theoria.Syntax, Theoria.Elaborator, Theoria.DSL, Theoria.Pretty],
         Inductives: ~r/^Theoria\.Inductive/,
+        Equations: ~r/^Theoria\.Equation/,
+        Rewrite: ~r/^Theoria\.(Rewrite|Simp)/,
         Validation: ~r/^Theoria\.Validation/,
-        Tooling: ~r/^Theoria\.Lean/,
         Libraries: ~r/^Theoria\.Library\./,
-        Tooling: [Theoria.Prelude, Theoria.Theorem]
+        Workflows: [Theoria.Prelude, Theoria.Theorem],
+        Tooling: ~r/^Theoria\.Lean/
       ]
     ]
   end
@@ -92,7 +96,7 @@ defmodule Theoria.MixProject do
     [
       licenses: ["MIT"],
       links: %{"GitHub" => @source_url},
-      files: ~w(lib docs mix.exs README.md LICENSE .formatter.exs)
+      files: ~w(lib docs mix.exs README.md CHANGELOG.md LICENSE .formatter.exs)
     ]
   end
 end

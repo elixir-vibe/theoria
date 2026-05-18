@@ -1,5 +1,5 @@
 defmodule Theoria.Equation.RecursorDescriptor do
-  @moduledoc "Internal recursor-derived shape metadata for matcher descriptors."
+  @moduledoc "Experimental/internal API for 0.1; subject to change before 0.2. Internal recursor-derived shape metadata for matcher descriptors."
 
   alias Theoria.Env
   alias Theoria.Env.Recursor

@@ -1,5 +1,5 @@
 defmodule Theoria.Equation.SchemaBuilder do
-  @moduledoc "Internal builder for equation schemas and matcher metadata from signatures and case templates."
+  @moduledoc "Experimental/internal API for 0.1; subject to change before 0.2. Internal builder for equation schemas and matcher metadata from signatures and case templates."
 
   alias Theoria.Equation.CaseTemplate
   alias Theoria.Equation.MatcherInfo

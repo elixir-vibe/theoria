@@ -1,5 +1,5 @@
 defmodule Theoria.Equation.MatcherDescriptor do
-  @moduledoc "Internal descriptor-driven matcher generation metadata."
+  @moduledoc "Experimental/internal API for 0.1; subject to change before 0.2. Internal descriptor-driven matcher generation metadata."
 
   alias Theoria.Env
   alias Theoria.Equation.MatcherInfo

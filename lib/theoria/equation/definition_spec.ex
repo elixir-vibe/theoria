@@ -1,5 +1,5 @@
 defmodule Theoria.Equation.DefinitionSpec do
-  @moduledoc "Complete metadata package for a compiled equation definition."
+  @moduledoc "Experimental/internal API for 0.1; subject to change before 0.2. Complete metadata package for a compiled equation definition."
 
   alias Theoria.Env
   alias Theoria.Equation.{FixedParams, Info, MatcherInfo, MatcherSpec, Schema}

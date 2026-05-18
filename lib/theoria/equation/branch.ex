@@ -1,5 +1,5 @@
 defmodule Theoria.Equation.Branch do
-  @moduledoc "Internal constructor-specific branch descriptors for equation compilation."
+  @moduledoc "Experimental/internal API for 0.1; subject to change before 0.2. Internal constructor-specific branch descriptors for equation compilation."
 
   alias Theoria.Env.RecursorRule
   alias Theoria.Equation.Clause

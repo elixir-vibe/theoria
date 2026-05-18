@@ -24,8 +24,8 @@ The trusted boundary is deliberately narrow:
 
 - `Theoria.Term` is the core language.
 - `Theoria.Kernel` checks terms and admits declarations.
-- `Theoria.Env` stores checked constants, definitions, theorems, axioms, inductives, constructors, and recursors.
-- `Theoria.Syntax`, `Theoria.DSL`, theorem macros, and helper modules are conveniences only; they generate terms that the kernel still checks.
+- `Theoria.Env` stores checked constants, definitions, theorems, axioms, inductives, constructors, recursors, and matcher declarations.
+- `Theoria.Syntax`, `Theoria.DSL`, theorem macros, equation/rewrite/simp helpers, validation builders, and Lean encoding are conveniences only; they generate terms or metadata that the kernel still checks.
 
 ## Quickstart
 
@@ -233,12 +233,14 @@ Theoria.Theorem.add_all_to_env(MyProofs, env)
 
 Guides included with the package:
 
+- [`docs/release_0_1.md`](docs/release_0_1.md) — release boundary and API stability notes
 - [`docs/design.md`](docs/design.md) — kernel and environment design notes
 - [`docs/inductives.md`](docs/inductives.md) — inductive specifications and recursor generation
 - [`docs/theorem_modules.md`](docs/theorem_modules.md) — theorem module workflow
 - [`docs/validation.md`](docs/validation.md) — native validation corpus
 - [`docs/lean_validation.md`](docs/lean_validation.md) — contributor-only Lean oracle validation
 - [`docs/equations.md`](docs/equations.md) — internal equation, matcher, rewrite, and simp groundwork
+- [`CHANGELOG.md`](CHANGELOG.md) — release history
 
 ## Validation
 

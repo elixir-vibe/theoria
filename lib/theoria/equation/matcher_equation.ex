@@ -1,5 +1,5 @@
 defmodule Theoria.Equation.MatcherEquation do
-  @moduledoc "Metadata for an equation generated for a matcher alternative."
+  @moduledoc "Experimental/internal API for 0.1; subject to change before 0.2. Metadata for an equation generated for a matcher alternative."
 
   alias Theoria.Equation.Lemma
   alias Theoria.Term

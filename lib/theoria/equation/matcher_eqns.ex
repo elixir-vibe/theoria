@@ -1,5 +1,5 @@
 defmodule Theoria.Equation.MatcherEqns do
-  @moduledoc "Lookup helpers for generated matcher equation metadata."
+  @moduledoc "Experimental/internal API for 0.1; subject to change before 0.2. Lookup helpers for generated matcher equation metadata."
 
   alias Theoria.Env
   alias Theoria.Env.Matcher, as: EnvMatcher

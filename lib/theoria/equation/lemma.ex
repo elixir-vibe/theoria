@@ -1,5 +1,5 @@
 defmodule Theoria.Equation.Lemma do
-  @moduledoc "Metadata for an equation lemma generated from compiled equations."
+  @moduledoc "Experimental/internal API for 0.1; subject to change before 0.2. Metadata for an equation lemma generated from compiled equations."
 
   alias Theoria.Env
   alias Theoria.Equation.Clause

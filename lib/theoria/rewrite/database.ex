@@ -1,5 +1,5 @@
 defmodule Theoria.Rewrite.Database do
-  @moduledoc "A tiny untrusted rewrite-rule database."
+  @moduledoc "Experimental/internal API for 0.1; subject to change before 0.2. A tiny untrusted rewrite-rule database."
 
   alias Theoria.Env
   alias Theoria.Equation.Eqns

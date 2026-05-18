@@ -1,5 +1,5 @@
 defmodule Theoria.Simp.Rule do
-  @moduledoc "Simplifier rule metadata layered over untrusted rewrite rules."
+  @moduledoc "Experimental/internal API for 0.1; subject to change before 0.2. Simplifier rule metadata layered over untrusted rewrite rules."
 
   alias Theoria.Rewrite
 

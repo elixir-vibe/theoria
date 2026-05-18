@@ -22,7 +22,7 @@ defmodule Theoria.Env.Matcher do
           type: Term.t(),
           value: Term.t(),
           info: MatcherInfo.t(),
-          mode: :source_aligned | :matcher,
+          mode: :source_aligned | :matcher | :indexed_matcher,
           level_params: [atom()],
           equation_names: [atom()]
         }

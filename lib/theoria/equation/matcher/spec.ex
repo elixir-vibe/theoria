@@ -10,7 +10,7 @@ defmodule Theoria.Equation.Matcher.Spec do
   alias Theoria.Equation.Schema
   alias Theoria.Term
 
-  @type mode :: :source_aligned | :matcher
+  @type mode :: :source_aligned | :matcher | :indexed_matcher
 
   @enforce_keys [:name, :source, :type, :value, :info]
   defstruct [
@@ -57,6 +57,34 @@ defmodule Theoria.Equation.Matcher.Spec do
          level_params: info.level_params,
          equation_names: info |> MatcherEqns.generated() |> Enum.map(& &1.name)
        }}
+    end
+  end
+
+  @doc "Builds an explicit checked indexed matcher declaration spec from equation metadata."
+  @spec indexed_from_info(Info.t(), keyword()) :: {:ok, t()} | {:error, term()}
+  def indexed_from_info(info, opts \\ [])
+  def indexed_from_info(%Info{matcher: nil}, _opts), do: {:error, :missing_matcher_info}
+
+  def indexed_from_info(%Info{} = info, opts) do
+    with {:ok, env} <- Keyword.fetch(opts, :env),
+         {:ok, descriptor} <- MatcherDescriptor.from_env(env, info.schema, info.matcher),
+         true <- descriptor.indexed? || {:error, {:not_indexed_matcher_spec, info.name}},
+         {:ok, type} <- MatcherType.indexed_from_descriptor(descriptor),
+         {:ok, value} <- MatcherType.indexed_value_from_descriptor(descriptor) do
+      {:ok,
+       %__MODULE__{
+         name: info.matcher.name,
+         source: info.name,
+         type: type,
+         value: value,
+         info: info.matcher,
+         mode: :indexed_matcher,
+         level_params: info.level_params,
+         equation_names: []
+       }}
+    else
+      :error -> {:error, :missing_env}
+      {:error, _reason} = error -> error
     end
   end
 

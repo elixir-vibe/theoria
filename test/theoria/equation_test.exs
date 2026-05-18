@@ -7,6 +7,7 @@ defmodule Theoria.EquationTest do
   alias Theoria.Equation.Matcher.Descriptor, as: MatcherDescriptor
   alias Theoria.Equation.Matcher.Eqns, as: MatcherEqns
   alias Theoria.Equation.Matcher.Info, as: MatcherInfo
+  alias Theoria.Equation.Matcher.Spec, as: MatcherSpec
   alias Theoria.Equation.Matcher.Type, as: MatcherType
   alias Theoria.Equation.Recursor.Descriptor, as: RecursorDescriptor
   alias Theoria.Equation.Schema.Builder, as: SchemaBuilder
@@ -342,6 +343,25 @@ defmodule Theoria.EquationTest do
 
     assert MatcherType.indexed_value_from_descriptor(nat_descriptor) ==
              {:error, {:not_indexed_matcher_value, :nat}}
+  end
+
+  test "explicit indexed matcher specs are kernel-admitted without prelude installation" do
+    {:ok, env} = Prelude.env()
+    info = vec_matcher_info!(:vec_experimental_source, :vec_experimental_match)
+
+    assert {:ok, spec} = MatcherSpec.indexed_from_info(info, env: env)
+    assert spec.mode == :indexed_matcher
+    assert spec.equation_names == []
+    assert {:ok, %Term.Sort{}} = Kernel.infer(env, spec.type)
+    assert :ok = Kernel.check(env, spec.value, spec.type)
+
+    assert {:ok, env} = Kernel.add_matcher(env, spec)
+    assert {:ok, matcher} = Theoria.Env.fetch_matcher(env, :vec_experimental_match)
+    assert matcher.mode == :indexed_matcher
+    assert matcher.equation_names == []
+    assert {:ok, _replayed_env} = Kernel.validate_env(env)
+
+    assert Theoria.Env.fetch_matcher(elem(Prelude.env(), 1), :vec_experimental_match) == :error
   end
 
   test "experimental indexed matcher type and value are kernel-checkable" do
@@ -1094,8 +1114,13 @@ defmodule Theoria.EquationTest do
 
   defp vec_matcher_descriptor! do
     {:ok, env} = Prelude.env()
+    info = vec_matcher_info!(:vec_source, :vec_match)
+    {:ok, descriptor} = MatcherDescriptor.from_env(env, info.schema, info.matcher)
+    descriptor
+  end
 
-    vec_schema =
+  defp vec_matcher_info!(source, matcher_name) do
+    schema =
       Schema.new(:Vec, [],
         recursive_argument: 1,
         parameter_binders: [a: Term.sort(1)],
@@ -1103,13 +1128,16 @@ defmodule Theoria.EquationTest do
       )
 
     matcher =
-      MatcherInfo.new(:vec_match, 1, 1, [
+      MatcherInfo.new(matcher_name, 1, 1, [
         %Alternative{constructor: :vec_nil, num_fields: 0},
         %Alternative{constructor: :vec_cons, num_fields: 3}
       ])
 
-    {:ok, descriptor} = MatcherDescriptor.from_env(env, vec_schema, matcher)
-    descriptor
+    Info.new(source, Term.const(:Vec), Term.const(:Vec),
+      matcher: matcher,
+      schema: schema,
+      level_params: [:u]
+    )
   end
 
   defp vec_matcher_shape! do

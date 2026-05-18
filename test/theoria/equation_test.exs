@@ -411,6 +411,41 @@ defmodule Theoria.EquationTest do
     assert ih_fun == Term.const(:vec_validation_match, [1])
   end
 
+  test "indexed matcher equation statements derive recursive hypotheses from renamed fields" do
+    {:ok, env} = Prelude.env()
+    info = vec_matcher_info!(:vec_validation_source, :vec_validation_match)
+    {:ok, spec} = MatcherSpec.indexed_from_info(info, env: env)
+    {:ok, env} = Kernel.add_matcher(env, spec)
+    shape = vec_matcher_shape!()
+    [nil_alternative, cons_alternative] = shape.alternatives
+
+    renamed_cons = %{
+      cons_alternative
+      | binder_type: rename_foralls(cons_alternative.binder_type, [:head, :len, :tail, :ih])
+    }
+
+    shape = %{shape | alternatives: [nil_alternative, renamed_cons]}
+
+    equation =
+      MatcherEquation.indexed(:vec_validation_match, :vec_cons, renamed_cons.index_patterns)
+
+    assert {:ok, statement} = MatcherStatement.indexed(shape, equation)
+    assert {:ok, %Term.Sort{}} = Kernel.infer(env, statement)
+    assert {binders, %Term.Eq{right: rhs}} = collect_foralls(statement)
+    assert Enum.take(binders, -3) == [:head, :len, :tail]
+
+    assert {%Term.BVar{index: 3},
+            [
+              %Term.BVar{index: 2},
+              %Term.BVar{index: 1},
+              %Term.BVar{index: 0},
+              ih
+            ]} = TermApplication.collect(rhs)
+
+    assert {_ih_fun, [_a, _motive, %Term.BVar{index: 1}, %Term.BVar{index: 0}, _on_nil, _on_cons]} =
+             TermApplication.collect(ih)
+  end
+
   test "indexed matcher statement planning reports unsupported constructors" do
     shape = vec_matcher_shape!()
     equation = MatcherEquation.indexed(:vec_validation_match, :vec_snoc, [])
@@ -1270,6 +1305,12 @@ defmodule Theoria.EquationTest do
   end
 
   defp collect_lams(body), do: {[], body}
+
+  defp rename_foralls(term, []), do: term
+
+  defp rename_foralls(%Term.Forall{} = term, [name | names]) do
+    %{term | name: name, body: rename_foralls(term.body, names)}
+  end
 
   defp collect_foralls(%Term.Forall{name: name, body: body}) do
     {names, body} = collect_foralls(body)

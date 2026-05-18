@@ -38,6 +38,9 @@ defmodule Theoria.Equation.Matcher.Type do
       :index_patterns,
       :motive_name,
       :motive_type,
+      :motive_binders,
+      :motive_arguments,
+      :motive_result,
       :discriminants,
       :discriminant_binders,
       :alternatives,
@@ -56,6 +59,9 @@ defmodule Theoria.Equation.Matcher.Type do
       :index_patterns,
       :motive_name,
       :motive_type,
+      :motive_binders,
+      :motive_arguments,
+      :motive_result,
       :discriminants,
       :discriminant_binders,
       :alternatives,
@@ -75,6 +81,9 @@ defmodule Theoria.Equation.Matcher.Type do
             index_patterns: %{optional(atom() | boolean()) => [Term.t()]},
             motive_name: atom(),
             motive_type: Term.t(),
+            motive_binders: keyword(),
+            motive_arguments: [Term.t()],
+            motive_result: Term.t(),
             discriminants: [MatcherInfo.Discriminant.t()],
             discriminant_binders: keyword(),
             alternatives: [Alternative.t()],
@@ -154,6 +163,9 @@ defmodule Theoria.Equation.Matcher.Type do
         index_patterns: index_patterns(descriptor),
         motive_name: :motive,
         motive_type: Keyword.fetch!(plan, :motive_type),
+        motive_binders: Keyword.get(plan, :motive_binders, []),
+        motive_arguments: [],
+        motive_result: Term.const(:unplanned_motive_result),
         discriminants: descriptor.discriminants,
         discriminant_binders: Keyword.fetch!(plan, :discriminant_binders),
         alternatives: alternatives,
@@ -164,15 +176,12 @@ defmodule Theoria.Equation.Matcher.Type do
         recursor: descriptor.recursor
       }
 
+      shape = plan_motive_result(shape)
+      shape = plan_indexed_alternatives(shape)
       recursor_arguments = recursor_arguments(shape)
+      shape_with_arguments = %{shape | recursor_arguments: recursor_arguments}
 
-      shape = %{
-        shape
-        | recursor_arguments: recursor_arguments,
-          body: body_from_shape(%{shape | recursor_arguments: recursor_arguments})
-      }
-
-      {:ok, shape}
+      {:ok, %{shape_with_arguments | body: body_from_shape(shape_with_arguments)}}
     end
   end
 
@@ -255,10 +264,16 @@ defmodule Theoria.Equation.Matcher.Type do
     do: {:error, {:unsupported_matcher_shape, family}}
 
   defp indexed_shape_plan(%MatcherDescriptor{family: :Vec}) do
+    index_type = Term.const(:Nat)
+    index = Term.bvar(0)
+    parameter = Term.bvar(2)
+    vec_at_index = Term.const(:Vec) |> Term.app(parameter) |> Term.app(index)
+
     {:ok,
      [
        motive_type: Term.sort(1),
-       discriminant_binders: [xs: Term.const(:Vec)],
+       motive_binders: [n: index_type, xs: vec_at_index],
+       discriminant_binders: [xs: vec_at_index],
        result: Term.const(:unsupported_indexed_matcher_result)
      ]}
   end
@@ -308,10 +323,13 @@ defmodule Theoria.Equation.Matcher.Type do
 
   defp alternative_binder_type(_descriptor, alternative, _position), do: alternative.result
 
-  defp indexed_case_telescope(alternative) do
+  defp indexed_case_telescope(alternative),
+    do: indexed_case_telescope(alternative, Term.const(:unsupported_indexed_case))
+
+  defp indexed_case_telescope(alternative, result) do
     alternative.fields
     |> Enum.map(&{:_, &1.type})
-    |> forall_telescope(Term.const(:unsupported_indexed_case))
+    |> forall_telescope(result)
   end
 
   defp simple_case_telescope(alternative, recursive_type, result) do
@@ -326,6 +344,41 @@ defmodule Theoria.Equation.Matcher.Type do
     |> Kernel.++(Enum.map(recursive_fields, fn _field -> {:_, recursive_type} end))
     |> forall_telescope(result)
   end
+
+  defp plan_motive_result(%Shape{indexed?: false} = shape) do
+    %{shape | motive_arguments: [], motive_result: shape.result}
+  end
+
+  defp plan_motive_result(%Shape{indexed?: true} = shape) do
+    motive_arguments =
+      Enum.map(shape.motive_binders, fn {name, _type} -> binder_ref(shape, name) end)
+
+    motive_result = apply_motive(binder_ref(shape, shape.motive_name), motive_arguments)
+
+    %{
+      shape
+      | motive_arguments: motive_arguments,
+        motive_result: motive_result,
+        result: motive_result
+    }
+  end
+
+  defp plan_indexed_alternatives(%Shape{indexed?: false} = shape), do: shape
+
+  defp plan_indexed_alternatives(%Shape{indexed?: true} = shape) do
+    alternatives =
+      Enum.map(shape.alternatives, fn alternative ->
+        %{alternative | binder_type: indexed_case_telescope(alternative, shape.motive_result)}
+      end)
+
+    %{
+      shape
+      | alternatives: alternatives,
+        alternative_binders: Enum.map(alternatives, &{&1.binder_name, &1.binder_type})
+    }
+  end
+
+  defp apply_motive(motive, arguments), do: Enum.reduce(arguments, motive, &Term.app(&2, &1))
 
   defp recursor_arguments(%Shape{indexed?: true}), do: []
 
@@ -402,7 +455,7 @@ defmodule Theoria.Equation.Matcher.Type do
   defp shape_binders(%Shape{} = shape) do
     shape.parameters ++
       [{shape.motive_name, shape.motive_type}] ++
-      shape.discriminant_binders ++ shape.alternative_binders
+      shape.index_binders ++ shape.discriminant_binders ++ shape.alternative_binders
   end
 
   defp forall_telescope(binders, result) do

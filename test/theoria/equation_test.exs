@@ -235,6 +235,23 @@ defmodule Theoria.EquationTest do
     assert matcher_shape.parameters == [a: Term.sort(1)]
     assert Enum.map(matcher_shape.indices, &elem(&1, 0)) == [:n]
     assert Enum.map(matcher_shape.index_binders, &elem(&1, 0)) == [:n]
+    assert Enum.map(matcher_shape.motive_binders, &elem(&1, 0)) == [:n, :xs]
+    assert matcher_shape.motive_arguments == [Term.bvar(3), Term.bvar(2)]
+
+    assert %Term.App{
+             fun: %Term.App{fun: %Term.BVar{index: 4}, arg: %Term.BVar{index: 3}},
+             arg: %Term.BVar{index: 2}
+           } =
+             matcher_shape.motive_result
+
+    assert [
+             xs: %Term.App{
+               fun: %Term.App{fun: %Term.Const{name: :Vec}, arg: %Term.BVar{index: 2}},
+               arg: %Term.BVar{index: 0}
+             }
+           ] =
+             matcher_shape.discriminant_binders
+
     assert Enum.map(matcher_shape.alternatives, & &1.binder_name) == [:on_vec_nil, :on_vec_cons]
     assert matcher_shape.index_patterns[:vec_nil] == [Term.const(:zero)]
     assert [%Term.App{}] = matcher_shape.index_patterns[:vec_cons]

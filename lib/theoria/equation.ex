@@ -1,6 +1,6 @@
 defmodule Theoria.Equation do
   @moduledoc """
-  Experimental/internal API for 0.1; subject to change before 0.2.
+  Experimental/internal API for 0.2; subject to change before 0.3.
 
   Internal constructor-equation compiler facade.
 

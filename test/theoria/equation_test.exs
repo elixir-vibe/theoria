@@ -172,23 +172,36 @@ defmodule Theoria.EquationTest do
     end
   end
 
-  test "recursor descriptor rejects unsupported indexed or missing recursors" do
+  test "recursor descriptor describes indexed Vec recursor rules" do
     {:ok, env} = Prelude.env()
-    {:ok, vec_recursor} = Theoria.Env.fetch_recursor(env, :vec_ind)
-    vec_schema = Schema.new(:Vec, [])
-    vec_schema = %{vec_schema | recursive_argument: 0}
 
-    env_with_vec_rec = %{
-      env
-      | constants:
-          Map.put(env.constants, :Vec_rec, %{env.constants.vec_ind | metadata: vec_recursor})
-    }
+    vec_schema =
+      Schema.new(:Vec, [],
+        recursive_argument: 1,
+        parameter_binders: [a: Term.sort(1)],
+        argument_binders: [n: Term.const(:Nat), xs: Term.const(:Vec)]
+      )
 
-    assert RecursorDescriptor.from_schema(env, vec_schema) ==
-             {:error, {:missing_recursor, :Vec_rec}}
+    assert {:ok, descriptor} = RecursorDescriptor.from_schema(env, vec_schema)
+    assert descriptor.family == :Vec
+    assert descriptor.recursor.name == :vec_ind
+    assert descriptor.indexed?
+    assert descriptor.parameters == [a: Term.sort(1)]
+    assert Enum.map(descriptor.indices, &elem(&1, 0)) == [:n]
 
-    assert RecursorDescriptor.from_schema(env_with_vec_rec, vec_schema) ==
-             {:error, {:unsupported_indexed_recursor, :vec_ind}}
+    assert Enum.map(descriptor.rules, &{&1.constructor, &1.field_count}) == [
+             vec_nil: 0,
+             vec_cons: 3
+           ]
+
+    assert [%Term.Const{name: :zero}] = hd(descriptor.rules).index_patterns
+    assert [%Term.App{}] = List.last(descriptor.rules).index_patterns
+
+    matcher =
+      MatcherInfo.new(:vec_match, 0, 1, [%Alternative{constructor: :vec_nil, num_fields: 0}])
+
+    assert MatcherDescriptor.from_env(env, vec_schema, matcher) ==
+             {:error, {:unsupported_family, :Vec}}
   end
 
   test "matcher descriptor validation rejects corrupted shapes" do

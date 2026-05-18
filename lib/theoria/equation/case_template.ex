@@ -1,5 +1,5 @@
 defmodule Theoria.Equation.CaseTemplate do
-  @moduledoc "Experimental/internal API for 0.1; subject to change before 0.2. Schematic equation case template used by schema generation."
+  @moduledoc "Experimental/internal API for 0.2; subject to change before 0.3. Schematic equation case template used by schema generation."
 
   alias Theoria.Equation.Signature
   alias Theoria.Term

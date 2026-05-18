@@ -1,5 +1,5 @@
 defmodule Theoria.Equation.Compiled do
-  @moduledoc "Experimental/internal API for 0.1; subject to change before 0.2. Result of compiling constructor equations, including generated metadata."
+  @moduledoc "Experimental/internal API for 0.2; subject to change before 0.3. Result of compiling constructor equations, including generated metadata."
 
   alias Theoria.Equation.{Clause, FixedParams, MatcherInfo, Schema}
   alias Theoria.Term

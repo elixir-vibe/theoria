@@ -1,5 +1,5 @@
 defmodule Theoria.Equation.Info do
-  @moduledoc "Experimental/internal API for 0.1; subject to change before 0.2. Lean-inspired metadata for a compiled equation definition."
+  @moduledoc "Experimental/internal API for 0.2; subject to change before 0.3. Lean-inspired metadata for a compiled equation definition."
 
   alias Theoria.Env
   alias Theoria.Env.Constant

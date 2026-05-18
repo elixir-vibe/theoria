@@ -1,5 +1,5 @@
 defmodule Theoria.Rewrite.Match do
-  @moduledoc "Experimental/internal API for 0.1; subject to change before 0.2. Untrusted first-order matching for schematic rewrite rules."
+  @moduledoc "Experimental/internal API for 0.2; subject to change before 0.3. Untrusted first-order matching for schematic rewrite rules."
 
   alias Theoria.Term
 

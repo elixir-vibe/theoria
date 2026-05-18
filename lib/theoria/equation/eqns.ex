@@ -1,5 +1,5 @@
 defmodule Theoria.Equation.Eqns do
-  @moduledoc "Experimental/internal API for 0.1; subject to change before 0.2. Lookup helpers for generated equation theorem metadata."
+  @moduledoc "Experimental/internal API for 0.2; subject to change before 0.3. Lookup helpers for generated equation theorem metadata."
 
   alias Theoria.Env
   alias Theoria.Equation.Extension

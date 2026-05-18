@@ -1,5 +1,5 @@
 defmodule Theoria.Equation.Definition do
-  @moduledoc "Experimental/internal API for 0.1; subject to change before 0.2. Small internal helpers for building core lambda definitions."
+  @moduledoc "Experimental/internal API for 0.2; subject to change before 0.3. Small internal helpers for building core lambda definitions."
 
   alias Theoria.Term
 

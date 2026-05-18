@@ -1,5 +1,5 @@
 defmodule Theoria.Rewrite.Rule do
-  @moduledoc "Experimental/internal API for 0.1; subject to change before 0.2. A theorem-like rewrite rule over a core equality term."
+  @moduledoc "Experimental/internal API for 0.2; subject to change before 0.3. A theorem-like rewrite rule over a core equality term."
 
   alias Theoria.Equation.Lemma
   alias Theoria.Term

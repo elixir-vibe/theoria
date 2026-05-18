@@ -1,5 +1,5 @@
 defmodule Theoria.Simp.Step do
-  @moduledoc "Experimental/internal API for 0.1; subject to change before 0.2. One simplifier rewrite step for tracing and debugging."
+  @moduledoc "Experimental/internal API for 0.2; subject to change before 0.3. One simplifier rewrite step for tracing and debugging."
 
   alias Theoria.Term
 

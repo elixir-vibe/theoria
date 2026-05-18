@@ -1,5 +1,5 @@
 defprotocol Theoria.Lean.Encodable do
-  @moduledoc "Experimental/internal API for 0.1; subject to change before 0.2. Protocol for rendering Theoria structures as Lean oracle source."
+  @moduledoc "Experimental/internal API for 0.2; subject to change before 0.3. Protocol for rendering Theoria structures as Lean oracle source."
 
   @fallback_to_any true
 

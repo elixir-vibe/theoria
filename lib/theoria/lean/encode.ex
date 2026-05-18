@@ -1,6 +1,6 @@
 defmodule Theoria.Lean.Encode do
   @moduledoc """
-  Experimental/internal API for 0.1; subject to change before 0.2.
+  Experimental/internal API for 0.2; subject to change before 0.3.
 
   Encodes Theoria core terms as Lean source for contributor oracle checks.
 

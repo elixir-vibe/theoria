@@ -229,8 +229,18 @@ defmodule Theoria.EquationTest do
     assert Enum.map(vec_cons.recursive_fields, & &1.name) == [:field2]
     assert [%Term.App{}] = vec_cons.index_patterns
 
-    assert MatcherType.shape_from_descriptor(matcher_descriptor) ==
-             {:error, {:unsupported_indexed_matcher_shape, :Vec}}
+    assert {:ok, matcher_shape} = MatcherType.shape_from_descriptor(matcher_descriptor)
+    assert matcher_shape.indexed?
+    assert matcher_shape.family == :Vec
+    assert matcher_shape.parameters == [a: Term.sort(1)]
+    assert Enum.map(matcher_shape.indices, &elem(&1, 0)) == [:n]
+    assert Enum.map(matcher_shape.index_binders, &elem(&1, 0)) == [:n]
+    assert Enum.map(matcher_shape.alternatives, & &1.binder_name) == [:on_vec_nil, :on_vec_cons]
+    assert matcher_shape.index_patterns[:vec_nil] == [Term.const(:zero)]
+    assert [%Term.App{}] = matcher_shape.index_patterns[:vec_cons]
+
+    assert [_, %{binder_type: %Term.Forall{body: %Term.Forall{body: %Term.Forall{}}}}] =
+             matcher_shape.alternatives
 
     assert MatcherType.from_descriptor(matcher_descriptor) ==
              {:error, {:unsupported_indexed_matcher_type, :Vec}}

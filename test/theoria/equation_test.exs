@@ -230,7 +230,10 @@ defmodule Theoria.EquationTest do
     assert [%Term.App{}] = vec_cons.index_patterns
 
     assert MatcherType.from_descriptor(matcher_descriptor) ==
-             {:error, {:unsupported_matcher_type, :Vec}}
+             {:error, {:unsupported_indexed_matcher_type, :Vec}}
+
+    assert MatcherType.value_from_descriptor(matcher_descriptor) ==
+             {:error, {:unsupported_indexed_matcher_value, :Vec}}
   end
 
   test "matcher descriptor validation rejects corrupted shapes" do
@@ -284,6 +287,23 @@ defmodule Theoria.EquationTest do
       assert {:ok, value} = MatcherType.value_from_descriptor(descriptor)
       assert type == matcher.type
       assert value == matcher.value
+    end
+  end
+
+  test "matcher descriptors normalize fields across construction paths" do
+    {:ok, env} = Prelude.env()
+
+    for definition <- [:nat_add, :list_append] do
+      {:ok, info} = Info.fetch(env, definition)
+      assert {:ok, fallback} = MatcherDescriptor.from_schema(info.schema, info.matcher)
+      assert {:ok, recursor} = RecursorDescriptor.from_schema(env, info.schema)
+      assert {:ok, derived} = MatcherDescriptor.from_recursor(info.schema, info.matcher, recursor)
+      assert {:ok, env_derived} = MatcherDescriptor.from_env(env, info.schema, info.matcher)
+
+      for descriptor <- [fallback, derived, env_derived],
+          alternative <- descriptor.alternatives do
+        assert Enum.all?(alternative.fields, &match?(%MatcherDescriptor.Field{}, &1))
+      end
     end
   end
 
@@ -359,7 +379,7 @@ defmodule Theoria.EquationTest do
              _zero_alt,
              %MatcherType.Alternative{
                constructor: :succ,
-               fields: [{:pred, %Term.Const{name: :Nat}}]
+               fields: [%MatcherDescriptor.Field{name: :pred, type: %Term.Const{name: :Nat}}]
              }
            ] =
              MatcherType.alternatives(nat_info.schema, nat_info.matcher)
@@ -378,7 +398,10 @@ defmodule Theoria.EquationTest do
              _nil_alt,
              %MatcherType.Alternative{
                constructor: :list_cons,
-               fields: [{:head, _head}, {:tail, _tail}]
+               fields: [
+                 %MatcherDescriptor.Field{name: :head},
+                 %MatcherDescriptor.Field{name: :tail}
+               ]
              }
            ] = MatcherType.alternatives(list_info.schema, list_info.matcher)
   end

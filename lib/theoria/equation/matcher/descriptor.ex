@@ -7,9 +7,27 @@ defmodule Theoria.Equation.Matcher.Descriptor do
   alias Theoria.Equation.Schema
   alias Theoria.Term
 
+  defmodule Field do
+    @moduledoc "Normalized constructor field shape for matcher descriptors."
+
+    alias Theoria.Term
+
+    @enforce_keys [:name, :type, :position]
+    defstruct [:name, :type, :position, recursive?: false, recursive_indices: []]
+
+    @type t :: %__MODULE__{
+            name: atom(),
+            type: Term.t(),
+            position: non_neg_integer(),
+            recursive?: boolean(),
+            recursive_indices: [Term.t()]
+          }
+  end
+
   defmodule Alternative do
     @moduledoc "Descriptor for one matcher alternative."
 
+    alias Theoria.Equation.Matcher.Descriptor.Field
     alias Theoria.Term
 
     @enforce_keys [:name, :pattern, :fields, :result]
@@ -23,13 +41,11 @@ defmodule Theoria.Equation.Matcher.Descriptor do
       index_patterns: []
     ]
 
-    @type field :: {atom(), Term.t()} | Theoria.Equation.Recursor.Descriptor.Rule.Field.t()
-
     @type t :: %__MODULE__{
             name: atom() | boolean(),
             pattern: [atom() | boolean()],
-            fields: [field()],
-            recursive_fields: [field()],
+            fields: [Field.t()],
+            recursive_fields: [Field.t()],
             recursive_hypotheses: [{atom(), Term.t()}],
             index_patterns: [Term.t()],
             result: Term.t()
@@ -84,6 +100,23 @@ defmodule Theoria.Equation.Matcher.Descriptor do
     build(schema, info, recursor)
   end
 
+  @doc "Returns the normalized field name."
+  @spec field_name(Field.t()) :: atom()
+  def field_name(%Field{name: name}), do: name
+
+  @doc "Returns the normalized field type."
+  @spec field_type(Field.t()) :: Term.t()
+  def field_type(%Field{type: type}), do: type
+
+  @doc "Returns whether a normalized field is recursive."
+  @spec recursive_field?(Field.t()) :: boolean()
+  def recursive_field?(%Field{recursive?: recursive?}), do: recursive?
+
+  @doc "Returns normalized field types for an alternative."
+  @spec alternative_field_types(Alternative.t()) :: [Term.t()]
+  def alternative_field_types(%Alternative{} = alternative),
+    do: Enum.map(alternative.fields, &field_type/1)
+
   @doc "Validates descriptor consistency against matcher metadata."
   @spec validate(t(), MatcherInfo.t()) :: :ok | {:error, term()}
   def validate(%__MODULE__{} = descriptor, %MatcherInfo{} = info) do
@@ -129,9 +162,6 @@ defmodule Theoria.Equation.Matcher.Descriptor do
       not MapSet.subset?(recursive_fields, fields)
     end)
   end
-
-  defp field_name({name, _type}), do: name
-  defp field_name(%{name: name}), do: name
 
   defp build(%Schema{} = schema, %MatcherInfo{} = info, recursor_descriptor) do
     with :ok <- validate_recursor_shape(schema.family, info, recursor_descriptor) do
@@ -182,7 +212,7 @@ defmodule Theoria.Equation.Matcher.Descriptor do
         %Alternative{
           name: :succ,
           pattern: [:succ],
-          fields: [{:pred, Term.const(:Nat)}],
+          fields: [field(:pred, Term.const(:Nat), 0)],
           recursive_hypotheses: [{:ih, Term.bvar(3)}],
           result: Term.bvar(2)
         }
@@ -207,7 +237,7 @@ defmodule Theoria.Equation.Matcher.Descriptor do
         %Alternative{
           name: :list_cons,
           pattern: [:list_cons],
-          fields: [{:head, element_type}, {:tail, list_of(element_type)}],
+          fields: [field(:head, element_type, 0), field(:tail, list_of(element_type), 1)],
           recursive_hypotheses: [{:ih, Term.bvar(4)}],
           result: Term.bvar(2)
         }
@@ -231,8 +261,8 @@ defmodule Theoria.Equation.Matcher.Descriptor do
       %Alternative{
         name: alternative.constructor,
         pattern: alternative.pattern || [alternative.constructor],
-        fields: rule.fields,
-        recursive_fields: rule.recursive_fields,
+        fields: normalize_fields(rule.fields),
+        recursive_fields: normalize_fields(rule.recursive_fields),
         recursive_hypotheses: recursive_hypotheses(rule),
         index_patterns: rule.index_patterns,
         result: result_fun.(alternative.constructor)
@@ -241,6 +271,30 @@ defmodule Theoria.Equation.Matcher.Descriptor do
   end
 
   defp result(_family), do: Term.bvar(0)
+
+  defp field(name, type, position, opts \\ []) do
+    %Field{
+      name: name,
+      type: type,
+      position: position,
+      recursive?: Keyword.get(opts, :recursive?, false),
+      recursive_indices: Keyword.get(opts, :recursive_indices, [])
+    }
+  end
+
+  defp normalize_fields(fields), do: Enum.map(fields, &normalize_field/1)
+
+  defp normalize_field(%RecursorDescriptor.Rule.Field{} = field) do
+    %Field{
+      name: field.name,
+      type: field.type,
+      position: field.position,
+      recursive?: field.recursive?,
+      recursive_indices: field.recursive_indices
+    }
+  end
+
+  defp normalize_field(%Field{} = field), do: field
 
   defp indices(%RecursorDescriptor{} = descriptor), do: descriptor.indices
   defp indices(nil), do: []

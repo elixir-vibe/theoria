@@ -256,8 +256,29 @@ defmodule Theoria.EquationTest do
     assert matcher_shape.index_patterns[:vec_nil] == [Term.const(:zero)]
     assert [%Term.App{}] = matcher_shape.index_patterns[:vec_cons]
 
-    assert [_, %{binder_type: %Term.Forall{body: %Term.Forall{body: %Term.Forall{}}}}] =
-             matcher_shape.alternatives
+    assert [vec_nil_shape, vec_cons_shape] = matcher_shape.alternatives
+    assert vec_nil_shape.index_patterns == [Term.const(:zero)]
+
+    assert [%Term.Const{name: :zero}, %Term.Const{name: :vec_nil}] =
+             vec_nil_shape.motive_arguments
+
+    assert %Term.App{
+             fun: %Term.App{fun: %Term.BVar{index: 4}, arg: %Term.Const{name: :zero}},
+             arg: %Term.Const{name: :vec_nil}
+           } = vec_nil_shape.case_result
+
+    assert [%Term.App{}] = vec_cons_shape.index_patterns
+
+    assert [_, %Term.App{fun: %Term.App{fun: %Term.App{fun: %Term.Const{name: :vec_cons}}}}] =
+             vec_cons_shape.motive_arguments
+
+    assert %Term.App{fun: %Term.App{fun: %Term.BVar{index: 4}}, arg: %Term.App{}} =
+             vec_cons_shape.case_result
+
+    assert %{binder_type: %Term.Forall{body: %Term.Forall{body: %Term.Forall{body: case_result}}}} =
+             vec_cons_shape
+
+    assert case_result == vec_cons_shape.case_result
 
     assert MatcherType.from_descriptor(matcher_descriptor) ==
              {:error, {:unsupported_indexed_matcher_type, :Vec}}

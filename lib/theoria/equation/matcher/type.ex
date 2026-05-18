@@ -15,14 +15,26 @@ defmodule Theoria.Equation.Matcher.Type do
     alias Theoria.Equation.Matcher.Descriptor
 
     @enforce_keys [:constructor, :fields, :result_type, :binder_name, :binder_type]
-    defstruct [:constructor, :fields, :result_type, :binder_name, :binder_type]
+    defstruct [
+      :constructor,
+      :fields,
+      :result_type,
+      :binder_name,
+      :binder_type,
+      index_patterns: [],
+      motive_arguments: [],
+      case_result: nil
+    ]
 
     @type t :: %__MODULE__{
             constructor: atom() | boolean(),
             fields: [Descriptor.Field.t()],
             result_type: Term.t(),
             binder_name: atom(),
-            binder_type: Term.t()
+            binder_type: Term.t(),
+            index_patterns: [Term.t()],
+            motive_arguments: [Term.t()],
+            case_result: Term.t() | nil
           }
   end
 
@@ -209,7 +221,10 @@ defmodule Theoria.Equation.Matcher.Type do
       fields: alternative.fields,
       result_type: alternative.result,
       binder_name: alternative_binder_name(alternative),
-      binder_type: alternative_binder_type(descriptor, alternative, position)
+      binder_type: alternative_binder_type(descriptor, alternative, position),
+      index_patterns: alternative.index_patterns,
+      motive_arguments: [],
+      case_result: alternative.result
     }
   end
 
@@ -368,7 +383,15 @@ defmodule Theoria.Equation.Matcher.Type do
   defp plan_indexed_alternatives(%Shape{indexed?: true} = shape) do
     alternatives =
       Enum.map(shape.alternatives, fn alternative ->
-        %{alternative | binder_type: indexed_case_telescope(alternative, shape.motive_result)}
+        motive_arguments = alternative.index_patterns ++ [constructor_application(alternative)]
+        case_result = apply_motive(binder_ref(shape, shape.motive_name), motive_arguments)
+
+        %{
+          alternative
+          | motive_arguments: motive_arguments,
+            case_result: case_result,
+            binder_type: indexed_case_telescope(alternative, case_result)
+        }
       end)
 
     %{
@@ -376,6 +399,14 @@ defmodule Theoria.Equation.Matcher.Type do
       | alternatives: alternatives,
         alternative_binders: Enum.map(alternatives, &{&1.binder_name, &1.binder_type})
     }
+  end
+
+  defp constructor_application(%Alternative{} = alternative) do
+    alternative.fields
+    |> Enum.map(&Term.bvar(length(alternative.fields) - &1.position - 1))
+    |> Enum.reduce(Term.const(alternative.constructor), fn argument, term ->
+      Term.app(term, argument)
+    end)
   end
 
   defp apply_motive(motive, arguments), do: Enum.reduce(arguments, motive, &Term.app(&2, &1))

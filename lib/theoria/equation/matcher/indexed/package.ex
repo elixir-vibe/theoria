@@ -4,6 +4,7 @@ defmodule Theoria.Equation.Matcher.Indexed.Package do
   alias Theoria.Env
   alias Theoria.Equation.Info
   alias Theoria.Equation.Matcher.Eqns, as: MatcherEqns
+  alias Theoria.Equation.Matcher.Indexed.Realization
   alias Theoria.Equation.Matcher.Spec, as: MatcherSpec
   alias Theoria.Kernel
   alias Theoria.Term
@@ -50,6 +51,7 @@ defmodule Theoria.Equation.Matcher.Indexed.Package do
          :ok <- validate_equations(package),
          :ok <- validate_statements(package),
          :ok <- validate_lemmas(package),
+         :ok <- validate_realization_plan(package),
          :ok <- validate_realization_boundary(package),
          {:ok, _env} <- Kernel.validate_env(package.env) do
       :ok
@@ -137,6 +139,16 @@ defmodule Theoria.Equation.Matcher.Indexed.Package do
           {:halt, {:error, {:indexed_matcher_equation_lemma, lemma.name, reason}}}
       end
     end)
+  end
+
+  defp validate_realization_plan(package) do
+    case Realization.plan(package) do
+      {:ok, %Realization.Plan{realizable?: false, blockers: [_blocker | _rest]}} ->
+        :ok
+
+      {:ok, %Realization.Plan{} = plan} ->
+        {:error, {:indexed_matcher_unexpected_realization_plan, plan}}
+    end
   end
 
   defp validate_realization_boundary(%__MODULE__{info: info, env: env, equations: equations}) do

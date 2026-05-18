@@ -2,6 +2,8 @@ defmodule Theoria.Library.Vec do
   @moduledoc "Length-indexed vectors."
 
   alias Theoria.Env
+  alias Theoria.Equation.Matcher.Indexed.Package, as: IndexedPackage
+  alias Theoria.Equation.Matcher.Indexed.Vec, as: IndexedVec
   alias Theoria.Inductive
   alias Theoria.Inductive.Spec
   alias Theoria.Kernel
@@ -24,6 +26,31 @@ defmodule Theoria.Library.Vec do
     with {:ok, env} <- Nat.env() do
       extend(env)
     end
+  end
+
+  @doc "Extends a Vec environment with the experimental indexed matcher declaration."
+  @spec extend_with_indexed_matcher(Env.t(), keyword()) :: {:ok, Env.t()} | {:error, term()}
+  def extend_with_indexed_matcher(%Env{} = env, opts \\ []) do
+    matcher_name = Keyword.get(opts, :name, :vec_match)
+
+    with {:ok, package} <- IndexedPackage.build(indexed_matcher_info(matcher_name), env),
+         :ok <- IndexedPackage.validate(package) do
+      {:ok, package.env}
+    end
+  end
+
+  @doc "Returns a Vec environment extended with the experimental indexed matcher declaration."
+  @spec env_with_indexed_matcher(keyword()) :: {:ok, Env.t()} | {:error, term()}
+  def env_with_indexed_matcher(opts \\ []) do
+    with {:ok, env} <- env() do
+      extend_with_indexed_matcher(env, opts)
+    end
+  end
+
+  @doc "Returns equation metadata for the experimental Vec indexed matcher declaration."
+  @spec indexed_matcher_info(atom()) :: Theoria.Equation.Info.t()
+  def indexed_matcher_info(matcher_name \\ :vec_match) when is_atom(matcher_name) do
+    IndexedVec.info(matcher_name, :Vec)
   end
 
   @doc "Returns the inductive specification described by this library."

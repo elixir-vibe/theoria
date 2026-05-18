@@ -2,6 +2,9 @@ defmodule Theoria.Library.VecTest do
   use ExUnit.Case, async: true
 
   alias Theoria.Env
+  alias Theoria.Equation.Matcher.Eqns, as: MatcherEqns
+  alias Theoria.Equation.Matcher.Indexed.Package, as: IndexedPackage
+  alias Theoria.Equation.Matcher.Indexed.Realization, as: IndexedRealization
   alias Theoria.Inductive
   alias Theoria.Kernel
   alias Theoria.Library.Vec
@@ -90,6 +93,31 @@ defmodule Theoria.Library.VecTest do
 
     assert Normalize.defeq?(env, term, Term.refl(Term.app(Term.const(:succ), Term.const(:zero))))
     assert Kernel.check(env, expected, Term.sort(0)) == :ok
+  end
+
+  test "Vec indexed matcher can be installed explicitly without changing the default env" do
+    {:ok, default_env} = Vec.env()
+    assert Env.fetch_matcher(default_env, :vec_match) == :error
+
+    {:ok, env} = Vec.env_with_indexed_matcher()
+    assert {:ok, matcher} = Env.fetch_matcher(env, :vec_match)
+    assert matcher.mode == :indexed_matcher
+    assert matcher.equation_names == []
+    assert {:ok, _replayed} = Kernel.validate_env(env)
+
+    info = Vec.indexed_matcher_info(:vec_match)
+    assert {:ok, package} = IndexedPackage.build(info, env)
+    assert :ok = IndexedPackage.validate(package)
+    assert {:ok, theorems} = IndexedRealization.realize_all(package)
+    assert Enum.map(theorems, & &1.name) == [:"vec_match.eq_vec_nil", :"vec_match.eq_vec_cons"]
+    assert {:ok, [nil_equation, cons_equation]} = MatcherEqns.indexed_statements(info, env)
+    assert nil_equation.statement_status == :planned
+    assert cons_equation.statement_status == :planned
+  end
+
+  test "Prelude does not install experimental Vec indexed matchers" do
+    {:ok, env} = Theoria.Prelude.env()
+    assert Env.fetch_matcher(env, :vec_match) == :error
   end
 
   test "Vec requires Nat dependencies" do

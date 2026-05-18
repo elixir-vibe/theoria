@@ -60,7 +60,8 @@ defmodule Theoria.Equation.Matcher.Type do
       :result,
       :recursor_arguments,
       :body,
-      :recursor
+      :recursor,
+      :recursor_descriptor
     ]
     defstruct [
       :family,
@@ -81,7 +82,8 @@ defmodule Theoria.Equation.Matcher.Type do
       :result,
       :recursor_arguments,
       :body,
-      :recursor
+      :recursor,
+      :recursor_descriptor
     ]
 
     @type t :: %__MODULE__{
@@ -103,7 +105,8 @@ defmodule Theoria.Equation.Matcher.Type do
             result: Term.t(),
             recursor_arguments: [Term.t()],
             body: Term.t(),
-            recursor: atom()
+            recursor: atom(),
+            recursor_descriptor: Theoria.Equation.Recursor.Descriptor.t() | nil
           }
   end
 
@@ -185,7 +188,8 @@ defmodule Theoria.Equation.Matcher.Type do
         result: Keyword.fetch!(plan, :result),
         recursor_arguments: [],
         body: Term.const(:unplanned_matcher_body),
-        recursor: descriptor.recursor
+        recursor: descriptor.recursor,
+        recursor_descriptor: descriptor.recursor_descriptor
       }
 
       shape = plan_motive_result(shape)
@@ -202,7 +206,8 @@ defmodule Theoria.Equation.Matcher.Type do
   @spec validate_shape(Shape.t()) :: :ok | {:error, term()}
   def validate_shape(%Shape{} = shape) do
     with :ok <- validate_common_shape(shape),
-         :ok <- validate_recursor_arguments(shape) do
+         :ok <- validate_recursor_arguments(shape),
+         :ok <- validate_recursor_metadata(shape) do
       validate_indexed_shape(shape)
     end
   end
@@ -252,6 +257,34 @@ defmodule Theoria.Equation.Matcher.Type do
       :ok
     else
       {:error, {:recursor_argument_count_mismatch, shape.recursor, expected, actual}}
+    end
+  end
+
+  defp validate_recursor_metadata(%Shape{recursor_descriptor: nil}), do: :ok
+
+  defp validate_recursor_metadata(%Shape{family: :bool, discriminants: [_, _]}), do: :ok
+
+  defp validate_recursor_metadata(%Shape{} = shape) do
+    recursor = shape.recursor_descriptor.recursor
+
+    cond do
+      length(shape.alternatives) != recursor.num_minors ->
+        {:error,
+         {:recursor_minor_count_mismatch, recursor.name, recursor.num_minors,
+          length(shape.alternatives)}}
+
+      length(shape.indices) != recursor.num_indices ->
+        {:error,
+         {:recursor_index_count_mismatch, recursor.name, recursor.num_indices,
+          length(shape.indices)}}
+
+      length(shape.index_binders) != recursor.num_indices ->
+        {:error,
+         {:recursor_index_binder_count_mismatch, recursor.name, recursor.num_indices,
+          length(shape.index_binders)}}
+
+      true ->
+        :ok
     end
   end
 
@@ -305,6 +338,11 @@ defmodule Theoria.Equation.Matcher.Type do
   defp forall_result(term), do: term
 
   defp expected_recursor_arity(%Shape{family: :bool, discriminants: [_, _]}), do: 7
+
+  defp expected_recursor_arity(%Shape{recursor_descriptor: %{recursor: recursor}}) do
+    recursor.num_params + recursor.num_motives + recursor.num_minors + recursor.num_indices + 1
+  end
+
   defp expected_recursor_arity(%Shape{recursor: :bool_rec}), do: 4
   defp expected_recursor_arity(%Shape{recursor: :nat_rec}), do: 4
   defp expected_recursor_arity(%Shape{recursor: :list_rec}), do: 5

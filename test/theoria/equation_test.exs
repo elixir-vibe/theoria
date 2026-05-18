@@ -306,6 +306,11 @@ defmodule Theoria.EquationTest do
     [nil_alt, cons_alt] = shape.alternatives
 
     assert MatcherType.validate_shape(shape) == :ok
+    assert shape.recursor_descriptor.recursor.name == :vec_ind
+    assert shape.recursor_descriptor.recursor.num_params == 1
+    assert shape.recursor_descriptor.recursor.num_indices == 1
+    assert shape.recursor_descriptor.recursor.num_motives == 1
+    assert shape.recursor_descriptor.recursor.num_minors == 2
 
     assert MatcherType.validate_shape(%{shape | motive_arguments: []}) ==
              {:error, {:motive_argument_count_mismatch, :Vec}}
@@ -320,6 +325,12 @@ defmodule Theoria.EquationTest do
 
     assert MatcherType.validate_shape(%{shape | alternatives: [nil_alt, broken_case]}) ==
              {:error, {:missing_case_result, :vec_cons}}
+
+    assert MatcherType.validate_shape(%{shape | alternatives: [nil_alt]}) ==
+             {:error, {:alternative_binder_count_mismatch, :Vec}}
+
+    assert MatcherType.validate_shape(%{shape | indices: []}) ==
+             {:error, {:recursor_index_count_mismatch, :vec_ind, 1, 0}}
   end
 
   test "matcher descriptor validation rejects corrupted shapes" do

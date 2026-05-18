@@ -60,6 +60,7 @@ defmodule Theoria.Equation.Matcher.Descriptor do
     :alternatives,
     :result,
     :recursor,
+    :recursor_descriptor,
     indexed?: false,
     indices: [],
     recursive?: false
@@ -74,7 +75,8 @@ defmodule Theoria.Equation.Matcher.Descriptor do
           discriminants: [MatcherInfo.Discriminant.t()],
           alternatives: [Alternative.t()],
           result: Term.t(),
-          recursor: atom()
+          recursor: atom(),
+          recursor_descriptor: RecursorDescriptor.t() | nil
         }
 
   @doc "Builds a matcher descriptor from schema and matcher metadata."
@@ -174,7 +176,8 @@ defmodule Theoria.Equation.Matcher.Descriptor do
         discriminants: info.discriminants,
         alternatives: alternatives(schema.family, info, recursor_descriptor),
         result: result(schema.family),
-        recursor: recursor_name(schema.family, recursor_descriptor)
+        recursor: recursor_name(schema.family, recursor_descriptor),
+        recursor_descriptor: recursor_descriptor
       }
 
       validate(descriptor, info)

@@ -550,27 +550,84 @@ defmodule Theoria.Equation.Matcher.Type do
       shape.alternatives
       |> Enum.with_index()
       |> Enum.map(fn {alternative, position} ->
-        previous_binders = indexed_binders_before_alternative(shape, position)
-        fields = Enum.map(alternative.fields, &{:_, &1.type})
-        motive = binder_ref_in(previous_binders ++ fields, shape.motive_name)
-
-        motive_arguments =
-          alternative_motive_arguments(shape, alternative, previous_binders, fields)
-
-        case_result = apply_motive(motive, motive_arguments)
-
-        %{
-          alternative
-          | motive_arguments: motive_arguments,
-            case_result: case_result,
-            binder_type: indexed_case_telescope(alternative, case_result)
-        }
+        plan_indexed_alternative(shape, alternative, position)
       end)
 
     %{
       shape
       | alternatives: alternatives,
         alternative_binders: Enum.map(alternatives, &{&1.binder_name, &1.binder_type})
+    }
+  end
+
+  defp plan_indexed_alternative(
+         %Shape{family: :Vec} = shape,
+         %Alternative{constructor: :vec_nil} = alternative,
+         position
+       ) do
+    previous_binders = indexed_binders_before_alternative(shape, position)
+    motive = binder_ref_in(previous_binders, shape.motive_name)
+    constructor = Term.const(:vec_nil, [1]) |> Term.app(binder_ref_in(previous_binders, :a))
+    motive_arguments = [Term.const(:zero), constructor]
+    case_result = apply_motive(motive, motive_arguments)
+
+    %{
+      alternative
+      | motive_arguments: motive_arguments,
+        case_result: case_result,
+        binder_type: case_result
+    }
+  end
+
+  defp plan_indexed_alternative(
+         %Shape{family: :Vec},
+         %Alternative{constructor: :vec_cons} = alternative,
+         _position
+       ) do
+    motive_n_arg2 = Term.bvar(6) |> Term.app(Term.bvar(1)) |> Term.app(Term.bvar(0))
+    succ_n = Term.const(:succ) |> Term.app(Term.bvar(2))
+
+    constructor =
+      Term.const(:vec_cons, [1])
+      |> Term.app(Term.bvar(8))
+      |> Term.app(Term.bvar(3))
+      |> Term.app(Term.bvar(2))
+      |> Term.app(Term.bvar(1))
+
+    motive_arguments = [succ_n, constructor]
+    case_result = Term.bvar(7) |> Term.app(succ_n) |> Term.app(constructor)
+
+    binder_type =
+      forall_telescope(
+        [
+          _: Term.bvar(4),
+          _: Term.const(:Nat),
+          _: Term.const(:Vec, [1]) |> Term.app(Term.bvar(6)) |> Term.app(Term.bvar(0)),
+          _: motive_n_arg2
+        ],
+        case_result
+      )
+
+    %{
+      alternative
+      | motive_arguments: motive_arguments,
+        case_result: case_result,
+        binder_type: binder_type
+    }
+  end
+
+  defp plan_indexed_alternative(%Shape{} = shape, %Alternative{} = alternative, position) do
+    previous_binders = indexed_binders_before_alternative(shape, position)
+    fields = Enum.map(alternative.fields, &{:_, &1.type})
+    motive = binder_ref_in(previous_binders ++ fields, shape.motive_name)
+    motive_arguments = alternative_motive_arguments(shape, alternative, previous_binders, fields)
+    case_result = apply_motive(motive, motive_arguments)
+
+    %{
+      alternative
+      | motive_arguments: motive_arguments,
+        case_result: case_result,
+        binder_type: indexed_case_telescope(alternative, case_result)
     }
   end
 

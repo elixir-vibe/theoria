@@ -278,20 +278,23 @@ defmodule Theoria.EquationTest do
              %Term.App{
                fun: %Term.App{
                  fun: %Term.App{
-                   fun: %Term.App{fun: %Term.Const{name: :vec_cons}, arg: %Term.BVar{index: 7}},
-                   arg: %Term.BVar{index: 2}
+                   fun: %Term.App{fun: %Term.Const{name: :vec_cons}, arg: %Term.BVar{index: 8}},
+                   arg: %Term.BVar{index: 3}
                  },
-                 arg: %Term.BVar{index: 1}
+                 arg: %Term.BVar{index: 2}
                },
-               arg: %Term.BVar{index: 0}
+               arg: %Term.BVar{index: 1}
              }
            ] = vec_cons_shape.motive_arguments
 
-    assert %Term.App{fun: %Term.App{fun: %Term.BVar{index: 6}}, arg: %Term.App{}} =
+    assert %Term.App{fun: %Term.App{fun: %Term.BVar{index: 7}}, arg: %Term.App{}} =
              vec_cons_shape.case_result
 
-    assert %{binder_type: %Term.Forall{body: %Term.Forall{body: %Term.Forall{body: case_result}}}} =
-             vec_cons_shape
+    assert %{
+             binder_type: %Term.Forall{
+               body: %Term.Forall{body: %Term.Forall{body: %Term.Forall{body: case_result}}}
+             }
+           } = vec_cons_shape
 
     assert case_result == vec_cons_shape.case_result
 
@@ -341,13 +344,13 @@ defmodule Theoria.EquationTest do
              {:error, {:not_indexed_matcher_value, :nat}}
   end
 
-  test "experimental indexed matcher terms are not admitted as checked declarations yet" do
+  test "experimental indexed matcher type is well-formed but value is not admitted yet" do
     {:ok, env} = Prelude.env()
     descriptor = vec_matcher_descriptor!()
     assert {:ok, type} = MatcherType.indexed_from_descriptor(descriptor)
     assert {:ok, value} = MatcherType.indexed_value_from_descriptor(descriptor)
 
-    assert {:error, _reason} = Kernel.infer(env, type)
+    assert {:ok, %Term.Sort{}} = Kernel.infer(env, type)
     assert {:error, _reason} = Kernel.check(env, value, type)
   end
 

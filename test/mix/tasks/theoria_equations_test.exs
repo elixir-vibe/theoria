@@ -18,15 +18,15 @@ defmodule Mix.Tasks.Theoria.EquationsTest do
     assert output =~ "equations:"
     assert output =~ "bool_not rec_arg=0 fixed=[]"
     assert output =~ "bool_not.eq_true"
-    assert output =~ "matcher: bool_not.match_1"
+    assert output =~ "matcher: bool_not_match_1"
     assert output =~ "discriminants:"
     assert output =~ "alternatives:"
     assert output =~ "unfold: bool_not.eq_def"
     assert output =~ "list_append rec_arg=1 fixed=[0] levels=[:u]"
-    assert output =~ "matcher: list_append.match_1 mode=matcher arity=5"
+    assert output =~ "matcher: list_append_match_1 mode=matcher arity=5"
     assert output =~ "descriptor: family=list discrs=1 alts=2 recursor=list_rec"
     assert output =~ "list_append.eq_nil"
-    assert output =~ "list_append.match_1.eq_list_cons"
+    assert output =~ "list_append_match_1.eq_list_cons"
   end
 
   test "filters equations by definition name" do
@@ -38,11 +38,11 @@ defmodule Mix.Tasks.Theoria.EquationsTest do
       end)
 
     assert output =~ "nat_add rec_arg=0 fixed=[]"
-    assert output =~ "matcher: nat_add.match_1 mode=matcher arity=4"
+    assert output =~ "matcher: nat_add_match_1 mode=matcher arity=4"
     assert output =~ "descriptor: family=nat discrs=1 alts=2 recursor=nat_rec"
     assert output =~ "0: m position=0 family=nat"
     assert output =~ "nat_add.eq_succ"
-    assert output =~ "nat_add.match_1.eq_succ"
+    assert output =~ "nat_add_match_1.eq_succ"
     refute output =~ "bool_not rec_arg=0 fixed=[]"
   end
 
@@ -54,7 +54,7 @@ defmodule Mix.Tasks.Theoria.EquationsTest do
         Equations.run(["bool_and"])
       end)
 
-    assert output =~ "matcher: bool_and.match_1 mode=matcher arity=7"
+    assert output =~ "matcher: bool_and_match_1 mode=matcher arity=7"
     assert output =~ "descriptor: family=bool discrs=2 alts=4 recursor=bool_rec"
     assert output =~ "true_true fields=0"
     assert output =~ "false_false fields=0"

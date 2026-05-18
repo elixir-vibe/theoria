@@ -74,7 +74,7 @@ defmodule Theoria.Equation.Matcher.Info do
     discriminant_count = opts |> Keyword.get(:discriminants, []) |> length() |> max(1)
 
     new(
-      :"#{definition_name}.match_1",
+      :"#{definition_name}_match_1",
       num_params(family),
       discriminant_count,
       alternatives(family, schema, discriminant_count),

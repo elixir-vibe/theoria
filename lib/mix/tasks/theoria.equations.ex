@@ -14,7 +14,8 @@ defmodule Mix.Tasks.Theoria.Equations do
     Eqns,
     Extension,
     Info,
-    Lemma
+    Lemma,
+    Name
   }
 
   alias Theoria.Prelude
@@ -93,7 +94,7 @@ defmodule Mix.Tasks.Theoria.Equations do
 
   defp print_lemmas(lemmas) do
     Enum.each(lemmas, fn lemma ->
-      Mix.shell().info("    #{lemma.name}")
+      Mix.shell().info("    #{format_equation_name(lemma)}")
     end)
   end
 
@@ -103,7 +104,7 @@ defmodule Mix.Tasks.Theoria.Equations do
     Mix.shell().info("    matcher equations:")
 
     Enum.each(matcher_equations, fn equation ->
-      Mix.shell().info("      #{equation.name}")
+      Mix.shell().info("      #{format_equation_name(equation)}")
     end)
   end
 
@@ -165,7 +166,7 @@ defmodule Mix.Tasks.Theoria.Equations do
   end
 
   defp print_unfold(%Info{} = info) do
-    Mix.shell().info("    unfold: #{Lemma.unfold_for(info).name}")
+    Mix.shell().info("    unfold: #{format_equation_name(Lemma.unfold_for(info))}")
   end
 
   defp registry_entry_count(env, equations) do
@@ -191,6 +192,9 @@ defmodule Mix.Tasks.Theoria.Equations do
     |> Env.matchers()
     |> Enum.filter(&MapSet.member?(source_names, &1.source))
   end
+
+  defp format_equation_name(%{id: %Name{} = id}), do: Name.format(id)
+  defp format_equation_name(%{name: name}), do: Name.format_declaration(name)
 
   defp install_equations(env, equations) do
     equations

@@ -165,7 +165,7 @@ defmodule Theoria.Equation.Matcher.Indexed.Package do
 
   defp validate_realization_boundary(%__MODULE__{equations: equations} = package) do
     Enum.reduce_while(equations, :ok, fn equation, :ok ->
-      case Realization.realize(package, equation.name) do
+      case Realization.realize(package, equation.id) do
         {:ok, %Theoria.Theorem{name: name}} when name == equation.name -> {:cont, :ok}
         other -> {:halt, {:error, {:indexed_matcher_realization_boundary, equation.name, other}}}
       end

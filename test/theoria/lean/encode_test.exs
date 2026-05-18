@@ -91,7 +91,7 @@ defmodule Theoria.Lean.EncodeTest do
     assert source =~ "proof Theoria.Library.Vec.Theorems.vec_ind_cons_nat"
     assert source =~ "proof equation.nat_add.eq_succ"
     assert source =~ "proof equation.list_append.eq_cons"
-    assert source =~ "proof equation.nat_add.match_1.eq_succ"
+    assert source =~ "proof equation.nat_add_match_1.eq_succ"
     assert source =~ "defeq nat_add_one_zero"
     assert source =~ "defeq list_length_singleton"
     assert source =~ "defeq vec_ind_cons"

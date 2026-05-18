@@ -5,14 +5,15 @@ defmodule Theoria.Equation.Eqns do
   alias Theoria.Equation.Extension
   alias Theoria.Equation.Info
   alias Theoria.Equation.Lemma
+  alias Theoria.Equation.Name
   alias Theoria.Rewrite.Database
   alias Theoria.Rewrite.Rule
 
   @doc "Returns generated equation theorem names for a definition."
-  @spec get(Env.t(), atom()) :: {:ok, [atom()]} | {:error, term()}
+  @spec get(Env.t(), atom()) :: {:ok, [Name.t()]} | {:error, term()}
   def get(%Env{} = env, name) when is_atom(name) do
     with {:ok, lemmas} <- generated(env, name) do
-      {:ok, Enum.map(lemmas, & &1.name)}
+      {:ok, Enum.map(lemmas, & &1.id)}
     end
   end
 
@@ -33,8 +34,11 @@ defmodule Theoria.Equation.Eqns do
   end
 
   @doc "Finds the source definition for a generated equation theorem name."
-  @spec source(Env.t(), atom()) :: {:ok, atom()} | :error
-  def source(%Env{} = env, theorem_name) when is_atom(theorem_name) do
+  @spec source(Env.t(), Name.t() | atom()) :: {:ok, atom()} | :error
+  def source(%Env{} = env, theorem_name),
+    do: source_declaration(env, declaration_name(theorem_name))
+
+  defp source_declaration(env, theorem_name) do
     case Extension.source_for(env, theorem_name) do
       {:ok, matcher_name} -> matcher_source_definition(env, matcher_name)
       :error -> :error
@@ -42,8 +46,10 @@ defmodule Theoria.Equation.Eqns do
   end
 
   @doc "Realizes generated equation theorem metadata without installing it."
-  @spec realize(Env.t(), atom()) ::
+  @spec realize(Env.t(), atom() | Name.t()) ::
           {:ok, Theoria.Theorem.t()} | {:ok, [Theoria.Theorem.t()]} | {:error, term()}
+  def realize(%Env{} = env, %Name{} = name), do: realize_theorem(env, Name.to_declaration(name))
+
   def realize(%Env{} = env, name) when is_atom(name) do
     case Info.fetch(env, name) do
       {:ok, info} -> realize_all(env, info)
@@ -75,6 +81,9 @@ defmodule Theoria.Equation.Eqns do
       {:error, _reason} = error -> error
     end
   end
+
+  defp declaration_name(%Name{} = name), do: Name.to_declaration(name)
+  defp declaration_name(name) when is_atom(name), do: name
 
   defp realize_all(env, info) do
     info
@@ -148,8 +157,11 @@ defmodule Theoria.Equation.Eqns do
   @spec installed?(Env.t(), atom()) :: boolean()
   def installed?(%Env{} = env, name) when is_atom(name) do
     case get(env, name) do
-      {:ok, names} -> Enum.all?(names, &match?({:ok, _constant}, Env.fetch(env, &1)))
-      {:error, _reason} -> false
+      {:ok, names} ->
+        Enum.all?(names, &match?({:ok, _constant}, Env.fetch(env, Name.to_declaration(&1))))
+
+      {:error, _reason} ->
+        false
     end
   end
 end

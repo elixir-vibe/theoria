@@ -2,11 +2,13 @@ defmodule Theoria.Equation.Matcher.Equation do
   @moduledoc "Experimental/internal API for 0.2; subject to change before 0.3. Metadata for an equation generated for a matcher alternative."
 
   alias Theoria.Equation.Lemma
+  alias Theoria.Equation.Name
   alias Theoria.Term
 
   @enforce_keys [:matcher, :name, :constructor, :left, :right, :equality_type]
   defstruct [
     :matcher,
+    :id,
     :name,
     :constructor,
     :left,
@@ -25,6 +27,7 @@ defmodule Theoria.Equation.Matcher.Equation do
 
   @type t :: %__MODULE__{
           matcher: atom(),
+          id: Name.t() | nil,
           name: atom(),
           constructor: atom(),
           left: Term.t(),
@@ -44,9 +47,12 @@ defmodule Theoria.Equation.Matcher.Equation do
   @doc "Builds matcher-equation metadata from an ordinary equation lemma."
   @spec from_lemma(atom(), atom(), Lemma.t()) :: t()
   def from_lemma(matcher, constructor, %Lemma{} = lemma) when is_atom(matcher) do
+    id = Name.matcher_equation(matcher, constructor)
+
     %__MODULE__{
       matcher: matcher,
-      name: :"#{matcher}.eq_#{suffix_name(constructor)}",
+      id: id,
+      name: Name.to_declaration(id),
       constructor: constructor,
       left: lemma.left,
       right: lemma.right,
@@ -59,18 +65,20 @@ defmodule Theoria.Equation.Matcher.Equation do
   @doc "Builds indexed matcher-equation metadata from a matcher alternative."
   @spec indexed(atom(), atom(), [Term.t()]) :: t()
   def indexed(matcher, constructor, index_patterns) when is_atom(matcher) do
-    name = :"#{matcher}.eq_#{suffix_name(constructor)}"
+    id = Name.indexed_matcher_equation(matcher, constructor)
+    declaration_name = Name.to_declaration(id)
 
     %__MODULE__{
       matcher: matcher,
-      name: name,
+      id: id,
+      name: declaration_name,
       constructor: constructor,
       left: Term.const(matcher),
       right: Term.const(constructor),
       equality_type: Term.const(:unsupported_indexed_matcher_equation),
       indexed?: true,
       index_patterns: index_patterns,
-      statement_name: name,
+      statement_name: declaration_name,
       statement_status: :unsupported,
       realizable?: false
     }
@@ -85,7 +93,4 @@ defmodule Theoria.Equation.Matcher.Equation do
       source: equation.source && equation.source.source
     )
   end
-
-  defp suffix_name(nil), do: "nil"
-  defp suffix_name(suffix), do: Atom.to_string(suffix)
 end

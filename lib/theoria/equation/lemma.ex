@@ -4,13 +4,14 @@ defmodule Theoria.Equation.Lemma do
   alias Theoria.Env
   alias Theoria.Equation.Clause
   alias Theoria.Equation.Info
+  alias Theoria.Equation.Name
   alias Theoria.Kernel
   alias Theoria.Term
   alias Theoria.Theorem
   alias Theoria.Validation.DefeqCheck
 
   @enforce_keys [:name, :left, :right]
-  defstruct [:name, :left, :right, :source, binders: [], equality_type: nil]
+  defstruct [:name, :left, :right, :source, :id, binders: [], equality_type: nil]
 
   @type binder :: {atom(), Term.t()}
 
@@ -19,33 +20,41 @@ defmodule Theoria.Equation.Lemma do
           left: Term.t(),
           right: Term.t(),
           source: Clause.t() | nil,
+          id: Name.t() | nil,
           binders: [binder()],
           equality_type: Term.t() | nil
         }
 
   @doc "Builds equation-lemma metadata."
-  @spec new(atom(), Term.t(), Term.t(), keyword()) :: t()
-  def new(name, left, right, opts \\ []) when is_atom(name) do
+  @spec new(atom() | Name.t(), Term.t(), Term.t(), keyword()) :: t()
+  def new(name_or_id, left, right, opts \\ [])
+
+  def new(%Name{} = id, left, right, opts) do
+    new(Name.to_declaration(id), left, right, Keyword.put(opts, :id, id))
+  end
+
+  def new(name, left, right, opts) when is_atom(name) do
     %__MODULE__{
       name: name,
       left: left,
       right: right,
       source: Keyword.get(opts, :source),
+      id: Keyword.get(opts, :id),
       binders: Keyword.get(opts, :binders, []),
       equality_type: Keyword.get(opts, :equality_type)
     }
   end
 
   @doc "Returns the Lean-style theorem name for a definition equation."
-  @spec theorem_name(atom(), atom()) :: atom()
-  def theorem_name(definition_name, suffix) when is_atom(definition_name) and is_atom(suffix) do
-    :"#{definition_name}.eq_#{suffix_name(suffix)}"
+  @spec theorem_name(atom(), atom()) :: Name.t()
+  def theorem_name(definition_name, suffix) when is_atom(definition_name) do
+    Name.equation(definition_name, if(suffix == :"", do: nil, else: suffix))
   end
 
   @doc "Builds equation-lemma metadata named after a compiled definition."
   @spec for_definition(Info.t(), atom(), Term.t(), Term.t(), keyword()) :: t()
   def for_definition(%Info{name: definition_name}, suffix, left, right, opts \\ [])
-      when is_atom(suffix) do
+      when is_atom(suffix) or is_nil(suffix) do
     new(theorem_name(definition_name, suffix), left, right, opts)
   end
 
@@ -58,7 +67,7 @@ defmodule Theoria.Equation.Lemma do
     left = apply_binders(Term.const(info.name, levels), binder_count)
     equality_type = result_type(info.type, binder_count)
 
-    for_definition(info, :def, left, body,
+    new(Name.unfold(info.name), left, body,
       binders: binders,
       equality_type: equality_type
     )
@@ -104,7 +113,7 @@ defmodule Theoria.Equation.Lemma do
   @doc "Turns equation-lemma metadata into a native definitional-equality validation check."
   @spec defeq_check(t(), atom()) :: DefeqCheck.t()
   def defeq_check(%__MODULE__{} = lemma, category) when is_atom(category) do
-    DefeqCheck.new(category, Atom.to_string(lemma.name), lemma.left, lemma.right)
+    DefeqCheck.new(category, defeq_check_name(lemma), lemma.left, lemma.right)
   end
 
   @doc "Turns many equation lemmas into native definitional-equality validation checks."
@@ -177,6 +186,9 @@ defmodule Theoria.Equation.Lemma do
 
   defp result_type(type, _count), do: type
 
+  defp defeq_check_name(%__MODULE__{id: %Name{} = id}), do: Name.format(id)
+  defp defeq_check_name(%__MODULE__{name: name}), do: Atom.to_string(name)
+
   defp equality_type_and_opts(%__MODULE__{} = lemma, opts, []) when is_list(opts) do
     {lemma.equality_type || Keyword.fetch!(opts, :equality_type), opts}
   end
@@ -194,7 +206,4 @@ defmodule Theoria.Equation.Lemma do
       Term.lam(name, type, body)
     end)
   end
-
-  defp suffix_name(nil), do: "nil"
-  defp suffix_name(suffix), do: Atom.to_string(suffix)
 end

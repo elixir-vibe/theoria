@@ -65,7 +65,7 @@ defmodule Theoria.PrettyTest do
         fixed_params: FixedParams.new([0])
       )
 
-    lemma = Lemma.new(:"list_append.eq_nil", const(:zero), const(:zero))
+    lemma = Lemma.new(:theoria__eq__list_append__nil, const(:zero), const(:zero))
     alternative = %Alternative{constructor: :list_nil, num_fields: 0}
     matcher = MatcherInfo.new(:match_list, 1, 1, [alternative])
     matcher_equation = MatcherEquation.from_lemma(:match_list, :list_nil, lemma)
@@ -84,7 +84,7 @@ defmodule Theoria.PrettyTest do
     env_matcher =
       EnvMatcher.new(:match_list, :list_append, const(:Nat), matcher,
         value: const(:zero),
-        equation_names: [:"match_list.eq_list_nil"]
+        equation_names: [:theoria__matcher_eq__match_list__list_nil]
       )
 
     signature = Signature.new(:list_append, :list, [m: const(:Nat)], const(:Nat), rec_arg_pos: 0)

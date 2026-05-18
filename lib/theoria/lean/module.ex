@@ -5,6 +5,7 @@ defmodule Theoria.Lean.Module do
   alias Theoria.Equation.{Info, Lemma}
   alias Theoria.Equation.Matcher.Eqns, as: MatcherEqns
   alias Theoria.Equation.Matcher.Equation, as: MatcherEquation
+  alias Theoria.Equation.Name
   alias Theoria.Lean.Encode
   alias Theoria.Lean.MirrorPrelude
   alias Theoria.Prelude
@@ -149,7 +150,8 @@ defmodule Theoria.Lean.Module do
 
   defp add_indexed_type_checks(module, statements) do
     Enum.reduce(statements, {:ok, module}, fn equation, {:ok, module} ->
-      {:ok, add_type_check(module, "indexed.#{equation.name}", equation.statement_type)}
+      {:ok,
+       add_type_check(module, "indexed.#{Name.format(equation.id)}", equation.statement_type)}
     end)
   end
 
@@ -157,12 +159,21 @@ defmodule Theoria.Lean.Module do
     case Lemma.to_theorem(env, lemma) do
       {:ok, theorem} ->
         {:cont,
-         {:ok, add_proof_check(module, "equation.#{theorem.name}", theorem.proof, theorem.type)}}
+         {:ok,
+          add_proof_check(
+            module,
+            "equation.#{equation_lemma_label(lemma)}",
+            theorem.proof,
+            theorem.type
+          )}}
 
       {:error, error} ->
         {:halt, {:error, {:equation, lemma.name, error}}}
     end
   end
+
+  defp equation_lemma_label(%{id: %Name{} = id}), do: Name.format(id)
+  defp equation_lemma_label(%{name: name}), do: Name.format_declaration(name)
 
   defp equation_category_enabled?(info, categories),
     do: equation_category(info.name) in categories

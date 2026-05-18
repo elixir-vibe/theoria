@@ -139,8 +139,12 @@ end
 defimpl Inspect, for: Theoria.Equation.Lemma do
   import Inspect.Algebra
 
+  def inspect(%{id: %Theoria.Equation.Name{} = id}, _opts) do
+    concat(["#Theoria.EquationLemma<", Theoria.Equation.Name.format(id), ">"])
+  end
+
   def inspect(lemma, _opts) do
-    concat(["#Theoria.EquationLemma<", Atom.to_string(lemma.name), ">"])
+    concat(["#Theoria.EquationLemma<", Theoria.Equation.Name.format_declaration(lemma.name), ">"])
   end
 end
 
@@ -184,7 +188,7 @@ defimpl Inspect, for: Theoria.Equation.Matcher.Equation do
   def inspect(equation, _opts) do
     concat([
       "#Theoria.MatcherEquation<",
-      Atom.to_string(equation.name),
+      Theoria.Equation.Name.format_declaration(equation.name),
       ", matcher: ",
       Atom.to_string(equation.matcher),
       ", constructor: ",
@@ -301,7 +305,7 @@ defimpl Inspect, for: Theoria.Simp.Rule do
   def inspect(rule, _opts) do
     concat([
       "#Theoria.SimpRule<",
-      Atom.to_string(rule.rewrite.name),
+      Theoria.Equation.Name.format_declaration(rule.rewrite.name),
       ", priority: #{rule.priority}, source: #{rule.source}",
       ">"
     ])
@@ -320,7 +324,12 @@ defimpl Inspect, for: Theoria.Simp.Step do
   import Inspect.Algebra
 
   def inspect(step, _opts) do
-    concat(["#Theoria.SimpStep<", Atom.to_string(step.rule), ", source: #{step.source}", ">"])
+    concat([
+      "#Theoria.SimpStep<",
+      Theoria.Equation.Name.format_declaration(step.rule),
+      ", source: #{step.source}",
+      ">"
+    ])
   end
 end
 
@@ -330,7 +339,7 @@ defimpl Inspect, for: Theoria.Rewrite.Rule do
   def inspect(rule, _opts) do
     concat([
       "#Theoria.RewriteRule<",
-      Atom.to_string(rule.name),
+      Theoria.Equation.Name.format_declaration(rule.name),
       " #{rule.direction}",
       ">"
     ])

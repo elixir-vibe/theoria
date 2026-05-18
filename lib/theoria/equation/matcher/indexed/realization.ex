@@ -2,6 +2,7 @@ defmodule Theoria.Equation.Matcher.Indexed.Realization do
   @moduledoc "Experimental/internal API for 0.2; subject to change before 0.3. Realization planning for indexed matcher equations."
 
   alias Theoria.Equation.Matcher.Indexed.Package
+  alias Theoria.Equation.Name
   alias Theoria.Kernel
   alias Theoria.Term
   alias Theoria.Theorem
@@ -78,8 +79,8 @@ defmodule Theoria.Equation.Matcher.Indexed.Realization do
   def blockers(%Plan{blockers: blockers}), do: blockers
 
   @doc "Realizes one indexed matcher equation theorem without installing it."
-  @spec realize(Package.t(), atom()) :: {:ok, Theorem.t()} | {:error, term()}
-  def realize(%Package{} = package, equation_name) when is_atom(equation_name) do
+  @spec realize(Package.t(), Name.t()) :: {:ok, Theorem.t()} | {:error, term()}
+  def realize(%Package{} = package, %Name{} = equation_name) do
     with {:ok, plan} <- plan(package),
          %EquationPlan{} = equation_plan <- find_plan(plan, equation_name),
          {:ok, proof} <- proof_for(package, equation_plan),
@@ -101,7 +102,7 @@ defmodule Theoria.Equation.Matcher.Indexed.Realization do
   def realize_all(%Package{} = package) do
     package.statements
     |> Enum.reduce_while({:ok, []}, fn equation, {:ok, theorems} ->
-      case realize(package, equation.name) do
+      case realize(package, equation.id) do
         {:ok, theorem} -> {:cont, {:ok, [theorem | theorems]}}
         {:error, _reason} = error -> {:halt, error}
       end
@@ -146,7 +147,7 @@ defmodule Theoria.Equation.Matcher.Indexed.Realization do
   defp proof_term(%Term.Eq{left: left}), do: Term.refl(left)
 
   defp find_plan(%Plan{equations: equations}, equation_name),
-    do: Enum.find(equations, &(&1.name == equation_name))
+    do: Enum.find(equations, &(&1.name == Name.to_declaration(equation_name)))
 
   defp package_blockers(equations) do
     equations

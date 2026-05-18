@@ -39,7 +39,7 @@ defmodule Theoria.Simp.Database do
   end
 
   defp equation_source(name) do
-    if name |> Atom.to_string() |> String.contains?(".match_") do
+    if name |> Atom.to_string() |> String.contains?("__matcher_eq__") do
       :matcher_equation
     else
       :equation

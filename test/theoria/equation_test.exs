@@ -24,6 +24,7 @@ defmodule Theoria.EquationTest do
     FixedParams,
     Info,
     Lemma,
+    Name,
     Pattern,
     Schema,
     Signature
@@ -69,7 +70,7 @@ defmodule Theoria.EquationTest do
 
     assert schema.family == :nat
     assert Enum.map(schema.equations, & &1.suffix) == [:zero]
-    assert SchemaBuilder.matcher(signature, schema).name == :"plus.match_1"
+    assert SchemaBuilder.matcher(signature, schema).name == :plus_match_1
   end
 
   test "schema validates scope and duplicate equation suffixes" do
@@ -102,26 +103,26 @@ defmodule Theoria.EquationTest do
     registry = Extension.build(env)
 
     assert Map.has_key?(registry.definitions, :nat_add)
-    assert Map.has_key?(registry.matchers, :"bool_and.match_1")
+    assert Map.has_key?(registry.matchers, :bool_and_match_1)
 
     assert registry.equation_names.bool_and == [
-             :"bool_and.eq_true_true",
-             :"bool_and.eq_true_false",
-             :"bool_and.eq_false_true",
-             :"bool_and.eq_false_false"
+             :theoria__eq__bool_and__true_true,
+             :theoria__eq__bool_and__true_false,
+             :theoria__eq__bool_and__false_true,
+             :theoria__eq__bool_and__false_false
            ]
 
-    assert registry.matcher_equation_names[:"bool_and.match_1"] == [
-             :"bool_and.match_1.eq_true_true",
-             :"bool_and.match_1.eq_true_false",
-             :"bool_and.match_1.eq_false_true",
-             :"bool_and.match_1.eq_false_false"
+    assert registry.matcher_equation_names[:bool_and_match_1] == [
+             :theoria__matcher_eq__bool_and_match_1__true_true,
+             :theoria__matcher_eq__bool_and_match_1__true_false,
+             :theoria__matcher_eq__bool_and_match_1__false_true,
+             :theoria__matcher_eq__bool_and_match_1__false_false
            ]
 
-    assert Extension.source_for(registry, :"bool_and.match_1.eq_false_false") ==
-             {:ok, :"bool_and.match_1"}
+    assert Extension.source_for(registry, :theoria__matcher_eq__bool_and_match_1__false_false) ==
+             {:ok, :bool_and_match_1}
 
-    assert Extension.unfold_name(env, :nat_add) == {:ok, :"nat_add.eq_def"}
+    assert Extension.unfold_name(env, :nat_add) == {:ok, :theoria__unfold__nat_add__def}
 
     assert Extension.summary(registry) == %{
              definitions: 6,
@@ -134,28 +135,31 @@ defmodule Theoria.EquationTest do
 
     assert :ok = Extension.validate(env)
     assert {:ok, [matcher]} = {:ok, Extension.matchers_for(env, :nat_add)}
-    assert matcher.name == :"nat_add.match_1"
-    assert :"bool_and.match_1.eq_true_true" in Extension.theorem_names(registry)
-    assert Extension.realizable?(env, :"bool_and.match_1.eq_true_true")
-    assert {:ok, theorem} = Extension.realize(env, :"bool_and.match_1.eq_true_true")
-    assert theorem.name == :"bool_and.match_1.eq_true_true"
+    assert matcher.name == :nat_add_match_1
+    assert :theoria__matcher_eq__bool_and_match_1__true_true in Extension.theorem_names(registry)
+    assert Extension.realizable?(env, :theoria__matcher_eq__bool_and_match_1__true_true)
+
+    assert {:ok, theorem} =
+             Extension.realize(env, :theoria__matcher_eq__bool_and_match_1__true_true)
+
+    assert theorem.name == :theoria__matcher_eq__bool_and_match_1__true_true
     assert {:ok, theorems} = Extension.realize_all(env)
     assert length(theorems) == map_size(registry.theorem_sources)
   end
 
   test "extension validation rejects stale matcher equation names" do
     {:ok, env} = Prelude.env()
-    env = corrupt_matcher(env, :"bool_and.match_1", &%{&1 | equation_names: [:stale_equation]})
+    env = corrupt_matcher(env, :bool_and_match_1, &%{&1 | equation_names: [:stale_equation]})
 
-    assert {:error, {:matcher_equation_name_mismatch, :"bool_and.match_1", _, _}} =
+    assert {:error, {:matcher_equation_name_mismatch, :bool_and_match_1, _, _}} =
              Extension.validate(env)
   end
 
   test "extension validation rejects matcher declarations with unknown sources" do
     {:ok, env} = Prelude.env()
-    env = corrupt_matcher(env, :"bool_and.match_1", &%{&1 | source: :missing_source})
+    env = corrupt_matcher(env, :bool_and_match_1, &%{&1 | source: :missing_source})
 
-    assert {:error, {:unknown_matcher_source, :"bool_and.match_1", :missing_source}} =
+    assert {:error, {:unknown_matcher_source, :bool_and_match_1, :missing_source}} =
              Extension.validate(env)
   end
 
@@ -354,8 +358,8 @@ defmodule Theoria.EquationTest do
     assert {:ok, equations} = MatcherEqns.indexed_generated(info, env)
 
     assert Enum.map(equations, & &1.name) == [
-             :"vec_validation_match.eq_vec_nil",
-             :"vec_validation_match.eq_vec_cons"
+             :theoria__indexed_matcher_eq__vec_validation_match__vec_nil,
+             :theoria__indexed_matcher_eq__vec_validation_match__vec_cons
            ]
 
     assert Enum.map(equations, & &1.constructor) == [:vec_nil, :vec_cons]
@@ -374,14 +378,25 @@ defmodule Theoria.EquationTest do
     assert {:ok, statements} = MatcherEqns.indexed_statements(info, env)
     by_name = Map.new(statements, &{&1.name, &1.statement_type})
 
-    assert {:ok, %Term.Sort{}} = Kernel.infer(env, by_name[:"vec_validation_match.eq_vec_nil"])
-    assert {:ok, %Term.Sort{}} = Kernel.infer(env, by_name[:"vec_validation_match.eq_vec_cons"])
+    assert {:ok, %Term.Sort{}} =
+             Kernel.infer(
+               env,
+               by_name[:theoria__indexed_matcher_eq__vec_validation_match__vec_nil]
+             )
+
+    assert {:ok, %Term.Sort{}} =
+             Kernel.infer(
+               env,
+               by_name[:theoria__indexed_matcher_eq__vec_validation_match__vec_cons]
+             )
 
     assert {_nil_binders, %Term.Eq{right: %Term.BVar{index: 1}}} =
-             collect_foralls(by_name[:"vec_validation_match.eq_vec_nil"])
+             collect_foralls(by_name[:theoria__indexed_matcher_eq__vec_validation_match__vec_nil])
 
     assert {cons_binders, cons_body} =
-             collect_foralls(by_name[:"vec_validation_match.eq_vec_cons"])
+             collect_foralls(
+               by_name[:theoria__indexed_matcher_eq__vec_validation_match__vec_cons]
+             )
 
     assert cons_binders == [:a, :motive, :n, :xs, :on_vec_nil, :on_vec_cons, :arg0, :n, :arg2]
     refute cons_body == Term.eq(Term.const(:Nat), Term.const(:zero), Term.const(:zero))
@@ -456,28 +471,38 @@ defmodule Theoria.EquationTest do
 
     assert {:ok, lemmas} = MatcherEqns.indexed_lemmas(info, env)
 
-    assert Enum.map(lemmas, & &1.name) == [
-             :"vec_validation_match.eq_vec_nil",
-             :"vec_validation_match.eq_vec_cons"
+    assert Enum.map(lemmas, & &1.id) == [
+             Name.indexed_matcher_equation(:vec_validation_match, :vec_nil),
+             Name.indexed_matcher_equation(:vec_validation_match, :vec_cons)
            ]
 
     assert Enum.all?(lemmas, &(&1.source == nil))
     assert Enum.all?(lemmas, &match?({:ok, %Term.Sort{}}, Kernel.infer(env, &1.equality_type)))
 
     assert {:ok, theorem} =
-             MatcherEqns.indexed_realize(info, env, :"vec_validation_match.eq_vec_cons")
+             MatcherEqns.indexed_realize(
+               info,
+               env,
+               constructor: :vec_cons
+             )
 
-    assert theorem.name == :"vec_validation_match.eq_vec_cons"
+    assert theorem.name == :theoria__indexed_matcher_eq__vec_validation_match__vec_cons
 
     assert {:ok, theorems} = MatcherEqns.indexed_realize_all(info, env)
 
     assert Enum.map(theorems, & &1.name) == [
-             :"vec_validation_match.eq_vec_nil",
-             :"vec_validation_match.eq_vec_cons"
+             :theoria__indexed_matcher_eq__vec_validation_match__vec_nil,
+             :theoria__indexed_matcher_eq__vec_validation_match__vec_cons
            ]
 
-    assert MatcherEqns.indexed_realize(info, env, :"vec_validation_match.eq_vec_snoc") ==
-             {:error, {:unknown_indexed_matcher_equation, :"vec_validation_match.eq_vec_snoc"}}
+    unknown = Name.indexed_matcher_equation(:vec_validation_match, :vec_snoc)
+
+    assert MatcherEqns.indexed_realize(
+             info,
+             env,
+             constructor: :vec_snoc
+           ) ==
+             {:error, {:unknown_indexed_matcher_equation, unknown}}
   end
 
   test "indexed matcher statement lemma planning reports invalid inputs" do
@@ -489,12 +514,14 @@ defmodule Theoria.EquationTest do
       )
 
     assert MatcherStatement.indexed_to_lemma(ordinary) ==
-             {:error, {:not_indexed_matcher_statement, :"nat_add_match.eq_zero"}}
+             {:error, {:not_indexed_matcher_statement, :theoria__matcher_eq__nat_add_match__zero}}
 
     indexed = MatcherEquation.indexed(:vec_validation_match, :vec_nil, [Term.const(:zero)])
 
     assert MatcherStatement.indexed_to_lemma(indexed) ==
-             {:error, {:missing_indexed_matcher_statement, :"vec_validation_match.eq_vec_nil"}}
+             {:error,
+              {:missing_indexed_matcher_statement,
+               :theoria__indexed_matcher_eq__vec_validation_match__vec_nil}}
   end
 
   test "indexed matcher statements use shape-derived levels" do
@@ -508,7 +535,8 @@ defmodule Theoria.EquationTest do
     statement =
       Enum.find_value(
         statements,
-        &(&1.name == :"vec_validation_match.eq_vec_cons" && &1.statement_type)
+        &(&1.name == :theoria__indexed_matcher_eq__vec_validation_match__vec_cons &&
+            &1.statement_type)
       )
 
     constants = collect_consts(statement)
@@ -874,7 +902,7 @@ defmodule Theoria.EquationTest do
 
   test "equation lemma metadata becomes defeq checks and checked theorems" do
     info = Info.new(:nat_add, nat(), zero())
-    assert Lemma.theorem_name(:nat_add, :zero) == :"nat_add.eq_zero"
+    assert Lemma.theorem_name(:nat_add, :zero) == Name.equation(:nat_add, :zero)
     lemma = Lemma.for_definition(info, :zero, zero(), zero())
     check = Lemma.defeq_check(lemma, :nat)
 
@@ -889,13 +917,13 @@ defmodule Theoria.EquationTest do
     assert theorem.proof == Term.refl(zero())
 
     assert {:ok, env, theorem} = Lemma.add_to_env(env, lemma, nat())
-    assert theorem.name == :"nat_add.eq_zero"
-    assert {:ok, _constant} = Theoria.Env.fetch(env, :"nat_add.eq_zero")
+    assert theorem.name == :theoria__eq__nat_add__zero
+    assert {:ok, _constant} = Theoria.Env.fetch(env, :theoria__eq__nat_add__zero)
 
     other = Lemma.for_definition(info, :zero_again, zero(), zero())
     assert {:ok, env, [installed]} = Lemma.add_all_to_env(env, [other], nat())
-    assert installed.name == :"nat_add.eq_zero_again"
-    assert {:ok, _constant} = Theoria.Env.fetch(env, :"nat_add.eq_zero_again")
+    assert installed.name == :theoria__eq__nat_add__zero_again
+    assert {:ok, _constant} = Theoria.Env.fetch(env, :theoria__eq__nat_add__zero_again)
   end
 
   test "generated equation lemmas come from stored definition metadata" do
@@ -903,36 +931,46 @@ defmodule Theoria.EquationTest do
     {:ok, info} = Info.fetch(env, :nat_add)
 
     assert Enum.map(Lemma.generated_for(info), & &1.name) == [
-             :"nat_add.eq_zero",
-             :"nat_add.eq_succ"
+             :theoria__eq__nat_add__zero,
+             :theoria__eq__nat_add__succ
            ]
 
     assert {:ok, env, theorems} = Lemma.add_generated_to_env(env, :nat_add)
     assert Enum.map(theorems, & &1.name) == Enum.map(Lemma.generated_for(info), & &1.name)
-    assert {:ok, _constant} = Theoria.Env.fetch(env, :"nat_add.eq_succ")
+    assert {:ok, _constant} = Theoria.Env.fetch(env, :theoria__eq__nat_add__succ)
     assert Eqns.installed?(env, :nat_add)
   end
 
   test "generated equation lookup mirrors Lean-style getEqnsFor" do
     {:ok, env} = Prelude.env()
 
-    assert {:ok, [:"nat_add.eq_zero", :"nat_add.eq_succ"]} = Eqns.get(env, :nat_add)
-    assert {:ok, :nat_add} = Eqns.source(env, :"nat_add.eq_succ")
-    assert {:ok, :nat_add} = Eqns.source(env, :"nat_add.eq_def")
-    assert {:ok, :nat_add} = Eqns.source(env, :"nat_add.match_1.eq_succ")
-    assert {:ok, :"nat_add.match_1"} = MatcherEqns.source(env, :"nat_add.match_1.eq_succ")
+    assert Eqns.get(env, :nat_add) ==
+             {:ok, [Name.equation(:nat_add, :zero), Name.equation(:nat_add, :succ)]}
+
+    assert {:ok, :nat_add} = Eqns.source(env, Name.equation(:nat_add, :succ))
+    assert {:ok, :nat_add} = Eqns.source(env, Name.unfold(:nat_add))
+    assert {:ok, :nat_add} = Eqns.source(env, Name.matcher_equation(:nat_add_match_1, :succ))
+
+    assert {:ok, :nat_add_match_1} =
+             MatcherEqns.source(env, Name.matcher_equation(:nat_add_match_1, :succ))
+
     assert {:ok, [zero_theorem, succ_theorem]} = Eqns.realize(env, :nat_add)
-    assert zero_theorem.name == :"nat_add.eq_zero"
-    assert succ_theorem.name == :"nat_add.eq_succ"
-    assert {:ok, theorem} = Eqns.realize(env, :"nat_add.eq_succ")
-    assert theorem.name == :"nat_add.eq_succ"
-    assert {:ok, unfold_theorem} = Eqns.realize(env, :"nat_add.eq_def")
-    assert unfold_theorem.name == :"nat_add.eq_def"
+    assert zero_theorem.name == :theoria__eq__nat_add__zero
+    assert succ_theorem.name == :theoria__eq__nat_add__succ
+    assert {:ok, theorem} = Eqns.realize(env, Name.equation(:nat_add, :succ))
+    assert theorem.name == :theoria__eq__nat_add__succ
+    assert {:ok, unfold_theorem} = Eqns.realize(env, Name.unfold(:nat_add))
+    assert unfold_theorem.name == :theoria__unfold__nat_add__def
     assert {:ok, unfold} = Eqns.unfold(env, :nat_add)
-    assert unfold.name == :"nat_add.eq_def"
+    assert unfold.name == :theoria__unfold__nat_add__def
     assert {:ok, _theorem} = Lemma.to_theorem(env, unfold)
     assert {:ok, lemmas} = Eqns.generated(env, :list_append)
-    assert Enum.map(lemmas, & &1.name) == [:"list_append.eq_nil", :"list_append.eq_cons"]
+
+    assert Enum.map(lemmas, & &1.name) == [
+             :theoria__eq__list_append__nil,
+             :theoria__eq__list_append__cons
+           ]
+
     refute Eqns.installed?(env, :nat_add)
   end
 
@@ -949,12 +987,12 @@ defmodule Theoria.EquationTest do
     {:ok, env} = Prelude.env()
 
     for {definition, matcher_name} <- [
-          bool_not: :"bool_not.match_1",
-          bool_and: :"bool_and.match_1",
-          bool_or: :"bool_or.match_1",
-          nat_add: :"nat_add.match_1",
-          list_length: :"list_length.match_1",
-          list_append: :"list_append.match_1"
+          bool_not: :bool_not_match_1,
+          bool_and: :bool_and_match_1,
+          bool_or: :bool_or_match_1,
+          nat_add: :nat_add_match_1,
+          list_length: :list_length_match_1,
+          list_append: :list_append_match_1
         ] do
       {:ok, info} = Info.fetch(env, definition)
       {:ok, matcher} = Theoria.Env.fetch_matcher(env, matcher_name)
@@ -972,43 +1010,49 @@ defmodule Theoria.EquationTest do
     {:ok, info} = Info.fetch(env, :list_append)
 
     assert length(info.clauses) == 2
-    assert info.matcher.name == :"list_append.match_1"
+    assert info.matcher.name == :list_append_match_1
     assert length(info.matcher.discriminants) == 1
     assert [%{name: :ys, position: 1, family: :list}] = info.matcher.discriminants
     assert info.matcher.overlaps == %{}
     assert info.schema.family == :list
     assert Enum.map(info.schema.equations, & &1.suffix) == [nil, :cons]
     assert Enum.map(info.matcher.alternatives, & &1.constructor) == [:list_nil, :list_cons]
-    assert {:ok, matcher} = Theoria.Env.fetch_matcher(env, :"list_append.match_1")
+    assert {:ok, matcher} = Theoria.Env.fetch_matcher(env, :list_append_match_1)
     assert matcher.source == :list_append
 
     assert matcher.equation_names == [
-             :"list_append.match_1.eq_list_nil",
-             :"list_append.match_1.eq_list_cons"
+             :theoria__matcher_eq__list_append_match_1__list_nil,
+             :theoria__matcher_eq__list_append_match_1__list_cons
            ]
   end
 
   test "matcher equations are generated from matcher metadata" do
     {:ok, env} = Prelude.env()
-    {:ok, names} = MatcherEqns.get(env, :"list_append.match_1")
+    {:ok, names} = MatcherEqns.get(env, :list_append_match_1)
 
-    assert names == [:"list_append.match_1.eq_list_nil", :"list_append.match_1.eq_list_cons"]
+    assert names == [
+             Name.matcher_equation(:list_append_match_1, :list_nil),
+             Name.matcher_equation(:list_append_match_1, :list_cons)
+           ]
 
     [nil_equation | _rest] =
-      MatcherEqns.all(env) |> Enum.filter(&(&1.matcher == :"list_append.match_1"))
+      MatcherEqns.all(env) |> Enum.filter(&(&1.matcher == :list_append_match_1))
 
     assert nil_equation.constructor == :list_nil
-    assert {:ok, equations} = MatcherEqns.generated(env, :"list_append.match_1")
-    assert Enum.map(equations, & &1.name) == names
-    assert {:ok, theorem} = MatcherEqns.realize(env, :"list_append.match_1.eq_list_nil")
-    assert theorem.name == :"list_append.match_1.eq_list_nil"
+    assert {:ok, equations} = MatcherEqns.generated(env, :list_append_match_1)
+    assert Enum.map(equations, & &1.id) == names
+
+    assert {:ok, theorem} =
+             MatcherEqns.realize(env, Name.matcher_equation(:list_append_match_1, :list_nil))
+
+    assert theorem.name == :theoria__matcher_eq__list_append_match_1__list_nil
   end
 
   test "environment replay rejects corrupted matcher declarations" do
     {:ok, env} = Prelude.env()
-    {:ok, constant} = Theoria.Env.fetch(env, :"nat_add.match_1")
+    {:ok, constant} = Theoria.Env.fetch(env, :nat_add_match_1)
     corrupted = %{constant | value: Term.const(:zero)}
-    env = %{env | constants: Map.put(env.constants, :"nat_add.match_1", corrupted)}
+    env = %{env | constants: Map.put(env.constants, :nat_add_match_1, corrupted)}
 
     assert {:error, error} = Theoria.Kernel.validate_env(env)
     assert error.reason in [:type_mismatch, :invalid_declaration]
@@ -1038,7 +1082,11 @@ defmodule Theoria.EquationTest do
     {:ok, env} = Prelude.env()
 
     assert {:ok, rules} = Eqns.rules(env, :nat_add)
-    assert Enum.map(rules, & &1.name) == [:"nat_add.eq_zero", :"nat_add.eq_succ"]
+
+    assert Enum.map(rules, & &1.name) == [
+             :theoria__eq__nat_add__zero,
+             :theoria__eq__nat_add__succ
+           ]
 
     assert {:ok, env, theorems} = Eqns.install_all(env)
     assert length(theorems) == 16
@@ -1053,12 +1101,20 @@ defmodule Theoria.EquationTest do
       |> Info.all()
       |> Map.new(&{&1.name, Enum.map(Lemma.generated_for(&1), fn lemma -> lemma.name end)})
 
-    assert generated.bool_not == [:"bool_not.eq_true", :"bool_not.eq_false"]
-    assert :"bool_and.eq_true_false" in generated.bool_and
-    assert :"bool_or.eq_false_true" in generated.bool_or
-    assert generated.nat_add == [:"nat_add.eq_zero", :"nat_add.eq_succ"]
-    assert generated.list_length == [:"list_length.eq_nil", :"list_length.eq_cons"]
-    assert generated.list_append == [:"list_append.eq_nil", :"list_append.eq_cons"]
+    assert generated.bool_not == [:theoria__eq__bool_not__true, :theoria__eq__bool_not__false]
+    assert :theoria__eq__bool_and__true_false in generated.bool_and
+    assert :theoria__eq__bool_or__false_true in generated.bool_or
+    assert generated.nat_add == [:theoria__eq__nat_add__zero, :theoria__eq__nat_add__succ]
+
+    assert generated.list_length == [
+             :theoria__eq__list_length__nil,
+             :theoria__eq__list_length__cons
+           ]
+
+    assert generated.list_append == [
+             :theoria__eq__list_append__nil,
+             :theoria__eq__list_append__cons
+           ]
   end
 
   test "context exposes branch and outer values" do

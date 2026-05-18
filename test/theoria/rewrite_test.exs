@@ -45,7 +45,7 @@ defmodule Theoria.RewriteTest do
 
     bool_false = Term.const(false)
 
-    assert {:ok, ^bool_false, %Rule{name: :"bool_not.eq_true"}} =
+    assert {:ok, ^bool_false, %Rule{name: :theoria__eq__bool_not__true}} =
              Database.once(database, Term.app(Term.const(:bool_not), Term.const(true)))
 
     singleton = list_cons(nat(), zero(), list_nil())
@@ -56,23 +56,28 @@ defmodule Theoria.RewriteTest do
       |> Term.app(list_nil())
       |> Term.app(singleton)
 
-    assert {:ok, ^singleton, %Rule{name: :"list_append.eq_nil"}} =
+    assert {:ok, ^singleton, %Rule{name: :theoria__eq__list_append__nil}} =
              Database.once(database, append_nil)
 
     one = Term.app(Term.const(:succ), zero())
     add_zero = Term.const(:nat_add) |> Term.app(zero()) |> Term.app(one)
 
-    assert {:ok, ^one, %Rule{name: :"nat_add.eq_zero"}} = Database.once(database, add_zero)
+    assert {:ok, ^one, %Rule{name: :theoria__eq__nat_add__zero}} =
+             Database.once(database, add_zero)
   end
 
   test "database can include generated matcher equations without indexed metadata" do
     {:ok, env} = Prelude.env()
     database = Database.from_env_all_equations(env)
 
-    assert Enum.any?(database.rules, &(&1.name == :"bool_not.match_1.eq_true"))
-    refute Enum.any?(database.rules, &(&1.name == :"vec_validation_match.eq_vec_nil"))
+    assert Enum.any?(database.rules, &(&1.name == :theoria__matcher_eq__bool_not_match_1__true))
 
-    assert {:ok, rewritten, %Rule{name: :"bool_not.match_1.eq_true"}} =
+    refute Enum.any?(
+             database.rules,
+             &(&1.name == :theoria__indexed_matcher_eq__vec_validation_match__vec_nil)
+           )
+
+    assert {:ok, rewritten, %Rule{name: :theoria__matcher_eq__bool_not_match_1__true}} =
              Database.once(database, Term.app(Term.const(:bool_not), Term.const(true)))
 
     assert rewritten == Term.const(false)

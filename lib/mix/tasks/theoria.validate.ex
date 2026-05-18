@@ -5,7 +5,7 @@ defmodule Mix.Tasks.Theoria.Validate do
 
   use Mix.Task
 
-  alias Theoria.Equation.{Info, Lemma}
+  alias Theoria.Equation.{Info, Lemma, Name}
   alias Theoria.Validation
   alias Theoria.Validation.{Corpus, Options, Report}
 
@@ -97,7 +97,9 @@ defmodule Mix.Tasks.Theoria.Validate do
     Mix.shell().info("  #{Info.summary(equation)}")
 
     if Keyword.get(opts, :verbose, false) do
-      Enum.each(Lemma.generated_for(equation), &Mix.shell().info("    #{&1.name}"))
+      Enum.each(Lemma.generated_for(equation), fn lemma ->
+        Mix.shell().info("    #{Name.format(lemma.id)}")
+      end)
     end
   end
 

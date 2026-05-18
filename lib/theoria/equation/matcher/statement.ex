@@ -25,9 +25,7 @@ defmodule Theoria.Equation.Matcher.Statement do
 
   def indexed_to_lemma(%MatcherEquation{} = equation) do
     {:ok,
-     Lemma.new(equation.name, equation.left, equation.right,
-       equality_type: equation.statement_type
-     )}
+     Lemma.new(equation.id, equation.left, equation.right, equality_type: equation.statement_type)}
   end
 
   @doc "Builds indexed matcher equation statements for every equation."

@@ -109,7 +109,12 @@ defmodule Theoria.Library.VecTest do
     assert {:ok, package} = IndexedPackage.build(info, env)
     assert :ok = IndexedPackage.validate(package)
     assert {:ok, theorems} = IndexedRealization.realize_all(package)
-    assert Enum.map(theorems, & &1.name) == [:"vec_match.eq_vec_nil", :"vec_match.eq_vec_cons"]
+
+    assert Enum.map(theorems, & &1.name) == [
+             :theoria__indexed_matcher_eq__vec_match__vec_nil,
+             :theoria__indexed_matcher_eq__vec_match__vec_cons
+           ]
+
     assert {:ok, [nil_equation, cons_equation]} = MatcherEqns.indexed_statements(info, env)
     assert nil_equation.statement_status == :planned
     assert cons_equation.statement_status == :planned

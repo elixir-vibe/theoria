@@ -2,6 +2,7 @@ defmodule Theoria.Equation.Matcher.Indexed.RealizationTest do
   use ExUnit.Case, async: true
 
   alias Theoria.Equation.Matcher.Indexed.Realization
+  alias Theoria.Equation.Name
   alias Theoria.Kernel
   alias Theoria.Prelude
   alias Theoria.Validation.IndexedMatchers
@@ -15,9 +16,9 @@ defmodule Theoria.Equation.Matcher.Indexed.RealizationTest do
     assert Realization.blockers(plan) == []
     assert plan.matcher == :vec_validation_match
 
-    assert Enum.map(plan.equations, & &1.name) == [
-             :"vec_validation_match.eq_vec_nil",
-             :"vec_validation_match.eq_vec_cons"
+    assert Enum.map(plan.equations, & &1.lemma.id) == [
+             Name.indexed_matcher_equation(:vec_validation_match, :vec_nil),
+             Name.indexed_matcher_equation(:vec_validation_match, :vec_cons)
            ]
 
     assert Enum.all?(plan.equations, &(&1.proof_strategy == :recursor_iota_refl))
@@ -30,15 +31,20 @@ defmodule Theoria.Equation.Matcher.Indexed.RealizationTest do
     {:ok, env} = Prelude.env()
     {:ok, package} = IndexedMatchers.check(env)
 
-    assert {:ok, theorem} = Realization.realize(package, :"vec_validation_match.eq_vec_cons")
-    assert theorem.name == :"vec_validation_match.eq_vec_cons"
+    assert {:ok, theorem} =
+             Realization.realize(
+               package,
+               Name.indexed_matcher_equation(:vec_validation_match, :vec_cons)
+             )
+
+    assert theorem.name == :theoria__indexed_matcher_eq__vec_validation_match__vec_cons
     assert :ok = Kernel.check(package.env, theorem.proof, theorem.type)
 
     assert {:ok, theorems} = Realization.realize_all(package)
 
     assert Enum.map(theorems, & &1.name) == [
-             :"vec_validation_match.eq_vec_nil",
-             :"vec_validation_match.eq_vec_cons"
+             Name.to_declaration(Name.indexed_matcher_equation(:vec_validation_match, :vec_nil)),
+             Name.to_declaration(Name.indexed_matcher_equation(:vec_validation_match, :vec_cons))
            ]
   end
 end

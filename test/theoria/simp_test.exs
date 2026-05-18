@@ -13,7 +13,7 @@ defmodule Theoria.SimpTest do
     one = Term.app(Term.const(:succ), zero())
     term = Term.const(:nat_add) |> Term.app(zero()) |> Term.app(one)
 
-    assert {:ok, ^one, %Step{rule: :"nat_add.eq_zero", before: ^term, after: ^one}} =
+    assert {:ok, ^one, %Step{rule: :theoria__eq__nat_add__zero, before: ^term, after: ^one}} =
              Simp.once(env, term)
   end
 
@@ -22,7 +22,11 @@ defmodule Theoria.SimpTest do
     one = Term.app(Term.const(:succ), zero())
     term = Term.const(:nat_add) |> Term.app(zero()) |> Term.app(one)
 
-    assert %{term: ^one, steps: [%Step{rule: :"nat_add.eq_zero", after: ^one}], stopped: :normal} =
+    assert %{
+             term: ^one,
+             steps: [%Step{rule: :theoria__eq__nat_add__zero, after: ^one}],
+             stopped: :normal
+           } =
              Simp.normalize(env, term)
   end
 
@@ -42,13 +46,16 @@ defmodule Theoria.SimpTest do
 
     refute Enum.any?(
              equation_rules,
-             &match?(%Rule{rewrite: %{name: :"bool_not.match_1.eq_true"}}, &1)
+             &match?(%Rule{rewrite: %{name: :theoria__matcher_eq__bool_not_match_1__true}}, &1)
            )
 
     assert Enum.any?(
              all_rules,
              &match?(
-               %Rule{rewrite: %{name: :"bool_not.match_1.eq_true"}, source: :matcher_equation},
+               %Rule{
+                 rewrite: %{name: :theoria__matcher_eq__bool_not_match_1__true},
+                 source: :matcher_equation
+               },
                &1
              )
            )

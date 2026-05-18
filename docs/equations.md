@@ -91,32 +91,34 @@ The prelude does not install generated equation theorems by default yet.
 `Theoria.Equation.Eqns` is the small Theoria equivalent of Lean's equation-theorem lookup layer:
 
 ```elixir
+alias Theoria.Equation.Name
+
 Theoria.Equation.Eqns.get(env, :nat_add)
-#=> {:ok, [:"nat_add.eq_zero", :"nat_add.eq_succ"]}
+#=> {:ok, [Name.equation(:nat_add, :zero), Name.equation(:nat_add, :succ)]}
 
 Theoria.Equation.Eqns.generated(env, :nat_add)
 Theoria.Equation.Eqns.unfold(env, :nat_add)
-Theoria.Equation.Eqns.source(env, :"nat_add.eq_succ")
+Theoria.Equation.Eqns.source(env, Name.equation(:nat_add, :succ))
 Theoria.Equation.Eqns.installed?(env, :nat_add)
 ```
 
 `Theoria.Equation.Matcher.Eqns` is the matcher-equation side of the same groundwork and reads first-class matcher declarations from the environment:
 
 ```elixir
-Theoria.Equation.Matcher.Eqns.get(env, :"nat_add.match_1")
-#=> {:ok, [:"nat_add.match_1.eq_zero", :"nat_add.match_1.eq_succ"]}
+Theoria.Equation.Matcher.Eqns.get(env, :nat_add_match_1)
+#=> {:ok, [Name.matcher_equation(:nat_add_match_1, :zero), Name.matcher_equation(:nat_add_match_1, :succ)]}
 
-Theoria.Equation.Matcher.Eqns.source(env, :"nat_add.match_1.eq_succ")
-#=> {:ok, :"nat_add.match_1"}
+Theoria.Equation.Matcher.Eqns.source(env, Name.matcher_equation(:nat_add_match_1, :succ))
+#=> {:ok, :nat_add_match_1}
 ```
 
 Generated theorem metadata can also be realized without installing declarations:
 
 ```elixir
 Theoria.Equation.Eqns.realize(env, :nat_add)
-Theoria.Equation.Eqns.realize(env, :"nat_add.eq_succ")
-Theoria.Equation.Eqns.realize(env, :"nat_add.eq_def")
-Theoria.Equation.Matcher.Eqns.realize(env, :"nat_add.match_1.eq_succ")
+Theoria.Equation.Eqns.realize(env, Name.equation(:nat_add, :succ))
+Theoria.Equation.Eqns.realize(env, Name.unfold(:nat_add))
+Theoria.Equation.Matcher.Eqns.realize(env, Name.matcher_equation(:nat_add_match_1, :succ))
 ```
 
 `Theoria.Equation.Extension` provides typed registry helpers for source lookup, matcher lookup, unfold names, generated theorem-name enumeration, and an in-memory `Extension.Registry` snapshot. It is currently rebuilt from environment metadata rather than stored as a persistent disk-backed extension.

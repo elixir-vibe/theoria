@@ -142,7 +142,7 @@ Theoria.Equation.Eqns.realize(env, Name.unfold(:nat_add))
 Theoria.Equation.Matcher.Eqns.realize(env, Name.matcher_equation(:nat_add_match_1, :succ))
 ```
 
-`Theoria.Equation.Extension` provides typed registry helpers for source lookup, matcher lookup, unfold names, generated theorem-name enumeration, and an in-memory `Extension.Registry` snapshot. It is currently rebuilt from environment metadata rather than stored as a persistent disk-backed extension.
+`Theoria.Equation.Extension` provides typed registry helpers for source lookup, matcher lookup, unfold names, generated theorem-name enumeration, structured theorem identities (`theorem_ids/1`, `equation_ids/1`, `matcher_equation_ids/2`, `unfold_id/2`), and an in-memory `Extension.Registry` snapshot. It is currently rebuilt from environment metadata rather than stored as a persistent disk-backed extension.
 
 ## Matcher maturity
 
@@ -185,6 +185,14 @@ Theoria.Simp.normalize(env, term, max_steps: 100)
 ```
 
 It repeatedly applies priority-sorted generated equation rewrite rules and returns the final term plus rich `%Theoria.Simp.Step{}` trace entries. It is not a trusted simplifier yet.
+
+Indexed matcher equations are excluded from combined rewrite/simp databases by default. For explicit experiments, use:
+
+```elixir
+Theoria.Rewrite.Database.from_env_indexed_matcher_equations(env)
+Theoria.Simp.Database.from_env_indexed_matcher_equations(env)
+Theoria.Rewrite.Database.from_env_all_equations(env, include_indexed_matchers: true)
+```
 
 A small smoke-test task runs built-in examples:
 

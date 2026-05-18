@@ -7,7 +7,10 @@ Post-0.2 development toward the next experimental API boundary.
 - Introduced structured `Theoria.Equation.Name` identities for ordinary, unfold, matcher, and indexed matcher equations.
 - Kept generated equation declaration atoms as internal kernel/environment addresses instead of public identity values.
 - Added selector-based indexed matcher equation lookup/realization and opt-in Vec indexed equation theorem installation.
+- Added indexed matcher equation metadata recording in opt-in Vec environments.
 - Carried structured equation identities through rewrite/simp rule metadata and friendly CLI/Lean labels.
+- Added explicit indexed matcher rewrite/simp database constructors behind opt-in policy.
+- Generated the Lean oracle mirror declaration for the validation Vec matcher from the checked matcher type.
 
 ## 0.2.0
 

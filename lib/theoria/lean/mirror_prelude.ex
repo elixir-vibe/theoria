@@ -1,6 +1,8 @@
 defmodule Theoria.Lean.MirrorPrelude do
   @moduledoc "Experimental/internal API for 0.2; subject to change before 0.3. Lean declarations that bridge Theoria primitives not rendered directly to Lean core."
 
+  alias Theoria.Equation.Matcher.Spec, as: MatcherSpec
+  alias Theoria.Lean.Encode
   alias Theoria.Lean.Mirror.Inductive
   alias Theoria.Library.Vec
 
@@ -29,15 +31,12 @@ defmodule Theoria.Lean.MirrorPrelude do
   end
 
   defp indexed_matcher_source do
+    {:ok, env} = Vec.env()
+    info = Vec.indexed_matcher_info(:vec_validation_match)
+    {:ok, spec} = MatcherSpec.indexed_from_info(info, env: env)
+
     """
-    axiom tVecValidationMatch
-      (a : Type)
-      (motive : forall (n : Nat), TVec a n -> Type)
-      (n : Nat)
-      (xs : TVec a n)
-      (onVecNil : motive Nat.zero (@TVec.vec_nil a))
-      (onVecCons : forall (head : a), forall (n : Nat), forall (tail : TVec a n), motive n tail -> motive (Nat.succ n) (@TVec.vec_cons a head n tail)) :
-      motive n xs
+    axiom #{Encode.constant(spec.name)} : #{Encode.term(spec.type)}
 
     """
   end

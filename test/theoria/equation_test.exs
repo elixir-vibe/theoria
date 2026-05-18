@@ -91,6 +91,13 @@ defmodule Theoria.EquationTest do
     assert SchemaBuilder.overlaps(duplicate) == %{0 => [1]}
   end
 
+  test "matcher info exposes default matcher naming helpers" do
+    assert MatcherInfo.default_name(:nat_add) == :nat_add_match_1
+    assert MatcherInfo.default_name(:nat_add, 2) == :nat_add_match_2
+    assert MatcherInfo.source_name(:nat_add_match_1) == {:ok, :nat_add}
+    assert MatcherInfo.source_name(:nat_add) == :error
+  end
+
   test "matcher info records small Lean-like matcher metadata" do
     alt = %Alternative{constructor: :zero, num_fields: 0}
     info = MatcherInfo.new(:match_nat, 0, 1, [alt])
@@ -123,6 +130,13 @@ defmodule Theoria.EquationTest do
              {:ok, :bool_and_match_1}
 
     assert Extension.unfold_name(env, :nat_add) == {:ok, :theoria__unfold__nat_add__def}
+    assert Extension.unfold_id(env, :nat_add) == {:ok, Name.unfold(:nat_add)}
+
+    assert Name.equation(:bool_and, :true_true) in Extension.equation_ids(
+             registry.definitions.bool_and
+           )
+
+    assert Name.matcher_equation(:bool_and_match_1, :true_true) in Extension.theorem_ids(registry)
 
     assert Extension.summary(registry) == %{
              definitions: 6,

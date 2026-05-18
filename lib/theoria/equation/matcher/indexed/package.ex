@@ -75,8 +75,8 @@ defmodule Theoria.Equation.Matcher.Indexed.Package do
       package.matcher.mode != :indexed_matcher ->
         {:error, {:indexed_matcher_mode_mismatch, package.matcher.name}}
 
-      package.matcher.equation_names != [] ->
-        {:error, {:indexed_matcher_equations_installed, package.matcher.name}}
+      package.matcher.equation_names not in [[], Enum.map(package.equations, & &1.name)] ->
+        {:error, {:indexed_matcher_equation_name_mismatch, package.matcher.name}}
 
       true ->
         :ok

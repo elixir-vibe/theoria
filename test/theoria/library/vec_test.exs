@@ -9,6 +9,8 @@ defmodule Theoria.Library.VecTest do
   alias Theoria.Kernel
   alias Theoria.Library.Vec
   alias Theoria.Normalize
+  alias Theoria.Rewrite.Database, as: RewriteDatabase
+  alias Theoria.Simp.Database, as: SimpDatabase
   alias Theoria.Term
 
   import Theoria.DSL
@@ -125,6 +127,24 @@ defmodule Theoria.Library.VecTest do
 
     assert {:ok, _constant} = Env.fetch(env, :theoria__indexed_matcher_eq__vec_match__vec_nil)
     assert {:ok, _constant} = Env.fetch(env, :theoria__indexed_matcher_eq__vec_match__vec_cons)
+    assert {:ok, matcher} = Env.fetch_matcher(env, :vec_match)
+
+    assert matcher.equation_names == [
+             :theoria__indexed_matcher_eq__vec_match__vec_nil,
+             :theoria__indexed_matcher_eq__vec_match__vec_cons
+           ]
+
+    assert length(RewriteDatabase.from_env_indexed_matcher_equations(env).rules) == 2
+    assert length(SimpDatabase.from_env_indexed_matcher_equations(env).rules) == 2
+
+    default_rules = RewriteDatabase.from_env_all_equations(env).rules
+
+    indexed_rules =
+      RewriteDatabase.from_env_all_equations(env, include_indexed_matchers: true).rules
+
+    assert length(indexed_rules) == length(default_rules) + 2
+    refute Enum.any?(default_rules, &match?(%{id: %{kind: :indexed_matcher_equation}}, &1))
+    assert Enum.any?(indexed_rules, &match?(%{id: %{kind: :indexed_matcher_equation}}, &1))
     assert {:ok, _replayed} = Kernel.validate_env(env)
   end
 

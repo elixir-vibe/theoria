@@ -3,6 +3,7 @@ defmodule Theoria.Equation.Matcher.Statement.Vec do
 
   alias Theoria.Equation.Matcher.Equation, as: MatcherEquation
   alias Theoria.Equation.Matcher.Statement.Frame
+  alias Theoria.Equation.Matcher.Statement.Indexed
   alias Theoria.Term
 
   defmodule FieldBinder do
@@ -56,13 +57,7 @@ defmodule Theoria.Equation.Matcher.Statement.Vec do
   def indexed(shape, %MatcherEquation{} = equation, _alternative),
     do: {:error, {:unsupported_indexed_matcher_statement, shape.family, equation.constructor}}
 
-  defp base_frame(shape), do: Frame.new(statement_binders(shape))
-
-  defp statement_binders(shape),
-    do:
-      shape.parameters ++
-        [{shape.motive_name, shape.motive_type}] ++
-        shape.index_binders ++ shape.discriminant_binders ++ shape.alternative_binders
+  defp base_frame(shape), do: Frame.new(Indexed.statement_binders(shape))
 
   defp constructor_field_binders(%{family: :Vec} = shape, alternative, frame) do
     names =
@@ -95,23 +90,19 @@ defmodule Theoria.Equation.Matcher.Statement.Vec do
   defp vec_field_type(shape, %{position: 2}, frame) do
     with {:ok, a} <- Frame.ref(frame, :a),
          {:ok, n} <- newest_field_ref(frame) do
-      {:ok, Term.const(:Vec, statement_levels(shape)) |> Term.app(a) |> Term.app(n)}
+      {:ok, Term.const(:Vec, Indexed.statement_levels(shape)) |> Term.app(a) |> Term.app(n)}
     end
   end
 
   defp constructor_application(shape, alternative, frame, field_binders) do
-    with {:ok, parameters} <- refs_for_names(frame, Keyword.keys(shape.parameters)),
+    with {:ok, parameters} <- Indexed.refs_for_names(frame, Keyword.keys(shape.parameters)),
          {:ok, fields} <- field_refs(frame, field_binders) do
       arguments = parameters ++ fields
 
       {:ok,
-       Enum.reduce(
-         arguments,
-         Term.const(alternative.constructor, statement_levels(shape)),
-         fn argument, term ->
-           Term.app(term, argument)
-         end
-       )}
+       alternative.constructor
+       |> Term.const(Indexed.statement_levels(shape))
+       |> Indexed.apply_args(arguments)}
     end
   end
 
@@ -125,10 +116,7 @@ defmodule Theoria.Equation.Matcher.Statement.Vec do
     with {:ok, fields} <- field_refs(frame, field_binders),
          {:ok, ihs} <- recursive_hypotheses(shape, matcher, frame, field_binders),
          {:ok, alternative_ref} <- Frame.ref(frame, alternative.binder_name) do
-      {:ok,
-       Enum.reduce(fields ++ ihs, alternative_ref, fn argument, term ->
-         Term.app(term, argument)
-       end)}
+      {:ok, Indexed.apply_args(alternative_ref, fields ++ ihs)}
     end
   end
 
@@ -157,37 +145,22 @@ defmodule Theoria.Equation.Matcher.Statement.Vec do
   defp field_refs(frame, field_binders) do
     field_binders
     |> Enum.map(& &1.name)
-    |> then(&refs_for_names(frame, &1))
+    |> then(&Indexed.refs_for_names(frame, &1))
   end
 
   defp matcher_application(shape, matcher, frame, [index, major]) do
-    with {:ok, parameters} <- refs_for_names(frame, Keyword.keys(shape.parameters)),
+    with {:ok, parameters} <- Indexed.refs_for_names(frame, Keyword.keys(shape.parameters)),
          {:ok, motive} <- Frame.ref(frame, shape.motive_name),
          {:ok, alternatives} <- alternative_refs(shape, frame) do
       arguments = parameters ++ [motive, index, major] ++ alternatives
 
       {:ok,
-       Enum.reduce(arguments, Term.const(matcher, statement_levels(shape)), fn argument, term ->
-         Term.app(term, argument)
-       end)}
+       matcher |> Term.const(Indexed.statement_levels(shape)) |> Indexed.apply_args(arguments)}
     end
   end
 
   defp alternative_refs(shape, frame) do
-    refs_for_names(frame, Enum.map(shape.alternatives, & &1.binder_name))
-  end
-
-  defp refs_for_names(frame, names) do
-    Enum.reduce_while(names, {:ok, []}, fn name, {:ok, refs} ->
-      case Frame.ref(frame, name) do
-        {:ok, ref} -> {:cont, {:ok, [ref | refs]}}
-        {:error, _reason} = error -> {:halt, error}
-      end
-    end)
-    |> case do
-      {:ok, refs} -> {:ok, Enum.reverse(refs)}
-      {:error, _reason} = error -> error
-    end
+    Indexed.refs_for_names(frame, Enum.map(shape.alternatives, & &1.binder_name))
   end
 
   defp field_binder_pairs(field_binders) do
@@ -246,20 +219,5 @@ defmodule Theoria.Equation.Matcher.Statement.Vec do
     end
   end
 
-  defp statement_levels(shape) do
-    shape.parameters
-    |> Keyword.values()
-    |> Enum.find_value([1], fn
-      %Term.Sort{level: level} -> [level]
-      _type -> false
-    end)
-  end
-
-  defp case_binders(alternative), do: collect_foralls(alternative.binder_type)
-
-  defp collect_foralls(%Term.Forall{name: name, domain: domain, body: body}) do
-    [{name, domain} | collect_foralls(body)]
-  end
-
-  defp collect_foralls(_body), do: []
+  defp case_binders(alternative), do: Indexed.collect_foralls(alternative.binder_type)
 end

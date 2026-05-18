@@ -2,6 +2,8 @@ defmodule Theoria.Library.Vec do
   @moduledoc "Length-indexed vectors."
 
   alias Theoria.Env
+  alias Theoria.Env.Constant
+  alias Theoria.Env.Matcher, as: EnvMatcher
   alias Theoria.Equation.Matcher.Indexed.Package, as: IndexedPackage
   alias Theoria.Equation.Matcher.Indexed.Realization, as: IndexedRealization
   alias Theoria.Equation.Matcher.Indexed.Vec, as: IndexedVec
@@ -53,8 +55,9 @@ defmodule Theoria.Library.Vec do
   @spec install_indexed_matcher_equations(IndexedPackage.t()) ::
           {:ok, Env.t(), [Theorem.t()]} | {:error, term()}
   def install_indexed_matcher_equations(%IndexedPackage{} = package) do
-    with {:ok, theorems} <- IndexedRealization.realize_all(package) do
-      install_theorems(package.env, theorems)
+    with {:ok, theorems} <- IndexedRealization.realize_all(package),
+         {:ok, env, installed} <- install_theorems(package.env, theorems) do
+      {:ok, record_indexed_equation_names(env, package, installed), installed}
     end
   end
 
@@ -92,6 +95,18 @@ defmodule Theoria.Library.Vec do
       {:error, _reason} = error -> {:halt, error}
     end
   end
+
+  defp record_indexed_equation_names(%Env{constants: constants} = env, package, theorems) do
+    names = Enum.map(theorems, & &1.name)
+
+    constants =
+      Map.update!(constants, package.matcher.name, &put_indexed_equation_names(&1, names))
+
+    %{env | constants: constants}
+  end
+
+  defp put_indexed_equation_names(%Constant{metadata: %EnvMatcher{} = matcher} = constant, names),
+    do: %{constant | metadata: %{matcher | equation_names: names}}
 
   defp maybe_install_indexed_equations(package, opts) do
     if Keyword.get(opts, :install_equations, false) do

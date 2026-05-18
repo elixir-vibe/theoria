@@ -66,6 +66,7 @@ defmodule Theoria.MixProject do
       extras: [
         "README.md",
         "CHANGELOG.md",
+        "docs/release_0_3.md",
         "docs/release_0_2.md",
         "docs/design.md",
         "docs/inductives.md",

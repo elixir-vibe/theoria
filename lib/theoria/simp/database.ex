@@ -27,6 +27,17 @@ defmodule Theoria.Simp.Database do
     |> new()
   end
 
+  @doc "Builds a simplifier database from installed indexed matcher equations."
+  @spec from_env_indexed_matcher_equations(Env.t(), keyword()) :: t()
+  def from_env_indexed_matcher_equations(%Env{} = env, opts \\ []) do
+    env
+    |> RewriteDatabase.from_env_indexed_matcher_equations(opts)
+    |> then(fn database ->
+      Enum.map(database.rules, &Rule.new(&1, source: :matcher_equation))
+    end)
+    |> new()
+  end
+
   @doc "Builds a simplifier database from generated definition and matcher equations."
   @spec from_env_all_equations(Env.t(), keyword()) :: t()
   def from_env_all_equations(%Env{} = env, opts \\ []) do

@@ -68,13 +68,32 @@ defmodule Theoria.Equation.Matcher.Info do
     }
   end
 
+  @doc "Returns the default generated matcher declaration name for a definition."
+  @spec default_name(atom(), pos_integer()) :: atom()
+  def default_name(definition_name, ordinal \\ 1)
+      when is_atom(definition_name) and is_integer(ordinal) and ordinal > 0 do
+    :"#{definition_name}_match_#{ordinal}"
+  end
+
+  @doc "Returns the source definition prefix for a default generated matcher declaration."
+  @spec source_name(atom()) :: {:ok, atom()} | :error
+  def source_name(matcher_name) when is_atom(matcher_name) do
+    matcher_name
+    |> Atom.to_string()
+    |> String.split("_match_", parts: 2)
+    |> case do
+      [source, ordinal] -> source_name_from_parts(source, ordinal)
+      _other -> :error
+    end
+  end
+
   @doc "Builds matcher metadata from supported equation schema metadata."
   @spec for_schema(atom(), Theoria.Equation.Schema.t(), keyword()) :: t()
   def for_schema(definition_name, %Theoria.Equation.Schema{family: family} = schema, opts \\ []) do
     discriminant_count = opts |> Keyword.get(:discriminants, []) |> length() |> max(1)
 
     new(
-      :"#{definition_name}_match_1",
+      default_name(definition_name),
       num_params(family),
       discriminant_count,
       alternatives(family, schema, discriminant_count),
@@ -122,6 +141,13 @@ defmodule Theoria.Equation.Matcher.Info do
       %Alternative{constructor: :list_nil, num_fields: 0},
       %Alternative{constructor: :list_cons, num_fields: 2}
     ]
+  end
+
+  defp source_name_from_parts(source, ordinal) do
+    case Integer.parse(ordinal) do
+      {n, ""} when n > 0 -> {:ok, String.to_atom(source)}
+      _invalid -> :error
+    end
   end
 
   defp suffix_pattern(:true_true), do: [true, true]

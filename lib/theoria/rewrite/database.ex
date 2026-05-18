@@ -6,6 +6,7 @@ defmodule Theoria.Rewrite.Database do
   alias Theoria.Equation.Lemma
   alias Theoria.Equation.Matcher.Eqns, as: MatcherEqns
   alias Theoria.Equation.Matcher.Equation, as: MatcherEquation
+  alias Theoria.Equation.Matcher.Indexed.Vec, as: IndexedVec
   alias Theoria.Rewrite
   alias Theoria.Rewrite.Rule
   alias Theoria.Term
@@ -47,12 +48,40 @@ defmodule Theoria.Rewrite.Database do
     |> new()
   end
 
+  @doc "Builds a rewrite database from installed indexed matcher equation metadata."
+  @spec from_env_indexed_matcher_equations(Env.t(), keyword()) :: t()
+  def from_env_indexed_matcher_equations(%Env{} = env, opts \\ []) do
+    env
+    |> Env.matchers()
+    |> Enum.filter(&(&1.mode == :indexed_matcher and &1.equation_names != []))
+    |> Enum.flat_map(&indexed_matcher_rules(env, &1, opts))
+    |> new()
+  end
+
   @doc "Builds a rewrite database from generated definition and matcher equations in an environment."
   @spec from_env_all_equations(Env.t(), keyword()) :: t()
   def from_env_all_equations(%Env{} = env, opts \\ []) do
     generated = from_env_equations(env, opts).rules
     matchers = from_env_matcher_equations(env, opts).rules
-    new(generated ++ matchers)
+    indexed = indexed_rules(env, opts)
+    new(generated ++ matchers ++ indexed)
+  end
+
+  defp indexed_rules(env, opts) do
+    if Keyword.get(opts, :include_indexed_matchers, false) do
+      from_env_indexed_matcher_equations(env, opts).rules
+    else
+      []
+    end
+  end
+
+  defp indexed_matcher_rules(env, matcher, opts) do
+    info = IndexedVec.info(matcher.name, matcher.source)
+
+    case MatcherEqns.indexed_lemmas(info, env) do
+      {:ok, lemmas} -> Enum.map(lemmas, &Rule.from_lemma(&1, opts))
+      {:error, _reason} -> []
+    end
   end
 
   @doc "Applies the first rule that rewrites the term."

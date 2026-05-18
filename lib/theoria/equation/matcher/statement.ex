@@ -2,47 +2,8 @@ defmodule Theoria.Equation.Matcher.Statement do
   @moduledoc "Experimental/internal API for 0.2; subject to change before 0.3. Statement planning for matcher equations."
 
   alias Theoria.Equation.Matcher.Equation, as: MatcherEquation
+  alias Theoria.Equation.Matcher.Statement.Frame
   alias Theoria.Term
-
-  defmodule Frame do
-    @moduledoc false
-
-    alias Theoria.Term
-
-    @enforce_keys [:binders]
-    defstruct [:binders]
-
-    def new(binders), do: %__MODULE__{binders: binders}
-
-    def push(%__MODULE__{binders: binders}, name, type),
-      do: %__MODULE__{binders: binders ++ [{name, type}]}
-
-    def push_many(frame, binders) do
-      Enum.reduce(binders, frame, fn {name, type}, acc -> push(acc, name, type) end)
-    end
-
-    def binders(%__MODULE__{binders: binders}), do: binders
-
-    def ref(%__MODULE__{binders: binders}, name) do
-      index =
-        binders
-        |> Enum.reverse()
-        |> Enum.find_index(&(elem(&1, 0) == name))
-
-      if is_nil(index),
-        do: raise(ArgumentError, "unknown matcher equation binder #{inspect(name)}")
-
-      Term.bvar(index)
-    end
-
-    def forall(%__MODULE__{} = frame, body), do: forall_telescope(binders(frame), body)
-
-    defp forall_telescope(binders, result) do
-      Enum.reduce(Enum.reverse(binders), result, fn {name, type}, body ->
-        Term.forall(name, type, body)
-      end)
-    end
-  end
 
   @doc "Builds an indexed matcher equation theorem statement."
   @spec indexed(term(), MatcherEquation.t()) :: {:ok, Term.t()} | {:error, term()}
@@ -76,13 +37,14 @@ defmodule Theoria.Equation.Matcher.Statement do
        ) do
     frame = base_frame(shape)
     index = hd(alternative.index_patterns)
-    major = constructor_application(shape, alternative, frame)
-    motive = Frame.ref(frame, shape.motive_name)
-    result_type = motive |> Term.app(index) |> Term.app(major)
-    lhs = matcher_application(shape, equation.matcher, frame, [index, major])
-    rhs = Frame.ref(frame, alternative.binder_name)
 
-    {:ok, Frame.forall(frame, Term.eq(result_type, lhs, rhs))}
+    with {:ok, major} <- constructor_application(shape, alternative, frame),
+         {:ok, motive} <- Frame.ref(frame, shape.motive_name),
+         {:ok, lhs} <- matcher_application(shape, equation.matcher, frame, [index, major]),
+         {:ok, rhs} <- Frame.ref(frame, alternative.binder_name) do
+      result_type = motive |> Term.app(index) |> Term.app(major)
+      {:ok, Frame.forall(frame, Term.eq(result_type, lhs, rhs))}
+    end
   end
 
   defp indexed_for_alternative(
@@ -91,16 +53,19 @@ defmodule Theoria.Equation.Matcher.Statement do
          alternative
        ) do
     base = base_frame(shape)
-    field_binders = constructor_field_binders(shape, alternative, base)
-    frame = Frame.push_many(base, field_binders)
     index = hd(alternative.index_patterns)
-    major = constructor_application(shape, alternative, frame)
-    motive = Frame.ref(frame, shape.motive_name)
-    result_type = motive |> Term.app(index) |> Term.app(major)
-    lhs = matcher_application(shape, equation.matcher, frame, [index, major])
-    rhs = alternative_application(shape, equation.matcher, frame, alternative)
 
-    {:ok, Frame.forall(frame, Term.eq(result_type, lhs, rhs))}
+    with {:ok, field_binders} <- constructor_field_binders(shape, alternative, base) do
+      frame = Frame.push_many(base, field_binders)
+
+      with {:ok, major} <- constructor_application(shape, alternative, frame),
+           {:ok, motive} <- Frame.ref(frame, shape.motive_name),
+           {:ok, lhs} <- matcher_application(shape, equation.matcher, frame, [index, major]),
+           {:ok, rhs} <- alternative_application(shape, equation.matcher, frame, alternative) do
+        result_type = motive |> Term.app(index) |> Term.app(major)
+        {:ok, Frame.forall(frame, Term.eq(result_type, lhs, rhs))}
+      end
+    end
   end
 
   defp indexed_for_alternative(shape, %MatcherEquation{} = equation, _alternative),
@@ -121,77 +86,110 @@ defmodule Theoria.Equation.Matcher.Statement do
       |> Enum.take(length(alternative.fields))
       |> Enum.map(&elem(&1, 0))
 
-    {binders, _frame} =
-      alternative.fields
-      |> Enum.zip(names)
-      |> Enum.reduce({[], frame}, fn {field, name}, {binders, current_frame} ->
-        type = vec_field_type(field, current_frame)
-        {[{name, type} | binders], Frame.push(current_frame, name, type)}
-      end)
+    alternative.fields
+    |> Enum.zip(names)
+    |> Enum.reduce_while({:ok, {[], frame}}, fn {field, name}, {:ok, {binders, current_frame}} ->
+      case vec_field_type(field, current_frame) do
+        {:ok, type} ->
+          {:cont, {:ok, {[{name, type} | binders], Frame.push(current_frame, name, type)}}}
 
-    Enum.reverse(binders)
+        {:error, _reason} = error ->
+          {:halt, error}
+      end
+    end)
+    |> case do
+      {:ok, {binders, _frame}} -> {:ok, Enum.reverse(binders)}
+      {:error, _reason} = error -> error
+    end
   end
 
   defp vec_field_type(%{position: 0}, frame), do: Frame.ref(frame, :a)
-  defp vec_field_type(%{position: 1}, _frame), do: Term.const(:Nat)
+  defp vec_field_type(%{position: 1}, _frame), do: {:ok, Term.const(:Nat)}
 
   defp vec_field_type(%{position: 2}, frame) do
-    Term.const(:Vec, [1])
-    |> Term.app(Frame.ref(frame, :a))
-    |> Term.app(Frame.ref(frame, :n))
+    with {:ok, a} <- Frame.ref(frame, :a),
+         {:ok, n} <- Frame.ref(frame, :n) do
+      {:ok, Term.const(:Vec, [1]) |> Term.app(a) |> Term.app(n)}
+    end
   end
 
   defp constructor_application(shape, alternative, frame) do
-    shape.parameters
-    |> Keyword.keys()
-    |> Enum.map(&Frame.ref(frame, &1))
-    |> Kernel.++(field_refs(alternative, frame))
-    |> Enum.reduce(Term.const(alternative.constructor, [1]), fn argument, term ->
-      Term.app(term, argument)
-    end)
+    with {:ok, parameters} <- refs_for_names(frame, Keyword.keys(shape.parameters)),
+         {:ok, fields} <- field_refs(alternative, frame) do
+      arguments = parameters ++ fields
+
+      {:ok,
+       Enum.reduce(arguments, Term.const(alternative.constructor, [1]), fn argument, term ->
+         Term.app(term, argument)
+       end)}
+    end
   end
 
   defp alternative_application(%{family: :Vec} = shape, matcher, frame, alternative) do
-    ihs = recursive_hypotheses(shape, matcher, frame, alternative)
-
-    alternative
-    |> field_refs(frame)
-    |> Kernel.++(ihs)
-    |> Enum.reduce(Frame.ref(frame, alternative.binder_name), fn argument, term ->
-      Term.app(term, argument)
-    end)
+    with {:ok, fields} <- field_refs(alternative, frame),
+         {:ok, ihs} <- recursive_hypotheses(shape, matcher, frame, alternative),
+         {:ok, alternative_ref} <- Frame.ref(frame, alternative.binder_name) do
+      {:ok,
+       Enum.reduce(fields ++ ihs, alternative_ref, fn argument, term ->
+         Term.app(term, argument)
+       end)}
+    end
   end
 
   defp recursive_hypotheses(%{family: :Vec} = shape, matcher, frame, alternative) do
     alternative.fields
     |> Enum.filter(& &1.recursive?)
-    |> Enum.map(fn _field ->
-      matcher_application(shape, matcher, frame, [Frame.ref(frame, :n), Frame.ref(frame, :arg2)])
+    |> Enum.reduce_while({:ok, []}, fn _field, {:ok, hypotheses} ->
+      with {:ok, n} <- Frame.ref(frame, :n),
+           {:ok, arg2} <- Frame.ref(frame, :arg2),
+           {:ok, hypothesis} <- matcher_application(shape, matcher, frame, [n, arg2]) do
+        {:cont, {:ok, [hypothesis | hypotheses]}}
+      else
+        {:error, _reason} = error -> {:halt, error}
+      end
     end)
+    |> case do
+      {:ok, hypotheses} -> {:ok, Enum.reverse(hypotheses)}
+      {:error, _reason} = error -> error
+    end
   end
 
   defp field_refs(alternative, frame) do
     alternative
     |> case_binders()
     |> Enum.take(length(alternative.fields))
-    |> Enum.map(fn {name, _type} -> Frame.ref(frame, name) end)
+    |> Enum.map(&elem(&1, 0))
+    |> then(&refs_for_names(frame, &1))
   end
 
   defp matcher_application(shape, matcher, frame, [index, major]) do
-    arguments =
-      shape.parameters
-      |> Keyword.keys()
-      |> Enum.map(&Frame.ref(frame, &1))
-      |> Kernel.++([Frame.ref(frame, shape.motive_name), index, major])
-      |> Kernel.++(alternative_refs(shape, frame))
+    with {:ok, parameters} <- refs_for_names(frame, Keyword.keys(shape.parameters)),
+         {:ok, motive} <- Frame.ref(frame, shape.motive_name),
+         {:ok, alternatives} <- alternative_refs(shape, frame) do
+      arguments = parameters ++ [motive, index, major] ++ alternatives
 
-    Enum.reduce(arguments, Term.const(matcher, [1]), fn argument, term ->
-      Term.app(term, argument)
-    end)
+      {:ok,
+       Enum.reduce(arguments, Term.const(matcher, [1]), fn argument, term ->
+         Term.app(term, argument)
+       end)}
+    end
   end
 
   defp alternative_refs(shape, frame) do
-    Enum.map(shape.alternatives, &Frame.ref(frame, &1.binder_name))
+    refs_for_names(frame, Enum.map(shape.alternatives, & &1.binder_name))
+  end
+
+  defp refs_for_names(frame, names) do
+    Enum.reduce_while(names, {:ok, []}, fn name, {:ok, refs} ->
+      case Frame.ref(frame, name) do
+        {:ok, ref} -> {:cont, {:ok, [ref | refs]}}
+        {:error, _reason} = error -> {:halt, error}
+      end
+    end)
+    |> case do
+      {:ok, refs} -> {:ok, Enum.reverse(refs)}
+      {:error, _reason} = error -> error
+    end
   end
 
   defp case_binders(alternative), do: collect_foralls(alternative.binder_type)

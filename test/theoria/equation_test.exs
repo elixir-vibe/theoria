@@ -427,6 +427,16 @@ defmodule Theoria.EquationTest do
              {:error, {:unsupported_indexed_matcher_statement, :UnsupportedVec, :vec_nil}}
   end
 
+  test "indexed matcher statement planning reports missing frame binders" do
+    shape = vec_matcher_shape!()
+    [nil_alternative | rest] = shape.alternatives
+    shape = %{shape | alternatives: [%{nil_alternative | binder_name: :missing_on_nil} | rest]}
+    equation = MatcherEquation.indexed(:vec_validation_match, :vec_nil, [Term.const(:zero)])
+
+    assert MatcherStatement.indexed(shape, equation) ==
+             {:error, {:unknown_indexed_matcher_statement_binder, :missing_on_nil}}
+  end
+
   test "indexed matcher statement planning short-circuits unsupported batches" do
     shape = vec_matcher_shape!()
 

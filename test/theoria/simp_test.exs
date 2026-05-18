@@ -67,6 +67,21 @@ defmodule Theoria.SimpTest do
            )
   end
 
+  test "normalizes nested rewrites with checked proof artifact when requested" do
+    {:ok, env} = Prelude.env()
+    one = Term.app(Term.const(:succ), zero())
+    add_zero = Term.const(:nat_add) |> Term.app(zero()) |> Term.app(one)
+    term = Term.app(Term.const(:succ), add_zero)
+    expected = Term.app(Term.const(:succ), one)
+
+    result = Simp.normalize(env, term, prove: true, realize: true)
+
+    assert result.term == expected
+    assert [%Step{path: [:arg], proof: proof}] = result.steps
+    assert not is_nil(proof)
+    assert :ok = Kernel.check(env, result.realized.proof, result.realized.type)
+  end
+
   test "normalizes with checked proof artifact when requested" do
     {:ok, env} = Prelude.env()
     one = Term.app(Term.const(:succ), zero())

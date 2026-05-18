@@ -37,12 +37,12 @@ defmodule Theoria.RewriteTest do
     lemma = Lemma.new(:zero_to_one, zero, one)
     rule = Rule.from_lemma(lemma, Term.const(:Nat))
 
-    assert {:ok, %Theoria.Rewrite.Step{path: [], after: ^one}} =
+    assert {:ok, %Theoria.Rewrite.Step{path: [], after: ^one, substitution: %{}}} =
              Rewrite.once_with_step(zero, rule)
 
     term = Term.app(Term.const(:succ), zero)
 
-    assert {:ok, %Theoria.Rewrite.Step{path: [:arg], after: ^succ_one}} =
+    assert {:ok, %Theoria.Rewrite.Step{path: [:arg], after: ^succ_one, substitution: %{}}} =
              Rewrite.once_with_step(term, rule)
   end
 
@@ -83,6 +83,18 @@ defmodule Theoria.RewriteTest do
 
     assert {:ok, ^one, %Rule{name: %Identity{kind: :equation, owner: :nat_add, target: :zero}}} =
              Database.once(database, add_zero)
+  end
+
+  test "rewrite steps record schematic substitutions" do
+    {:ok, env} = Prelude.env()
+    database = Database.from_env_equations(env, realize: true)
+    one = Term.app(Term.const(:succ), zero())
+    add_zero = Term.const(:nat_add) |> Term.app(zero()) |> Term.app(one)
+
+    assert {:ok, %Theoria.Rewrite.Step{path: [], substitution: %{0 => ^one}, proof: proof}} =
+             Database.once_with_step(database, add_zero)
+
+    assert %Term.App{} = proof
   end
 
   test "database can realize generated equation rules as proof-backed artifacts" do

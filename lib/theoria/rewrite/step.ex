@@ -5,7 +5,7 @@ defmodule Theoria.Rewrite.Step do
   alias Theoria.Term
 
   @enforce_keys [:rule, :before, :after, :path]
-  defstruct [:rule, :before, :after, :path, :proof]
+  defstruct [:rule, :before, :after, :path, :proof, :substitution]
 
   @type path_segment :: atom()
 
@@ -14,6 +14,7 @@ defmodule Theoria.Rewrite.Step do
           before: Term.t(),
           after: Term.t(),
           path: [path_segment()],
-          proof: Term.t() | nil
+          proof: Term.t() | nil,
+          substitution: Theoria.Rewrite.Match.substitution() | nil
         }
 end

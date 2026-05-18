@@ -6,6 +6,7 @@ defmodule Theoria.Simp do
   alias Theoria.Equation.Identity
   alias Theoria.Equation.Realized
   alias Theoria.Kernel
+  alias Theoria.Rewrite.Proof, as: RewriteProof
   alias Theoria.Simp.Database
   alias Theoria.Simp.Result
   alias Theoria.Simp.Step
@@ -124,27 +125,17 @@ defmodule Theoria.Simp do
       rule: rule.rewrite.name,
       before: rewrite_step.before,
       after: rewrite_step.after,
-      proof: rewrite_step.proof || step_proof(env, rewrite_step.before, rewrite_step.after, opts),
+      proof: step_proof(env, rewrite_step, opts) || rewrite_step.proof,
       path: rewrite_step.path,
       source: rule.source
     }
   end
 
-  defp step_proof(env, before, after_term, opts) do
+  defp step_proof(env, rewrite_step, opts) do
     if Keyword.get(opts, :prove, false) do
-      checked_step_proof(env, before, after_term)
+      RewriteProof.for_step(env, rewrite_step)
     else
       nil
-    end
-  end
-
-  defp checked_step_proof(env, before, after_term) do
-    with {:ok, type} <- Kernel.infer(env, before),
-         proof = Term.refl(before),
-         :ok <- Kernel.check(env, proof, Term.eq(type, before, after_term)) do
-      proof
-    else
-      {:error, _reason} -> nil
     end
   end
 end

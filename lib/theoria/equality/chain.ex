@@ -2,6 +2,7 @@ defmodule Theoria.Equality.Chain do
   @moduledoc "Builds kernel-checked equality artifacts for rewrite/simp traces."
 
   alias Theoria.Env
+  alias Theoria.Equality
   alias Theoria.Equation.Identity
   alias Theoria.Equation.Realized
   alias Theoria.Kernel
@@ -40,5 +41,27 @@ defmodule Theoria.Equality.Chain do
     end
   end
 
-  defp proof_term(%__MODULE__{start: start}), do: Term.refl(start)
+  defp proof_term(%__MODULE__{start: start, steps: []}), do: Term.refl(start)
+
+  defp proof_term(%__MODULE__{} = chain) do
+    chain.steps
+    |> Enum.reverse()
+    |> Enum.reduce({chain.start, nil}, fn %{after: next, proof: proof}, {current, acc} ->
+      cond do
+        is_nil(proof) ->
+          {next, nil}
+
+        is_nil(acc) ->
+          {next, proof}
+
+        true ->
+          {next, Equality.trans(chain.type, chain.start, current, next, acc, proof)}
+      end
+    end)
+    |> elem(1)
+    |> case do
+      nil -> Term.refl(chain.start)
+      proof -> proof
+    end
+  end
 end

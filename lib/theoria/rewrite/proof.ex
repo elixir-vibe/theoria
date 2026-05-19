@@ -106,6 +106,12 @@ defmodule Theoria.Rewrite.Proof do
   defp lift_path(env, type, proof, %Step{path: [:right]} = step),
     do: lift_eq_right(env, type, proof, step)
 
+  defp lift_path(env, type, proof, %Step{path: [:base]} = step),
+    do: lift_eq_rec_base(env, type, proof, step)
+
+  defp lift_path(env, type, proof, %Step{path: [:proof]} = step),
+    do: lift_eq_rec_proof(env, type, proof, step)
+
   defp lift_path(env, type, proof, %Step{path: [:arg | rest]} = step) do
     case {step.before, step.after} do
       {%Term.App{fun: fun, arg: left}, %Term.App{fun: after_fun, arg: right}}
@@ -202,6 +208,74 @@ defmodule Theoria.Rewrite.Proof do
           Term.eq_rec(value_type, motive, Term.refl(step.before), proof),
           step
         )
+
+      _ ->
+        {:error, :unsupported_path}
+    end
+  end
+
+  defp lift_eq_rec_base(env, result_type, proof, step) do
+    case {step.before, step.after} do
+      {%Term.EqRec{} = before, %Term.EqRec{} = after_term}
+      when before.type == after_term.type and before.motive == after_term.motive and
+             before.proof == after_term.proof ->
+        with {:ok, base_type} <- Kernel.infer(env, before.base) do
+          target = %Term.EqRec{
+            before
+            | type: Term.shift(before.type, 1),
+              motive: Term.shift(before.motive, 1),
+              base: Term.bvar(0),
+              proof: Term.shift(before.proof, 1)
+          }
+
+          motive =
+            Term.lam(
+              :z,
+              base_type,
+              Term.eq(Term.shift(result_type, 1), Term.shift(step.before, 1), target)
+            )
+
+          check_lifted(
+            env,
+            result_type,
+            Term.eq_rec(base_type, motive, Term.refl(step.before), proof),
+            step
+          )
+        end
+
+      _ ->
+        {:error, :unsupported_path}
+    end
+  end
+
+  defp lift_eq_rec_proof(env, result_type, proof, step) do
+    case {step.before, step.after} do
+      {%Term.EqRec{} = before, %Term.EqRec{} = after_term}
+      when before.type == after_term.type and before.motive == after_term.motive and
+             before.base == after_term.base ->
+        with {:ok, proof_type} <- Kernel.infer(env, before.proof) do
+          target = %Term.EqRec{
+            before
+            | type: Term.shift(before.type, 1),
+              motive: Term.shift(before.motive, 1),
+              base: Term.shift(before.base, 1),
+              proof: Term.bvar(0)
+          }
+
+          motive =
+            Term.lam(
+              :h,
+              proof_type,
+              Term.eq(Term.shift(result_type, 1), Term.shift(step.before, 1), target)
+            )
+
+          check_lifted(
+            env,
+            result_type,
+            Term.eq_rec(proof_type, motive, Term.refl(step.before), proof),
+            step
+          )
+        end
 
       _ ->
         {:error, :unsupported_path}

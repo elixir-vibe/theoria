@@ -4,10 +4,14 @@ The 0.6 line focuses on deeper proof-producing automation and stronger generated
 
 ## Proof path expansion
 
-0.6 explores kernel-checkable proof lifting beyond top-level/application/equality-side paths. Candidate paths include:
+0.6 explores kernel-checkable proof lifting beyond top-level/application/equality-side paths. Newly supported paths include:
+
+- `EqRec` base paths;
+- `EqRec` proof paths.
+
+Candidate paths for further work include:
 
 - equality type paths;
-- `EqRec` base/proof paths;
 - binder domain paths;
 - let type/value paths.
 

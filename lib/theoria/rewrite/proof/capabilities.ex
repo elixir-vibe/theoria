@@ -24,8 +24,11 @@ defmodule Theoria.Rewrite.Proof.Capabilities do
       path in [[:domain], [:body]] ->
         unsupported(:binder_boundary, "binder paths remain kernel-checked boundaries")
 
-      path in [[:proof], [:base]] ->
-        unsupported(:eq_rec_boundary, "EqRec paths remain kernel-checked boundaries")
+      path == [:base] ->
+        supported(:eq_rec_base_congruence, "EqRec base congruence")
+
+      path == [:proof] ->
+        supported(:eq_rec_proof_congruence, "EqRec proof congruence")
 
       true ->
         unsupported(:unknown_path, "no proof lifting rule for this path")
@@ -52,7 +55,9 @@ defmodule Theoria.Rewrite.Proof.Capabilities do
       [:body],
       [:domain],
       [:proof],
-      [:base]
+      [:base],
+      [:type],
+      [:motive]
     ]
 
   defp application_path?(path), do: Enum.all?(path, &(&1 in [:fun, :arg]))

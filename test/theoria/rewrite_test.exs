@@ -3,6 +3,7 @@ defmodule Theoria.RewriteTest do
 
   alias Theoria.Equation.Identity
   alias Theoria.Equation.Lemma
+  alias Theoria.Kernel
   alias Theoria.Prelude
   alias Theoria.Rewrite
   alias Theoria.Rewrite.{Database, Proof, Rule}
@@ -82,8 +83,35 @@ defmodule Theoria.RewriteTest do
     assert {:ok, step} = Rewrite.once_with_step(eq_rec, rule)
     assert step.path == [:proof]
 
-    assert %{proof_result: %{status: :checked, capability: %{reason: :eq_rec_boundary}}} =
+    assert %{proof_result: %{status: :checked, capability: %{reason: :eq_rec_proof_congruence}}} =
              Proof.attach(env, step)
+  end
+
+  test "EqRec proof rewrite steps can carry checked non-definitional proof" do
+    {:ok, env} = Prelude.env()
+    zero = Term.const(:zero)
+    nat = Term.const(:Nat)
+    motive = Term.lam(:n, nat, Term.shift(nat, 1))
+    equality = Term.eq(nat, zero, zero)
+    h1 = Term.const(:h1)
+    h2 = Term.const(:h2)
+    proof_equality = Term.eq(equality, h1, h2)
+
+    {:ok, env} = Kernel.add_axiom(env, :h1, equality)
+    {:ok, env} = Kernel.add_axiom(env, :h2, equality)
+    {:ok, env} = Kernel.add_axiom(env, :h1_eq_h2, proof_equality)
+
+    eq_rec = Term.eq_rec(nat, motive, zero, h1)
+    rule = Rule.new(:h1_to_h2, proof_equality, proof: Term.const(:h1_eq_h2))
+
+    assert {:ok, step} = Rewrite.once_with_step(eq_rec, rule)
+    assert step.path == [:proof]
+    assert step.after == Term.eq_rec(nat, motive, zero, h2)
+
+    assert %{proof_result: %{status: :checked, proof: %Term.EqRec{}, capability: capability}} =
+             Proof.attach(env, step)
+
+    assert capability.reason == :eq_rec_proof_congruence
   end
 
   test "EqRec base rewrite steps report explicit base boundary" do
@@ -98,8 +126,31 @@ defmodule Theoria.RewriteTest do
     assert {:ok, step} = Rewrite.once_with_step(eq_rec, rule)
     assert step.path == [:base]
 
-    assert %{proof_result: %{status: :checked, capability: %{reason: :eq_rec_boundary}}} =
+    assert %{proof_result: %{status: :checked, capability: %{reason: :eq_rec_base_congruence}}} =
              Proof.attach(env, step)
+  end
+
+  test "EqRec base rewrite steps can carry checked non-definitional proof" do
+    {:ok, env} = Prelude.env()
+    zero = Term.const(:zero)
+    one = Term.app(Term.const(:succ), zero)
+    nat = Term.const(:Nat)
+    motive = Term.lam(:n, nat, Term.shift(nat, 1))
+    eq_rec = Term.eq_rec(nat, motive, zero, Term.refl(zero))
+    equality = Term.eq(nat, zero, one)
+
+    {:ok, env} = Kernel.add_axiom(env, :zero_eq_one, equality)
+
+    rule = Rule.new(:zero_to_one, equality, proof: Term.const(:zero_eq_one))
+
+    assert {:ok, step} = Rewrite.once_with_step(eq_rec, rule)
+    assert step.path == [:base]
+    assert step.after == Term.eq_rec(nat, motive, one, Term.refl(zero))
+
+    assert %{proof_result: %{status: :checked, proof: %Term.EqRec{}, capability: capability}} =
+             Proof.attach(env, step)
+
+    assert capability.reason == :eq_rec_base_congruence
   end
 
   test "binder rewrite steps report unsupported proof lifting" do

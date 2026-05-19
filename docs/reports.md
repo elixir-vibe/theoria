@@ -24,7 +24,7 @@ mix theoria.kernel.check --generated-size 4 --generated-max-terms 256
 mix theoria.kernel.check --environment-depth 8
 ```
 
-The report compares production kernel behavior with the independent reference checker/normalizer, checks deterministic generated typed terms with stable family counts, timing, diagnostics, and configurable bounds, summarizes generated artifact proof strategies, replays the Prelude environment, replays theorem-module-installed environments, replays generated/indexed artifact environments, checks generated environment corpora, checks invalid environment rejection cases, and verifies metadata/reduction preservation across replay sources.
+The report compares production kernel behavior with the independent reference checker/normalizer, checks deterministic generated typed terms with stable family counts, timing, diagnostics, and configurable bounds, summarizes generated proof construction strategies for artifacts, replays the Prelude environment, replays theorem-module-installed environments, replays generated/indexed artifact environments, checks generated environment corpora, checks invalid environment rejection cases, and verifies trusted-adjacent metadata/reduction preservation across replay sources.
 
 These reports are assurance, not a formal proof of kernel correctness. The trusted boundary remains native kernel checking of declarations and artifacts.
 
@@ -69,7 +69,7 @@ Capability output has this shape. Nested structural lifts may include `inner` to
 }
 ```
 
-Kernel JSON reports include `timings`, `total_checks`, `total_replay_checks`, `environment_report`, `invalid_environment_checks`, `metadata_replay`, `metadata_replay_checks`, and optional structured `explanation` entries when `--explain` is passed with coverage JSON.
+Kernel JSON reports include `timings`, `total_checks`, `total_replay_checks`, `environment_report`, `invalid_environment_checks`, `metadata_replay`, `metadata_replay_checks`, and optional structured `explanation` entries when `--explain` is passed with coverage JSON. `metadata_replay` is Theoria's replay of trusted-adjacent environment metadata and reduction data; it should not be read as a Lean environment-extension compatibility claim.
 
 `mix theoria.kernel.check --assurance-summary --coverage --json` returns a smaller envelope:
 

@@ -21,7 +21,7 @@ The Lean oracle is contributor-only validation. It is not a runtime dependency a
 
 ## Rewrite and simp
 
-Rewrite and simp can transform terms, but search is not a proof. Proof-producing rewrite currently supports top-level rewrites, nested application function/argument congruence, and selected equality-side lifting when the constructed proof kernel-checks. Binder body/domain and EqRec base/proof paths remain explicit boundaries unless the final proof is accepted by the kernel. Step proof data is reported as a structured proof result with status, capability, and optional proof term. `mix theoria.simp --explain` prints the proof capability matrix and step-level proof results. Prefer APIs that return checked artifacts when the result must be trusted:
+Rewrite and simp can transform terms, but search is not a proof. Proof-producing rewrite currently supports top-level rewrites, nested application function/argument congruence, and selected equality-side lifting when the constructed proof kernel-checks. Binder body/domain and EqRec base/proof paths remain explicit boundaries unless the final proof is accepted by the kernel. Step proof data is reported as a structured proof result with status, capability, and optional proof term; unlike Lean's simp result convention where an absent proof can stand for reflexivity, Theoria reports proof status explicitly for diagnostics. `mix theoria.simp --explain` prints the proof capability matrix and step-level proof results. Prefer APIs that return checked artifacts when the result must be trusted:
 
 ```elixir
 {:ok, artifact} = Theoria.Simp.realize(env, term)

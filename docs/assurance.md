@@ -1,6 +1,6 @@
 # Kernel assurance
 
-Theoria's trusted runtime boundary is the native kernel. Assurance commands compare that kernel with independent reference paths, replay checked environments, and check generated artifacts. These checks improve confidence; they are not a formal proof of kernel correctness.
+Theoria's trusted runtime boundary is the native kernel. Assurance commands compare that kernel with independent reference paths, re-admit checked environments through replay, and check generated artifacts. These checks improve confidence; they are not a formal proof of kernel correctness and do not imply Lean feature parity.
 
 ## Main command
 
@@ -8,7 +8,7 @@ Theoria's trusted runtime boundary is the native kernel. Assurance commands comp
 mix theoria.kernel.check
 ```
 
-This runs the curated kernel corpus, generated terms, generated environment corpora, theorem-module replay, artifact replay, metadata/reduction replay, and invalid-environment rejection checks.
+This runs the curated kernel corpus, generated terms, generated environment corpora, theorem-module replay, artifact replay, trusted-adjacent metadata/reduction replay, and invalid-environment rejection checks.
 
 Useful variants:
 
@@ -37,7 +37,7 @@ Defaults are chosen for regular CI. Increase bounds locally for deeper assurance
 - Generated terms: deterministic typed terms checked against production and reference paths.
 - Environment corpus: generated declaration chains replayed and normalized through production/reference paths.
 - Invalid environments: malformed environments rejected with expected reason classes.
-- Metadata replay: replayed declarations preserve trusted-adjacent metadata and reduction data.
+- Metadata replay: replayed declarations preserve trusted-adjacent environment metadata and reduction data. This is analogous in spirit to checking Lean environment-extension data, but it is Theoria-specific assurance, not Lean compatibility.
 - Artifact replay: generated and indexed equation artifacts replay in checked environments.
 
 ## Summary output

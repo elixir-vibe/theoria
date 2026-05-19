@@ -4,6 +4,7 @@ defmodule Theoria.Kernel.Reference.Replay do
   alias Theoria.Env
   alias Theoria.Env.Constant
   alias Theoria.Kernel.Reference
+  alias Theoria.Kernel.Reference.Replay.Failure
   alias Theoria.Term.Sort
 
   defmodule Report do
@@ -12,7 +13,7 @@ defmodule Theoria.Kernel.Reference.Replay do
     @enforce_keys [:checked, :skipped, :failures]
     defstruct [:checked, :skipped, :failures]
 
-    @type failure :: {Env.name(), atom(), term()}
+    @type failure :: Failure.t()
     @type t :: %__MODULE__{
             checked: non_neg_integer(),
             skipped: non_neg_integer(),
@@ -45,20 +46,20 @@ defmodule Theoria.Kernel.Reference.Replay do
 
   defp replay_declaration(source_env, replay_env, name) do
     case Env.fetch(source_env, name) do
-      {:ok, %Constant{} = constant} -> replay_constant(replay_env, name, constant)
-      :error -> {:error, {name, :missing_declaration, :error}}
+      {:ok, %Constant{} = constant} -> replay_constant(source_env, replay_env, name, constant)
+      :error -> {:error, Failure.new(source_env, name, :lookup, :missing_declaration)}
     end
   end
 
-  defp replay_constant(env, name, %Constant{kind: :axiom} = constant) do
-    with :ok <- check_type(env, name, constant) do
+  defp replay_constant(source_env, env, name, %Constant{kind: :axiom} = constant) do
+    with :ok <- check_type(source_env, env, name, constant) do
       {:ok, Env.put_axiom(env, name, constant.type, constant.universe_params)}
     end
   end
 
-  defp replay_constant(env, name, %Constant{kind: :definition} = constant) do
-    with :ok <- check_type(env, name, constant),
-         :ok <- check_value(env, name, constant) do
+  defp replay_constant(source_env, env, name, %Constant{kind: :definition} = constant) do
+    with :ok <- check_type(source_env, env, name, constant),
+         :ok <- check_value(source_env, env, name, constant) do
       {:ok,
        Env.put_definition(env, name, constant.type, constant.value, constant.universe_params,
          metadata: constant.metadata
@@ -66,16 +67,16 @@ defmodule Theoria.Kernel.Reference.Replay do
     end
   end
 
-  defp replay_constant(env, name, %Constant{kind: :theorem} = constant) do
-    with :ok <- check_type(env, name, constant),
-         :ok <- check_value(env, name, constant) do
+  defp replay_constant(source_env, env, name, %Constant{kind: :theorem} = constant) do
+    with :ok <- check_type(source_env, env, name, constant),
+         :ok <- check_value(source_env, env, name, constant) do
       {:ok, Env.put_theorem(env, name, constant.type, constant.value, constant.universe_params)}
     end
   end
 
-  defp replay_constant(env, name, %Constant{kind: :matcher} = constant) do
-    with :ok <- check_type(env, name, constant),
-         :ok <- check_value(env, name, constant) do
+  defp replay_constant(source_env, env, name, %Constant{kind: :matcher} = constant) do
+    with :ok <- check_type(source_env, env, name, constant),
+         :ok <- check_value(source_env, env, name, constant) do
       {:ok,
        Env.put_matcher(
          env,
@@ -88,8 +89,8 @@ defmodule Theoria.Kernel.Reference.Replay do
     end
   end
 
-  defp replay_constant(env, name, %Constant{} = constant) do
-    with :ok <- check_type(env, name, constant) do
+  defp replay_constant(source_env, env, name, %Constant{} = constant) do
+    with :ok <- check_type(source_env, env, name, constant) do
       {:ok,
        Env.put_constant(env, name, constant.type, constant.universe_params,
          kind: constant.kind,
@@ -99,20 +100,25 @@ defmodule Theoria.Kernel.Reference.Replay do
     end
   end
 
-  defp check_type(env, name, %Constant{type: type}) do
+  defp check_type(source_env, env, name, %Constant{type: type}) do
     case Reference.infer(env, type) do
-      {:ok, %Sort{}} -> :ok
-      {:ok, other} -> {:error, {name, :type_not_sort, other}}
-      {:error, reason} -> {:error, {name, :type_error, reason}}
+      {:ok, %Sort{}} ->
+        :ok
+
+      {:ok, other} ->
+        {:error, Failure.new(source_env, name, :type, :type_not_sort, actual: other)}
+
+      {:error, reason} ->
+        {:error, Failure.new(source_env, name, :type, reason)}
     end
   end
 
-  defp check_value(_env, _name, %Constant{value: nil}), do: :ok
+  defp check_value(_source_env, _env, _name, %Constant{value: nil}), do: :ok
 
-  defp check_value(env, name, %Constant{type: type, value: value}) do
+  defp check_value(source_env, env, name, %Constant{type: type, value: value}) do
     case Reference.check(env, value, type) do
       :ok -> :ok
-      {:error, reason} -> {:error, {name, :value_error, reason}}
+      {:error, reason} -> {:error, Failure.new(source_env, name, :value, reason)}
     end
   end
 end

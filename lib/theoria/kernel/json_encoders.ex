@@ -85,6 +85,22 @@ defimpl Jason.Encoder, for: Theoria.Kernel.TheoremModuleReport do
   end
 end
 
+defimpl Jason.Encoder, for: Theoria.Kernel.Reference.Replay.Failure do
+  def encode(failure, opts) do
+    Jason.Encode.map(
+      %{
+        name: inspect(failure.name),
+        phase: failure.phase,
+        declaration_kind: failure.declaration_kind,
+        reason: inspect(failure.reason),
+        direct_dependencies: failure.direct_dependencies,
+        details: inspect(failure.details)
+      },
+      opts
+    )
+  end
+end
+
 defimpl Jason.Encoder, for: Theoria.Kernel.ArtifactReplay do
   def encode(replay, opts) do
     Jason.Encode.map(
@@ -148,6 +164,8 @@ defimpl Jason.Encoder, for: Theoria.Kernel.Differential.Report do
       opts
     )
   end
+
+  defp encode_failure(%Theoria.Kernel.Reference.Replay.Failure{} = failure), do: failure
 
   defp encode_failure({:generated_term, name, reason}) do
     %{

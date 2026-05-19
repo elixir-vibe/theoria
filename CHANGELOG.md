@@ -4,6 +4,8 @@
 
 Post-0.6 development toward deeper replay and environment assurance.
 
+- Added structured reference replay failure diagnostics with declaration phase, kind, dependencies, and details.
+
 ## 0.6.0
 
 Proof-producing rewrite expansion and structured generated assurance reports.

@@ -4,7 +4,7 @@ The 0.7 line focuses on deeper kernel/reference assurance through environment re
 
 ## Replay diagnostics
 
-0.7 should make replay failures actionable. Reference replay failures should carry structured data such as declaration name, phase, declaration kind, dependency context, and production/reference details where relevant.
+0.7 should make replay failures actionable. Reference replay failures carry structured data such as declaration name, phase, declaration kind, dependency context, and details. Further work should enrich this with production/reference details where relevant.
 
 ## Environment assurance
 

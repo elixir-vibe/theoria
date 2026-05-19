@@ -18,7 +18,7 @@ The 0.7 line focuses on deeper kernel/reference assurance through environment re
 
 ## Declaration-chain generation
 
-0.7 generates bounded declaration chains and compares production/reference behavior for replay, normalization, and dependency tracking. Further work should add more environment variants beyond the initial transparent definition chain.
+0.7 generates bounded declaration, let, theorem, and universe-polymorphic chains and compares production/reference behavior for replay, normalization, and dependency tracking. `mix theoria.kernel.check --environment-depth N` controls the generated chain depth. Further work should add invalid/rejection-oriented environment variants.
 
 ## Boundaries
 

@@ -12,6 +12,7 @@ defmodule Theoria.Kernel.Differential do
   alias Theoria.Kernel.Differential.Options
   alias Theoria.Kernel.Differential.Timings
   alias Theoria.Kernel.EnvironmentCorpus
+  alias Theoria.Kernel.EnvironmentCorpus.Report, as: EnvironmentReport
   alias Theoria.Kernel.GeneratedTerm
   alias Theoria.Kernel.GeneratedTerm.Failure, as: GeneratedTermFailure
   alias Theoria.Kernel.GeneratedTerm.Report, as: GeneratedTermReport
@@ -42,6 +43,7 @@ defmodule Theoria.Kernel.Differential do
       :environment_count,
       :environment_replay_count,
       :environment_normalize_count,
+      :environment_report,
       :theorem_count,
       :theorem_modules,
       :theorem_replay_count,
@@ -73,6 +75,7 @@ defmodule Theoria.Kernel.Differential do
       :environment_count,
       :environment_replay_count,
       :environment_normalize_count,
+      :environment_report,
       :theorem_count,
       :theorem_modules,
       :theorem_replay_count,
@@ -106,6 +109,7 @@ defmodule Theoria.Kernel.Differential do
             environment_count: non_neg_integer(),
             environment_replay_count: non_neg_integer(),
             environment_normalize_count: non_neg_integer(),
+            environment_report: EnvironmentReport.t(),
             theorem_count: non_neg_integer(),
             theorem_modules: [TheoremModuleReport.t()],
             theorem_replay_count: non_neg_integer(),
@@ -218,9 +222,7 @@ defmodule Theoria.Kernel.Differential do
     {{generated_terms, generated_term_failures}, generated_term_ms} =
       timed(fn -> generated_term_failures(opts) end)
 
-    {{environment_count, environment_replay_count, environment_normalize_count,
-      environment_failures}, environment_ms} =
-      timed(fn -> environment_failures() end)
+    {environment_report, environment_ms} = timed(fn -> environment_report(opts) end)
 
     {{theorem_count, theorem_modules, theorem_replay_count, theorem_replay_skipped,
       theorem_failures}, theorem_ms} =
@@ -250,9 +252,10 @@ defmodule Theoria.Kernel.Differential do
       generated_term_count: generated_terms.total,
       generated_term_families: generated_terms.families,
       generated_terms: generated_terms,
-      environment_count: environment_count,
-      environment_replay_count: environment_replay_count,
-      environment_normalize_count: environment_normalize_count,
+      environment_count: environment_report.total,
+      environment_replay_count: environment_report.replay_checks,
+      environment_normalize_count: environment_report.normalize_checks,
+      environment_report: environment_report,
       theorem_count: theorem_count,
       theorem_modules: theorem_modules,
       theorem_replay_count: theorem_replay_count,
@@ -290,7 +293,7 @@ defmodule Theoria.Kernel.Differential do
           normalize_failures ++
           defeq_failures ++
           generated_term_failures ++
-          environment_failures ++
+          environment_report.failures ++
           theorem_failures ++
           generated_artifact_failures ++
           indexed_artifact_failures ++ replay_report.failures ++ artifact_replay.failures
@@ -358,25 +361,31 @@ defmodule Theoria.Kernel.Differential do
     end
   end
 
-  defp environment_failures do
-    cases = EnvironmentCorpus.cases()
+  defp environment_report(%Options{} = opts) do
+    opts
+    |> environment_options()
+    |> EnvironmentCorpus.cases()
+    |> Enum.map(&environment_case_report/1)
+    |> EnvironmentReport.new()
+  end
 
-    replay_reports = Enum.map(cases, &{&1, Replay.run(&1.env)})
+  defp environment_options(%Options{} = opts),
+    do: [definition_chain_depth: opts.environment_depth]
+
+  defp environment_case_report(%EnvironmentCorpus.Case{} = corpus_case) do
+    replay_report = Replay.run(corpus_case.env)
 
     replay_failures =
-      Enum.flat_map(replay_reports, fn {corpus_case, report} ->
-        Enum.map(report.failures, &{corpus_case.name, :environment_replay, &1})
-      end)
+      Enum.map(replay_report.failures, &{corpus_case.name, :environment_replay, &1})
 
-    normalize_failures = Enum.flat_map(cases, &environment_normalize_failures/1)
+    normalize_failures = environment_normalize_failures(corpus_case)
 
-    replay_count =
-      Enum.reduce(replay_reports, 0, fn {_case, report}, count -> count + report.checked end)
-
-    normalize_count =
-      Enum.reduce(cases, 0, fn corpus_case, count -> count + length(corpus_case.normalize) end)
-
-    {length(cases), replay_count, normalize_count, replay_failures ++ normalize_failures}
+    %EnvironmentReport.Case{
+      name: corpus_case.name,
+      replay_checks: replay_report.checked,
+      normalize_checks: length(corpus_case.normalize),
+      failures: replay_failures ++ normalize_failures
+    }
   end
 
   defp environment_normalize_failures(%EnvironmentCorpus.Case{} = corpus_case) do

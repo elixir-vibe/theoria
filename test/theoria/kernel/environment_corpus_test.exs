@@ -8,7 +8,16 @@ defmodule Theoria.Kernel.EnvironmentCorpusTest do
   alias Theoria.Normalize
 
   test "definition chain cases replay and normalize through production/reference paths" do
-    for %EnvironmentCorpus.Case{} = corpus_case <- EnvironmentCorpus.cases() do
+    cases = EnvironmentCorpus.cases()
+
+    assert Enum.map(cases, & &1.name) == [
+             :definition_chain,
+             :let_chain,
+             :theorem_chain,
+             :universe_polymorphic_chain
+           ]
+
+    for %EnvironmentCorpus.Case{} = corpus_case <- cases do
       assert Replay.run(corpus_case.env).failures == []
 
       for {_name, term} <- corpus_case.normalize do

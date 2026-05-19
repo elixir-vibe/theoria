@@ -40,7 +40,7 @@ defmodule Mix.Tasks.Theoria.Kernel.CheckTest do
     assert output =~ "- artifact replay skipped:"
   end
 
-  test "rejects invalid generated term bounds" do
+  test "rejects invalid generated term and environment bounds" do
     Mix.Task.clear()
 
     assert_raise Mix.Error, ~r/invalid --generated-size/, fn ->
@@ -52,6 +52,12 @@ defmodule Mix.Tasks.Theoria.Kernel.CheckTest do
     assert_raise Mix.Error, ~r/invalid --generated-max-terms/, fn ->
       capture_io(fn -> Check.run(["--generated-max-terms", "0"]) end)
     end
+
+    Mix.Task.clear()
+
+    assert_raise Mix.Error, ~r/invalid --environment-depth/, fn ->
+      capture_io(fn -> Check.run(["--environment-depth", "0"]) end)
+    end
   end
 
   test "accepts generated term bounds" do
@@ -59,12 +65,20 @@ defmodule Mix.Tasks.Theoria.Kernel.CheckTest do
 
     output =
       capture_io(fn ->
-        Check.run(["--generated-size", "1", "--generated-max-terms", "4", "--verbose"])
+        Check.run([
+          "--generated-size",
+          "1",
+          "--generated-max-terms",
+          "4",
+          "--environment-depth",
+          "2",
+          "--verbose"
+        ])
       end)
 
     assert output =~ "✓ generated term checks: 39"
     assert output =~ "generated_terms=39 size=1 max_terms=4"
-    assert output =~ "environment_cases="
+    assert output =~ "environment_cases=4 replay="
   end
 
   test "prints verbose report" do
@@ -147,7 +161,9 @@ defmodule Mix.Tasks.Theoria.Kernel.CheckTest do
     assert report["generated_terms"]["families"]["bool_beta"] == 4
     assert report["generated_terms"]["families"]["nat_beta"] == 3
     assert is_integer(report["timings"]["generated_term_ms"])
-    assert report["environment_cases"] == 1
+    assert report["environment_cases"] == 4
+    assert report["environment_report"]["total"] == 4
+    assert length(report["environment_report"]["cases"]) == 4
     assert report["environment_replay_checks"] > 0
     assert report["environment_normalize_checks"] > 0
     assert report["proof_strategies"]["total"] == 40

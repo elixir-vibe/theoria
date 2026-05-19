@@ -22,6 +22,7 @@ defmodule Mix.Tasks.Theoria.Kernel.Check do
                explain: :boolean,
                generated_size: :integer,
                generated_max_terms: :integer,
+               environment_depth: :integer,
                json: :boolean,
                verbose: :boolean
              ]
@@ -41,6 +42,9 @@ defmodule Mix.Tasks.Theoria.Kernel.Check do
       {:error, {:invalid_generated_max_terms, max_terms}} ->
         Mix.raise("invalid --generated-max-terms: #{inspect(max_terms)}")
 
+      {:error, {:invalid_environment_depth, depth}} ->
+        Mix.raise("invalid --environment-depth: #{inspect(depth)}")
+
       {:error, reason} ->
         Mix.raise("failed to build Theoria prelude: #{inspect(reason)}")
     end
@@ -49,7 +53,8 @@ defmodule Mix.Tasks.Theoria.Kernel.Check do
   defp differential_opts(opts) do
     [
       generated_size: Keyword.get(opts, :generated_size, 3),
-      generated_max_terms: Keyword.get(opts, :generated_max_terms, 128)
+      generated_max_terms: Keyword.get(opts, :generated_max_terms, 128),
+      environment_depth: Keyword.get(opts, :environment_depth, 4)
     ]
   end
 
@@ -78,6 +83,7 @@ defmodule Mix.Tasks.Theoria.Kernel.Check do
       Mix.shell().info("✓ generated term checks: #{report.generated_term_count}")
       print_generated_term_families(report.generated_term_families, "  ")
       Mix.shell().info("✓ environment cases: #{report.environment_count}")
+      print_environment_cases(report.environment_report.cases, "  ")
       Mix.shell().info("  environment replay checks: #{report.environment_replay_count}")
       Mix.shell().info("  environment normalize checks: #{report.environment_normalize_count}")
       Mix.shell().info("✓ theorem checks: #{report.theorem_count}")
@@ -149,6 +155,14 @@ defmodule Mix.Tasks.Theoria.Kernel.Check do
       Mix.shell().info("  total_replay_checks=#{Differential.Report.total_replay_checks(report)}")
       Mix.shell().info("  failures=#{Differential.Report.failure_count(report)}")
     end
+  end
+
+  defp print_environment_cases(cases, prefix) do
+    Enum.each(cases, fn corpus_case ->
+      Mix.shell().info(
+        "#{prefix}#{corpus_case.name}: replay=#{corpus_case.replay_checks} normalize=#{corpus_case.normalize_checks}"
+      )
+    end)
   end
 
   defp print_proof_strategy_counts(strategies, prefix) do

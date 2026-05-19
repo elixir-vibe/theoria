@@ -28,6 +28,35 @@ defimpl Jason.Encoder, for: Theoria.Kernel.GeneratedTerm.Failure do
   end
 end
 
+defimpl Jason.Encoder, for: Theoria.Kernel.EnvironmentCorpus.Report.Case do
+  def encode(corpus_case, opts) do
+    Jason.Encode.map(
+      %{
+        name: corpus_case.name,
+        replay_checks: corpus_case.replay_checks,
+        normalize_checks: corpus_case.normalize_checks,
+        failures: Enum.map(corpus_case.failures, &inspect/1)
+      },
+      opts
+    )
+  end
+end
+
+defimpl Jason.Encoder, for: Theoria.Kernel.EnvironmentCorpus.Report do
+  def encode(report, opts) do
+    Jason.Encode.map(
+      %{
+        total: report.total,
+        replay_checks: report.replay_checks,
+        normalize_checks: report.normalize_checks,
+        cases: report.cases,
+        failures: Enum.map(report.failures, &inspect/1)
+      },
+      opts
+    )
+  end
+end
+
 defimpl Jason.Encoder, for: Theoria.Kernel.ProofStrategyReport do
   def encode(report, opts) do
     Jason.Encode.map(%{total: report.total, counts: report.counts}, opts)
@@ -145,6 +174,7 @@ defimpl Jason.Encoder, for: Theoria.Kernel.Differential.Report do
         environment_cases: report.environment_count,
         environment_replay_checks: report.environment_replay_count,
         environment_normalize_checks: report.environment_normalize_count,
+        environment_report: report.environment_report,
         theorem_checks: report.theorem_count,
         theorem_modules: report.theorem_modules,
         theorem_replay_checks: report.theorem_replay_count,

@@ -10,7 +10,7 @@ Post-0.4 development toward stronger kernel assurance and deeper proof automatio
 - Split term quote and Prelude-specific quote sugar out of the main DSL facade.
 - Added an explicit kernel inductive admission boundary.
 - Added explicit universe constraint sets and strengthened conservative universe solving.
-- Extended proof-producing rewrite support to nested application paths.
+- Extended proof-producing rewrite support to nested application paths and made binder-path proof limits explicit.
 - Added typed generated-term property coverage for dependent fragments.
 - Added replay checks for environments extended with generated and indexed artifacts.
 

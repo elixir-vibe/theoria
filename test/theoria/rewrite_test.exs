@@ -46,6 +46,19 @@ defmodule Theoria.RewriteTest do
              Rewrite.once_with_step(term, rule)
   end
 
+  test "binder rewrite steps report unsupported proof lifting" do
+    {:ok, env} = Prelude.env()
+    zero = Term.const(:zero)
+    one = Term.app(Term.const(:succ), zero)
+    equality = Term.eq(Term.const(:Nat), zero, one)
+    rule = Rule.new(:zero_to_one, equality, proof: Term.refl(zero))
+    term = Term.lam(:x, Term.const(:Nat), zero)
+
+    assert {:ok, step} = Rewrite.once_with_step(term, rule)
+    assert step.path == [:body]
+    assert %{proof_status: :kernel_rejected} = Proof.attach(env, step)
+  end
+
   test "nested application rewrite steps can carry checked proof" do
     {:ok, env} = Prelude.env()
     zero = Term.const(:zero)

@@ -46,11 +46,11 @@ defmodule Theoria.Kernel.Coverage do
   end
 
   defp declaration_kinds(env, declarations) do
-    declarations
-    |> Enum.map(fn name -> Env.fetch(env, name) end)
-    |> Enum.flat_map(fn
-      {:ok, constant} -> [constant.kind]
-      :error -> []
+    Enum.flat_map(declarations, fn name ->
+      case Env.fetch(env, name) do
+        {:ok, constant} -> [constant.kind]
+        :error -> []
+      end
     end)
     |> Enum.frequencies()
   end

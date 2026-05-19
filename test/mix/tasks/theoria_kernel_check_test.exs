@@ -22,6 +22,8 @@ defmodule Mix.Tasks.Theoria.Kernel.CheckTest do
     assert output =~ "✓ theorem checks:"
     assert output =~ "✓ generated artifact checks:"
     assert output =~ "✓ indexed artifact checks:"
+    assert output =~ "✓ replay checks:"
+    assert output =~ "- replay skipped:"
   end
 
   test "prints verbose report" do
@@ -34,6 +36,7 @@ defmodule Mix.Tasks.Theoria.Kernel.CheckTest do
 
     assert output =~ "verbose:"
     assert output =~ "indexed_artifacts="
+    assert output =~ "replay="
   end
 
   test "prints JSON report" do
@@ -50,6 +53,7 @@ defmodule Mix.Tasks.Theoria.Kernel.CheckTest do
     assert output =~ "\"rejection_checks\""
     assert output =~ "\"generated_artifact_checks\""
     assert output =~ "\"indexed_artifact_checks\""
+    assert output =~ "\"replay_checks\""
     assert output =~ "\"failures\":[]"
   end
 end

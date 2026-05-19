@@ -9,6 +9,7 @@ defmodule Theoria.Kernel.Differential do
   alias Theoria.Kernel.Corpus
   alias Theoria.Kernel.Reference
   alias Theoria.Kernel.Reference.Normalize, as: ReferenceNormalize
+  alias Theoria.Kernel.Reference.Replay
   alias Theoria.Normalize
   alias Theoria.Term
   alias Theoria.Theorem
@@ -27,6 +28,8 @@ defmodule Theoria.Kernel.Differential do
       :theorem_count,
       :generated_artifact_count,
       :indexed_artifact_count,
+      :replay_count,
+      :replay_skipped,
       :failures
     ]
     defstruct [
@@ -38,10 +41,12 @@ defmodule Theoria.Kernel.Differential do
       :theorem_count,
       :generated_artifact_count,
       :indexed_artifact_count,
+      :replay_count,
+      :replay_skipped,
       :failures
     ]
 
-    @type failure :: {atom(), atom(), term(), term()}
+    @type failure :: {atom(), atom(), term(), term()} | Replay.Report.failure()
     @type t :: %__MODULE__{
             infer_count: non_neg_integer(),
             check_count: non_neg_integer(),
@@ -51,6 +56,8 @@ defmodule Theoria.Kernel.Differential do
             theorem_count: non_neg_integer(),
             generated_artifact_count: non_neg_integer(),
             indexed_artifact_count: non_neg_integer(),
+            replay_count: non_neg_integer(),
+            replay_skipped: non_neg_integer(),
             failures: [failure()]
           }
 
@@ -118,6 +125,7 @@ defmodule Theoria.Kernel.Differential do
     {theorem_count, theorem_failures} = theorem_failures(env)
     {generated_artifact_count, generated_artifact_failures} = generated_artifact_failures(env)
     {indexed_artifact_count, indexed_artifact_failures} = indexed_artifact_failures(env)
+    replay_report = Replay.run(env)
 
     %Report{
       infer_count: length(Corpus.infer_cases()),
@@ -129,13 +137,16 @@ defmodule Theoria.Kernel.Differential do
       theorem_count: theorem_count,
       generated_artifact_count: generated_artifact_count,
       indexed_artifact_count: indexed_artifact_count,
+      replay_count: replay_report.checked,
+      replay_skipped: replay_report.skipped,
       failures:
         infer_failures ++
           check_failures ++
           rejection_failures ++
           normalize_failures ++
           defeq_failures ++
-          theorem_failures ++ generated_artifact_failures ++ indexed_artifact_failures
+          theorem_failures ++
+          generated_artifact_failures ++ indexed_artifact_failures ++ replay_report.failures
     }
   end
 

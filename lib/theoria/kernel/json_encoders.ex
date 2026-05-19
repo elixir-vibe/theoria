@@ -10,10 +10,20 @@ defimpl Jason.Encoder, for: Theoria.Kernel.Differential.Report do
         theorem_checks: report.theorem_count,
         generated_artifact_checks: report.generated_artifact_count,
         indexed_artifact_checks: report.indexed_artifact_count,
+        replay_checks: report.replay_count,
+        replay_skipped: report.replay_skipped,
         failures: Enum.map(report.failures, &encode_failure/1)
       },
       opts
     )
+  end
+
+  defp encode_failure({name, kind, reason}) do
+    %{
+      kind: kind,
+      name: inspect(name),
+      reason: inspect(reason)
+    }
   end
 
   defp encode_failure({kind, name, production, reference}) do

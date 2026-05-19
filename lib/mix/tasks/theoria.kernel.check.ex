@@ -39,6 +39,8 @@ defmodule Mix.Tasks.Theoria.Kernel.Check do
       Mix.shell().info("✓ theorem checks: #{report.theorem_count}")
       Mix.shell().info("✓ generated artifact checks: #{report.generated_artifact_count}")
       Mix.shell().info("✓ indexed artifact checks: #{report.indexed_artifact_count}")
+      Mix.shell().info("✓ replay checks: #{report.replay_count}")
+      Mix.shell().info("- replay skipped: #{report.replay_skipped}")
       maybe_print_verbose(report, opts)
     end
   end
@@ -53,6 +55,7 @@ defmodule Mix.Tasks.Theoria.Kernel.Check do
       Mix.shell().info("  modules=#{report.theorem_count}")
       Mix.shell().info("  generated_artifacts=#{report.generated_artifact_count}")
       Mix.shell().info("  indexed_artifacts=#{report.indexed_artifact_count}")
+      Mix.shell().info("  replay=#{report.replay_count} skipped=#{report.replay_skipped}")
       Mix.shell().info("  failures=#{length(report.failures)}")
     end
   end

@@ -19,6 +19,7 @@ defmodule Theoria.Kernel.DifferentialTest do
     assert report.theorem_count > 0
     assert report.generated_artifact_count > 0
     assert report.indexed_artifact_count > 0
+    assert report.replay_count > 0
   end
 
   test "reference checker covers let terms" do

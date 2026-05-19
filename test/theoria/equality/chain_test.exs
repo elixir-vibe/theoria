@@ -20,5 +20,16 @@ defmodule Theoria.Equality.ChainTest do
     assert {:ok, realized} = Chain.realize(env, chain, Identity.simp(:chain, :trans))
 
     assert %Term.EqRec{} = realized.proof
+    assert realized.proof_strategy == :transitive
+  end
+
+  test "marks defeq fallback when step proofs are missing" do
+    {:ok, env} = Prelude.env()
+    nat = Term.const(:Nat)
+    zero = Term.const(:zero)
+    chain = Chain.step(Chain.new(nat, zero), zero)
+
+    assert {:ok, realized} = Chain.realize(env, chain, Identity.simp(:chain, :fallback))
+    assert realized.proof_strategy == :fallback_defeq
   end
 end

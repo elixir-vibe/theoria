@@ -3,6 +3,7 @@ defmodule Theoria.Equality.Chain do
 
   alias Theoria.Env
   alias Theoria.Equality
+  alias Theoria.Equality.Chain.Result
   alias Theoria.Equation.Identity
   alias Theoria.Equation.Realized
   alias Theoria.Kernel
@@ -34,34 +35,46 @@ defmodule Theoria.Equality.Chain do
   @spec realize(Env.t(), t(), Identity.t()) :: {:ok, Realized.t()} | {:error, term()}
   def realize(%Env{} = env, %__MODULE__{} = chain, %Identity{} = identity) do
     theorem_type = Term.eq(chain.type, chain.start, chain.current)
-    proof = proof_term(chain)
+    proof_result = proof_result(chain)
 
-    with :ok <- Kernel.check(env, proof, theorem_type) do
-      Realized.check(env, identity, theorem_type, proof)
+    with :ok <- Kernel.check(env, proof_result.proof, theorem_type),
+         {:ok, realized} <- Realized.check(env, identity, theorem_type, proof_result.proof) do
+      {:ok, %{realized | proof_strategy: proof_result.strategy}}
     end
   end
 
-  defp proof_term(%__MODULE__{start: start, steps: []}), do: Term.refl(start)
+  @doc "Returns the proof term and strategy selected for a chain."
+  @spec proof_result(t()) :: Result.t()
+  def proof_result(%__MODULE__{start: start, steps: []}),
+    do: %Result{proof: Term.refl(start), strategy: :refl}
 
-  defp proof_term(%__MODULE__{} = chain) do
-    chain.steps
-    |> Enum.reverse()
-    |> Enum.reduce({chain.start, nil}, fn %{after: next, proof: proof}, {current, acc} ->
+  def proof_result(%__MODULE__{} = chain) do
+    steps = Enum.reverse(chain.steps)
+
+    case proof_term(chain, steps) do
+      {proof, strategy} -> %Result{proof: proof, strategy: strategy}
+      nil -> %Result{proof: Term.refl(chain.start), strategy: :fallback_defeq}
+    end
+  end
+
+  defp proof_term(%__MODULE__{} = chain, steps) do
+    steps
+    |> Enum.reduce({chain.start, nil, :refl}, fn %{after: next, proof: proof},
+                                                 {current, acc, strategy} ->
       cond do
         is_nil(proof) ->
-          {next, nil}
+          {next, nil, strategy}
 
         is_nil(acc) ->
-          {next, proof}
+          {next, proof, :single}
 
         true ->
-          {next, Equality.trans(chain.type, chain.start, current, next, acc, proof)}
+          {next, Equality.trans(chain.type, chain.start, current, next, acc, proof), :transitive}
       end
     end)
-    |> elem(1)
     |> case do
-      nil -> Term.refl(chain.start)
-      proof -> proof
+      {_current, nil, _strategy} -> nil
+      {_current, proof, strategy} -> {proof, strategy}
     end
   end
 end

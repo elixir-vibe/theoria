@@ -18,7 +18,13 @@ defmodule Mix.Tasks.Theoria.Simp do
     Mix.Task.run("app.start")
 
     case OptionParser.parse(args,
-           strict: [examples: :boolean, json: :boolean, list: :boolean, prove: :boolean]
+           strict: [
+             examples: :boolean,
+             explain: :boolean,
+             json: :boolean,
+             list: :boolean,
+             prove: :boolean
+           ]
          ) do
       {opts, [], []} ->
         if Keyword.get(opts, :list, false),
@@ -47,7 +53,7 @@ defmodule Mix.Tasks.Theoria.Simp do
       Mix.shell().info(Jason.encode!(%{examples: Enum.map(results, &json_example/1)}))
     else
       Mix.shell().info("simplification examples:")
-      Enum.each(results, &print_example/1)
+      Enum.each(results, &print_example(&1, opts))
     end
   end
 
@@ -61,7 +67,7 @@ defmodule Mix.Tasks.Theoria.Simp do
     %{name: name, term: term, result: result}
   end
 
-  defp print_example(%{name: name, term: term, result: result}) do
+  defp print_example(%{name: name, term: term, result: result}, opts) do
     Mix.shell().info("  #{name}: #{Pretty.term(term)} ↦ #{Pretty.term(result.term)}")
 
     Mix.shell().info(
@@ -71,7 +77,25 @@ defmodule Mix.Tasks.Theoria.Simp do
     if result.realized do
       Mix.shell().info("    proof: checked #{Identity.format(result.realized.identity)}")
     end
+
+    if Keyword.get(opts, :explain, false), do: print_explain(result)
   end
+
+  defp print_explain(%{steps: steps}) do
+    Enum.each(steps, fn step ->
+      proof = step.proof_result
+      capability = if(proof, do: proof.capability, else: nil)
+
+      Mix.shell().info(
+        "    explain path=#{inspect(step.path)} status=#{status(proof)} capability=#{capability_reason(capability)}"
+      )
+    end)
+  end
+
+  defp status(nil), do: :none
+  defp status(proof), do: proof.status
+  defp capability_reason(nil), do: :none
+  defp capability_reason(capability), do: capability.reason
 
   defp json_example(%{name: name, result: result}) do
     %{

@@ -3,6 +3,7 @@ defmodule Theoria.Rewrite do
 
   alias Theoria.Rewrite.Match
   alias Theoria.Rewrite.Proof
+  alias Theoria.Rewrite.Proof.Result, as: ProofResult
   alias Theoria.Rewrite.Rule
   alias Theoria.Rewrite.Step
   alias Theoria.Term
@@ -46,7 +47,8 @@ defmodule Theoria.Rewrite do
            before: term,
            after: rewritten,
            path: path,
-           proof: proof,
+           proof_result:
+             if(proof, do: ProofResult.checked(proof, Proof.Capabilities.explain(path))),
            substitution: substitution
          }}
 

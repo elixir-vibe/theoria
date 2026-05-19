@@ -28,6 +28,9 @@ defmodule Theoria.Kernel.Differential do
       :defeq_count,
       :rejection_count,
       :theorem_count,
+      :theorem_modules,
+      :theorem_replay_count,
+      :theorem_replay_skipped,
       :generated_artifact_count,
       :indexed_artifact_count,
       :replay_count,
@@ -47,6 +50,9 @@ defmodule Theoria.Kernel.Differential do
       :defeq_count,
       :rejection_count,
       :theorem_count,
+      :theorem_modules,
+      :theorem_replay_count,
+      :theorem_replay_skipped,
       :generated_artifact_count,
       :indexed_artifact_count,
       :replay_count,
@@ -68,6 +74,9 @@ defmodule Theoria.Kernel.Differential do
             defeq_count: non_neg_integer(),
             rejection_count: non_neg_integer(),
             theorem_count: non_neg_integer(),
+            theorem_modules: [map()],
+            theorem_replay_count: non_neg_integer(),
+            theorem_replay_skipped: non_neg_integer(),
             generated_artifact_count: non_neg_integer(),
             indexed_artifact_count: non_neg_integer(),
             replay_count: non_neg_integer(),
@@ -142,7 +151,8 @@ defmodule Theoria.Kernel.Differential do
 
     normalize_failures = failures(Corpus.normalize_cases(), &compare_normalize_case(env, &1))
     defeq_failures = failures(Corpus.defeq_cases(), &compare_defeq_case(env, &1))
-    {theorem_count, theorem_failures} = theorem_failures(env)
+    {theorem_count, theorem_modules, theorem_failures} = theorem_failures(env)
+    {theorem_replay_count, theorem_replay_skipped, theorem_replay_failures} = theorem_replay(env)
     {generated_artifact_count, generated_artifact_failures} = generated_artifact_failures(env)
     {indexed_artifact_count, indexed_artifact_failures} = indexed_artifact_failures(env)
     replay_report = Replay.run(env)
@@ -157,6 +167,9 @@ defmodule Theoria.Kernel.Differential do
       rejection_count:
         length(Corpus.infer_rejection_cases()) + length(Corpus.check_rejection_cases()),
       theorem_count: theorem_count,
+      theorem_modules: theorem_modules,
+      theorem_replay_count: theorem_replay_count,
+      theorem_replay_skipped: theorem_replay_skipped,
       generated_artifact_count: generated_artifact_count,
       indexed_artifact_count: indexed_artifact_count,
       replay_count: replay_report.checked,
@@ -174,6 +187,7 @@ defmodule Theoria.Kernel.Differential do
           normalize_failures ++
           defeq_failures ++
           theorem_failures ++
+          theorem_replay_failures ++
           generated_artifact_failures ++
           indexed_artifact_failures ++ replay_report.failures ++ artifact_replay.failures
     }
@@ -256,21 +270,48 @@ defmodule Theoria.Kernel.Differential do
   end
 
   defp theorem_failures(env) do
-    {count, failures} =
+    {count, modules, failures} =
       ValidationCorpus.builtin_theorem_modules()
-      |> Enum.reduce({0, []}, fn module, {count, failures} ->
+      |> Enum.reduce({0, [], []}, fn module, {count, modules, failures} ->
         case Theorem.check_all(module, env) do
           {:ok, theorems} ->
             module_failures = failures(theorems, &compare_theorem(env, &1))
-            {count + length(theorems), [module_failures | failures]}
+            module_summary = %{module: inspect(module), checks: length(theorems)}
+            {count + length(theorems), [module_summary | modules], [module_failures | failures]}
 
           {:error, {name, error}} ->
             failure = {:theorem_module, name, :production_check_failed, error}
-            {count, [[failure] | failures]}
+            module_summary = %{module: inspect(module), checks: 0}
+            {count, [module_summary | modules], [[failure] | failures]}
         end
       end)
 
-    {count, failures |> Enum.reverse() |> List.flatten()}
+    {count, Enum.reverse(modules), failures |> Enum.reverse() |> List.flatten()}
+  end
+
+  defp theorem_replay(env) do
+    {count, skipped, failures} =
+      ValidationCorpus.builtin_theorem_modules()
+      |> Enum.reduce({0, 0, []}, fn module, {count, skipped, failures} ->
+        case Theorem.check_all(module, env) do
+          {:ok, theorems} ->
+            {module_count, module_skipped, module_failures} = replay_theorem_module(env, theorems)
+            {count + module_count, skipped + module_skipped, [module_failures | failures]}
+
+          {:error, {name, error}} ->
+            failure = {:theorem_replay, name, :production_check_failed, error}
+            {count, skipped, [[failure] | failures]}
+        end
+      end)
+
+    {count, skipped, failures |> Enum.reverse() |> List.flatten()}
+  end
+
+  defp replay_theorem_module(env, theorems) do
+    {theorem_env, skipped} = install_artifact_theorems(env, theorems)
+    report = Replay.run(theorem_env)
+    base_count = length(Env.declarations(env))
+    {max(report.checked - base_count, 0), length(skipped) + report.skipped, report.failures}
   end
 
   defp failures(cases, callback) do

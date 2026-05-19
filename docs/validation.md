@@ -125,7 +125,7 @@ mix theoria.theorems MyApp.Proofs
 
 ## Kernel differential reports
 
-Use `mix theoria.kernel.check` for production/reference kernel assurance. It covers curated infer/check/normalize/defeq cases, rejection cases, theorem modules, generated artifacts, indexed artifacts, reference replay of the Prelude environment, and replay of environments extended with generated and indexed artifacts.
+Use `mix theoria.kernel.check` for production/reference kernel assurance. It covers curated infer/check/normalize/defeq cases, rejection cases, theorem modules, generated artifacts, indexed artifacts, reference replay of the Prelude environment, replay of theorem-module-installed environments, and replay of environments extended with generated and indexed artifacts.
 
 Coverage and JSON modes are intended for CI and tooling:
 

@@ -80,7 +80,7 @@ defmodule Theoria.RewriteTest do
 
     assert {:ok, step} = Rewrite.once_with_step(term, rule)
     assert step.path == [:body]
-    assert %{proof_status: :kernel_rejected} = Proof.attach(env, step)
+    assert %{proof_result: %{status: :kernel_rejected}} = Proof.attach(env, step)
   end
 
   test "nested application rewrite steps can carry checked proof" do
@@ -155,7 +155,12 @@ defmodule Theoria.RewriteTest do
     one = Term.app(Term.const(:succ), zero())
     add_zero = Term.const(:nat_add) |> Term.app(zero()) |> Term.app(one)
 
-    assert {:ok, %Theoria.Rewrite.Step{path: [], substitution: %{0 => ^one}, proof: proof}} =
+    assert {:ok,
+            %Theoria.Rewrite.Step{
+              path: [],
+              substitution: %{0 => ^one},
+              proof_result: %{proof: proof}
+            }} =
              Database.once_with_step(database, add_zero)
 
     assert %Term.App{} = proof
@@ -173,7 +178,7 @@ defmodule Theoria.RewriteTest do
     assert {:ok,
             %Theoria.Rewrite.Step{
               rule: %Rule{realized: %Theoria.Equation.Realized{}},
-              proof: %Term.App{}
+              proof_result: %{proof: %Term.App{}}
             }} =
              Database.once_with_step(database, env, add_zero, realize: :lazy)
   end

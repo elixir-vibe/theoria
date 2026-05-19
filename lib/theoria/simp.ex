@@ -116,9 +116,12 @@ defmodule Theoria.Simp do
 
   defp proof_chain(type, %Result{} = result) do
     Enum.reduce(result.steps, Chain.new(type, result.input), fn step, chain ->
-      Chain.step(chain, step.after, step.proof)
+      Chain.step(chain, step.after, proof_from_result(step.proof_result))
     end)
   end
+
+  defp proof_from_result(%Theoria.Rewrite.Proof.Result{proof: proof}), do: proof
+  defp proof_from_result(_result), do: nil
 
   defp step(env, rule, rewrite_step, opts) do
     proved_step = proved_step(env, rewrite_step, opts)
@@ -127,8 +130,7 @@ defmodule Theoria.Simp do
       rule: rule.rewrite.name,
       before: rewrite_step.before,
       after: rewrite_step.after,
-      proof: proved_step.proof,
-      proof_status: proved_step.proof_status,
+      proof_result: proved_step.proof_result,
       path: rewrite_step.path,
       source: rule.source
     }
@@ -138,7 +140,7 @@ defmodule Theoria.Simp do
     if Keyword.get(opts, :prove, false) do
       RewriteProof.attach(env, rewrite_step)
     else
-      %{rewrite_step | proof: nil, proof_status: :not_requested}
+      %{rewrite_step | proof_result: Theoria.Rewrite.Proof.Result.not_requested()}
     end
   end
 end

@@ -1,3 +1,29 @@
+defimpl Jason.Encoder, for: Theoria.Rewrite.Proof.Capability do
+  def encode(capability, opts) do
+    Jason.Encode.map(
+      %{
+        supported: capability.supported?,
+        reason: capability.reason,
+        description: capability.description
+      },
+      opts
+    )
+  end
+end
+
+defimpl Jason.Encoder, for: Theoria.Rewrite.Proof.Result do
+  def encode(result, opts) do
+    Jason.Encode.map(
+      %{
+        proof_status: result.status,
+        proof_capability: result.capability,
+        has_proof: not is_nil(result.proof)
+      },
+      opts
+    )
+  end
+end
+
 defimpl Jason.Encoder, for: Theoria.Level.Solver.Explanation do
   def encode(explanation, opts) do
     Jason.Encode.map(
@@ -24,6 +50,7 @@ defimpl Jason.Encoder, for: Theoria.Equation.Realized do
         identity: realized.identity,
         type: inspect(realized.type),
         proof: inspect(realized.proof),
+        proof_strategy: realized.proof_strategy,
         universe_params: realized.universe_params
       },
       opts
@@ -39,8 +66,7 @@ defimpl Jason.Encoder, for: Theoria.Rewrite.Step do
         before: inspect(step.before),
         after: inspect(step.after),
         path: step.path,
-        proof_status: step.proof_status,
-        has_proof: not is_nil(step.proof),
+        proof: step.proof_result,
         substitution: encode_substitution(step.substitution)
       },
       opts
@@ -64,8 +90,7 @@ defimpl Jason.Encoder, for: Theoria.Simp.Step do
         before: inspect(step.before),
         after: inspect(step.after),
         path: step.path,
-        proof_status: step.proof_status,
-        has_proof: not is_nil(step.proof),
+        proof: step.proof_result,
         source: step.source
       },
       opts
@@ -82,6 +107,7 @@ defimpl Jason.Encoder, for: Theoria.Simp.Result do
         stopped: result.stopped,
         steps: result.steps,
         proof_checked: not is_nil(result.realized),
+        proof_strategy: if(result.realized, do: result.realized.proof_strategy),
         realized: result.realized
       },
       opts

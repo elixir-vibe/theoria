@@ -9,6 +9,7 @@ defmodule Theoria.Rewrite.Database do
   alias Theoria.Equation.Matcher.Equation, as: MatcherEquation
   alias Theoria.Rewrite
   alias Theoria.Rewrite.Proof
+  alias Theoria.Rewrite.Proof.Result, as: ProofResult
   alias Theoria.Rewrite.Rule
   alias Theoria.Term
 
@@ -153,8 +154,10 @@ defmodule Theoria.Rewrite.Database do
       %{
         step
         | rule: rule,
-          proof: Proof.instantiate_rule(rule, step.substitution),
-          proof_status: nil
+          proof_result:
+            rule
+            |> Proof.instantiate_rule(step.substitution)
+            |> then(&if(&1, do: ProofResult.checked(&1, Proof.Capabilities.explain(step.path))))
       }
     else
       step

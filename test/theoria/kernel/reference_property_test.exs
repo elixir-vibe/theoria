@@ -153,6 +153,12 @@ defmodule Theoria.Kernel.ReferencePropertyTest do
       map(nat_term_gen(), fn term ->
         equality = Term.eq(nat, term, term)
         GeneratedTerm.new(env, Term.refl(term), equality)
+      end),
+      map(nat_term_gen(), fn term ->
+        motive = Term.lam(:n, nat, Term.shift(nat, 1))
+        base = term
+        proof = Term.refl(term)
+        GeneratedTerm.new(env, Term.eq_rec(nat, motive, base, proof), nat)
       end)
     ])
   end

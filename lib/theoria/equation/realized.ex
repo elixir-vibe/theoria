@@ -8,12 +8,13 @@ defmodule Theoria.Equation.Realized do
   alias Theoria.Theorem
 
   @enforce_keys [:identity, :type, :proof]
-  defstruct [:identity, :type, :proof, universe_params: []]
+  defstruct [:identity, :type, :proof, :proof_strategy, universe_params: []]
 
   @type t :: %__MODULE__{
           identity: Identity.t(),
           type: Term.t(),
           proof: Term.t(),
+          proof_strategy: atom() | nil,
           universe_params: [atom()]
         }
 
@@ -27,6 +28,7 @@ defmodule Theoria.Equation.Realized do
          identity: identity,
          type: type,
          proof: proof,
+         proof_strategy: Keyword.get(opts, :proof_strategy),
          universe_params: Keyword.get(opts, :universe_params, [])
        }}
     end

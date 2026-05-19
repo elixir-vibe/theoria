@@ -52,6 +52,8 @@ defmodule Mix.Tasks.Theoria.Kernel.Check do
       Mix.shell().info("✓ defeq checks: #{report.defeq_count}")
       Mix.shell().info("✓ rejection checks: #{report.rejection_count}")
       Mix.shell().info("✓ theorem checks: #{report.theorem_count}")
+      Mix.shell().info("✓ theorem replay checks: #{report.theorem_replay_count}")
+      Mix.shell().info("- theorem replay skipped: #{report.theorem_replay_skipped}")
       Mix.shell().info("✓ generated artifact checks: #{report.generated_artifact_count}")
       Mix.shell().info("✓ indexed artifact checks: #{report.indexed_artifact_count}")
       Mix.shell().info("✓ replay checks: #{report.replay_count}")
@@ -80,6 +82,15 @@ defmodule Mix.Tasks.Theoria.Kernel.Check do
       Mix.shell().info("  normalize=#{report.normalize_count} defeq=#{report.defeq_count}")
       Mix.shell().info("  rejected=#{report.rejection_count}")
       Mix.shell().info("  modules=#{report.theorem_count}")
+
+      Enum.each(report.theorem_modules, fn module ->
+        Mix.shell().info("    #{module.module}: #{module.checks}")
+      end)
+
+      Mix.shell().info(
+        "  theorem_replay=#{report.theorem_replay_count} skipped=#{report.theorem_replay_skipped}"
+      )
+
       Mix.shell().info("  generated_artifacts=#{report.generated_artifact_count}")
       Mix.shell().info("  indexed_artifacts=#{report.indexed_artifact_count}")
       Mix.shell().info("  replay=#{report.replay_count} skipped=#{report.replay_skipped}")

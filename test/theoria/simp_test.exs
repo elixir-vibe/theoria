@@ -77,7 +77,7 @@ defmodule Theoria.SimpTest do
     result = Simp.normalize(env, term, prove: true, realize: :lazy)
 
     assert result.term == expected
-    assert [%Step{path: [:arg], proof: proof}] = result.steps
+    assert [%Step{path: [:arg], proof_result: %{proof: proof, status: :checked}}] = result.steps
     assert not is_nil(proof)
     assert :ok = Kernel.check(env, result.realized.proof, result.realized.type)
   end
@@ -93,7 +93,9 @@ defmodule Theoria.SimpTest do
     assert %Theoria.Equation.Realized{identity: %Identity{kind: :simp}} = result.realized
     assert result.proof == result.realized.proof
     assert :ok = Kernel.check(env, result.realized.proof, result.realized.type)
-    assert [%Step{proof: nil, path: [], proof_status: :missing_rule_proof}] = result.steps
+
+    assert [%Step{proof_result: %{proof: nil, status: :missing_rule_proof}, path: []}] =
+             result.steps
   end
 
   test "multi-step simp combines checked step proofs" do
@@ -105,7 +107,7 @@ defmodule Theoria.SimpTest do
     result = Simp.normalize(env, term, prove: true, realize: :lazy)
 
     assert result.term == one
-    assert Enum.map(result.steps, & &1.proof_status) == [:checked, :checked]
+    assert Enum.map(result.steps, & &1.proof_result.status) == [:checked, :checked]
     assert %Term.EqRec{} = result.realized.proof
     assert :ok = Kernel.check(env, result.realized.proof, result.realized.type)
   end

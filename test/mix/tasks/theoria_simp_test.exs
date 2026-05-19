@@ -45,6 +45,18 @@ defmodule Mix.Tasks.Theoria.SimpTest do
     assert output =~ "proof: checked simp.normalize"
   end
 
+  test "explains proof capabilities" do
+    Mix.Task.clear()
+
+    output =
+      capture_io(fn ->
+        Simp.run(["nat_add_zero", "--prove", "--explain"])
+      end)
+
+    assert output =~ "explain path="
+    assert output =~ "capability="
+  end
+
   test "prints JSON for examples" do
     Mix.Task.clear()
 
@@ -56,6 +68,7 @@ defmodule Mix.Tasks.Theoria.SimpTest do
     assert output =~ "\"examples\""
     assert output =~ "\"name\":\"nat_add_zero\""
     assert output =~ "\"proof_checked\":true"
+    assert output =~ "\"proof\""
   end
 
   test "runs examples with checked simp artifacts" do

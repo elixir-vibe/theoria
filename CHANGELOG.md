@@ -19,6 +19,11 @@ Post-0.4 development toward stronger kernel assurance and deeper proof automatio
 - Added equality-side rewrite proof lifting for equality terms.
 - Added Jason encoders for structured artifact replay reports.
 - Added regression coverage for explicit equality-chain transitivity proofs.
+- Replaced separate step proof fields with a structured proof result.
+- Added proof capability reporting and `mix theoria.simp --explain`.
+- Added equality-chain proof strategy metadata.
+- Added theorem-module environment replay and theorem-module report breakdowns.
+- Expanded reference properties with `EqRec` over reflexivity.
 
 ## 0.4.0
 

@@ -56,7 +56,7 @@ Definitional equality compares normalized core terms through `Theoria.Term.equiv
 
 ## Differential assurance
 
-`Theoria.Kernel.Differential` compares production kernel results against `Theoria.Kernel.Reference` on the curated kernel corpus, including Bool/Nat/List/Vec examples, rejected inference/checking cases, generated equation artifacts, explicit indexed matcher artifacts, the built-in theorem modules, reference replay of environment declarations, and replay of environments extended with generated artifacts. Property tests also generate closed Bool, Nat, List Bool, Vec Bool, and typed dependent fragments, plus generated equalities and List eliminator applications, then compare production inference, checking, and normalization with the reference path.
+`Theoria.Kernel.Differential` compares production kernel results against `Theoria.Kernel.Reference` on the curated kernel corpus, including Bool/Nat/List/Vec examples, rejected inference/checking cases, generated equation artifacts, explicit indexed matcher artifacts, the built-in theorem modules, reference replay of environment declarations, theorem-module-installed environment replay, and replay of environments extended with generated artifacts. Property tests also generate closed Bool, Nat, List Bool, Vec Bool, typed dependent fragments, and `EqRec` over reflexivity, plus generated equalities and List eliminator applications, then compare production inference, checking, and normalization with the reference path.
 
 Run it with:
 

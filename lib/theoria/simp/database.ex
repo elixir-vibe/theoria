@@ -6,6 +6,7 @@ defmodule Theoria.Simp.Database do
   alias Theoria.Rewrite
   alias Theoria.Rewrite.Database, as: RewriteDatabase
   alias Theoria.Rewrite.Proof
+  alias Theoria.Rewrite.Proof.Result, as: ProofResult
   alias Theoria.Simp.Rule
   alias Theoria.Term
 
@@ -99,8 +100,10 @@ defmodule Theoria.Simp.Database do
       {%{
          step
          | rule: rewrite,
-           proof: Proof.instantiate_rule(rewrite, step.substitution),
-           proof_status: nil
+           proof_result:
+             rewrite
+             |> Proof.instantiate_rule(step.substitution)
+             |> then(&if(&1, do: ProofResult.checked(&1, Proof.Capabilities.explain(step.path))))
        }, %{rule | rewrite: rewrite}}
     else
       {step, rule}

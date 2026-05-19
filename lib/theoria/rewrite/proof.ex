@@ -5,6 +5,8 @@ defmodule Theoria.Rewrite.Proof do
   alias Theoria.Equality
   alias Theoria.Kernel
   alias Theoria.Rewrite.Match
+  alias Theoria.Rewrite.Proof.Capabilities
+  alias Theoria.Rewrite.Proof.Result
   alias Theoria.Rewrite.Rule
   alias Theoria.Rewrite.Step
   alias Theoria.Term
@@ -24,7 +26,7 @@ defmodule Theoria.Rewrite.Proof do
   @spec for_step(Env.t(), Step.t()) :: Term.t() | nil
   def for_step(%Env{} = env, %Step{} = step) do
     case attach(env, step) do
-      %Step{proof: proof, proof_status: :checked} -> proof
+      %Step{proof_result: %Result{proof: proof, status: :checked}} -> proof
       %Step{} -> nil
     end
   end
@@ -32,9 +34,11 @@ defmodule Theoria.Rewrite.Proof do
   @doc "Attaches proof status and a checked proof to a rewrite step when possible."
   @spec attach(Env.t(), Step.t()) :: Step.t()
   def attach(%Env{} = env, %Step{} = step) do
+    capability = Capabilities.explain(step.path)
+
     case proof_result(env, step) do
-      {:ok, proof} -> %{step | proof: proof, proof_status: :checked}
-      {:error, status} -> %{step | proof_status: status}
+      {:ok, proof} -> %{step | proof_result: Result.checked(proof, capability)}
+      {:error, status} -> %{step | proof_result: Result.rejected(status, capability)}
     end
   end
 
@@ -49,7 +53,11 @@ defmodule Theoria.Rewrite.Proof do
     end
   end
 
-  defp local_or_defeq_proof(env, type, %Step{proof: proof, path: []} = step)
+  defp local_or_defeq_proof(
+         env,
+         type,
+         %Step{proof_result: %Result{proof: proof}, path: []} = step
+       )
        when not is_nil(proof) do
     if Kernel.check(env, proof, Term.eq(type, step.before, step.after)) == :ok do
       {:ok, proof}
@@ -58,11 +66,18 @@ defmodule Theoria.Rewrite.Proof do
     end
   end
 
-  defp local_or_defeq_proof(env, type, %Step{proof: proof, path: path} = step)
+  defp local_or_defeq_proof(
+         env,
+         type,
+         %Step{proof_result: %Result{proof: proof}, path: path} = step
+       )
        when not is_nil(proof) and path != [],
        do: lift_path_or_defeq(env, type, proof, step)
 
-  defp local_or_defeq_proof(_env, _type, %Step{proof: nil}),
+  defp local_or_defeq_proof(_env, _type, %Step{proof_result: nil}),
+    do: {:error, :missing_rule_proof}
+
+  defp local_or_defeq_proof(_env, _type, %Step{proof_result: %Result{proof: nil}}),
     do: {:error, :missing_rule_proof}
 
   defp local_or_defeq_proof(env, type, %Step{} = step) do
@@ -95,7 +110,13 @@ defmodule Theoria.Rewrite.Proof do
     case {step.before, step.after} do
       {%Term.App{fun: fun, arg: left}, %Term.App{fun: after_fun, arg: right}}
       when fun == after_fun ->
-        nested = %Step{step | before: left, after: right, path: rest, proof: proof}
+        nested = %Step{
+          step
+          | before: left,
+            after: right,
+            path: rest,
+            proof_result: Result.checked(proof, Capabilities.explain(rest))
+        }
 
         with {:ok, nested_type} <- Kernel.infer(env, left),
              {:ok, nested_proof} <- local_or_defeq_proof(env, nested_type, nested) do
@@ -111,7 +132,13 @@ defmodule Theoria.Rewrite.Proof do
     case {step.before, step.after} do
       {%Term.App{fun: left_fun, arg: arg}, %Term.App{fun: right_fun, arg: after_arg}}
       when arg == after_arg ->
-        nested = %Step{step | before: left_fun, after: right_fun, path: rest, proof: proof}
+        nested = %Step{
+          step
+          | before: left_fun,
+            after: right_fun,
+            path: rest,
+            proof_result: Result.checked(proof, Capabilities.explain(rest))
+        }
 
         with {:ok, nested_type} <- Kernel.infer(env, left_fun),
              {:ok, nested_proof} <- local_or_defeq_proof(env, nested_type, nested) do

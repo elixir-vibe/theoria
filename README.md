@@ -240,24 +240,15 @@ Theoria.Theorem.add_all_to_env(MyProofs, env)
 
 ## Documentation
 
-Guides included with the package:
+Start with:
 
-- [`docs/release_0_7.md`](docs/release_0_7.md) — 0.7 development boundary for replay and environment assurance
-- [`docs/release_0_6.md`](docs/release_0_6.md) — 0.6 development boundary for deeper proof automation
-- [`docs/release_0_6_checklist.md`](docs/release_0_6_checklist.md) — 0.6 release readiness checklist
-- [`docs/release_0_5.md`](docs/release_0_5.md) — 0.5 development boundary and assurance/reporting notes
-- [`docs/release_0_2.md`](docs/release_0_2.md) — 0.2 release boundary and API stability notes
-- [`docs/design.md`](docs/design.md) — kernel and environment design notes
-- [`docs/inductives.md`](docs/inductives.md) — inductive specifications and recursor generation
-- [`docs/theorem_modules.md`](docs/theorem_modules.md) — theorem module workflow
+- [`docs/design.md`](docs/design.md) — kernel and environment design
+- [`docs/theorem_modules.md`](docs/theorem_modules.md) — writing checked theorem modules
+- [`docs/inductives.md`](docs/inductives.md) — inductive specs and recursors
 - [`docs/trusted_boundary.md`](docs/trusted_boundary.md) — what is trusted versus automation
-- [`docs/kernel_spec.md`](docs/kernel_spec.md) — Elixir-authored kernel spec, reference checker, and differential checks
-- [`docs/validation.md`](docs/validation.md) — native validation corpus
-- [`docs/reports.md`](docs/reports.md) — CLI report, coverage, explanation, and JSON output guide
-- [`docs/proof_capabilities.md`](docs/proof_capabilities.md) — proof-producing rewrite/simp path support and boundaries
-- [`docs/lean_validation.md`](docs/lean_validation.md) — contributor-only Lean oracle validation
-- [`docs/equations.md`](docs/equations.md) — internal equation, matcher, rewrite, and simp groundwork
-- [`CHANGELOG.md`](CHANGELOG.md) — release history
+- [`docs/validation.md`](docs/validation.md) — native validation workflow
+
+Additional maintainer and experimental notes live under [`docs/`](docs/). See [`CHANGELOG.md`](CHANGELOG.md) for release history.
 
 ## Validation
 

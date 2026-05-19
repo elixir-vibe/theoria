@@ -173,6 +173,8 @@ defmodule Mix.Tasks.Theoria.Kernel.CheckTest do
     assert report["environment_normalize_checks"] > 0
     assert report["invalid_environment_checks"] == 6
     assert report["metadata_replay_checks"] > 0
+    assert report["metadata_replay"]["checked"] == report["metadata_replay_checks"]
+    assert report["metadata_replay"]["sources"]["prelude"] > 0
     assert report["proof_strategies"]["total"] == 40
     assert report["proof_strategies"]["counts"]["refl"] == 38
   end

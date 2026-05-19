@@ -82,7 +82,7 @@ defmodule Theoria.Kernel.AssuranceSummary do
         replay: report.environment_replay_count,
         normalize: report.environment_normalize_count,
         invalid: report.invalid_environment_count,
-        metadata: report.metadata_replay_count
+        metadata: report.metadata_replay.checked
       },
       artifacts: %Artifacts{
         generated: report.generated_artifact_count,

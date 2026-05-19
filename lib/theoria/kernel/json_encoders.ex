@@ -1,3 +1,16 @@
+defimpl Jason.Encoder, for: Theoria.Kernel.MetadataReplayReport do
+  def encode(report, opts) do
+    Jason.Encode.map(
+      %{
+        checked: report.checked,
+        sources: report.sources,
+        failures: Enum.map(report.failures, &inspect/1)
+      },
+      opts
+    )
+  end
+end
+
 defimpl Jason.Encoder, for: Theoria.Kernel.Corpus.Summary do
   def encode(summary, opts), do: Jason.Encode.map(Map.from_struct(summary), opts)
 end
@@ -168,8 +181,9 @@ defimpl Jason.Encoder, for: Theoria.Kernel.ArtifactReplay do
     Jason.Encode.map(
       %{
         checked: Theoria.Kernel.ArtifactReplay.checked(replay),
-        generated_checked: replay.generated_checked,
-        indexed_checked: replay.indexed_checked,
+        generated_checked: Theoria.Kernel.ArtifactReplay.generated_checked(replay),
+        indexed_checked: Theoria.Kernel.ArtifactReplay.indexed_checked(replay),
+        sources: Theoria.Kernel.ArtifactReplay.sources(replay),
         skipped: replay.skipped,
         failures: replay.failures
       },
@@ -207,7 +221,8 @@ defimpl Jason.Encoder, for: Theoria.Kernel.Differential.Report do
         environment_normalize_checks: report.environment_normalize_count,
         environment_report: report.environment_report,
         invalid_environment_checks: report.invalid_environment_count,
-        metadata_replay_checks: report.metadata_replay_count,
+        metadata_replay_checks: report.metadata_replay.checked,
+        metadata_replay: report.metadata_replay,
         theorem_checks: report.theorem_count,
         theorem_modules: report.theorem_modules,
         theorem_replay_checks: report.theorem_replay_count,

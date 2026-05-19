@@ -97,7 +97,8 @@ defmodule Mix.Tasks.Theoria.Kernel.Check do
       Mix.shell().info("  environment replay checks: #{report.environment_replay_count}")
       Mix.shell().info("  environment normalize checks: #{report.environment_normalize_count}")
       Mix.shell().info("✓ invalid environment checks: #{report.invalid_environment_count}")
-      Mix.shell().info("✓ metadata replay checks: #{report.metadata_replay_count}")
+      Mix.shell().info("✓ metadata replay checks: #{report.metadata_replay.checked}")
+      print_metadata_replay_sources(report.metadata_replay.sources, "  ")
       Mix.shell().info("✓ theorem checks: #{report.theorem_count}")
       Mix.shell().info("✓ theorem replay checks: #{report.theorem_replay_count}")
       Mix.shell().info("- theorem replay skipped: #{report.theorem_replay_skipped}")
@@ -187,7 +188,7 @@ defmodule Mix.Tasks.Theoria.Kernel.Check do
       print_generated_term_families(report.generated_terms.families, "    ")
 
       Mix.shell().info(
-        "  environment_cases=#{report.environment_count} replay=#{report.environment_replay_count} normalize=#{report.environment_normalize_count} invalid=#{report.invalid_environment_count} metadata=#{report.metadata_replay_count}"
+        "  environment_cases=#{report.environment_count} replay=#{report.environment_replay_count} normalize=#{report.environment_normalize_count} invalid=#{report.invalid_environment_count} metadata=#{report.metadata_replay.checked}"
       )
 
       Mix.shell().info("  modules=#{report.theorem_count}")
@@ -218,6 +219,10 @@ defmodule Mix.Tasks.Theoria.Kernel.Check do
     end
   end
 
+  defp print_metadata_replay_sources(sources, prefix) do
+    print_count_pairs(sources, prefix)
+  end
+
   defp print_environment_cases(cases, prefix) do
     Enum.each(cases, fn corpus_case ->
       Mix.shell().info(
@@ -235,9 +240,13 @@ defmodule Mix.Tasks.Theoria.Kernel.Check do
   end
 
   defp print_generated_term_families(families, prefix) do
-    families
-    |> Enum.sort_by(fn {family, _count} -> family end)
-    |> Enum.each(fn {family, count} -> Mix.shell().info("#{prefix}#{family}: #{count}") end)
+    print_count_pairs(families, prefix)
+  end
+
+  defp print_count_pairs(pairs, prefix) do
+    pairs
+    |> Enum.sort_by(fn {name, _count} -> name end)
+    |> Enum.each(fn {name, count} -> Mix.shell().info("#{prefix}#{name}: #{count}") end)
   end
 
   defp print_artifact_replay_skips([]), do: :ok

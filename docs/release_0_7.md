@@ -18,7 +18,7 @@ The 0.7 line focuses on deeper kernel/reference assurance through environment re
 
 ## Declaration-chain generation
 
-0.7 generates bounded declaration, let, theorem, and universe-polymorphic chains and compares production/reference behavior for replay, normalization, metadata/reduction preservation, and dependency tracking. `mix theoria.kernel.check --environment-depth N` controls the generated chain depth. Invalid environment cases also check that malformed declaration indexes, bad declaration values, bad theorem proofs, duplicate declaration indexes, and unknown dependencies are rejected by native environment validation with the expected reason.
+0.7 generates bounded declaration, let, theorem, and universe-polymorphic chains and compares production/reference behavior for replay, normalization, metadata/reduction preservation, and dependency tracking. `mix theoria.kernel.check --environment-depth N` controls the generated chain depth. Metadata replay reports include source breakdowns for Prelude, generated environments, generated artifacts, indexed artifacts, and theorem modules. Invalid environment cases also check that malformed declaration indexes, bad declaration values, bad theorem proofs, duplicate declaration indexes, and unknown dependencies are rejected by native environment validation with the expected reason.
 
 ## Assurance summary
 

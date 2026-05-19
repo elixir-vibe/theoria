@@ -17,6 +17,7 @@ defmodule Theoria.Kernel.Differential do
   alias Theoria.Kernel.GeneratedTerm.Failure, as: GeneratedTermFailure
   alias Theoria.Kernel.GeneratedTerm.Report, as: GeneratedTermReport
   alias Theoria.Kernel.Generator
+  alias Theoria.Kernel.MetadataReplayReport
   alias Theoria.Kernel.ProofStrategyReport
   alias Theoria.Kernel.Reference
   alias Theoria.Kernel.Reference.Normalize, as: ReferenceNormalize
@@ -44,7 +45,7 @@ defmodule Theoria.Kernel.Differential do
       :environment_normalize_count,
       :environment_report,
       :invalid_environment_count,
-      :metadata_replay_count,
+      :metadata_replay,
       :theorem_count,
       :theorem_modules,
       :theorem_replay_count,
@@ -77,7 +78,7 @@ defmodule Theoria.Kernel.Differential do
       :environment_normalize_count,
       :environment_report,
       :invalid_environment_count,
-      :metadata_replay_count,
+      :metadata_replay,
       :theorem_count,
       :theorem_modules,
       :theorem_replay_count,
@@ -112,7 +113,7 @@ defmodule Theoria.Kernel.Differential do
             environment_normalize_count: non_neg_integer(),
             environment_report: EnvironmentReport.t(),
             invalid_environment_count: non_neg_integer(),
-            metadata_replay_count: non_neg_integer(),
+            metadata_replay: MetadataReplayReport.t(),
             theorem_count: non_neg_integer(),
             theorem_modules: [TheoremModuleReport.t()],
             theorem_replay_count: non_neg_integer(),
@@ -143,7 +144,7 @@ defmodule Theoria.Kernel.Differential do
     def total_checks(%__MODULE__{} = report) do
       report.infer_count + report.check_count + report.normalize_count + report.defeq_count +
         report.rejection_count + report.generated_term_count + report.environment_normalize_count +
-        report.invalid_environment_count + report.metadata_replay_count + report.theorem_count +
+        report.invalid_environment_count + report.metadata_replay.checked + report.theorem_count +
         report.generated_artifact_count + report.indexed_artifact_count
     end
 
@@ -243,8 +244,8 @@ defmodule Theoria.Kernel.Differential do
 
     {replay_report, replay_ms} = timed(fn -> Replay.run(env) end)
 
-    {{metadata_replay_count, metadata_replay_failures}, metadata_replay_ms} =
-      timed(fn -> metadata_replay_failures(env, replay_report) end)
+    {metadata_replay, metadata_replay_ms} =
+      timed(fn -> metadata_replay_report(env, opts, replay_report) end)
 
     {artifact_replay, artifact_replay_ms} = timed(fn -> artifact_replay(env) end)
 
@@ -267,7 +268,7 @@ defmodule Theoria.Kernel.Differential do
       environment_normalize_count: environment_report.normalize_checks,
       environment_report: environment_report,
       invalid_environment_count: invalid_environment_count,
-      metadata_replay_count: metadata_replay_count,
+      metadata_replay: metadata_replay,
       theorem_count: theorem_count,
       theorem_modules: theorem_modules,
       theorem_replay_count: theorem_replay_count,
@@ -307,7 +308,7 @@ defmodule Theoria.Kernel.Differential do
           generated_term_failures ++
           environment_report.failures ++
           invalid_environment_failures ++
-          metadata_replay_failures ++
+          metadata_replay.failures ++
           theorem_failures ++
           generated_artifact_failures ++
           indexed_artifact_failures ++ replay_report.failures ++ artifact_replay.failures
@@ -433,11 +434,87 @@ defmodule Theoria.Kernel.Differential do
     end
   end
 
-  defp metadata_replay_failures(%Env{} = source_env, %Replay.Report{} = replay_report) do
+  defp metadata_replay_report(%Env{} = env, %Options{} = opts, %Replay.Report{} = replay_report) do
+    [
+      metadata_replay_entry(:prelude, env, replay_report),
+      environment_metadata_replay_entry(opts),
+      generated_artifact_metadata_replay_entry(env),
+      indexed_artifact_metadata_replay_entry(env),
+      theorem_module_metadata_replay_entry(env)
+    ]
+    |> MetadataReplayReport.new()
+  end
+
+  defp metadata_replay_entry(source, %Env{} = source_env, %Replay.Report{} = replay_report) do
     names = source_env |> Env.declarations() |> Enum.take(replay_report.checked)
 
-    {length(names),
-     failures(names, &compare_replayed_metadata(source_env, replay_report.env, &1))}
+    failures =
+      failures(names, fn name ->
+        case compare_replayed_metadata(source_env, replay_report.env, name) do
+          :ok -> :ok
+          {:error, failure} -> {:error, {source, failure}}
+        end
+      end)
+
+    {source, length(names), failures}
+  end
+
+  defp environment_metadata_replay_entry(%Options{} = opts) do
+    opts
+    |> environment_options()
+    |> EnvironmentCorpus.cases()
+    |> Enum.map(fn corpus_case ->
+      metadata_replay_entry(corpus_case.name, corpus_case.env, Replay.run(corpus_case.env))
+    end)
+    |> merge_metadata_replay_entries(:environment_corpus)
+  end
+
+  defp generated_artifact_metadata_replay_entry(env) do
+    with {:ok, generated_theorems} <- Extension.realize_all(env),
+         {artifact_env, _skipped} <- install_artifact_theorems(env, generated_theorems) do
+      metadata_replay_entry(:generated_artifacts, artifact_env, Replay.run(artifact_env))
+    else
+      {:error, reason} ->
+        {:generated_artifacts, 0, [{:generated_artifacts, :metadata_replay_failed, reason}]}
+    end
+  end
+
+  defp indexed_artifact_metadata_replay_entry(env) do
+    with {:ok, package} <- IndexedMatchers.check(env),
+         {:ok, indexed_realized} <- IndexedRealization.realize_all(package),
+         theorems = Enum.map(indexed_realized, &Realized.to_theorem/1),
+         {artifact_env, _skipped} <- install_artifact_theorems(package.env, theorems) do
+      metadata_replay_entry(:indexed_artifacts, artifact_env, Replay.run(artifact_env))
+    else
+      {:error, reason} ->
+        {:indexed_artifacts, 0, [{:indexed_artifacts, :metadata_replay_failed, reason}]}
+    end
+  end
+
+  defp theorem_module_metadata_replay_entry(env) do
+    ValidationCorpus.builtin_theorem_modules()
+    |> Enum.map(&theorem_module_metadata_replay_entry(env, &1))
+    |> merge_metadata_replay_entries(:theorem_modules)
+  end
+
+  defp theorem_module_metadata_replay_entry(env, module) do
+    case Theorem.check_all(module, env) do
+      {:ok, theorems} ->
+        {theorem_env, _skipped} = install_artifact_theorems(env, theorems)
+        metadata_replay_entry(module, theorem_env, Replay.run(theorem_env))
+
+      {:error, reason} ->
+        {module, 0, [{:theorem_module_metadata_replay, module, reason}]}
+    end
+  end
+
+  defp merge_metadata_replay_entries(entries, source) do
+    {count, failures} =
+      Enum.reduce(entries, {0, []}, fn {_entry_source, count, failures}, {total, all_failures} ->
+        {total + count, [failures | all_failures]}
+      end)
+
+    {source, count, failures |> Enum.reverse() |> List.flatten()}
   end
 
   defp compare_replayed_metadata(source_env, replay_env, name) do

@@ -16,6 +16,8 @@ Post-0.6 development toward deeper replay and environment assurance.
 - Improved `mix theoria.theorems MODULE` to load downstream theorem modules directly.
 - Added kernel/validation corpus summary structs and `docs/assurance.md`.
 - Made `--assurance-summary` compose with `--coverage` for text and JSON output.
+- Added structured metadata replay reports with source breakdowns for Prelude, generated environments, artifacts, indexed artifacts, and theorem modules.
+- Added artifact replay source accessors and documented new assurance report JSON fields.
 
 ## 0.6.0
 

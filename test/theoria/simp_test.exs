@@ -74,7 +74,7 @@ defmodule Theoria.SimpTest do
     term = Term.app(Term.const(:succ), add_zero)
     expected = Term.app(Term.const(:succ), one)
 
-    result = Simp.normalize(env, term, prove: true, realize: true)
+    result = Simp.normalize(env, term, prove: true, realize: :lazy)
 
     assert result.term == expected
     assert [%Step{path: [:arg], proof: proof}] = result.steps
@@ -93,7 +93,21 @@ defmodule Theoria.SimpTest do
     assert %Theoria.Equation.Realized{identity: %Identity{kind: :simp}} = result.realized
     assert result.proof == result.realized.proof
     assert :ok = Kernel.check(env, result.realized.proof, result.realized.type)
-    assert [%Step{proof: %Term.Refl{}, path: []}] = result.steps
+    assert [%Step{proof: nil, path: [], proof_status: :missing_rule_proof}] = result.steps
+  end
+
+  test "multi-step simp combines checked step proofs" do
+    {:ok, env} = Prelude.env()
+    one = Term.app(Term.const(:succ), zero())
+    inner = Term.const(:nat_add) |> Term.app(zero()) |> Term.app(one)
+    term = Term.const(:nat_add) |> Term.app(zero()) |> Term.app(inner)
+
+    result = Simp.normalize(env, term, prove: true, realize: :lazy)
+
+    assert result.term == one
+    assert Enum.map(result.steps, & &1.proof_status) == [:checked, :checked]
+    assert %Term.EqRec{} = result.realized.proof
+    assert :ok = Kernel.check(env, result.realized.proof, result.realized.type)
   end
 
   test "realizes and installs simp equality under a user theorem name" do

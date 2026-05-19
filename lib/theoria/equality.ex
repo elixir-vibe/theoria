@@ -36,6 +36,23 @@ defmodule Theoria.Equality do
     rewrite(type, motive, left_eq_middle, middle_eq_right)
   end
 
+  @doc "Builds congruence for applying equal functions to the same argument."
+  @spec congr_fun(Term.t(), Term.t(), Term.t(), Term.t(), Term.t(), Term.t()) :: Term.EqRec.t()
+  def congr_fun(fun_type, result_type, arg, left_fun, _right_fun, proof) do
+    motive =
+      Term.lam(
+        :g,
+        fun_type,
+        Term.eq(
+          Term.shift(result_type, 1),
+          Term.app(Term.shift(left_fun, 1), Term.shift(arg, 1)),
+          Term.app(Term.bvar(0), Term.shift(arg, 1))
+        )
+      )
+
+    rewrite(fun_type, motive, Term.refl(Term.app(left_fun, arg)), proof)
+  end
+
   @doc "Builds congruence for a unary function."
   @spec congr(Term.t(), Term.t(), Term.t(), Term.t(), Term.t(), Term.t()) :: Term.EqRec.t()
   def congr(domain, codomain, fun, left, _right, proof) do

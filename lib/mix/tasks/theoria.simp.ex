@@ -17,7 +17,9 @@ defmodule Mix.Tasks.Theoria.Simp do
   def run(args) do
     Mix.Task.run("app.start")
 
-    case OptionParser.parse(args, strict: [examples: :boolean, list: :boolean, prove: :boolean]) do
+    case OptionParser.parse(args,
+           strict: [examples: :boolean, json: :boolean, list: :boolean, prove: :boolean]
+         ) do
       {opts, [], []} ->
         if Keyword.get(opts, :list, false),
           do: list_examples(),
@@ -39,20 +41,45 @@ defmodule Mix.Tasks.Theoria.Simp do
 
   defp run_examples(opts, examples) do
     {:ok, env} = Prelude.env()
-    Mix.shell().info("simplification examples:")
+    results = Enum.map(examples, &run_example(env, &1, opts))
 
-    Enum.each(examples, fn {name, term} ->
-      result = Simp.normalize(env, term, prove: Keyword.get(opts, :prove, false))
-      Mix.shell().info("  #{name}: #{Pretty.term(term)} ↦ #{Pretty.term(result.term)}")
+    if Keyword.get(opts, :json, false) do
+      Mix.shell().info(Jason.encode!(%{examples: Enum.map(results, &json_example/1)}))
+    else
+      Mix.shell().info("simplification examples:")
+      Enum.each(results, &print_example/1)
+    end
+  end
 
-      Mix.shell().info(
-        "    steps: #{Enum.map_join(result.steps, ", ", &Identity.format_declaration(&1.rule))}"
+  defp run_example(env, {name, term}, opts) do
+    result =
+      Simp.normalize(env, term,
+        prove: Keyword.get(opts, :prove, false),
+        realize: Keyword.get(opts, :realize, false)
       )
 
-      if result.realized do
-        Mix.shell().info("    proof: checked #{Identity.format(result.realized.identity)}")
-      end
-    end)
+    %{name: name, term: term, result: result}
+  end
+
+  defp print_example(%{name: name, term: term, result: result}) do
+    Mix.shell().info("  #{name}: #{Pretty.term(term)} ↦ #{Pretty.term(result.term)}")
+
+    Mix.shell().info(
+      "    steps: #{Enum.map_join(result.steps, ", ", &Identity.format_declaration(&1.rule))}"
+    )
+
+    if result.realized do
+      Mix.shell().info("    proof: checked #{Identity.format(result.realized.identity)}")
+    end
+  end
+
+  defp json_example(%{name: name, result: result}) do
+    %{
+      name: name,
+      stopped: result.stopped,
+      proof_checked: not is_nil(result.realized),
+      result: result
+    }
   end
 
   defp select_examples(names) do

@@ -8,7 +8,17 @@ defmodule Theoria.Rewrite.Rule do
   alias Theoria.Term
 
   @enforce_keys [:name, :equality]
-  defstruct [:name, :equality, :identity, :proof, :realized, direction: :forward, binders: []]
+  defstruct [
+    :name,
+    :equality,
+    :identity,
+    :proof,
+    :realized,
+    :source_lemma,
+    realize: false,
+    direction: :forward,
+    binders: []
+  ]
 
   @type t :: %__MODULE__{
           name: atom() | Identity.t(),
@@ -16,6 +26,8 @@ defmodule Theoria.Rewrite.Rule do
           identity: Identity.t() | nil,
           proof: Term.t() | nil,
           realized: Theoria.Equation.Realized.t() | nil,
+          source_lemma: Lemma.t() | nil,
+          realize: false | true | :lazy,
           direction: :forward | :backward,
           binders: [Lemma.binder()]
         }
@@ -39,6 +51,8 @@ defmodule Theoria.Rewrite.Rule do
       identity: Keyword.get(opts, :identity),
       proof: Keyword.get(opts, :proof),
       realized: Keyword.get(opts, :realized),
+      source_lemma: Keyword.get(opts, :source_lemma),
+      realize: Keyword.get(opts, :realize, false),
       direction: Keyword.get(opts, :direction, :forward),
       binders: Keyword.get(opts, :binders, [])
     }
@@ -53,7 +67,7 @@ defmodule Theoria.Rewrite.Rule do
   @doc "Builds a rewrite rule from equation-lemma metadata, realizing it first when requested."
   @spec from_realizing_lemma(Env.t(), Lemma.t(), keyword()) :: t()
   def from_realizing_lemma(%Env{} = env, %Lemma{} = lemma, opts \\ []) do
-    if Keyword.get(opts, :realize, false) do
+    if Keyword.get(opts, :realize, false) == true do
       case Lemma.realize(env, lemma, opts) do
         {:ok, realized} ->
           from_lemma(lemma, Keyword.merge(opts, proof: realized.proof, realized: realized))
@@ -62,9 +76,23 @@ defmodule Theoria.Rewrite.Rule do
           from_lemma(lemma, opts)
       end
     else
-      from_lemma(lemma, opts)
+      from_lemma(lemma, Keyword.put(opts, :source_lemma, lemma))
     end
   end
+
+  @doc "Realizes a lazy proof-backed rewrite rule."
+  @spec realize(Env.t(), t(), keyword()) :: t()
+  def realize(env, rule, opts \\ [])
+  def realize(%Env{}, %__MODULE__{realized: %Realized{}} = rule, _opts), do: rule
+
+  def realize(%Env{} = env, %__MODULE__{source_lemma: %Lemma{} = lemma} = rule, opts) do
+    case Lemma.realize(env, lemma, opts) do
+      {:ok, realized} -> %{rule | proof: realized.proof, realized: realized, realize: true}
+      {:error, _reason} -> rule
+    end
+  end
+
+  def realize(%Env{}, %__MODULE__{} = rule, _opts), do: rule
 
   @doc "Builds a rewrite rule from equation-lemma metadata."
   @spec from_lemma(Lemma.t(), Term.t() | keyword(), keyword()) :: t()
@@ -75,7 +103,9 @@ defmodule Theoria.Rewrite.Rule do
       binders: lemma.binders,
       direction: Keyword.get(opts, :direction, :forward),
       proof: Keyword.get(opts, :proof),
-      realized: Keyword.get(opts, :realized)
+      realized: Keyword.get(opts, :realized),
+      source_lemma: Keyword.get(opts, :source_lemma),
+      realize: Keyword.get(opts, :realize, false)
     )
   end
 

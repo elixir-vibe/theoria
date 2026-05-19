@@ -22,9 +22,11 @@ The equation and simp Mix tasks expose checked artifact paths:
 
 ```bash
 mix theoria.equations --realize nat_add
+mix theoria.equations --realize --json nat_add
 mix theoria.simp --examples --prove
 mix theoria.simp --list
 mix theoria.simp nat_add_zero --prove
+mix theoria.simp nat_add_zero --prove --json
 ```
 
 These commands do not make rewrite/simp search trusted. They surface the kernel-checked artifact produced after untrusted planning.
@@ -63,7 +65,24 @@ Paths such as `[:arg]` or `[:fun, :arg]` are the groundwork for congruence lifti
 
 ## Congruence and equality chain groundwork
 
-`Theoria.Rewrite.Proof` can instantiate proof-backed rules at matched substitutions and lift supported `[:arg]` rewrites through unary application congruence. `Theoria.Equality.Chain` now consumes step proofs with equality transitivity where available, falling back to kernel-checked reflexivity only when the whole trace is definitionally equal.
+`Theoria.Rewrite.Proof` can instantiate proof-backed rules at matched substitutions and lift supported `[:arg]` and `[:fun]` rewrites through application congruence. `Theoria.Equality.Chain` now consumes step proofs with equality transitivity where available, falling back to kernel-checked reflexivity only when the whole trace is definitionally equal.
+
+Proof diagnostics are explicit on rewrite/simp steps:
+
+- `:checked`
+- `:not_requested`
+- `:missing_rule_proof`
+- `:unsupported_path`
+- `:kernel_rejected`
+
+Supported proof-producing paths currently cover top-level rewrites and direct application `[:arg]` / `[:fun]` rewrites. Deeper recursive congruence paths and binder-aware paths remain future work.
+
+Generated equation rewrite databases support both eager and lazy source realization:
+
+```elixir
+Theoria.Rewrite.Database.from_env_equations(env, realize: true)
+Theoria.Rewrite.Database.from_env_equations(env, realize: :lazy)
+```
 
 ## Equality chain groundwork
 

@@ -29,15 +29,8 @@ defmodule Mix.Tasks.Theoria.Equations do
     with {:ok, opts, names} <- parse_args(args),
          {:ok, env} <- Prelude.env() do
       equations = select_equations(env, names)
-      print_equations(env, equations)
 
-      if Keyword.get(opts, :realize, false) do
-        realize_equations(env, equations)
-      end
-
-      if Keyword.get(opts, :install, false) do
-        install_equations(env, equations)
-      end
+      handle_output(env, equations, opts)
     else
       {:error, %Theoria.Error{} = error} ->
         Mix.raise("failed to build Theoria prelude:\n\n#{Exception.message(error)}")
@@ -48,7 +41,7 @@ defmodule Mix.Tasks.Theoria.Equations do
   end
 
   defp parse_args(args) do
-    case OptionParser.parse(args, strict: [install: :boolean, realize: :boolean]) do
+    case OptionParser.parse(args, strict: [install: :boolean, json: :boolean, realize: :boolean]) do
       {opts, names, []} ->
         {:ok, opts, Enum.map(names, &String.to_atom/1)}
 
@@ -70,6 +63,58 @@ defmodule Mix.Tasks.Theoria.Equations do
         {:error, reason} -> Mix.raise("unknown equation definition #{name}: #{inspect(reason)}")
       end
     end)
+  end
+
+  defp handle_output(env, equations, opts) do
+    if Keyword.get(opts, :json, false) do
+      print_json(env, equations, opts)
+    else
+      print_text(env, equations, opts)
+    end
+  end
+
+  defp print_text(env, equations, opts) do
+    print_equations(env, equations)
+    maybe_realize(env, equations, opts)
+    maybe_install(env, equations, opts)
+  end
+
+  defp maybe_realize(env, equations, opts) do
+    if Keyword.get(opts, :realize, false), do: realize_equations(env, equations)
+  end
+
+  defp maybe_install(env, equations, opts) do
+    if Keyword.get(opts, :install, false), do: install_equations(env, equations)
+  end
+
+  defp print_json(env, equations, opts) do
+    Mix.shell().info(
+      Jason.encode!(%{
+        equations: Enum.map(equations, &json_equation(env, &1, opts)),
+        registry_entries: registry_entry_count(env, equations)
+      })
+    )
+  end
+
+  defp json_equation(env, info, opts) do
+    %{
+      definition: info.name,
+      identities: Extension.equation_identities(info),
+      matcher_identities: info |> MatcherEqns.generated() |> Enum.map(& &1.identity),
+      realized: realized_count(env, info, opts)
+    }
+  end
+
+  defp realized_count(env, info, opts) do
+    if Keyword.get(opts, :realize, false) do
+      case Eqns.realize(env, info.name) do
+        {:ok, artifacts} when is_list(artifacts) -> length(artifacts)
+        {:ok, _artifact} -> 1
+        {:error, _reason} -> 0
+      end
+    else
+      0
+    end
   end
 
   defp print_equations(_env, []), do: Mix.shell().info("No equation metadata found.")

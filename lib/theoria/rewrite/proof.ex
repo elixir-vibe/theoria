@@ -23,34 +23,69 @@ defmodule Theoria.Rewrite.Proof do
   @doc "Returns a checked proof for a rewrite step when currently supported."
   @spec for_step(Env.t(), Step.t()) :: Term.t() | nil
   def for_step(%Env{} = env, %Step{} = step) do
+    case attach(env, step) do
+      %Step{proof: proof, proof_status: :checked} -> proof
+      %Step{} -> nil
+    end
+  end
+
+  @doc "Attaches proof status and a checked proof to a rewrite step when possible."
+  @spec attach(Env.t(), Step.t()) :: Step.t()
+  def attach(%Env{} = env, %Step{} = step) do
+    case proof_result(env, step) do
+      {:ok, proof} -> %{step | proof: proof, proof_status: :checked}
+      {:error, status} -> %{step | proof_status: status}
+    end
+  end
+
+  defp proof_result(%Env{} = env, %Step{} = step) do
     with {:ok, type} <- Kernel.infer(env, step.before),
-         proof when not is_nil(proof) <- local_or_defeq_proof(env, type, step),
+         {:ok, proof} <- local_or_defeq_proof(env, type, step),
          :ok <- Kernel.check(env, proof, Term.eq(type, step.before, step.after)) do
-      proof
+      {:ok, proof}
     else
-      _ -> nil
+      {:error, %Theoria.Error{}} -> {:error, :kernel_rejected}
+      {:error, status} when is_atom(status) -> {:error, status}
     end
   end
 
   defp local_or_defeq_proof(env, type, %Step{proof: proof, path: []} = step)
        when not is_nil(proof) do
     if Kernel.check(env, proof, Term.eq(type, step.before, step.after)) == :ok do
-      proof
+      {:ok, proof}
     else
       defeq_proof(env, type, step.before, step.after)
     end
   end
 
   defp local_or_defeq_proof(env, type, %Step{proof: proof, path: [:arg]} = step)
-       when not is_nil(proof) do
-    case step.before do
-      %Term.App{fun: fun, arg: left} ->
-        case step.after do
-          %Term.App{fun: ^fun, arg: right} ->
-            lift_app_arg_or_defeq(env, type, fun, left, right, proof, step)
+       when not is_nil(proof),
+       do: lift_app_arg_or_defeq(env, type, proof, step)
 
-          _ ->
-            defeq_proof(env, type, step.before, step.after)
+  defp local_or_defeq_proof(env, type, %Step{proof: proof, path: [:fun]} = step)
+       when not is_nil(proof),
+       do: lift_app_fun_or_defeq(env, type, proof, step)
+
+  defp local_or_defeq_proof(_env, _type, %Step{proof: nil}),
+    do: {:error, :missing_rule_proof}
+
+  defp local_or_defeq_proof(env, type, %Step{} = step) do
+    case defeq_proof(env, type, step.before, step.after) do
+      {:ok, _proof} = ok -> ok
+      {:error, _status} -> {:error, :unsupported_path}
+    end
+  end
+
+  defp lift_app_arg_or_defeq(env, type, proof, step) do
+    case {step.before, step.after} do
+      {%Term.App{fun: fun, arg: left}, %Term.App{fun: after_fun, arg: right}}
+      when fun == after_fun ->
+        with {:ok, domain} <- Kernel.infer(env, left),
+             candidate = Equality.congr(domain, type, fun, left, right, proof),
+             :ok <- Kernel.check(env, candidate, Term.eq(type, step.before, step.after)) do
+          {:ok, candidate}
+        else
+          _ -> defeq_proof(env, type, step.before, step.after)
         end
 
       _ ->
@@ -58,16 +93,20 @@ defmodule Theoria.Rewrite.Proof do
     end
   end
 
-  defp local_or_defeq_proof(env, type, %Step{} = step),
-    do: defeq_proof(env, type, step.before, step.after)
+  defp lift_app_fun_or_defeq(env, type, proof, step) do
+    case {step.before, step.after} do
+      {%Term.App{fun: left_fun, arg: arg}, %Term.App{fun: right_fun, arg: after_arg}}
+      when arg == after_arg ->
+        with {:ok, fun_type} <- Kernel.infer(env, left_fun),
+             candidate = Equality.congr_fun(fun_type, type, arg, left_fun, right_fun, proof),
+             :ok <- Kernel.check(env, candidate, Term.eq(type, step.before, step.after)) do
+          {:ok, candidate}
+        else
+          _ -> defeq_proof(env, type, step.before, step.after)
+        end
 
-  defp lift_app_arg_or_defeq(env, type, fun, left, right, proof, step) do
-    with {:ok, domain} <- Kernel.infer(env, left),
-         candidate = Equality.congr(domain, type, fun, left, right, proof),
-         :ok <- Kernel.check(env, candidate, Term.eq(type, step.before, step.after)) do
-      candidate
-    else
-      _ -> defeq_proof(env, type, step.before, step.after)
+      _ ->
+        defeq_proof(env, type, step.before, step.after)
     end
   end
 
@@ -75,8 +114,8 @@ defmodule Theoria.Rewrite.Proof do
     proof = Term.refl(before)
 
     case Kernel.check(env, proof, Term.eq(type, before, after_term)) do
-      :ok -> proof
-      {:error, _reason} -> nil
+      :ok -> {:ok, proof}
+      {:error, _reason} -> {:error, :kernel_rejected}
     end
   end
 

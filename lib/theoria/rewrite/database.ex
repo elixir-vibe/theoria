@@ -8,6 +8,7 @@ defmodule Theoria.Rewrite.Database do
   alias Theoria.Equation.Matcher.Eqns, as: MatcherEqns
   alias Theoria.Equation.Matcher.Equation, as: MatcherEquation
   alias Theoria.Rewrite
+  alias Theoria.Rewrite.Proof
   alias Theoria.Rewrite.Rule
   alias Theoria.Term
 
@@ -131,5 +132,32 @@ defmodule Theoria.Rewrite.Database do
         :not_found -> false
       end
     end)
+  end
+
+  @doc "Applies the first matching rule, realizing lazy rule proofs only after selection."
+  @spec once_with_step(t(), Env.t(), Term.t(), keyword()) ::
+          {:ok, Theoria.Rewrite.Step.t()} | :not_found
+  def once_with_step(%__MODULE__{rules: rules}, %Env{} = env, term, opts \\ []) do
+    Enum.find_value(Enum.reverse(rules), :not_found, fn rule ->
+      case Rewrite.once_with_step(term, rule) do
+        {:ok, step} -> {:ok, realize_selected_step(step, env, opts)}
+        :not_found -> false
+      end
+    end)
+  end
+
+  defp realize_selected_step(step, env, opts) do
+    if Keyword.get(opts, :realize, false) == :lazy do
+      rule = Rule.realize(env, step.rule, opts)
+
+      %{
+        step
+        | rule: rule,
+          proof: Proof.instantiate_rule(rule, step.substitution),
+          proof_status: nil
+      }
+    else
+      step
+    end
   end
 end

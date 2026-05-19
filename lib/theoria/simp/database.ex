@@ -5,6 +5,7 @@ defmodule Theoria.Simp.Database do
   alias Theoria.Equation.Eqns
   alias Theoria.Rewrite
   alias Theoria.Rewrite.Database, as: RewriteDatabase
+  alias Theoria.Rewrite.Proof
   alias Theoria.Simp.Rule
   alias Theoria.Term
 
@@ -73,5 +74,36 @@ defmodule Theoria.Simp.Database do
         :not_found -> false
       end
     end)
+  end
+
+  @doc "Applies the first matching simplifier rule with lazy proof realization support."
+  @spec once_with_step(t(), Env.t(), Term.t(), keyword()) ::
+          {:ok, Theoria.Rewrite.Step.t(), Rule.t()} | :not_found
+  def once_with_step(%__MODULE__{rules: rules}, %Env{} = env, term, opts \\ []) do
+    Enum.find_value(rules, :not_found, fn rule ->
+      case Rewrite.once_with_step(term, rule.rewrite) do
+        {:ok, step} ->
+          {step, rule} = realize_selected_step(step, rule, env, opts)
+          {:ok, step, rule}
+
+        :not_found ->
+          false
+      end
+    end)
+  end
+
+  defp realize_selected_step(step, rule, env, opts) do
+    if Keyword.get(opts, :realize, false) == :lazy do
+      rewrite = Rewrite.Rule.realize(env, step.rule, opts)
+
+      {%{
+         step
+         | rule: rewrite,
+           proof: Proof.instantiate_rule(rewrite, step.substitution),
+           proof_status: nil
+       }, %{rule | rewrite: rewrite}}
+    else
+      {step, rule}
+    end
   end
 end

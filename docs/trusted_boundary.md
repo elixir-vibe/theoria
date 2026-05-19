@@ -21,7 +21,7 @@ The Lean oracle is contributor-only validation. It is not a runtime dependency a
 
 ## Rewrite and simp
 
-Rewrite and simp can transform terms, but search is not a proof. Prefer APIs that return checked artifacts when the result must be trusted:
+Rewrite and simp can transform terms, but search is not a proof. Proof-producing rewrite currently supports top-level rewrites and direct application function/argument congruence; unsupported paths are reported on step metadata. Prefer APIs that return checked artifacts when the result must be trusted:
 
 ```elixir
 {:ok, artifact} = Theoria.Simp.realize(env, term)

@@ -72,6 +72,19 @@ defmodule Mix.Tasks.Theoria.EquationsTest do
     assert output =~ "Realized 2 equation artifact(s)."
   end
 
+  test "prints JSON for realized generated equations" do
+    Mix.Task.clear()
+
+    output =
+      capture_io(fn ->
+        Equations.run(["--json", "--realize", "nat_add"])
+      end)
+
+    assert output =~ "\"definition\":\"nat_add\""
+    assert output =~ "\"realized\":2"
+    assert output =~ "nat_add.eq_succ"
+  end
+
   test "installs generated equations on request" do
     Mix.Task.clear()
 

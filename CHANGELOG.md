@@ -11,7 +11,10 @@ Post-0.3 development toward proof-producing rewrite/simp automation.
 - Added `realize: true` support for generated equation rewrite databases so rules can carry checked source artifacts.
 - Added `mix theoria.equations --realize`, `mix theoria.simp --prove`, named simp examples, and example scripts to expose checked artifacts from the CLI and package integration paths.
 - Added rewrite-step path and substitution tracking through structural rewrites and wired simp traces to consume rewrite-step metadata.
-- Added `Theoria.Rewrite.Proof` for instantiated rule proofs and supported application-argument congruence lifting.
+- Added `Theoria.Rewrite.Proof` for instantiated rule proofs and supported application function/argument congruence lifting.
+- Added lazy rewrite-rule realization with `realize: :lazy`.
+- Added proof-status diagnostics on rewrite and simp steps.
+- Added JSON output for equation realization and simp proof examples.
 - Updated equality chains to combine available step proofs with transitivity.
 - Added trusted boundary documentation for kernel-checked artifacts versus untrusted automation.
 

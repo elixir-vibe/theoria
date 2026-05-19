@@ -5,7 +5,7 @@ defmodule Theoria.RewriteTest do
   alias Theoria.Equation.Lemma
   alias Theoria.Prelude
   alias Theoria.Rewrite
-  alias Theoria.Rewrite.{Database, Rule}
+  alias Theoria.Rewrite.{Database, Proof, Rule}
   alias Theoria.Term
 
   test "rewrites the first structural occurrence forward" do
@@ -44,6 +44,20 @@ defmodule Theoria.RewriteTest do
 
     assert {:ok, %Theoria.Rewrite.Step{path: [:arg], after: ^succ_one, substitution: %{}}} =
              Rewrite.once_with_step(term, rule)
+  end
+
+  test "function-position rewrite steps can carry checked proof" do
+    {:ok, env} = Prelude.env()
+    bool_not = Term.const(:bool_not)
+    bool = Term.const(:Bool)
+    fun_type = Term.arrow(bool, bool)
+    equality = Term.eq(fun_type, bool_not, bool_not)
+    rule = Rule.new(:same_bool_not, equality, proof: Term.refl(bool_not))
+    term = Term.app(bool_not, Term.const(true))
+
+    assert {:ok, step} = Rewrite.once_with_step(term, rule)
+    assert step.path == [:fun]
+    assert %Term.EqRec{} = Proof.for_step(env, step)
   end
 
   test "database applies the first matching equation rule" do
@@ -95,6 +109,23 @@ defmodule Theoria.RewriteTest do
              Database.once_with_step(database, add_zero)
 
     assert %Term.App{} = proof
+  end
+
+  test "database lazily realizes selected equation rules" do
+    {:ok, env} = Prelude.env()
+    database = Database.from_env_equations(env, realize: :lazy)
+
+    one = Term.app(Term.const(:succ), zero())
+    add_zero = Term.const(:nat_add) |> Term.app(zero()) |> Term.app(one)
+
+    refute Enum.any?(database.rules, & &1.realized)
+
+    assert {:ok,
+            %Theoria.Rewrite.Step{
+              rule: %Rule{realized: %Theoria.Equation.Realized{}},
+              proof: %Term.App{}
+            }} =
+             Database.once_with_step(database, env, add_zero, realize: :lazy)
   end
 
   test "database can realize generated equation rules as proof-backed artifacts" do

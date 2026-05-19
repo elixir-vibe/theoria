@@ -44,6 +44,7 @@ defmodule Theoria.Kernel.Differential do
       :environment_replay_count,
       :environment_normalize_count,
       :environment_report,
+      :invalid_environment_count,
       :theorem_count,
       :theorem_modules,
       :theorem_replay_count,
@@ -76,6 +77,7 @@ defmodule Theoria.Kernel.Differential do
       :environment_replay_count,
       :environment_normalize_count,
       :environment_report,
+      :invalid_environment_count,
       :theorem_count,
       :theorem_modules,
       :theorem_replay_count,
@@ -110,6 +112,7 @@ defmodule Theoria.Kernel.Differential do
             environment_replay_count: non_neg_integer(),
             environment_normalize_count: non_neg_integer(),
             environment_report: EnvironmentReport.t(),
+            invalid_environment_count: non_neg_integer(),
             theorem_count: non_neg_integer(),
             theorem_modules: [TheoremModuleReport.t()],
             theorem_replay_count: non_neg_integer(),
@@ -140,7 +143,8 @@ defmodule Theoria.Kernel.Differential do
     def total_checks(%__MODULE__{} = report) do
       report.infer_count + report.check_count + report.normalize_count + report.defeq_count +
         report.rejection_count + report.generated_term_count + report.environment_normalize_count +
-        report.theorem_count + report.generated_artifact_count + report.indexed_artifact_count
+        report.invalid_environment_count + report.theorem_count + report.generated_artifact_count +
+        report.indexed_artifact_count
     end
 
     @spec total_replay_checks(t()) :: non_neg_integer()
@@ -224,6 +228,9 @@ defmodule Theoria.Kernel.Differential do
 
     {environment_report, environment_ms} = timed(fn -> environment_report(opts) end)
 
+    {{invalid_environment_count, invalid_environment_failures}, invalid_environment_ms} =
+      timed(fn -> invalid_environment_failures(opts) end)
+
     {{theorem_count, theorem_modules, theorem_replay_count, theorem_replay_skipped,
       theorem_failures}, theorem_ms} =
       timed(fn -> theorem_failures(env) end)
@@ -256,6 +263,7 @@ defmodule Theoria.Kernel.Differential do
       environment_replay_count: environment_report.replay_checks,
       environment_normalize_count: environment_report.normalize_checks,
       environment_report: environment_report,
+      invalid_environment_count: invalid_environment_count,
       theorem_count: theorem_count,
       theorem_modules: theorem_modules,
       theorem_replay_count: theorem_replay_count,
@@ -279,7 +287,7 @@ defmodule Theoria.Kernel.Differential do
         defeq_ms: defeq_ms,
         rejection_ms: rejection_ms,
         generated_term_ms: generated_term_ms,
-        theorem_ms: theorem_ms + environment_ms,
+        theorem_ms: theorem_ms + environment_ms + invalid_environment_ms,
         generated_artifact_ms: generated_artifact_ms,
         indexed_artifact_ms: indexed_artifact_ms,
         replay_ms: replay_ms,
@@ -294,6 +302,7 @@ defmodule Theoria.Kernel.Differential do
           defeq_failures ++
           generated_term_failures ++
           environment_report.failures ++
+          invalid_environment_failures ++
           theorem_failures ++
           generated_artifact_failures ++
           indexed_artifact_failures ++ replay_report.failures ++ artifact_replay.failures
@@ -399,6 +408,18 @@ defmodule Theoria.Kernel.Differential do
         {:error, {:environment_normalize, {corpus_case.name, name}, production, reference}}
       end
     end)
+  end
+
+  defp invalid_environment_failures(%Options{} = opts) do
+    cases = EnvironmentCorpus.invalid_cases(environment_options(opts))
+    {length(cases), failures(cases, &compare_invalid_environment/1)}
+  end
+
+  defp compare_invalid_environment(%EnvironmentCorpus.InvalidCase{} = invalid_case) do
+    case Kernel.validate_env(invalid_case.env) do
+      {:error, _reason} -> :ok
+      :ok -> {:error, {:invalid_environment, invalid_case.name, :accepted, invalid_case.reason}}
+    end
   end
 
   defp artifact_replay(env) do

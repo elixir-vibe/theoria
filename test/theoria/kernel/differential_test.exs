@@ -32,6 +32,8 @@ defmodule Theoria.Kernel.DifferentialTest do
     assert report.environment_count > 0
     assert report.environment_replay_count > 0
     assert report.environment_normalize_count > 0
+    assert report.environment_report.total == report.environment_count
+    assert report.invalid_environment_count > 0
     assert report.theorem_count > 0
     assert report.theorem_modules != []
     assert report.theorem_replay_count > 0

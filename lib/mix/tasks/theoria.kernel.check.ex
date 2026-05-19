@@ -86,6 +86,7 @@ defmodule Mix.Tasks.Theoria.Kernel.Check do
       print_environment_cases(report.environment_report.cases, "  ")
       Mix.shell().info("  environment replay checks: #{report.environment_replay_count}")
       Mix.shell().info("  environment normalize checks: #{report.environment_normalize_count}")
+      Mix.shell().info("✓ invalid environment checks: #{report.invalid_environment_count}")
       Mix.shell().info("✓ theorem checks: #{report.theorem_count}")
       Mix.shell().info("✓ theorem replay checks: #{report.theorem_replay_count}")
       Mix.shell().info("- theorem replay skipped: #{report.theorem_replay_skipped}")
@@ -126,7 +127,7 @@ defmodule Mix.Tasks.Theoria.Kernel.Check do
       print_generated_term_families(report.generated_terms.families, "    ")
 
       Mix.shell().info(
-        "  environment_cases=#{report.environment_count} replay=#{report.environment_replay_count} normalize=#{report.environment_normalize_count}"
+        "  environment_cases=#{report.environment_count} replay=#{report.environment_replay_count} normalize=#{report.environment_normalize_count} invalid=#{report.invalid_environment_count}"
       )
 
       Mix.shell().info("  modules=#{report.theorem_count}")

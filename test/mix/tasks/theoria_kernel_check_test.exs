@@ -25,6 +25,7 @@ defmodule Mix.Tasks.Theoria.Kernel.CheckTest do
     assert output =~ "✓ environment cases:"
     assert output =~ "environment replay checks:"
     assert output =~ "environment normalize checks:"
+    assert output =~ "✓ invalid environment checks:"
     assert output =~ "✓ theorem checks:"
     assert output =~ "✓ theorem replay checks:"
     assert output =~ "✓ generated artifact checks:"
@@ -132,6 +133,8 @@ defmodule Mix.Tasks.Theoria.Kernel.CheckTest do
     assert output =~ "\"environment_cases\""
     assert output =~ "\"environment_replay_checks\""
     assert output =~ "\"environment_normalize_checks\""
+    assert output =~ "\"environment_report\""
+    assert output =~ "\"invalid_environment_checks\""
     assert output =~ "\"generated_artifact_checks\""
     assert output =~ "\"indexed_artifact_checks\""
     assert output =~ "\"proof_strategy_counts\""
@@ -166,6 +169,7 @@ defmodule Mix.Tasks.Theoria.Kernel.CheckTest do
     assert length(report["environment_report"]["cases"]) == 4
     assert report["environment_replay_checks"] > 0
     assert report["environment_normalize_checks"] > 0
+    assert report["invalid_environment_checks"] == 3
     assert report["proof_strategies"]["total"] == 40
     assert report["proof_strategies"]["counts"]["refl"] == 38
   end

@@ -1,6 +1,7 @@
 defmodule Theoria.Kernel.EnvironmentCorpusTest do
   use ExUnit.Case, async: true
 
+  alias Theoria.Kernel
   alias Theoria.Kernel.EnvironmentCorpus
   alias Theoria.Kernel.Reference
   alias Theoria.Kernel.Reference.Normalize, as: ReferenceNormalize
@@ -26,6 +27,20 @@ defmodule Theoria.Kernel.EnvironmentCorpusTest do
 
         assert {:ok, _type} = Reference.infer(corpus_case.env, term)
       end
+    end
+  end
+
+  test "invalid cases are rejected by native environment validation" do
+    cases = EnvironmentCorpus.invalid_cases()
+
+    assert Enum.map(cases, & &1.name) == [
+             :missing_declaration_index,
+             :untracked_declaration,
+             :definition_value_type_mismatch
+           ]
+
+    for %EnvironmentCorpus.InvalidCase{} = invalid_case <- cases do
+      assert {:error, _reason} = Kernel.validate_env(invalid_case.env)
     end
   end
 end

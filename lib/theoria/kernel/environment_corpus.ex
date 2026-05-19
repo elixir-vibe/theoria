@@ -6,6 +6,15 @@ defmodule Theoria.Kernel.EnvironmentCorpus do
   alias Theoria.Level
   alias Theoria.Term
 
+  defmodule InvalidCase do
+    @moduledoc "Environment corpus case expected to be rejected by native validation."
+
+    @enforce_keys [:name, :env, :reason]
+    defstruct [:name, :env, :reason]
+
+    @type t :: %__MODULE__{name: atom(), env: Env.t(), reason: atom()}
+  end
+
   defmodule Case do
     @moduledoc "Environment corpus case with terms that should normalize under that environment."
 
@@ -26,6 +35,38 @@ defmodule Theoria.Kernel.EnvironmentCorpus do
       let_chain(depth),
       theorem_chain(depth),
       universe_polymorphic_chain(depth)
+    ]
+  end
+
+  @doc "Returns malformed deterministic environments expected to be rejected."
+  @spec invalid_cases(keyword()) :: [InvalidCase.t()]
+  def invalid_cases(_opts \\ []) do
+    type_name = :InvalidEnvType
+    value_name = :invalid_env_value
+    type = Term.const(type_name)
+    sort_zero = Term.sort(0)
+
+    valid =
+      Env.new()
+      |> add_axiom!(type_name, sort_zero)
+      |> add_axiom!(value_name, type)
+
+    [
+      %InvalidCase{
+        name: :missing_declaration_index,
+        env: %{valid | declarations: [:missing_decl | Env.declarations(valid)]},
+        reason: :missing_declaration
+      },
+      %InvalidCase{
+        name: :untracked_declaration,
+        env: %{valid | declarations: []},
+        reason: :untracked_declaration
+      },
+      %InvalidCase{
+        name: :definition_value_type_mismatch,
+        env: Env.put_definition(valid, :bad_definition, type, sort_zero),
+        reason: :type_mismatch
+      }
     ]
   end
 

@@ -91,12 +91,13 @@ defmodule Mix.Tasks.Theoria.Kernel.Check do
       Mix.shell().info("✓ defeq checks: #{report.defeq_count}")
       Mix.shell().info("✓ rejection checks: #{report.rejection_count}")
       Mix.shell().info("✓ generated term checks: #{report.generated_term_count}")
-      print_generated_term_families(report.generated_term_families, "  ")
+      print_generated_term_families(report.generated_terms.families, "  ")
       Mix.shell().info("✓ environment cases: #{report.environment_count}")
       print_environment_cases(report.environment_report.cases, "  ")
       Mix.shell().info("  environment replay checks: #{report.environment_replay_count}")
       Mix.shell().info("  environment normalize checks: #{report.environment_normalize_count}")
       Mix.shell().info("✓ invalid environment checks: #{report.invalid_environment_count}")
+      Mix.shell().info("✓ metadata replay checks: #{report.metadata_replay_count}")
       Mix.shell().info("✓ theorem checks: #{report.theorem_count}")
       Mix.shell().info("✓ theorem replay checks: #{report.theorem_replay_count}")
       Mix.shell().info("- theorem replay skipped: #{report.theorem_replay_skipped}")
@@ -146,6 +147,7 @@ defmodule Mix.Tasks.Theoria.Kernel.Check do
       Mix.shell().info("  replay: #{summary.environments.replay}")
       Mix.shell().info("  normalize: #{summary.environments.normalize}")
       Mix.shell().info("  invalid: #{summary.environments.invalid}")
+      Mix.shell().info("  metadata: #{summary.environments.metadata}")
       Mix.shell().info("")
       Mix.shell().info("Artifacts:")
       Mix.shell().info("  generated: #{summary.artifacts.generated}")
@@ -172,7 +174,7 @@ defmodule Mix.Tasks.Theoria.Kernel.Check do
       print_generated_term_families(report.generated_terms.families, "    ")
 
       Mix.shell().info(
-        "  environment_cases=#{report.environment_count} replay=#{report.environment_replay_count} normalize=#{report.environment_normalize_count} invalid=#{report.invalid_environment_count}"
+        "  environment_cases=#{report.environment_count} replay=#{report.environment_replay_count} normalize=#{report.environment_normalize_count} invalid=#{report.invalid_environment_count} metadata=#{report.metadata_replay_count}"
       )
 
       Mix.shell().info("  modules=#{report.theorem_count}")

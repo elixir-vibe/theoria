@@ -199,6 +199,7 @@ defimpl Jason.Encoder, for: Theoria.Kernel.Differential.Report do
         environment_normalize_checks: report.environment_normalize_count,
         environment_report: report.environment_report,
         invalid_environment_checks: report.invalid_environment_count,
+        metadata_replay_checks: report.metadata_replay_count,
         theorem_checks: report.theorem_count,
         theorem_modules: report.theorem_modules,
         theorem_replay_checks: report.theorem_replay_count,

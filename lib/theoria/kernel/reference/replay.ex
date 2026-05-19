@@ -10,14 +10,15 @@ defmodule Theoria.Kernel.Reference.Replay do
   defmodule Report do
     @moduledoc "Reference environment replay summary."
 
-    @enforce_keys [:checked, :skipped, :failures]
-    defstruct [:checked, :skipped, :failures]
+    @enforce_keys [:checked, :skipped, :failures, :env]
+    defstruct [:checked, :skipped, :failures, :env]
 
     @type failure :: Failure.t()
     @type t :: %__MODULE__{
             checked: non_neg_integer(),
             skipped: non_neg_integer(),
-            failures: [failure()]
+            failures: [failure()],
+            env: Env.t()
           }
 
     @spec ok?(t()) :: boolean()
@@ -55,15 +56,15 @@ defmodule Theoria.Kernel.Reference.Replay do
 
       {:error, failure} ->
         failure = Failure.with_replay_context(failure, Enum.reverse(checked_names), pending)
-        {:error, checked, skipped, [failure]}
+        {:error, replay_env, checked, skipped, [failure]}
     end
   end
 
-  defp report({%Env{}, checked, skipped}),
-    do: %Report{checked: checked, skipped: skipped, failures: []}
+  defp report({%Env{} = env, checked, skipped}),
+    do: %Report{checked: checked, skipped: skipped, failures: [], env: env}
 
-  defp report({:error, checked, skipped, failures}),
-    do: %Report{checked: checked, skipped: skipped, failures: failures}
+  defp report({:error, %Env{} = env, checked, skipped, failures}),
+    do: %Report{checked: checked, skipped: skipped, failures: failures, env: env}
 
   defp replay_declaration(source_env, replay_env, name) do
     case Env.fetch(source_env, name) do

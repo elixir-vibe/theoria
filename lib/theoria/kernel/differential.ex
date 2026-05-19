@@ -38,13 +38,13 @@ defmodule Theoria.Kernel.Differential do
       :defeq_count,
       :rejection_count,
       :generated_term_count,
-      :generated_term_families,
       :generated_terms,
       :environment_count,
       :environment_replay_count,
       :environment_normalize_count,
       :environment_report,
       :invalid_environment_count,
+      :metadata_replay_count,
       :theorem_count,
       :theorem_modules,
       :theorem_replay_count,
@@ -71,13 +71,13 @@ defmodule Theoria.Kernel.Differential do
       :defeq_count,
       :rejection_count,
       :generated_term_count,
-      :generated_term_families,
       :generated_terms,
       :environment_count,
       :environment_replay_count,
       :environment_normalize_count,
       :environment_report,
       :invalid_environment_count,
+      :metadata_replay_count,
       :theorem_count,
       :theorem_modules,
       :theorem_replay_count,
@@ -106,13 +106,13 @@ defmodule Theoria.Kernel.Differential do
             defeq_count: non_neg_integer(),
             rejection_count: non_neg_integer(),
             generated_term_count: non_neg_integer(),
-            generated_term_families: %{atom() => non_neg_integer()},
             generated_terms: GeneratedTermReport.t(),
             environment_count: non_neg_integer(),
             environment_replay_count: non_neg_integer(),
             environment_normalize_count: non_neg_integer(),
             environment_report: EnvironmentReport.t(),
             invalid_environment_count: non_neg_integer(),
+            metadata_replay_count: non_neg_integer(),
             theorem_count: non_neg_integer(),
             theorem_modules: [TheoremModuleReport.t()],
             theorem_replay_count: non_neg_integer(),
@@ -143,8 +143,8 @@ defmodule Theoria.Kernel.Differential do
     def total_checks(%__MODULE__{} = report) do
       report.infer_count + report.check_count + report.normalize_count + report.defeq_count +
         report.rejection_count + report.generated_term_count + report.environment_normalize_count +
-        report.invalid_environment_count + report.theorem_count + report.generated_artifact_count +
-        report.indexed_artifact_count
+        report.invalid_environment_count + report.metadata_replay_count + report.theorem_count +
+        report.generated_artifact_count + report.indexed_artifact_count
     end
 
     @spec total_replay_checks(t()) :: non_neg_integer()
@@ -242,6 +242,10 @@ defmodule Theoria.Kernel.Differential do
       timed(fn -> indexed_artifact_failures(env) end)
 
     {replay_report, replay_ms} = timed(fn -> Replay.run(env) end)
+
+    {{metadata_replay_count, metadata_replay_failures}, metadata_replay_ms} =
+      timed(fn -> metadata_replay_failures(env, replay_report) end)
+
     {artifact_replay, artifact_replay_ms} = timed(fn -> artifact_replay(env) end)
 
     proof_strategy_counts =
@@ -257,13 +261,13 @@ defmodule Theoria.Kernel.Differential do
       rejection_count:
         length(Corpus.infer_rejection_cases()) + length(Corpus.check_rejection_cases()),
       generated_term_count: generated_terms.total,
-      generated_term_families: generated_terms.families,
       generated_terms: generated_terms,
       environment_count: environment_report.total,
       environment_replay_count: environment_report.replay_checks,
       environment_normalize_count: environment_report.normalize_checks,
       environment_report: environment_report,
       invalid_environment_count: invalid_environment_count,
+      metadata_replay_count: metadata_replay_count,
       theorem_count: theorem_count,
       theorem_modules: theorem_modules,
       theorem_replay_count: theorem_replay_count,
@@ -290,7 +294,7 @@ defmodule Theoria.Kernel.Differential do
         theorem_ms: theorem_ms + environment_ms + invalid_environment_ms,
         generated_artifact_ms: generated_artifact_ms,
         indexed_artifact_ms: indexed_artifact_ms,
-        replay_ms: replay_ms,
+        replay_ms: replay_ms + metadata_replay_ms,
         artifact_replay_ms: artifact_replay_ms,
         total_ms: total_ms
       },
@@ -303,6 +307,7 @@ defmodule Theoria.Kernel.Differential do
           generated_term_failures ++
           environment_report.failures ++
           invalid_environment_failures ++
+          metadata_replay_failures ++
           theorem_failures ++
           generated_artifact_failures ++
           indexed_artifact_failures ++ replay_report.failures ++ artifact_replay.failures
@@ -427,6 +432,29 @@ defmodule Theoria.Kernel.Differential do
         {:error, {:invalid_environment, invalid_case.name, :accepted, invalid_case.reason}}
     end
   end
+
+  defp metadata_replay_failures(%Env{} = source_env, %Replay.Report{} = replay_report) do
+    names = source_env |> Env.declarations() |> Enum.take(replay_report.checked)
+
+    {length(names),
+     failures(names, &compare_replayed_metadata(source_env, replay_report.env, &1))}
+  end
+
+  defp compare_replayed_metadata(source_env, replay_env, name) do
+    with {:ok, source} <- Env.fetch(source_env, name),
+         {:ok, replayed} <- Env.fetch(replay_env, name),
+         :ok <- compare_replayed_field(name, :metadata, source.metadata, replayed.metadata) do
+      compare_replayed_field(name, :reduction, source.reduction, replayed.reduction)
+    else
+      :error -> {:error, {:metadata_replay, name, :missing_replayed_declaration}}
+      {:error, failure} -> {:error, failure}
+    end
+  end
+
+  defp compare_replayed_field(_name, _field, value, value), do: :ok
+
+  defp compare_replayed_field(name, field, source, replayed),
+    do: {:error, {:metadata_replay, name, field, source, replayed}}
 
   defp artifact_replay(env) do
     with {:ok, generated_theorems} <- Extension.realize_all(env),

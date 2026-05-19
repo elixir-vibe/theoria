@@ -27,14 +27,15 @@ defmodule Theoria.Kernel.AssuranceSummary do
 
   defmodule Environments do
     @moduledoc "Generated environment assurance counts."
-    @enforce_keys [:cases, :replay, :normalize, :invalid]
-    defstruct [:cases, :replay, :normalize, :invalid]
+    @enforce_keys [:cases, :replay, :normalize, :invalid, :metadata]
+    defstruct [:cases, :replay, :normalize, :invalid, :metadata]
 
     @type t :: %__MODULE__{
             cases: non_neg_integer(),
             replay: non_neg_integer(),
             normalize: non_neg_integer(),
-            invalid: non_neg_integer()
+            invalid: non_neg_integer(),
+            metadata: non_neg_integer()
           }
   end
 
@@ -74,13 +75,14 @@ defmodule Theoria.Kernel.AssuranceSummary do
       },
       generated_terms: %GeneratedTerms{
         total: report.generated_term_count,
-        families: map_size(report.generated_term_families)
+        families: map_size(report.generated_terms.families)
       },
       environments: %Environments{
         cases: report.environment_count,
         replay: report.environment_replay_count,
         normalize: report.environment_normalize_count,
-        invalid: report.invalid_environment_count
+        invalid: report.invalid_environment_count,
+        metadata: report.metadata_replay_count
       },
       artifacts: %Artifacts{
         generated: report.generated_artifact_count,

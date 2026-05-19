@@ -40,8 +40,20 @@ defmodule Theoria.Kernel.EnvironmentCorpus.Report do
   @spec total(t()) :: non_neg_integer()
   def total(%__MODULE__{total: total}), do: total
 
+  @spec replay_checks(t()) :: non_neg_integer()
+  def replay_checks(%__MODULE__{replay_checks: replay_checks}), do: replay_checks
+
+  @spec normalize_checks(t()) :: non_neg_integer()
+  def normalize_checks(%__MODULE__{normalize_checks: normalize_checks}), do: normalize_checks
+
+  @spec case_names(t()) :: [atom()]
+  def case_names(%__MODULE__{cases: cases}), do: Enum.map(cases, & &1.name)
+
+  @spec case(t(), atom()) :: Case.t() | nil
+  def case(%__MODULE__{cases: cases}, name), do: Enum.find(cases, &(&1.name == name))
+
   @spec case_count(t(), atom()) :: non_neg_integer()
-  def case_count(%__MODULE__{cases: cases}, name) do
-    if Enum.any?(cases, &(&1.name == name)), do: 1, else: 0
+  def case_count(%__MODULE__{} = report, name) do
+    if __MODULE__.case(report, name), do: 1, else: 0
   end
 end

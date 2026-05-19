@@ -11,6 +11,7 @@ Post-0.6 development toward deeper replay and environment assurance.
 - Added replay-order and dependency-path diagnostics to reference replay failures.
 - Strengthened invalid environment assurance to match expected rejection reasons and cover duplicate declarations, bad theorem proofs, and unknown dependencies.
 - Added `Theoria.Kernel.AssuranceSummary` and `mix theoria.kernel.check --assurance-summary`.
+- Added metadata/reduction replay checks and environment corpus report accessors.
 
 ## 0.6.0
 

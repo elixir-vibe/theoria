@@ -22,6 +22,7 @@ Post-0.3 development toward proof-producing rewrite/simp automation.
 - Removed the unsound symbolic universe upper-bound shortcut and normalized universe `max` modulo commutativity/associativity for level equality.
 - Avoided atom creation from CLI input in theorem, equation, and simp Mix tasks.
 - Extracted matcher declaration admission into a trusted-adjacent kernel admission module.
+- Split theorem macro implementation out of the core term-construction DSL facade.
 
 ## 0.3.0
 

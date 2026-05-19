@@ -65,7 +65,7 @@ term do
 end
 ```
 
-The `theorem` macro creates a small function trio: `<name>_type/0`, `<name>_proof/0`, and `<name>_theorem/1`. The final function returns a `Theoria.Theorem` only after kernel checking succeeds. Universe-polymorphic theorem declarations can be written with explicit universe parameters:
+`Theoria.DSL` is a facade over smaller DSL pieces. The theorem macro implementation lives in `Theoria.DSL.Theorem`, while the facade keeps existing `use Theoria.DSL` call sites stable. The `theorem` macro creates a small function trio: `<name>_type/0`, `<name>_proof/0`, and `<name>_theorem/1`. The final function returns a `Theoria.Theorem` only after kernel checking succeeds. Universe-polymorphic theorem declarations can be written with explicit universe parameters:
 
 ```elixir
 theorem :poly_identity, universes: [:u] do

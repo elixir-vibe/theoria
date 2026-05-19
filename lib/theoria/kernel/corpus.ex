@@ -136,6 +136,7 @@ defmodule Theoria.Kernel.Corpus do
     bool_false = Term.const(false)
     bvar_zero = Term.bvar(0)
     identity = Term.lam(:x, bool, bvar_zero)
+    renamed_identity = Term.lam(:y, bool, bvar_zero)
     zero = Term.const(:zero)
 
     [
@@ -144,7 +145,10 @@ defmodule Theoria.Kernel.Corpus do
       {:bool_not_true, Term.app(Term.const(:bool_not), bool_true), bool_false},
       {:true_not_defeq_false, bool_true, bool_false},
       {:zero_not_defeq_succ_zero, zero, succ(zero)},
-      {:list_append_nil_left, list_append_nil_left(list_bool_example()), list_bool_example()}
+      {:list_append_nil_left, list_append_nil_left(list_bool_example()), list_bool_example()},
+      {:alpha_equivalent_lambdas, identity, renamed_identity},
+      {:alpha_equivalent_foralls, Term.forall(:x, bool, bvar_zero),
+       Term.forall(:y, bool, bvar_zero)}
     ]
   end
 

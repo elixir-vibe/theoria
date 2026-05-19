@@ -16,6 +16,22 @@ defmodule Theoria.Level.SolverTest do
     refute Level.leq?(Level.succ(u), Level.succ(v))
   end
 
+  test "does not treat parameters as symbolic upper bounds for closed levels" do
+    u = Level.param(:u)
+
+    refute Level.leq?(Level.from_integer(1), u)
+    assert Level.leq?(Level.from_integer(1), Level.succ(u))
+  end
+
+  test "normalizes max modulo commutativity and associativity" do
+    u = Level.param(:u)
+    v = Level.param(:v)
+    w = Level.param(:w)
+
+    assert Level.equal?(Level.max(u, v), Level.max(v, u))
+    assert Level.equal?(Level.max(Level.max(u, v), w), Level.max(u, Level.max(w, v)))
+  end
+
   test "solves max upper bounds" do
     u = Level.param(:u)
     v = Level.param(:v)

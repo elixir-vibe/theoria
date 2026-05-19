@@ -160,11 +160,61 @@ defmodule Theoria.Term do
   @spec level_params(t()) :: MapSet.t(atom())
   def level_params(term), do: collect_level_params(term, MapSet.new())
 
+  @doc "Returns true when two core terms are equal modulo diagnostic binder names and level laws."
+  @spec equivalent?(t(), t()) :: boolean()
+  def equivalent?(%Sort{level: left}, %Sort{level: right}), do: Theoria.Level.equal?(left, right)
+
+  def equivalent?(%Const{name: left_name, levels: left_levels}, %Const{
+        name: right_name,
+        levels: right_levels
+      }) do
+    left_name == right_name and levels_equivalent?(left_levels, right_levels)
+  end
+
+  def equivalent?(%App{} = left, %App{} = right) do
+    equivalent?(left.fun, right.fun) and equivalent?(left.arg, right.arg)
+  end
+
+  def equivalent?(%Lam{} = left, %Lam{} = right) do
+    equivalent?(left.domain, right.domain) and equivalent?(left.body, right.body)
+  end
+
+  def equivalent?(%Forall{} = left, %Forall{} = right) do
+    equivalent?(left.domain, right.domain) and equivalent?(left.body, right.body)
+  end
+
+  def equivalent?(%Let{} = left, %Let{} = right) do
+    equivalent?(left.type, right.type) and equivalent?(left.value, right.value) and
+      equivalent?(left.body, right.body)
+  end
+
+  def equivalent?(%Eq{} = left, %Eq{} = right) do
+    equivalent?(left.type, right.type) and equivalent?(left.left, right.left) and
+      equivalent?(left.right, right.right)
+  end
+
+  def equivalent?(%Refl{} = left, %Refl{} = right), do: equivalent?(left.value, right.value)
+
+  def equivalent?(%EqRec{} = left, %EqRec{} = right) do
+    equivalent?(left.type, right.type) and equivalent?(left.motive, right.motive) and
+      equivalent?(left.base, right.base) and equivalent?(left.proof, right.proof)
+  end
+
+  def equivalent?(left, right), do: left == right
+
   @doc "Returns true when every bound variable index is in scope at the given depth."
   @spec well_scoped?(t(), non_neg_integer()) :: boolean()
   def well_scoped?(term, depth \\ 0) when is_integer(depth) and depth >= 0 do
     scoped?(term, depth)
   end
+
+  defp levels_equivalent?(left, right) when length(left) == length(right) do
+    left
+    |> Enum.zip(right)
+    |> Enum.all?(fn {left, right} -> Theoria.Level.equal?(left, right) end)
+  end
+
+  defp levels_equivalent?(_left, _right), do: false
 
   defp collect_constants(%Sort{}, constants), do: constants
   defp collect_constants(%BVar{}, constants), do: constants

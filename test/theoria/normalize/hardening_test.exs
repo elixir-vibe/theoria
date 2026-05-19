@@ -65,6 +65,19 @@ defmodule Theoria.Normalize.HardeningTest do
     assert normalized == term
   end
 
+  test "definitional equality ignores diagnostic binder names" do
+    env = Env.new()
+
+    assert Normalize.defeq?(env, lam(:x, sort(0), bvar(0)), lam(:y, sort(0), bvar(0)))
+    assert Normalize.defeq?(env, forall(:x, sort(0), bvar(0)), forall(:y, sort(0), bvar(0)))
+
+    assert Normalize.defeq?(
+             env,
+             let(:x, sort(0), sort(0), bvar(0)),
+             let(:y, sort(0), sort(0), bvar(0))
+           )
+  end
+
   test "definitional equality distinguishes different constructors" do
     {:ok, env} = Prelude.env()
 

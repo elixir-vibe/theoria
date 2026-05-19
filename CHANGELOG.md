@@ -18,6 +18,8 @@ Post-0.3 development toward proof-producing rewrite/simp automation.
 - Added Elixir-authored kernel spec metadata, a reference checker for core terms, a reference normalizer with reference primitive recursor reductions, Bool/Nat/List/Vec corpus cases, rejection/theorem/generated-artifact differential checks, and `mix theoria.kernel.check`.
 - Updated equality chains to combine available step proofs with transitivity.
 - Added trusted boundary documentation and architecture policy guards for kernel-checked artifacts versus untrusted automation.
+- Hardened definitional equality so diagnostic binder names no longer affect de Bruijn alpha-equivalent terms.
+- Removed the unsound symbolic universe upper-bound shortcut and normalized universe `max` modulo commutativity/associativity for level equality.
 
 ## 0.3.0
 

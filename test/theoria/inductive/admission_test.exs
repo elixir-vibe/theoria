@@ -89,9 +89,11 @@ defmodule Theoria.Inductive.AdmissionTest do
   end
 
   defp vec_type(u) do
+    result_level = Level.max(Level.from_integer(1), u)
+
     term do
       forall :a, sort(^u) do
-        nat() ~> sort(^u)
+        nat() ~> sort(^result_level)
       end
     end
     |> elab!()

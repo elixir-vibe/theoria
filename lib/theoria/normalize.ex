@@ -30,7 +30,7 @@ defmodule Theoria.Normalize do
 
     with {:ok, left, fuel} <- do_normalize(env, left, fuel),
          {:ok, right, _fuel} <- do_normalize(env, right, fuel) do
-      left == right
+      Term.equivalent?(left, right)
     else
       _ -> false
     end

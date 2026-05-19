@@ -99,16 +99,14 @@ defmodule Theoria.Level do
   def normalize(%Param{} = level), do: level
   def normalize(%Succ{level: level}), do: %Succ{level: normalize(level)}
 
-  def normalize(%Max{left: left, right: right}) do
-    left = normalize(left)
-    right = normalize(right)
-
-    cond do
-      left == right -> left
-      zero?(left) -> right
-      zero?(right) -> left
-      true -> normalize_closed_max(left, right)
-    end
+  def normalize(%Max{} = level) do
+    level
+    |> max_parts()
+    |> Enum.map(&normalize/1)
+    |> Enum.reject(&zero?/1)
+    |> Enum.uniq()
+    |> Enum.sort_by(&:erlang.term_to_binary/1)
+    |> normalize_max_parts()
   end
 
   @spec equal?(t(), t()) :: boolean()
@@ -137,10 +135,29 @@ defmodule Theoria.Level do
     |> then(&collect_params(right, &1))
   end
 
-  defp normalize_closed_max(left, right) do
-    case max_to_integer(left, right) do
-      {:ok, level} -> from_integer(level)
-      :error -> %Max{left: left, right: right}
+  defp max_parts(level), do: level |> collect_max_parts([]) |> Enum.reverse()
+
+  defp collect_max_parts(%Max{left: left, right: right}, parts) do
+    right
+    |> collect_max_parts(parts)
+    |> then(&collect_max_parts(left, &1))
+  end
+
+  defp collect_max_parts(level, parts), do: [level | parts]
+
+  defp normalize_max_parts([]), do: zero()
+  defp normalize_max_parts([level]), do: level
+
+  defp normalize_max_parts(parts) do
+    closed = Enum.map(parts, &to_integer/1)
+
+    if Enum.all?(closed, &match?({:ok, _level}, &1)) do
+      closed
+      |> Enum.map(fn {:ok, level} -> level end)
+      |> Enum.max()
+      |> from_integer()
+    else
+      Enum.reduce(parts, &%Max{left: &2, right: &1})
     end
   end
 end

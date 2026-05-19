@@ -22,8 +22,7 @@ defmodule Theoria.Level.Solver do
   end
 
   defp direct_solution?(left, right) do
-    Level.equal?(left, right) or Level.zero?(left) or closed_leq?(left, right) or
-      symbolic_upper_bound?(left, right)
+    Level.equal?(left, right) or Level.zero?(left) or closed_leq?(left, right)
   end
 
   defp decompose?(%Succ{level: left}, %Succ{level: right}, seen) do
@@ -47,10 +46,5 @@ defmodule Theoria.Level.Solver do
       {{:ok, left}, {:ok, right}} -> left <= right
       _other -> false
     end
-  end
-
-  defp symbolic_upper_bound?(left, right) do
-    match?({:ok, _level}, Level.to_integer(left)) and
-      not MapSet.equal?(Level.params(right), MapSet.new())
   end
 end

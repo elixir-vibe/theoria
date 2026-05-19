@@ -207,9 +207,11 @@ defmodule Theoria.Inductive.GenerateTest do
   end
 
   defp vec_type(u) do
+    result_level = Theoria.Level.max(Theoria.Level.from_integer(1), u)
+
     term do
       forall :a, sort(^u) do
-        nat() ~> sort(^u)
+        nat() ~> sort(^result_level)
       end
     end
     |> elab!()

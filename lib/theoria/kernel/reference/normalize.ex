@@ -33,7 +33,7 @@ defmodule Theoria.Kernel.Reference.Normalize do
   @spec defeq?(Env.t(), Term.t(), Term.t()) :: boolean()
   def defeq?(%Env{} = env, left, right) do
     case {normalize(env, left), normalize(env, right)} do
-      {{:ok, left}, {:ok, right}} -> left == right
+      {{:ok, left}, {:ok, right}} -> Term.equivalent?(left, right)
       _other -> false
     end
   end

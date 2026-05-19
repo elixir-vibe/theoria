@@ -52,6 +52,8 @@ defeq(env, left, right) -> boolean
 
 `Theoria.Kernel.Reference.Normalize` provides a separate slow reference normalizer for beta, let, transparent constant unfolding, reference primitive reductions, and `EqRec` over `Refl`. `Theoria.Kernel.Reference.Primitive` mirrors recursor iota reduction using the reference definitional-equality path for indexed rule matching, so reference normalization no longer calls production `Theoria.Normalize.Primitive`. The reference checker uses that path for WHNF and definitional equality.
 
+Definitional equality compares normalized core terms through `Theoria.Term.equivalent?/2`: diagnostic binder names are ignored, while de Bruijn indices carry binding identity. Universe levels are normalized before comparison, including canonical `max` ordering for commutativity/associativity cases.
+
 ## Differential assurance
 
 `Theoria.Kernel.Differential` compares production kernel results against `Theoria.Kernel.Reference` on the curated kernel corpus, including Bool/Nat/List/Vec examples, rejected inference/checking cases, generated equation artifacts, and the built-in theorem modules. Property tests also generate closed Bool, Nat, List Bool, and Vec Bool terms, plus generated equalities and List eliminator applications, then compare production inference, checking, and normalization with the reference path.

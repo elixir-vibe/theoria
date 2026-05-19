@@ -12,6 +12,7 @@ Post-0.5 development toward deeper proof-producing automation and stronger gener
 - Generated-term assurance now covers deterministic `let` and `forall` families.
 - Proof capability JSON can expose nested `inner` capabilities for composed structural lifts.
 - Simp results now expose proof status counts for trace reports.
+- Kernel differential reports now summarize generated artifact proof strategies.
 
 ## 0.5.0
 

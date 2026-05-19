@@ -60,6 +60,7 @@ defmodule Mix.Tasks.Theoria.Kernel.Check do
       Mix.shell().info("- theorem replay skipped: #{report.theorem_replay_skipped}")
       Mix.shell().info("✓ generated artifact checks: #{report.generated_artifact_count}")
       Mix.shell().info("✓ indexed artifact checks: #{report.indexed_artifact_count}")
+      print_proof_strategy_counts(report.proof_strategy_counts, "  ")
       Mix.shell().info("✓ replay checks: #{report.replay_count}")
       Mix.shell().info("- replay skipped: #{report.replay_skipped}")
       Mix.shell().info("✓ artifact replay checks: #{report.artifact_replay_count}")
@@ -100,6 +101,7 @@ defmodule Mix.Tasks.Theoria.Kernel.Check do
 
       Mix.shell().info("  generated_artifacts=#{report.generated_artifact_count}")
       Mix.shell().info("  indexed_artifacts=#{report.indexed_artifact_count}")
+      print_proof_strategy_counts(report.proof_strategy_counts, "    ")
       Mix.shell().info("  replay=#{report.replay_count} skipped=#{report.replay_skipped}")
 
       Mix.shell().info(
@@ -113,6 +115,14 @@ defmodule Mix.Tasks.Theoria.Kernel.Check do
       Mix.shell().info("  total_replay_checks=#{Differential.Report.total_replay_checks(report)}")
       Mix.shell().info("  failures=#{Differential.Report.failure_count(report)}")
     end
+  end
+
+  defp print_proof_strategy_counts(strategies, prefix) do
+    Mix.shell().info("#{prefix}proof strategies:")
+
+    strategies
+    |> Enum.sort_by(fn {strategy, _count} -> strategy end)
+    |> Enum.each(fn {strategy, count} -> Mix.shell().info("#{prefix}  #{strategy}: #{count}") end)
   end
 
   defp print_generated_term_families(families, prefix) do

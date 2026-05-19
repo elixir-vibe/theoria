@@ -28,4 +28,4 @@ No extensionality or proof-irrelevance shortcut is admitted. A path is supported
 
 ## Reports and examples
 
-0.5 made report/capability APIs structured. 0.6 uses those APIs to explain newly supported proof paths and to document boundaries when proof construction remains unsupported. Nested capability entries may include an `inner` capability so callers can see both the outer constructor lift and the inner path proof method.
+0.5 made report/capability APIs structured. 0.6 uses those APIs to explain newly supported proof paths and to document boundaries when proof construction remains unsupported. Nested capability entries may include an `inner` capability so callers can see both the outer constructor lift and the inner path proof method. Kernel reports also summarize generated artifact proof strategies so fallback-vs-construction progress stays visible.

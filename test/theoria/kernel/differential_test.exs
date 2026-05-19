@@ -26,6 +26,8 @@ defmodule Theoria.Kernel.DifferentialTest do
     assert report.theorem_replay_count > 0
     assert report.generated_artifact_count > 0
     assert report.indexed_artifact_count > 0
+    assert report.proof_strategy_counts.refl == report.generated_artifact_count
+    assert report.proof_strategy_counts.recursor_iota_refl == report.indexed_artifact_count
     assert report.replay_count > 0
     assert report.artifact_replay_count > 0
   end

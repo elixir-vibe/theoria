@@ -96,6 +96,7 @@ defimpl Jason.Encoder, for: Theoria.Kernel.Differential.Report do
         theorem_replay_skipped: report.theorem_replay_skipped,
         generated_artifact_checks: report.generated_artifact_count,
         indexed_artifact_checks: report.indexed_artifact_count,
+        proof_strategy_counts: report.proof_strategy_counts,
         replay_checks: report.replay_count,
         replay_skipped: report.replay_skipped,
         artifact_replay_checks: report.artifact_replay_count,

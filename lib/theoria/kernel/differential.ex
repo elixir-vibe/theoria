@@ -39,6 +39,7 @@ defmodule Theoria.Kernel.Differential do
       :theorem_replay_skipped,
       :generated_artifact_count,
       :indexed_artifact_count,
+      :proof_strategy_counts,
       :replay_count,
       :replay_skipped,
       :artifact_replay_count,
@@ -64,6 +65,7 @@ defmodule Theoria.Kernel.Differential do
       :theorem_replay_skipped,
       :generated_artifact_count,
       :indexed_artifact_count,
+      :proof_strategy_counts,
       :replay_count,
       :replay_skipped,
       :artifact_replay_count,
@@ -91,6 +93,7 @@ defmodule Theoria.Kernel.Differential do
             theorem_replay_skipped: non_neg_integer(),
             generated_artifact_count: non_neg_integer(),
             indexed_artifact_count: non_neg_integer(),
+            proof_strategy_counts: %{atom() => non_neg_integer()},
             replay_count: non_neg_integer(),
             replay_skipped: non_neg_integer(),
             artifact_replay_count: non_neg_integer(),
@@ -222,6 +225,8 @@ defmodule Theoria.Kernel.Differential do
       theorem_replay_skipped: theorem_replay_skipped,
       generated_artifact_count: generated_artifact_count,
       indexed_artifact_count: indexed_artifact_count,
+      proof_strategy_counts:
+        proof_strategy_counts(generated_artifact_count, indexed_artifact_count),
       replay_count: replay_report.checked,
       replay_skipped: replay_report.skipped,
       artifact_replay_count: ArtifactReplay.checked(artifact_replay),
@@ -255,6 +260,15 @@ defmodule Theoria.Kernel.Differential do
           indexed_artifact_failures ++ replay_report.failures ++ artifact_replay.failures
     }
   end
+
+  defp proof_strategy_counts(generated_artifact_count, indexed_artifact_count) do
+    %{}
+    |> put_positive(:refl, generated_artifact_count)
+    |> put_positive(:recursor_iota_refl, indexed_artifact_count)
+  end
+
+  defp put_positive(counts, _strategy, 0), do: counts
+  defp put_positive(counts, strategy, count), do: Map.put(counts, strategy, count)
 
   defp timed(function) do
     start = monotonic_time()

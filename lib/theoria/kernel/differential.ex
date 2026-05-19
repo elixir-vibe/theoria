@@ -2,6 +2,7 @@ defmodule Theoria.Kernel.Differential do
   @moduledoc "Production/reference kernel differential checks."
 
   alias Theoria.Env
+  alias Theoria.Equation.Extension
   alias Theoria.Kernel
   alias Theoria.Kernel.Corpus
   alias Theoria.Kernel.Reference
@@ -21,6 +22,7 @@ defmodule Theoria.Kernel.Differential do
       :defeq_count,
       :rejection_count,
       :theorem_count,
+      :generated_artifact_count,
       :failures
     ]
     defstruct [
@@ -30,6 +32,7 @@ defmodule Theoria.Kernel.Differential do
       :defeq_count,
       :rejection_count,
       :theorem_count,
+      :generated_artifact_count,
       :failures
     ]
 
@@ -41,6 +44,7 @@ defmodule Theoria.Kernel.Differential do
             defeq_count: non_neg_integer(),
             rejection_count: non_neg_integer(),
             theorem_count: non_neg_integer(),
+            generated_artifact_count: non_neg_integer(),
             failures: [failure()]
           }
 
@@ -106,6 +110,7 @@ defmodule Theoria.Kernel.Differential do
     normalize_failures = failures(Corpus.normalize_cases(), &compare_normalize_case(env, &1))
     defeq_failures = failures(Corpus.defeq_cases(), &compare_defeq_case(env, &1))
     {theorem_count, theorem_failures} = theorem_failures(env)
+    {generated_artifact_count, generated_artifact_failures} = generated_artifact_failures(env)
 
     %Report{
       infer_count: length(Corpus.infer_cases()),
@@ -115,11 +120,21 @@ defmodule Theoria.Kernel.Differential do
       rejection_count:
         length(Corpus.infer_rejection_cases()) + length(Corpus.check_rejection_cases()),
       theorem_count: theorem_count,
+      generated_artifact_count: generated_artifact_count,
       failures:
         infer_failures ++
           check_failures ++
-          rejection_failures ++ normalize_failures ++ defeq_failures ++ theorem_failures
+          rejection_failures ++
+          normalize_failures ++
+          defeq_failures ++ theorem_failures ++ generated_artifact_failures
     }
+  end
+
+  defp generated_artifact_failures(env) do
+    case Extension.realize_all(env) do
+      {:ok, theorems} -> {length(theorems), failures(theorems, &compare_theorem(env, &1))}
+      {:error, {name, error}} -> {0, [{:generated_artifact, name, :realization_failed, error}]}
+    end
   end
 
   defp theorem_failures(env) do

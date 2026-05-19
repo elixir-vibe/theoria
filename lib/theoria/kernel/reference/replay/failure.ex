@@ -16,7 +16,10 @@ defmodule Theoria.Kernel.Reference.Replay.Failure do
     :reason,
     :direct_dependencies,
     :transitive_dependencies,
-    :missing_dependencies
+    :missing_dependencies,
+    :dependency_path,
+    :checked_before_failure,
+    :pending_after_failure
   ]
   defstruct [
     :name,
@@ -26,6 +29,9 @@ defmodule Theoria.Kernel.Reference.Replay.Failure do
     :direct_dependencies,
     :transitive_dependencies,
     :missing_dependencies,
+    :dependency_path,
+    checked_before_failure: [],
+    pending_after_failure: [],
     details: []
   ]
 
@@ -34,9 +40,12 @@ defmodule Theoria.Kernel.Reference.Replay.Failure do
           phase: atom(),
           declaration_kind: atom() | nil,
           reason: term(),
-          direct_dependencies: [atom()],
-          transitive_dependencies: [atom()],
-          missing_dependencies: [atom()],
+          direct_dependencies: [Env.name()],
+          transitive_dependencies: [Env.name()],
+          missing_dependencies: [Env.name()],
+          dependency_path: [Env.name()],
+          checked_before_failure: [Env.name()],
+          pending_after_failure: [Env.name()],
           details: keyword()
         }
 
@@ -45,6 +54,7 @@ defmodule Theoria.Kernel.Reference.Replay.Failure do
     constant = fetch_constant(source_env, name)
 
     direct_dependencies = direct_dependencies(constant)
+    missing_dependencies = missing_dependencies(source_env, direct_dependencies)
 
     %__MODULE__{
       name: name,
@@ -53,8 +63,11 @@ defmodule Theoria.Kernel.Reference.Replay.Failure do
       reason: reason,
       direct_dependencies: direct_dependencies,
       transitive_dependencies: transitive_dependencies(source_env, direct_dependencies),
-      missing_dependencies: missing_dependencies(source_env, direct_dependencies),
-      details: details
+      missing_dependencies: missing_dependencies,
+      dependency_path: dependency_path(source_env, direct_dependencies, missing_dependencies),
+      checked_before_failure: Keyword.get(details, :checked_before_failure, []),
+      pending_after_failure: Keyword.get(details, :pending_after_failure, []),
+      details: Keyword.drop(details, [:checked_before_failure, :pending_after_failure])
     }
   end
 
@@ -112,6 +125,46 @@ defmodule Theoria.Kernel.Reference.Replay.Failure do
     |> Enum.uniq()
     |> Enum.sort()
   end
+
+  @spec with_replay_context(t(), [Env.name()], [Env.name()]) :: t()
+  def with_replay_context(%__MODULE__{} = failure, checked_before_failure, pending_after_failure) do
+    %__MODULE__{
+      failure
+      | checked_before_failure: checked_before_failure,
+        pending_after_failure: pending_after_failure
+    }
+  end
+
+  defp dependency_path(_env, _dependencies, []), do: []
+
+  defp dependency_path(env, dependencies, [target | _missing]) do
+    Enum.find_value(dependencies, [], &find_dependency_path(env, &1, target, MapSet.new()))
+  end
+
+  defp find_dependency_path(_env, dependency, dependency, _seen), do: [dependency]
+
+  defp find_dependency_path(env, dependency, target, seen) do
+    unless MapSet.member?(seen, dependency) do
+      dependency_path_from_fetch(env, dependency, target, MapSet.put(seen, dependency))
+    end
+  end
+
+  defp dependency_path_from_fetch(env, dependency, target, seen) do
+    case Env.fetch(env, dependency) do
+      {:ok, %Constant{} = constant} ->
+        constant
+        |> direct_dependencies()
+        |> Enum.find_value(
+          &prepend_dependency(dependency, find_dependency_path(env, &1, target, seen))
+        )
+
+      :error ->
+        nil
+    end
+  end
+
+  defp prepend_dependency(_dependency, nil), do: nil
+  defp prepend_dependency(dependency, path), do: [dependency | path]
 
   defp collect_missing_dependency(env, dependency, seen) do
     if MapSet.member?(seen, dependency) do

@@ -51,10 +51,13 @@ defmodule Theoria.Kernel.EnvironmentCorpus do
       |> add_axiom!(type_name, sort_zero)
       |> add_axiom!(value_name, type)
 
+    bad_theorem_type = Term.eq(type, Term.const(value_name), Term.const(value_name))
+    declarations = Env.declarations(valid)
+
     [
       %InvalidCase{
         name: :missing_declaration_index,
-        env: %{valid | declarations: [:missing_decl | Env.declarations(valid)]},
+        env: %{valid | declarations: [:missing_decl | declarations]},
         reason: :missing_declaration
       },
       %InvalidCase{
@@ -63,9 +66,24 @@ defmodule Theoria.Kernel.EnvironmentCorpus do
         reason: :untracked_declaration
       },
       %InvalidCase{
+        name: :duplicate_declaration_index,
+        env: %{valid | declarations: [type_name | declarations]},
+        reason: :duplicate_declaration_index
+      },
+      %InvalidCase{
         name: :definition_value_type_mismatch,
         env: Env.put_definition(valid, :bad_definition, type, sort_zero),
         reason: :type_mismatch
+      },
+      %InvalidCase{
+        name: :theorem_proof_type_mismatch,
+        env: Env.put_theorem(valid, :bad_theorem, bad_theorem_type, Term.refl(sort_zero)),
+        reason: :type_mismatch
+      },
+      %InvalidCase{
+        name: :unknown_constant_dependency,
+        env: Env.put_axiom(valid, :bad_dependency, Term.const(:UnknownDependency)),
+        reason: :unknown_constant
       }
     ]
   end

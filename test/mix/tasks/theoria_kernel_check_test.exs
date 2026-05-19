@@ -169,7 +169,7 @@ defmodule Mix.Tasks.Theoria.Kernel.CheckTest do
     assert length(report["environment_report"]["cases"]) == 4
     assert report["environment_replay_checks"] > 0
     assert report["environment_normalize_checks"] > 0
-    assert report["invalid_environment_checks"] == 3
+    assert report["invalid_environment_checks"] == 6
     assert report["proof_strategies"]["total"] == 40
     assert report["proof_strategies"]["counts"]["refl"] == 38
   end

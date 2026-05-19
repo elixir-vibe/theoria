@@ -36,11 +36,15 @@ defmodule Theoria.Kernel.EnvironmentCorpusTest do
     assert Enum.map(cases, & &1.name) == [
              :missing_declaration_index,
              :untracked_declaration,
-             :definition_value_type_mismatch
+             :duplicate_declaration_index,
+             :definition_value_type_mismatch,
+             :theorem_proof_type_mismatch,
+             :unknown_constant_dependency
            ]
 
     for %EnvironmentCorpus.InvalidCase{} = invalid_case <- cases do
-      assert {:error, _reason} = Kernel.validate_env(invalid_case.env)
+      assert {:error, %{reason: reason}} = Kernel.validate_env(invalid_case.env)
+      assert reason == invalid_case.reason
     end
   end
 end

@@ -4,7 +4,7 @@ The 0.7 line focuses on deeper kernel/reference assurance through environment re
 
 ## Replay diagnostics
 
-0.7 should make replay failures actionable. Reference replay failures carry structured data such as declaration name, phase, declaration kind, direct dependencies, transitive dependencies, missing dependencies, and details. Further work should enrich this with production/reference details where relevant.
+0.7 should make replay failures actionable. Reference replay failures carry structured data such as declaration name, phase, declaration kind, direct dependencies, transitive dependencies, missing dependencies, dependency path, checked declarations before failure, pending declarations after failure, and details. Further work should enrich this with production/reference details where relevant.
 
 ## Environment assurance
 
@@ -18,7 +18,7 @@ The 0.7 line focuses on deeper kernel/reference assurance through environment re
 
 ## Declaration-chain generation
 
-0.7 generates bounded declaration, let, theorem, and universe-polymorphic chains and compares production/reference behavior for replay, normalization, and dependency tracking. `mix theoria.kernel.check --environment-depth N` controls the generated chain depth. Invalid environment cases also check that malformed declaration indexes and bad declaration values are rejected by native environment validation.
+0.7 generates bounded declaration, let, theorem, and universe-polymorphic chains and compares production/reference behavior for replay, normalization, and dependency tracking. `mix theoria.kernel.check --environment-depth N` controls the generated chain depth. Invalid environment cases also check that malformed declaration indexes, bad declaration values, bad theorem proofs, duplicate declaration indexes, and unknown dependencies are rejected by native environment validation with the expected reason.
 
 ## Boundaries
 

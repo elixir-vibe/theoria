@@ -8,6 +8,8 @@ Post-0.6 development toward deeper replay and environment assurance.
 - Added a deterministic environment corpus with declaration-chain, let-chain, theorem-chain, and universe-polymorphic replay/normalization differential checks.
 - Added structured environment corpus reports and `mix theoria.kernel.check --environment-depth`.
 - Added invalid environment corpus checks for native environment validation rejection assurance.
+- Added replay-order and dependency-path diagnostics to reference replay failures.
+- Strengthened invalid environment assurance to match expected rejection reasons and cover duplicate declarations, bad theorem proofs, and unknown dependencies.
 
 ## 0.6.0
 

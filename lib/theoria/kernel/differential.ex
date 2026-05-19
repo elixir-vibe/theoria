@@ -417,8 +417,14 @@ defmodule Theoria.Kernel.Differential do
 
   defp compare_invalid_environment(%EnvironmentCorpus.InvalidCase{} = invalid_case) do
     case Kernel.validate_env(invalid_case.env) do
-      {:error, _reason} -> :ok
-      :ok -> {:error, {:invalid_environment, invalid_case.name, :accepted, invalid_case.reason}}
+      {:error, %{reason: reason}} when reason == invalid_case.reason ->
+        :ok
+
+      {:error, reason} ->
+        {:error, {:invalid_environment, invalid_case.name, reason, invalid_case.reason}}
+
+      :ok ->
+        {:error, {:invalid_environment, invalid_case.name, :accepted, invalid_case.reason}}
     end
   end
 

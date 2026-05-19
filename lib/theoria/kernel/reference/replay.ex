@@ -27,15 +27,36 @@ defmodule Theoria.Kernel.Reference.Replay do
   @doc "Replays an environment declaration-by-declaration through the reference checker."
   @spec run(Env.t()) :: Report.t()
   def run(%Env{} = env) do
-    env
-    |> Env.declarations()
-    |> Enum.reduce_while({Env.new(), 0, 0}, fn name, {replay_env, checked, skipped} ->
-      case replay_declaration(env, replay_env, name) do
-        {:ok, replay_env} -> {:cont, {replay_env, checked + 1, skipped}}
-        {:error, failure} -> {:halt, {:error, checked, skipped, [failure]}}
-      end
-    end)
+    replay_declarations(env, Env.declarations(env), Env.new(), [], 0, 0)
     |> report()
+  end
+
+  defp replay_declarations(_source_env, [], replay_env, _checked_names, checked, skipped),
+    do: {replay_env, checked, skipped}
+
+  defp replay_declarations(
+         source_env,
+         [name | pending],
+         replay_env,
+         checked_names,
+         checked,
+         skipped
+       ) do
+    case replay_declaration(source_env, replay_env, name) do
+      {:ok, replay_env} ->
+        replay_declarations(
+          source_env,
+          pending,
+          replay_env,
+          [name | checked_names],
+          checked + 1,
+          skipped
+        )
+
+      {:error, failure} ->
+        failure = Failure.with_replay_context(failure, Enum.reverse(checked_names), pending)
+        {:error, checked, skipped, [failure]}
+    end
   end
 
   defp report({%Env{}, checked, skipped}),

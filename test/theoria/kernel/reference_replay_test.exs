@@ -20,6 +20,9 @@ defmodule Theoria.Kernel.ReferenceReplayTest do
     assert failure.direct_dependencies == [:Missing]
     assert failure.transitive_dependencies == [:Missing]
     assert failure.missing_dependencies == [:Missing]
+    assert failure.dependency_path == [:Missing]
+    assert failure.checked_before_failure == []
+    assert failure.pending_after_failure == []
     assert match?(%Theoria.Error{}, failure.reason)
   end
 
@@ -36,5 +39,24 @@ defmodule Theoria.Kernel.ReferenceReplayTest do
     assert failure.direct_dependencies == [:B]
     assert failure.transitive_dependencies == [:A, :B]
     assert failure.missing_dependencies == []
+    assert failure.dependency_path == []
+    assert failure.checked_before_failure == [:A, :B]
+    assert failure.pending_after_failure == []
+  end
+
+  test "reports dependency path and pending replay context" do
+    env =
+      Env.new()
+      |> Env.put_axiom(:Root, Term.sort(0))
+      |> Env.put_constant(:Middle, Term.const(:Missing))
+      |> Env.put_constant(:Bad, Term.const(:Middle))
+      |> Env.put_axiom(:Pending, Term.sort(0))
+
+    assert %Replay.Report{failures: [%Failure{} = failure]} = Replay.run(env)
+
+    assert failure.name == :Middle
+    assert failure.dependency_path == [:Missing]
+    assert failure.checked_before_failure == [:Root]
+    assert failure.pending_after_failure == [:Bad, :Pending]
   end
 end

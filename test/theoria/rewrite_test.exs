@@ -179,6 +179,48 @@ defmodule Theoria.RewriteTest do
     assert capability.inner.reason == :application_congruence
   end
 
+  test "let type rewrite steps report typed transport boundary" do
+    {:ok, env} = Prelude.env()
+    nat = Term.const(:Nat)
+    bool = Term.const(:Bool)
+    zero = Term.const(:zero)
+    equality = Term.eq(Term.sort(1), nat, bool)
+
+    {:ok, env} = Kernel.add_axiom(env, :nat_eq_bool, equality)
+
+    term = Term.let(:x, nat, zero, Term.bvar(0))
+    rule = Rule.new(:nat_to_bool, equality, proof: Term.const(:nat_eq_bool))
+
+    assert {:ok, step} = Rewrite.once_with_step(term, rule)
+    assert step.path == [:type]
+
+    assert %{proof_result: %{capability: capability}} = Proof.attach(env, step)
+
+    assert capability.reason == :typed_transport_boundary
+    refute capability.supported?
+  end
+
+  test "refl value rewrite steps report explicit proof boundary" do
+    {:ok, env} = Prelude.env()
+    zero = Term.const(:zero)
+    one = Term.app(Term.const(:succ), zero)
+    nat = Term.const(:Nat)
+    equality = Term.eq(nat, zero, one)
+
+    {:ok, env} = Kernel.add_axiom(env, :zero_eq_one, equality)
+
+    term = Term.refl(zero)
+    rule = Rule.new(:zero_to_one, equality, proof: Term.const(:zero_eq_one))
+
+    assert {:ok, step} = Rewrite.once_with_step(term, rule)
+    assert step.path == [:value]
+
+    assert %{proof_result: %{status: :kernel_rejected, capability: capability}} =
+             Proof.attach(env, step)
+
+    assert capability.reason == :refl_value_boundary
+  end
+
   test "let value rewrite steps can carry checked proof" do
     {:ok, env} = Prelude.env()
     zero = Term.const(:zero)

@@ -43,6 +43,7 @@ defimpl Jason.Encoder, for: Theoria.Kernel.Differential.Timings do
         normalize_ms: timings.normalize_ms,
         defeq_ms: timings.defeq_ms,
         rejection_ms: timings.rejection_ms,
+        generated_term_ms: timings.generated_term_ms,
         theorem_ms: timings.theorem_ms,
         generated_artifact_ms: timings.generated_artifact_ms,
         indexed_artifact_ms: timings.indexed_artifact_ms,

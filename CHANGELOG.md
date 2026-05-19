@@ -8,11 +8,12 @@ Post-0.5 development toward deeper proof-producing automation and stronger gener
 - Added kernel-checked proof lifting for `EqRec` base/proof rewrite paths, including supported nested paths.
 - Added kernel-checked proof lifting for supported constructor value rewrite paths, including `let` values.
 - Equality chains now bridge missing definitional-equality steps when composing explicit checked proofs.
-- Kernel differential reports now include structured generated-term reports with configurable bounds and family counts.
+- Kernel differential reports now include structured generated-term reports with configurable bounds, timing, diagnostics, and family counts.
 - Generated-term assurance now covers deterministic `let`, `forall`, Bool equality, and Bool/Nat beta families.
 - Proof capability JSON can expose nested `inner` capabilities for composed structural lifts.
 - Simp results now expose proof status counts for trace reports.
 - Kernel differential reports now summarize generated artifact proof strategies with a structured proof-strategy report.
+- Proof capabilities now include step-aware diagnostics for parent-specific boundaries such as `Refl.value` and type-changing paths.
 
 ## 0.5.0
 

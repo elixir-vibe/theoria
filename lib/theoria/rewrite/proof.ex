@@ -37,7 +37,7 @@ defmodule Theoria.Rewrite.Proof do
   @doc "Attaches proof status and a checked proof to a rewrite step when possible."
   @spec attach(Env.t(), Step.t()) :: Step.t()
   def attach(%Env{} = env, %Step{} = step) do
-    capability = Capabilities.explain(step.path)
+    capability = Capabilities.explain_step(step)
 
     case proof_result(env, step) do
       {:ok, proof} -> %{step | proof_result: Result.checked(proof, capability)}

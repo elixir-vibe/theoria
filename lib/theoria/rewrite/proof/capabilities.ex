@@ -7,6 +7,8 @@ defmodule Theoria.Rewrite.Proof.Capabilities do
 
   alias Theoria.Rewrite.Proof.Capability
   alias Theoria.Rewrite.Proof.Capability.Entry
+  alias Theoria.Rewrite.Step
+  alias Theoria.Term
 
   @type capability :: Capability.t()
 
@@ -37,6 +39,18 @@ defmodule Theoria.Rewrite.Proof.Capabilities do
         unsupported(:unknown_path, "no proof lifting rule for this path")
     end
   end
+
+  @spec explain_step(Step.t()) :: capability()
+  def explain_step(%Step{path: [:value], before: %Term.Let{}}),
+    do: supported(:value_congruence, "let value congruence")
+
+  def explain_step(%Step{path: [:value], before: %Term.Refl{}}),
+    do: unsupported(:refl_value_boundary, "Refl value paths need typed proof transport")
+
+  def explain_step(%Step{path: [:type]}),
+    do: unsupported(:typed_transport_boundary, "type-changing paths need typed transport")
+
+  def explain_step(%Step{path: path}), do: explain(path)
 
   @spec supported?([atom()]) :: boolean()
   def supported?(path), do: explain(path).supported?

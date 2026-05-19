@@ -5,6 +5,7 @@ defmodule Mix.Tasks.Theoria.Kernel.Check do
 
   alias Theoria.Kernel.Coverage
   alias Theoria.Kernel.Differential
+  alias Theoria.Kernel.Differential.Options
   alias Theoria.Kernel.Explanation
   alias Theoria.Prelude
 
@@ -25,13 +26,20 @@ defmodule Mix.Tasks.Theoria.Kernel.Check do
                verbose: :boolean
              ]
            ),
-         {:ok, env} <- Prelude.env() do
-      report = Differential.run(env, differential_opts(opts))
+         {:ok, env} <- Prelude.env(),
+         {:ok, differential_opts} <- Options.parse(differential_opts(opts)) do
+      report = Differential.run(env, differential_opts)
       print_report(env, report, opts)
       maybe_raise(report)
     else
       {_opts, _args, invalid} ->
         Mix.raise("invalid option(s): #{format_invalid_options(invalid)}")
+
+      {:error, {:invalid_generated_size, size}} ->
+        Mix.raise("invalid --generated-size: #{inspect(size)}")
+
+      {:error, {:invalid_generated_max_terms, max_terms}} ->
+        Mix.raise("invalid --generated-max-terms: #{inspect(max_terms)}")
 
       {:error, reason} ->
         Mix.raise("failed to build Theoria prelude: #{inspect(reason)}")

@@ -83,6 +83,8 @@ defmodule Mix.Tasks.Theoria.SimpTest do
     assert output =~ "\"supported\""
     assert output =~ "\"reason\""
     assert output =~ "\"description\""
+    assert output =~ "\"inner\""
+    assert output =~ "eq_rec_base_congruence"
   end
 
   test "prints JSON for examples" do

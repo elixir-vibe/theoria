@@ -9,6 +9,7 @@ defmodule Theoria.Kernel.Differential do
   alias Theoria.Kernel.ArtifactReplay
   alias Theoria.Kernel.ArtifactReplay.Skip
   alias Theoria.Kernel.Corpus
+  alias Theoria.Kernel.Differential.Options
   alias Theoria.Kernel.Differential.Timings
   alias Theoria.Kernel.GeneratedTerm
   alias Theoria.Kernel.GeneratedTerm.Failure, as: GeneratedTermFailure
@@ -180,8 +181,9 @@ defmodule Theoria.Kernel.Differential do
   end
 
   @doc "Runs the default kernel differential corpus."
-  @spec run(Env.t(), keyword()) :: Report.t()
+  @spec run(Env.t(), keyword() | Options.t()) :: Report.t()
   def run(%Env{} = env, opts \\ []) do
+    {:ok, opts} = Options.parse(opts)
     total_start = monotonic_time()
 
     {infer_failures, infer_ms} =
@@ -202,7 +204,7 @@ defmodule Theoria.Kernel.Differential do
     {defeq_failures, defeq_ms} =
       timed(fn -> failures(Corpus.defeq_cases(), &compare_defeq_case(env, &1)) end)
 
-    {{generated_terms, generated_term_failures}, _generated_term_ms} =
+    {{generated_terms, generated_term_failures}, generated_term_ms} =
       timed(fn -> generated_term_failures(opts) end)
 
     {{theorem_count, theorem_modules, theorem_replay_count, theorem_replay_skipped,
@@ -255,6 +257,7 @@ defmodule Theoria.Kernel.Differential do
         normalize_ms: normalize_ms,
         defeq_ms: defeq_ms,
         rejection_ms: rejection_ms,
+        generated_term_ms: generated_term_ms,
         theorem_ms: theorem_ms,
         generated_artifact_ms: generated_artifact_ms,
         indexed_artifact_ms: indexed_artifact_ms,
@@ -298,11 +301,8 @@ defmodule Theoria.Kernel.Differential do
     {GeneratedTermReport.new(terms, generator_opts), failures(terms, &compare_generated_term/1)}
   end
 
-  defp generated_term_options(opts) do
-    [
-      size: Keyword.get(opts, :generated_size, 3),
-      max_terms: Keyword.get(opts, :generated_max_terms, 128)
-    ]
+  defp generated_term_options(%Options{} = opts) do
+    [size: opts.generated_size, max_terms: opts.generated_max_terms]
   end
 
   defp compare_generated_term(%GeneratedTerm{env: env, term: term, type: type} = generated) do

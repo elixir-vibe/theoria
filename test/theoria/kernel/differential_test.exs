@@ -20,6 +20,7 @@ defmodule Theoria.Kernel.DifferentialTest do
     assert report.generated_terms.total == report.generated_term_count
     assert report.generated_terms.size == 3
     assert report.generated_terms.max_terms == 128
+    assert is_integer(report.timings.generated_term_ms)
     assert report.generated_term_families.bool > 0
     assert report.generated_term_families.nat_eq_rec > 0
     assert report.generated_term_families.nat_let > 0

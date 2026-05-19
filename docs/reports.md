@@ -21,7 +21,7 @@ mix theoria.kernel.check --json --coverage --explain
 mix theoria.kernel.check --generated-size 4 --generated-max-terms 256
 ```
 
-The report compares production kernel behavior with the independent reference checker/normalizer, checks deterministic generated typed terms with stable family counts and configurable bounds, summarizes generated artifact proof strategies, replays the Prelude environment, replays theorem-module-installed environments, and replays generated/indexed artifact environments.
+The report compares production kernel behavior with the independent reference checker/normalizer, checks deterministic generated typed terms with stable family counts, timing, diagnostics, and configurable bounds, summarizes generated artifact proof strategies, replays the Prelude environment, replays theorem-module-installed environments, and replays generated/indexed artifact environments.
 
 These reports are assurance, not a formal proof of kernel correctness. The trusted boundary remains native kernel checking of declarations and artifacts.
 

@@ -5,7 +5,10 @@ defmodule Theoria.Level.Solver do
   alias Theoria.Level.{Constraint, Max, Succ}
 
   @spec leq?(Level.t(), Level.t()) :: boolean()
-  def leq?(left, right), do: solve?(Constraint.leq(left, right), MapSet.new())
+  def leq?(left, right), do: solve?(Constraint.leq(left, right))
+
+  @spec solve?(Constraint.t()) :: boolean()
+  def solve?(%Constraint{} = constraint), do: solve?(constraint, MapSet.new())
 
   defp solve?(%Constraint{} = constraint, seen) do
     key = {constraint.left, constraint.right}
@@ -27,6 +30,10 @@ defmodule Theoria.Level.Solver do
 
   defp decompose?(%Succ{level: left}, %Succ{level: right}, seen) do
     solve?(Constraint.leq(left, right), seen)
+  end
+
+  defp decompose?(left, %Succ{level: right}, seen) do
+    solve?(Constraint.leq(left, right), seen) or Level.equal?(left, right)
   end
 
   defp decompose?(%Max{left: left_part, right: right_part}, right, seen) do

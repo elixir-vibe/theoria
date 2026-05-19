@@ -37,6 +37,8 @@ defmodule Theoria.Level.SolverTest do
     v = Level.param(:v)
 
     assert Level.leq?(u, Level.max(v, u))
+    assert Level.leq?(v, Level.max(v, u))
+    assert Level.leq?(u, Level.max(Level.succ(u), v))
     assert Level.leq?(Level.max(u, v), Level.max(v, u))
     refute Level.leq?(Level.max(Level.succ(u), v), u)
   end

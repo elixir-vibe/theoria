@@ -1,6 +1,6 @@
 # Kernel spec
 
-Theoria's trusted base is the native Elixir kernel. This document describes the first Elixir-authored reference-checker fragment used for differential assurance.
+Theoria's trusted base is the native Elixir kernel. This document describes the Elixir-authored reference path used for differential assurance.
 
 ## Trusted modules
 
@@ -34,21 +34,23 @@ Later phases still need deeper independent coverage for:
 - full inductive/recursor reference validation
 - matcher declarations
 - environment replay
-- a reference normalizer independent of `Theoria.Normalize`
+- a broader generated theorem-module reference corpus
+- randomized well-typed term generation
 
 Differential checks use a curated corpus that stays inside the explicitly supported reference fragment.
 
 ## Judgments
 
-The reference fragment mirrors three judgments:
+The reference path mirrors four judgments:
 
 ```text
 infer(env, context, term) -> type
 check(env, context, term, expected_type) -> ok | error
+normalize(env, term) -> term
 defeq(env, left, right) -> boolean
 ```
 
-The reference checker uses the production normalizer for definitional equality in this initial phase. Later phases can split out a reference normalizer.
+`Theoria.Kernel.Reference.Normalize` provides a separate slow reference normalizer for beta, let, transparent constant unfolding, primitive reductions, and `EqRec` over `Refl`. The reference checker uses that path for WHNF and definitional equality.
 
 ## Differential assurance
 
@@ -58,6 +60,7 @@ Run it with:
 
 ```bash
 mix theoria.kernel.check
+mix theoria.kernel.check --json
 ```
 
 This is assurance groundwork, not a formal proof that the Elixir kernel is correct. The goal is to keep the maintained source Elixir-first while adding an independent, explicit, slower reference path that catches regressions in the trusted kernel.

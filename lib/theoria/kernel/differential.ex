@@ -5,18 +5,22 @@ defmodule Theoria.Kernel.Differential do
   alias Theoria.Kernel
   alias Theoria.Kernel.Corpus
   alias Theoria.Kernel.Reference
+  alias Theoria.Kernel.Reference.Normalize, as: ReferenceNormalize
+  alias Theoria.Normalize
   alias Theoria.Term
 
   defmodule Report do
     @moduledoc "Summary of kernel differential checks."
 
-    @enforce_keys [:infer_count, :check_count, :failures]
-    defstruct [:infer_count, :check_count, :failures]
+    @enforce_keys [:infer_count, :check_count, :normalize_count, :defeq_count, :failures]
+    defstruct [:infer_count, :check_count, :normalize_count, :defeq_count, :failures]
 
     @type failure :: {atom(), atom(), term(), term()}
     @type t :: %__MODULE__{
             infer_count: non_neg_integer(),
             check_count: non_neg_integer(),
+            normalize_count: non_neg_integer(),
+            defeq_count: non_neg_integer(),
             failures: [failure()]
           }
 
@@ -36,31 +40,59 @@ defmodule Theoria.Kernel.Differential do
     compare(:check, name, Kernel.check(env, term, type), Reference.check(env, term, type))
   end
 
+  @doc "Compares production and reference normalization for one term."
+  @spec compare_normalize(Env.t(), atom(), Term.t()) :: :ok | {:error, Report.failure()}
+  def compare_normalize(%Env{} = env, name, term) when is_atom(name) do
+    compare(
+      :normalize,
+      name,
+      Normalize.normalize(env, term),
+      ReferenceNormalize.normalize(env, term)
+    )
+  end
+
+  @doc "Compares production and reference definitional equality for one pair."
+  @spec compare_defeq(Env.t(), atom(), Term.t(), Term.t()) :: :ok | {:error, Report.failure()}
+  def compare_defeq(%Env{} = env, name, left, right) when is_atom(name) do
+    compare(
+      :defeq,
+      name,
+      Normalize.defeq?(env, left, right),
+      ReferenceNormalize.defeq?(env, left, right)
+    )
+  end
+
   @doc "Runs the default kernel differential corpus."
   @spec run(Env.t()) :: Report.t()
   def run(%Env{} = env) do
-    infer_failures =
-      Enum.flat_map(Corpus.infer_cases(), fn {name, term} ->
-        case compare_infer(env, name, term) do
-          :ok -> []
-          {:error, failure} -> [failure]
-        end
-      end)
+    infer_failures = failures(Corpus.infer_cases(), &compare_infer_case(env, &1))
+    check_failures = failures(Corpus.check_cases(), &compare_check_case(env, &1))
 
-    check_failures =
-      Enum.flat_map(Corpus.check_cases(), fn {name, term, type} ->
-        case compare_check(env, name, term, type) do
-          :ok -> []
-          {:error, failure} -> [failure]
-        end
-      end)
+    normalize_failures = failures(Corpus.normalize_cases(), &compare_normalize_case(env, &1))
+    defeq_failures = failures(Corpus.defeq_cases(), &compare_defeq_case(env, &1))
 
     %Report{
       infer_count: length(Corpus.infer_cases()),
       check_count: length(Corpus.check_cases()),
-      failures: infer_failures ++ check_failures
+      normalize_count: length(Corpus.normalize_cases()),
+      defeq_count: length(Corpus.defeq_cases()),
+      failures: infer_failures ++ check_failures ++ normalize_failures ++ defeq_failures
     }
   end
+
+  defp failures(cases, callback) do
+    Enum.flat_map(cases, fn test_case ->
+      case callback.(test_case) do
+        :ok -> []
+        {:error, failure} -> [failure]
+      end
+    end)
+  end
+
+  defp compare_infer_case(env, {name, term}), do: compare_infer(env, name, term)
+  defp compare_check_case(env, {name, term, type}), do: compare_check(env, name, term, type)
+  defp compare_normalize_case(env, {name, term}), do: compare_normalize(env, name, term)
+  defp compare_defeq_case(env, {name, left, right}), do: compare_defeq(env, name, left, right)
 
   defp compare(kind, name, production, reference) do
     if comparable(production) == comparable(reference) do
@@ -73,4 +105,6 @@ defmodule Theoria.Kernel.Differential do
   defp comparable({:ok, value}), do: {:ok, value}
   defp comparable(:ok), do: :ok
   defp comparable({:error, %{reason: reason}}), do: {:error, reason}
+  defp comparable(true), do: true
+  defp comparable(false), do: false
 end

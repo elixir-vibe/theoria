@@ -247,7 +247,7 @@ Guides included with the package:
 - [`docs/inductives.md`](docs/inductives.md) — inductive specifications and recursor generation
 - [`docs/theorem_modules.md`](docs/theorem_modules.md) — theorem module workflow
 - [`docs/trusted_boundary.md`](docs/trusted_boundary.md) — what is trusted versus automation
-- [`docs/kernel_spec.md`](docs/kernel_spec.md) — Elixir-authored kernel spec/reference fragment
+- [`docs/kernel_spec.md`](docs/kernel_spec.md) — Elixir-authored kernel spec, reference checker, and differential checks
 - [`docs/validation.md`](docs/validation.md) — native validation corpus
 - [`docs/lean_validation.md`](docs/lean_validation.md) — contributor-only Lean oracle validation
 - [`docs/equations.md`](docs/equations.md) — internal equation, matcher, rewrite, and simp groundwork
@@ -269,6 +269,7 @@ mix hex.build
 mix theoria.validate
 mix theoria.validate --only defeq
 mix theoria.kernel.check
+mix theoria.kernel.check --json
 ```
 
 Contributors with Lean installed can also run:

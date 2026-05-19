@@ -16,5 +16,20 @@ defmodule Mix.Tasks.Theoria.Kernel.CheckTest do
     assert output =~ "Kernel differential checks"
     assert output =~ "✓ infer checks:"
     assert output =~ "✓ check checks:"
+    assert output =~ "✓ normalize checks:"
+    assert output =~ "✓ defeq checks:"
+  end
+
+  test "prints JSON report" do
+    Mix.Task.clear()
+
+    output =
+      capture_io(fn ->
+        Check.run(["--json"])
+      end)
+
+    assert output =~ "\"infer_checks\""
+    assert output =~ "\"normalize_checks\""
+    assert output =~ "\"failures\":[]"
   end
 end

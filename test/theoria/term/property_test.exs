@@ -29,6 +29,18 @@ defmodule Theoria.Term.PropertyTest do
     end
   end
 
+  property "closed generated terms are well scoped" do
+    check all(term <- closed_term_gen()) do
+      assert Term.well_scoped?(term)
+    end
+  end
+
+  property "well-scoped terms remain well scoped after positive shift with enough depth" do
+    check all(term <- term_gen(), amount <- integer(0..3)) do
+      assert Term.well_scoped?(Term.shift(term, amount), amount)
+    end
+  end
+
   property "positive shifting composes additively" do
     check all(term <- term_gen(), left <- integer(0..3), right <- integer(0..3)) do
       assert term |> Term.shift(left) |> Term.shift(right) == Term.shift(term, left + right)

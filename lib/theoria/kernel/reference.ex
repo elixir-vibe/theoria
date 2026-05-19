@@ -4,8 +4,8 @@ defmodule Theoria.Kernel.Reference do
   alias Theoria.Context
   alias Theoria.Env
   alias Theoria.Error
+  alias Theoria.Kernel.Reference.Normalize
   alias Theoria.Level
-  alias Theoria.Normalize
   alias Theoria.Term
   alias Theoria.Term.{App, BVar, Const, Eq, EqRec, Forall, Lam, Let, Refl, Sort}
 

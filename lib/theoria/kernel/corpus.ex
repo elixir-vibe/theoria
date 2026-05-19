@@ -5,6 +5,8 @@ defmodule Theoria.Kernel.Corpus do
 
   @type infer_case :: {atom(), Term.t()}
   @type check_case :: {atom(), Term.t(), Term.t()}
+  @type normalize_case :: {atom(), Term.t()}
+  @type defeq_case :: {atom(), Term.t(), Term.t()}
 
   @doc "Returns reference-kernel inference cases."
   @spec infer_cases() :: [infer_case()]
@@ -56,6 +58,41 @@ defmodule Theoria.Kernel.Corpus do
       {:bool_identity_checks, bool_identity, bool_identity_type},
       {:let_true_checks, Term.let(:b, bool, bool_true, bvar_zero), bool},
       {:eq_rec_refl_checks, eq_rec_refl(bool, bool_true, bool_refl), bool_equality}
+    ]
+  end
+
+  @doc "Returns normalization cases for production/reference comparison."
+  @spec normalize_cases() :: [normalize_case()]
+  def normalize_cases do
+    bool = Term.const(:Bool)
+    bool_true = Term.const(true)
+    zero = Term.const(:zero)
+    bvar_zero = Term.bvar(0)
+    identity = Term.lam(:x, bool, bvar_zero)
+    bool_refl = Term.refl(bool_true)
+
+    [
+      {:beta_identity_true, Term.app(identity, bool_true)},
+      {:let_true, Term.let(:b, bool, bool_true, bvar_zero)},
+      {:bool_not_true, Term.app(Term.const(:bool_not), bool_true)},
+      {:succ_zero, Term.app(Term.const(:succ), zero)},
+      {:eq_rec_refl, eq_rec_refl(bool, bool_true, bool_refl)}
+    ]
+  end
+
+  @doc "Returns defeq cases for production/reference comparison."
+  @spec defeq_cases() :: [defeq_case()]
+  def defeq_cases do
+    bool = Term.const(:Bool)
+    bool_true = Term.const(true)
+    bool_false = Term.const(false)
+    bvar_zero = Term.bvar(0)
+    identity = Term.lam(:x, bool, bvar_zero)
+
+    [
+      {:beta_identity_true, Term.app(identity, bool_true), bool_true},
+      {:let_true, Term.let(:b, bool, bool_true, bvar_zero), bool_true},
+      {:bool_not_true, Term.app(Term.const(:bool_not), bool_true), bool_false}
     ]
   end
 

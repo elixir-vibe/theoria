@@ -94,6 +94,8 @@ defimpl Jason.Encoder, for: Theoria.Kernel.Reference.Replay.Failure do
         declaration_kind: failure.declaration_kind,
         reason: inspect(failure.reason),
         direct_dependencies: failure.direct_dependencies,
+        transitive_dependencies: failure.transitive_dependencies,
+        missing_dependencies: failure.missing_dependencies,
         details: inspect(failure.details)
       },
       opts

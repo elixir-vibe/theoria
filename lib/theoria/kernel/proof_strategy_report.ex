@@ -2,7 +2,7 @@ defmodule Theoria.Kernel.ProofStrategyReport do
   @moduledoc """
   Structured proof-strategy count summary for generated artifacts.
 
-  Experimental in the 0.6 line; the shape may change before 1.0.
+  Experimental before 1.0; the shape may change.
   """
 
   @enforce_keys [:total, :counts]

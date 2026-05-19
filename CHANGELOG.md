@@ -4,7 +4,7 @@
 
 Post-0.6 development toward deeper replay and environment assurance.
 
-- Added structured reference replay failure diagnostics with declaration phase, kind, dependencies, and details.
+- Added structured reference replay failure diagnostics with declaration phase, kind, direct/transitive dependency context, missing dependencies, and details.
 
 ## 0.6.0
 

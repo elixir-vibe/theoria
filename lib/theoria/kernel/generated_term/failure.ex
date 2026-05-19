@@ -2,7 +2,7 @@ defmodule Theoria.Kernel.GeneratedTerm.Failure do
   @moduledoc """
   Diagnostic payload for a generated-term differential failure.
 
-  Experimental in the 0.6 line; the shape may change before 1.0.
+  Experimental before 1.0; the shape may change.
   """
 
   @enforce_keys [:phase, :name, :term, :type, :production, :reference]

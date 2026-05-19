@@ -2,7 +2,7 @@ defmodule Theoria.Kernel.Differential.Options do
   @moduledoc """
   Structured options for kernel differential assurance runs.
 
-  Experimental in the 0.6 line; the shape may change before 1.0.
+  Experimental before 1.0; the shape may change.
   """
 
   @default_generated_size 3

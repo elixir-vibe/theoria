@@ -2,7 +2,7 @@ defmodule Theoria.Kernel.GeneratedTerm.Report do
   @moduledoc """
   Structured generated-term differential coverage summary.
 
-  Experimental in the 0.6 line; the shape may change before 1.0.
+  Experimental before 1.0; the shape may change.
   """
 
   @enforce_keys [:total, :families, :size, :max_terms]

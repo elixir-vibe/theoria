@@ -23,7 +23,7 @@ defmodule Theoria.Env do
     Map.fetch(constants, name)
   end
 
-  @spec put_constant(t(), atom(), Term.t(), [atom()], keyword()) :: t()
+  @spec put_constant(t(), name(), Term.t(), [atom()], keyword()) :: t()
   def put_constant(
         %__MODULE__{constants: constants} = env,
         name,
@@ -46,7 +46,7 @@ defmodule Theoria.Env do
     }
   end
 
-  @spec put_axiom(t(), atom(), Term.t(), [atom()]) :: t()
+  @spec put_axiom(t(), name(), Term.t(), [atom()]) :: t()
   def put_axiom(%__MODULE__{constants: constants} = env, name, type, universe_params \\ [])
       when is_list(universe_params) do
     %{
@@ -62,7 +62,7 @@ defmodule Theoria.Env do
     }
   end
 
-  @spec put_definition(t(), atom(), Term.t(), Term.t(), [atom()], keyword()) :: t()
+  @spec put_definition(t(), name(), Term.t(), Term.t(), [atom()], keyword()) :: t()
   def put_definition(
         %__MODULE__{constants: constants} = env,
         name,
@@ -87,7 +87,7 @@ defmodule Theoria.Env do
     }
   end
 
-  @spec put_matcher(t(), atom(), Term.t(), Term.t(), [atom()], EnvMatcher.t()) :: t()
+  @spec put_matcher(t(), name(), Term.t(), Term.t(), [atom()], EnvMatcher.t()) :: t()
   def put_matcher(
         %__MODULE__{constants: constants} = env,
         name,
@@ -112,7 +112,7 @@ defmodule Theoria.Env do
     }
   end
 
-  @spec put_theorem(t(), atom(), Term.t(), Term.t(), [atom()]) :: t()
+  @spec put_theorem(t(), name(), Term.t(), Term.t(), [atom()]) :: t()
   def put_theorem(
         %__MODULE__{constants: constants} = env,
         name,
@@ -135,31 +135,31 @@ defmodule Theoria.Env do
     }
   end
 
-  @spec fetch_inductive(t(), atom()) :: {:ok, EnvInductive.t()} | :error
+  @spec fetch_inductive(t(), name()) :: {:ok, EnvInductive.t()} | :error
   def fetch_inductive(%__MODULE__{} = env, name), do: fetch_metadata(env, name, EnvInductive)
 
-  @spec fetch_constructor(t(), atom()) :: {:ok, EnvConstructor.t()} | :error
+  @spec fetch_constructor(t(), name()) :: {:ok, EnvConstructor.t()} | :error
   def fetch_constructor(%__MODULE__{} = env, name), do: fetch_metadata(env, name, EnvConstructor)
 
-  @spec fetch_recursor(t(), atom()) :: {:ok, EnvRecursor.t()} | :error
+  @spec fetch_recursor(t(), name()) :: {:ok, EnvRecursor.t()} | :error
   def fetch_recursor(%__MODULE__{} = env, name), do: fetch_metadata(env, name, EnvRecursor)
 
-  @spec fetch_matcher(t(), atom()) :: {:ok, EnvMatcher.t()} | :error
+  @spec fetch_matcher(t(), name()) :: {:ok, EnvMatcher.t()} | :error
   def fetch_matcher(%__MODULE__{} = env, name), do: fetch_metadata(env, name, EnvMatcher)
 
-  @spec inductive?(t(), atom()) :: boolean()
+  @spec inductive?(t(), name()) :: boolean()
   def inductive?(%__MODULE__{} = env, name),
     do: match?({:ok, _metadata}, fetch_inductive(env, name))
 
-  @spec constructor?(t(), atom()) :: boolean()
+  @spec constructor?(t(), name()) :: boolean()
   def constructor?(%__MODULE__{} = env, name),
     do: match?({:ok, _metadata}, fetch_constructor(env, name))
 
-  @spec recursor?(t(), atom()) :: boolean()
+  @spec recursor?(t(), name()) :: boolean()
   def recursor?(%__MODULE__{} = env, name),
     do: match?({:ok, _metadata}, fetch_recursor(env, name))
 
-  @spec matcher?(t(), atom()) :: boolean()
+  @spec matcher?(t(), name()) :: boolean()
   def matcher?(%__MODULE__{} = env, name),
     do: match?({:ok, _metadata}, fetch_matcher(env, name))
 

@@ -97,7 +97,7 @@ mix theoria.kernel.check
 mix theoria.kernel.check --json
 ```
 
-The check compares the production kernel with `Theoria.Kernel.Reference`, a slower explicit checker for the core term fragment (`Sort`, `Const`, `App`, `Lam`, `Forall`, `BVar`, `Let`, `Eq`, `Refl`, `EqRec`). It also compares production normalization/definitional equality with `Theoria.Kernel.Reference.Normalize`, a separate slow reference normalizer, and rechecks the built-in theorem modules through the reference path. Property tests generate closed Bool/Nat terms and equalities for production/reference agreement. The Reach architecture policy now also guards the trusted boundary by forbidding kernel dependencies on DSL, library, rewrite/simp, Lean, or Mix task layers. The maintained source remains Elixir; Lean remains generated external oracle output, not a hand-written source of truth.
+The check compares the production kernel with `Theoria.Kernel.Reference`, a slower explicit checker for the core term fragment (`Sort`, `Const`, `App`, `Lam`, `Forall`, `BVar`, `Let`, `Eq`, `Refl`, `EqRec`). It also compares production normalization/definitional equality with `Theoria.Kernel.Reference.Normalize`, a separate slow reference normalizer, and rechecks the built-in theorem modules through the reference path. Property tests generate closed Bool, Nat, and List Bool terms, equalities, and List eliminator applications for production/reference agreement. The Reach architecture policy now also guards the trusted boundary by forbidding kernel dependencies on DSL, library, rewrite/simp, Lean, or Mix task layers. The maintained source remains Elixir; Lean remains generated external oracle output, not a hand-written source of truth.
 
 ## Stability
 

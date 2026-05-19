@@ -69,6 +69,37 @@ defmodule Theoria.Kernel.ReferencePropertyTest do
     end
   end
 
+  property "production and reference agree on generated List Bool terms" do
+    check all(term <- list_bool_term_gen()) do
+      {:ok, env} = Prelude.env()
+      list_bool = Term.app(Term.const(:List, [1]), Term.const(:Bool))
+
+      assert Kernel.infer(env, term) == Reference.infer(env, term)
+      assert Kernel.check(env, term, list_bool) == Reference.check(env, term, list_bool)
+    end
+  end
+
+  property "production and reference normalization agree on generated List Bool terms" do
+    check all(term <- list_bool_term_gen()) do
+      {:ok, env} = Prelude.env()
+
+      assert Normalize.normalize(env, term) == ReferenceNormalize.normalize(env, term)
+    end
+  end
+
+  property "production and reference normalization agree on generated List Bool eliminators" do
+    check all(left <- list_bool_term_gen(), right <- list_bool_term_gen()) do
+      {:ok, env} = Prelude.env()
+      bool = Term.const(:Bool)
+
+      length = Term.app(Term.app(Term.const(:list_length, [1]), bool), left)
+      append = Term.app(Term.app(Term.app(Term.const(:list_append, [1]), bool), left), right)
+
+      assert Normalize.normalize(env, length) == ReferenceNormalize.normalize(env, length)
+      assert Normalize.normalize(env, append) == ReferenceNormalize.normalize(env, append)
+    end
+  end
+
   defp bool_term_gen do
     bool_term_gen(3)
   end
@@ -120,5 +151,38 @@ defmodule Theoria.Kernel.ReferencePropertyTest do
 
   defp leaf_nat_gen do
     member_of([Term.const(:zero), Term.app(Term.const(:succ), Term.const(:zero))])
+  end
+
+  defp list_bool_term_gen do
+    list_bool_term_gen(3)
+  end
+
+  defp list_bool_term_gen(0) do
+    leaf_list_bool_gen()
+  end
+
+  defp list_bool_term_gen(size) do
+    smaller = list_bool_term_gen(size - 1)
+
+    one_of([
+      leaf_list_bool_gen(),
+      map({bool_term_gen(), smaller}, fn {head, tail} -> list_cons_bool(head, tail) end),
+      map(smaller, fn value ->
+        list_bool = Term.app(Term.const(:List, [1]), Term.const(:Bool))
+        Term.let(:xs, list_bool, value, Term.bvar(0))
+      end)
+    ])
+  end
+
+  defp leaf_list_bool_gen do
+    constant(empty_list_bool())
+  end
+
+  defp empty_list_bool do
+    Term.app(Term.const(:list_nil, [1]), Term.const(:Bool))
+  end
+
+  defp list_cons_bool(head, tail) do
+    Term.app(Term.app(Term.app(Term.const(:list_cons, [1]), Term.const(:Bool)), head), tail)
   end
 end

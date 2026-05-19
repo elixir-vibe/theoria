@@ -15,4 +15,11 @@ defmodule Theoria.Simp.Step do
           path: [atom()],
           source: atom()
         }
+
+  @spec proof_status(t()) :: ProofResult.status() | nil
+  def proof_status(%__MODULE__{proof_result: proof_result}), do: ProofResult.status(proof_result)
+
+  @spec proof_checked?(t()) :: boolean()
+  def proof_checked?(%__MODULE__{proof_result: proof_result}),
+    do: ProofResult.checked?(proof_result)
 end

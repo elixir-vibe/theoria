@@ -1,3 +1,17 @@
+defimpl Jason.Encoder, for: Theoria.Kernel.Explanation do
+  def encode(explanation, opts) do
+    Jason.Encode.map(
+      %{
+        name: explanation.name,
+        description: explanation.description,
+        trusted: explanation.trusted?,
+        boundary: explanation.boundary
+      },
+      opts
+    )
+  end
+end
+
 defimpl Jason.Encoder, for: Theoria.Kernel.TheoremModuleReport do
   def encode(report, opts) do
     Jason.Encode.map(

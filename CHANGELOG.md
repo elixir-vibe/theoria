@@ -26,6 +26,10 @@ Post-0.4 development toward stronger kernel assurance and deeper proof automatio
 - Added `mix theoria.kernel.check --explain` and proof capability matrix output for `mix theoria.simp --explain`.
 - Documented EqRec and binder path proof boundaries with regression coverage.
 - Added direct EqRec reference normalization tests.
+- Added structured kernel explanations and proof capability matrix entries.
+- Added `mix theoria.simp --capabilities` with JSON support.
+- Added proof-result and simp-result accessor helpers.
+- Added report documentation.
 - Expanded reference properties with `EqRec` over reflexivity.
 
 ## 0.4.0

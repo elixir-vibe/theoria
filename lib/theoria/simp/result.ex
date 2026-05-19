@@ -18,4 +18,10 @@ defmodule Theoria.Simp.Result do
           proof_strategy: atom() | nil,
           realized: Realized.t() | nil
         }
+
+  @spec proof_checked?(t()) :: boolean()
+  def proof_checked?(%__MODULE__{realized: realized}), do: not is_nil(realized)
+
+  @spec proof_strategy(t()) :: atom() | nil
+  def proof_strategy(%__MODULE__{proof_strategy: strategy}), do: strategy
 end

@@ -5,6 +5,7 @@ defmodule Mix.Tasks.Theoria.Kernel.Check do
 
   alias Theoria.Kernel.Coverage
   alias Theoria.Kernel.Differential
+  alias Theoria.Kernel.Explanation
   alias Theoria.Prelude
 
   @shortdoc "Runs kernel differential checks"
@@ -156,25 +157,35 @@ defmodule Mix.Tasks.Theoria.Kernel.Check do
 
   defp explanation do
     [
-      %{
+      %Explanation{
         name: :reference_replay,
-        description: "replays declarations through the independent reference checker"
+        description: "replays declarations through the independent reference checker",
+        trusted?: false,
+        boundary: :assurance
       },
-      %{
+      %Explanation{
         name: :theorem_replay,
-        description: "installs theorem modules and replays the extended environments"
+        description: "installs theorem modules and replays the extended environments",
+        trusted?: false,
+        boundary: :assurance
       },
-      %{
+      %Explanation{
         name: :artifact_replay,
-        description: "installs generated artifacts in suitable environments and replays them"
+        description: "installs generated artifacts in suitable environments and replays them",
+        trusted?: false,
+        boundary: :assurance
       },
-      %{
+      %Explanation{
         name: :skipped,
-        description: "a skipped item was not replayed as an installed declaration"
+        description: "a skipped item was not replayed as an installed declaration",
+        trusted?: false,
+        boundary: :coverage_gap
       },
-      %{
+      %Explanation{
         name: :boundary,
-        description: "these checks are assurance, not a formal proof of kernel correctness"
+        description: "these checks are assurance, not a formal proof of kernel correctness",
+        trusted?: false,
+        boundary: :trusted_boundary
       }
     ]
   end

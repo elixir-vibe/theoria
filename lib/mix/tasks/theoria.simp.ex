@@ -20,6 +20,7 @@ defmodule Mix.Tasks.Theoria.Simp do
 
     case OptionParser.parse(args,
            strict: [
+             capabilities: :boolean,
              examples: :boolean,
              explain: :boolean,
              json: :boolean,
@@ -28,15 +29,33 @@ defmodule Mix.Tasks.Theoria.Simp do
            ]
          ) do
       {opts, [], []} ->
-        if Keyword.get(opts, :list, false),
-          do: list_examples(),
-          else: run_examples(opts, examples())
+        cond do
+          Keyword.get(opts, :capabilities, false) -> print_capabilities(opts)
+          Keyword.get(opts, :list, false) -> list_examples()
+          true -> run_examples(opts, examples())
+        end
 
       {opts, names, []} ->
         run_examples(opts, select_examples(names))
 
       {_opts, _args, invalid} ->
         Mix.raise("invalid option(s): #{format_invalid_options(invalid)}")
+    end
+  end
+
+  defp print_capabilities(opts) do
+    entries = Capabilities.matrix()
+
+    if Keyword.get(opts, :json, false) do
+      Mix.shell().info(Jason.encode!(%{proof_capabilities: entries}))
+    else
+      Mix.shell().info("proof capabilities:")
+
+      Enum.each(entries, fn entry ->
+        Mix.shell().info(
+          "  #{inspect(entry.path)}: #{entry.capability.reason} supported=#{entry.capability.supported?}"
+        )
+      end)
     end
   end
 
@@ -87,29 +106,13 @@ defmodule Mix.Tasks.Theoria.Simp do
     if Keyword.get(opts, :explain, false) do
       Mix.shell().info("proof capabilities:")
 
-      Enum.each(capability_paths(), fn path ->
-        capability = Capabilities.explain(path)
-
+      Enum.each(Capabilities.matrix(), fn entry ->
         Mix.shell().info(
-          "  #{inspect(path)}: #{capability.reason} supported=#{capability.supported?}"
+          "  #{inspect(entry.path)}: #{entry.capability.reason} supported=#{entry.capability.supported?}"
         )
       end)
     end
   end
-
-  defp capability_paths,
-    do: [
-      [],
-      [:arg],
-      [:arg, :arg],
-      [:fun],
-      [:left],
-      [:right],
-      [:body],
-      [:domain],
-      [:proof],
-      [:base]
-    ]
 
   defp print_explain(%{steps: steps}) do
     Enum.each(steps, fn step ->

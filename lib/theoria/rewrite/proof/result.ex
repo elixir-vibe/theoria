@@ -27,6 +27,22 @@ defmodule Theoria.Rewrite.Proof.Result do
   @spec rejected(status(), Capability.t()) :: t()
   def rejected(status, capability), do: %__MODULE__{status: status, capability: capability}
 
+  @spec checked?(t() | nil) :: boolean()
+  def checked?(%__MODULE__{status: :checked}), do: true
+  def checked?(_result), do: false
+
+  @spec proof(t() | nil) :: Term.t() | nil
+  def proof(%__MODULE__{proof: proof}), do: proof
+  def proof(nil), do: nil
+
+  @spec status(t() | nil) :: status() | nil
+  def status(%__MODULE__{status: status}), do: status
+  def status(nil), do: nil
+
+  @spec capability(t() | nil) :: Capability.t() | nil
+  def capability(%__MODULE__{capability: capability}), do: capability
+  def capability(nil), do: nil
+
   @spec not_requested() :: t()
   def not_requested do
     %__MODULE__{

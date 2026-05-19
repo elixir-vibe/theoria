@@ -10,6 +10,18 @@ defimpl Jason.Encoder, for: Theoria.Equality.Chain.Result do
   end
 end
 
+defimpl Jason.Encoder, for: Theoria.Rewrite.Proof.Capability.Entry do
+  def encode(entry, opts) do
+    Jason.Encode.map(
+      %{
+        path: entry.path,
+        capability: entry.capability
+      },
+      opts
+    )
+  end
+end
+
 defimpl Jason.Encoder, for: Theoria.Rewrite.Proof.Capability do
   def encode(capability, opts) do
     Jason.Encode.map(

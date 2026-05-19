@@ -11,7 +11,7 @@ Elixir 1.19+. The package is experimental: the kernel and validation flow are th
 ```elixir
 def deps do
   [
-    {:theoria, "~> 0.4.0"}
+    {:theoria, "~> 0.5.0"}
   ]
 end
 ```

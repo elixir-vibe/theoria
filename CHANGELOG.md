@@ -1,8 +1,10 @@
 # Changelog
 
-## Unreleased
+## 0.5.0
 
-Post-0.4 development toward stronger kernel assurance and deeper proof automation.
+Released 2026-05-18.
+
+Structured assurance reports, proof diagnostics, and theorem/artifact replay.
 
 ### Added
 

@@ -3,7 +3,7 @@ defmodule Theoria.Kernel.Reference.Normalize do
 
   alias Theoria.Env
   alias Theoria.Env.Constant
-  alias Theoria.Normalize.Primitive
+  alias Theoria.Kernel.Reference.Primitive
   alias Theoria.Term
   alias Theoria.Term.{App, Const, Eq, EqRec, Forall, Lam, Let, Refl, Sort}
 
@@ -61,7 +61,12 @@ defmodule Theoria.Kernel.Reference.Normalize do
   end
 
   defp reduce_primitive_app(env, app, fuel) do
-    case Primitive.reduce(env, app, fn env, term -> whnf_loop(env, term, fuel) end) do
+    case Primitive.reduce(
+           env,
+           app,
+           fn env, term -> whnf_loop(env, term, fuel) end,
+           &defeq?/3
+         ) do
       {:stuck, app} -> {:ok, app, fuel}
       {:ok, term, fuel} -> {:ok, term, fuel}
       {:error, _reason} = error -> error

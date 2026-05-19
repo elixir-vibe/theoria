@@ -50,7 +50,7 @@ normalize(env, term) -> term
 defeq(env, left, right) -> boolean
 ```
 
-`Theoria.Kernel.Reference.Normalize` provides a separate slow reference normalizer for beta, let, transparent constant unfolding, primitive reductions, and `EqRec` over `Refl`. The reference checker uses that path for WHNF and definitional equality.
+`Theoria.Kernel.Reference.Normalize` provides a separate slow reference normalizer for beta, let, transparent constant unfolding, reference primitive reductions, and `EqRec` over `Refl`. `Theoria.Kernel.Reference.Primitive` mirrors recursor iota reduction using the reference definitional-equality path for indexed rule matching, so reference normalization no longer calls production `Theoria.Normalize.Primitive`. The reference checker uses that path for WHNF and definitional equality.
 
 ## Differential assurance
 

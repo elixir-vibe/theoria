@@ -34,8 +34,8 @@ Later phases still need deeper independent coverage for:
 - full inductive/recursor reference validation
 - matcher declarations
 - environment replay
-- a broader generated theorem-module reference corpus
-- randomized well-typed term generation
+- deeper theorem-module reference coverage beyond the built-in theorem corpus
+- broader randomized well-typed term generation
 
 Differential checks use a curated corpus that stays inside the explicitly supported reference fragment.
 
@@ -54,7 +54,7 @@ defeq(env, left, right) -> boolean
 
 ## Differential assurance
 
-`Theoria.Kernel.Differential` compares production kernel results against `Theoria.Kernel.Reference` on the curated kernel corpus.
+`Theoria.Kernel.Differential` compares production kernel results against `Theoria.Kernel.Reference` on the curated kernel corpus and the built-in theorem modules. Property tests also generate closed Bool terms/equalities and compare production inference, checking, and normalization with the reference path.
 
 Run it with:
 

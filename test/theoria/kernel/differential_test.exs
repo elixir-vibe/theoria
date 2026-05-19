@@ -15,6 +15,7 @@ defmodule Theoria.Kernel.DifferentialTest do
     assert report.check_count > 0
     assert report.normalize_count > 0
     assert report.defeq_count > 0
+    assert report.theorem_count > 0
   end
 
   test "reference checker covers let terms" do

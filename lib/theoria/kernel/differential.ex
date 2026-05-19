@@ -8,12 +8,28 @@ defmodule Theoria.Kernel.Differential do
   alias Theoria.Kernel.Reference.Normalize, as: ReferenceNormalize
   alias Theoria.Normalize
   alias Theoria.Term
+  alias Theoria.Theorem
+  alias Theoria.Validation.Corpus, as: ValidationCorpus
 
   defmodule Report do
     @moduledoc "Summary of kernel differential checks."
 
-    @enforce_keys [:infer_count, :check_count, :normalize_count, :defeq_count, :failures]
-    defstruct [:infer_count, :check_count, :normalize_count, :defeq_count, :failures]
+    @enforce_keys [
+      :infer_count,
+      :check_count,
+      :normalize_count,
+      :defeq_count,
+      :theorem_count,
+      :failures
+    ]
+    defstruct [
+      :infer_count,
+      :check_count,
+      :normalize_count,
+      :defeq_count,
+      :theorem_count,
+      :failures
+    ]
 
     @type failure :: {atom(), atom(), term(), term()}
     @type t :: %__MODULE__{
@@ -21,6 +37,7 @@ defmodule Theoria.Kernel.Differential do
             check_count: non_neg_integer(),
             normalize_count: non_neg_integer(),
             defeq_count: non_neg_integer(),
+            theorem_count: non_neg_integer(),
             failures: [failure()]
           }
 
@@ -62,6 +79,17 @@ defmodule Theoria.Kernel.Differential do
     )
   end
 
+  @doc "Compares production and reference checking for a theorem artifact."
+  @spec compare_theorem(Env.t(), Theorem.t()) :: :ok | {:error, Report.failure()}
+  def compare_theorem(%Env{} = env, %Theorem{} = theorem) do
+    compare(
+      :theorem,
+      theorem.name,
+      Kernel.check(env, theorem.proof, theorem.type),
+      Reference.check(env, theorem.proof, theorem.type)
+    )
+  end
+
   @doc "Runs the default kernel differential corpus."
   @spec run(Env.t()) :: Report.t()
   def run(%Env{} = env) do
@@ -70,14 +98,36 @@ defmodule Theoria.Kernel.Differential do
 
     normalize_failures = failures(Corpus.normalize_cases(), &compare_normalize_case(env, &1))
     defeq_failures = failures(Corpus.defeq_cases(), &compare_defeq_case(env, &1))
+    {theorem_count, theorem_failures} = theorem_failures(env)
 
     %Report{
       infer_count: length(Corpus.infer_cases()),
       check_count: length(Corpus.check_cases()),
       normalize_count: length(Corpus.normalize_cases()),
       defeq_count: length(Corpus.defeq_cases()),
-      failures: infer_failures ++ check_failures ++ normalize_failures ++ defeq_failures
+      theorem_count: theorem_count,
+      failures:
+        infer_failures ++
+          check_failures ++ normalize_failures ++ defeq_failures ++ theorem_failures
     }
+  end
+
+  defp theorem_failures(env) do
+    {count, failures} =
+      ValidationCorpus.builtin_theorem_modules()
+      |> Enum.reduce({0, []}, fn module, {count, failures} ->
+        case Theorem.check_all(module, env) do
+          {:ok, theorems} ->
+            module_failures = failures(theorems, &compare_theorem(env, &1))
+            {count + length(theorems), [module_failures | failures]}
+
+          {:error, {name, error}} ->
+            failure = {:theorem_module, name, :production_check_failed, error}
+            {count, [[failure] | failures]}
+        end
+      end)
+
+    {count, failures |> Enum.reverse() |> List.flatten()}
   end
 
   defp failures(cases, callback) do

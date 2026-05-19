@@ -18,6 +18,7 @@ defmodule Mix.Tasks.Theoria.Kernel.CheckTest do
     assert output =~ "✓ check checks:"
     assert output =~ "✓ normalize checks:"
     assert output =~ "✓ defeq checks:"
+    assert output =~ "✓ theorem checks:"
   end
 
   test "prints JSON report" do
@@ -30,6 +31,7 @@ defmodule Mix.Tasks.Theoria.Kernel.CheckTest do
 
     assert output =~ "\"infer_checks\""
     assert output =~ "\"normalize_checks\""
+    assert output =~ "\"theorem_checks\""
     assert output =~ "\"failures\":[]"
   end
 end

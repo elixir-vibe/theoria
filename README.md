@@ -248,7 +248,7 @@ Start with:
 - [`docs/trusted_boundary.md`](docs/trusted_boundary.md) — what is trusted versus automation
 - [`docs/validation.md`](docs/validation.md) — native validation workflow
 
-Additional maintainer and experimental notes live under [`docs/`](docs/). See [`CHANGELOG.md`](CHANGELOG.md) for release history.
+Additional maintainer and experimental notes live in the `docs/` directory. See [`CHANGELOG.md`](CHANGELOG.md) for release history.
 
 ## Validation
 

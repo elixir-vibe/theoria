@@ -1,3 +1,24 @@
+defimpl Jason.Encoder, for: Theoria.Kernel.Differential.Timings do
+  def encode(timings, opts) do
+    Jason.Encode.map(
+      %{
+        infer_ms: timings.infer_ms,
+        check_ms: timings.check_ms,
+        normalize_ms: timings.normalize_ms,
+        defeq_ms: timings.defeq_ms,
+        rejection_ms: timings.rejection_ms,
+        theorem_ms: timings.theorem_ms,
+        generated_artifact_ms: timings.generated_artifact_ms,
+        indexed_artifact_ms: timings.indexed_artifact_ms,
+        replay_ms: timings.replay_ms,
+        artifact_replay_ms: timings.artifact_replay_ms,
+        total_ms: timings.total_ms
+      },
+      opts
+    )
+  end
+end
+
 defimpl Jason.Encoder, for: Theoria.Kernel.Explanation do
   def encode(explanation, opts) do
     Jason.Encode.map(
@@ -78,6 +99,9 @@ defimpl Jason.Encoder, for: Theoria.Kernel.Differential.Report do
         indexed_artifact_replay_checks: report.indexed_artifact_replay_count,
         artifact_replay_skips: report.artifact_replay_skips,
         artifact_replay: report.artifact_replay,
+        timings: report.timings,
+        total_checks: Theoria.Kernel.Differential.Report.total_checks(report),
+        total_replay_checks: Theoria.Kernel.Differential.Report.total_replay_checks(report),
         failures: Enum.map(report.failures, &encode_failure/1)
       },
       opts

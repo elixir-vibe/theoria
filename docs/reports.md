@@ -46,3 +46,22 @@ step.proof_result.proof
 ## JSON output
 
 JSON output is produced through Jason encoders for report structs and proof diagnostics. Mix tasks should pass structs/maps to `Jason.encode!/1`; do not hand-roll JSON strings.
+
+Capability output has this shape:
+
+```json
+{
+  "proof_capabilities": [
+    {
+      "path": ["arg"],
+      "capability": {
+        "supported": true,
+        "reason": "application_congruence",
+        "description": "application congruence"
+      }
+    }
+  ]
+}
+```
+
+Kernel JSON reports include `timings`, `total_checks`, `total_replay_checks`, and optional structured `explanation` entries when `--explain` is passed with coverage JSON.

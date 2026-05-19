@@ -104,7 +104,10 @@ defmodule Mix.Tasks.Theoria.Kernel.Check do
 
       print_artifact_replay_skips(report.artifact_replay_skips)
 
-      Mix.shell().info("  failures=#{length(report.failures)}")
+      Mix.shell().info("  timings=#{inspect(report.timings)}")
+      Mix.shell().info("  total_checks=#{Differential.Report.total_checks(report)}")
+      Mix.shell().info("  total_replay_checks=#{Differential.Report.total_replay_checks(report)}")
+      Mix.shell().info("  failures=#{Differential.Report.failure_count(report)}")
     end
   end
 
@@ -155,40 +158,7 @@ defmodule Mix.Tasks.Theoria.Kernel.Check do
     if Keyword.get(opts, :explain, false), do: explanation(), else: nil
   end
 
-  defp explanation do
-    [
-      %Explanation{
-        name: :reference_replay,
-        description: "replays declarations through the independent reference checker",
-        trusted?: false,
-        boundary: :assurance
-      },
-      %Explanation{
-        name: :theorem_replay,
-        description: "installs theorem modules and replays the extended environments",
-        trusted?: false,
-        boundary: :assurance
-      },
-      %Explanation{
-        name: :artifact_replay,
-        description: "installs generated artifacts in suitable environments and replays them",
-        trusted?: false,
-        boundary: :assurance
-      },
-      %Explanation{
-        name: :skipped,
-        description: "a skipped item was not replayed as an installed declaration",
-        trusted?: false,
-        boundary: :coverage_gap
-      },
-      %Explanation{
-        name: :boundary,
-        description: "these checks are assurance, not a formal proof of kernel correctness",
-        trusted?: false,
-        boundary: :trusted_boundary
-      }
-    ]
-  end
+  defp explanation, do: Explanation.default()
 
   defp maybe_raise(report) do
     unless Differential.Report.ok?(report) do

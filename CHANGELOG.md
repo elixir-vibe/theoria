@@ -30,6 +30,9 @@ Post-0.4 development toward stronger kernel assurance and deeper proof automatio
 - Added `mix theoria.simp --capabilities` with JSON support.
 - Added proof-result and simp-result accessor helpers.
 - Added report documentation.
+- Added kernel differential timing metadata and report accessors.
+- Added theorem-module report accessors.
+- Added 0.5 development boundary notes.
 - Expanded reference properties with `EqRec` over reflexivity.
 
 ## 0.4.0

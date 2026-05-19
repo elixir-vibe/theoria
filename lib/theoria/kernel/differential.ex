@@ -9,6 +9,7 @@ defmodule Theoria.Kernel.Differential do
   alias Theoria.Kernel.ArtifactReplay
   alias Theoria.Kernel.ArtifactReplay.Skip
   alias Theoria.Kernel.Corpus
+  alias Theoria.Kernel.Differential.Timings
   alias Theoria.Kernel.Reference
   alias Theoria.Kernel.Reference.Normalize, as: ReferenceNormalize
   alias Theoria.Kernel.Reference.Replay
@@ -42,6 +43,7 @@ defmodule Theoria.Kernel.Differential do
       :indexed_artifact_replay_count,
       :artifact_replay_skips,
       :artifact_replay,
+      :timings,
       :failures
     ]
     defstruct [
@@ -64,6 +66,7 @@ defmodule Theoria.Kernel.Differential do
       :indexed_artifact_replay_count,
       :artifact_replay_skips,
       :artifact_replay,
+      :timings,
       :failures
     ]
 
@@ -88,11 +91,27 @@ defmodule Theoria.Kernel.Differential do
             indexed_artifact_replay_count: non_neg_integer(),
             artifact_replay_skips: [ArtifactReplay.skip()],
             artifact_replay: ArtifactReplay.t(),
+            timings: Timings.t(),
             failures: [failure()]
           }
 
     @spec ok?(t()) :: boolean()
     def ok?(%__MODULE__{failures: failures}), do: failures == []
+
+    @spec failure_count(t()) :: non_neg_integer()
+    def failure_count(%__MODULE__{failures: failures}), do: length(failures)
+
+    @spec total_checks(t()) :: non_neg_integer()
+    def total_checks(%__MODULE__{} = report) do
+      report.infer_count + report.check_count + report.normalize_count + report.defeq_count +
+        report.rejection_count + report.theorem_count + report.generated_artifact_count +
+        report.indexed_artifact_count
+    end
+
+    @spec total_replay_checks(t()) :: non_neg_integer()
+    def total_replay_checks(%__MODULE__{} = report) do
+      report.replay_count + report.theorem_replay_count + report.artifact_replay_count
+    end
   end
 
   @doc "Compares production and reference inference for one term."
@@ -143,25 +162,39 @@ defmodule Theoria.Kernel.Differential do
   @doc "Runs the default kernel differential corpus."
   @spec run(Env.t()) :: Report.t()
   def run(%Env{} = env) do
-    infer_failures = failures(Corpus.infer_cases(), &compare_infer_case(env, &1))
-    check_failures = failures(Corpus.check_cases(), &compare_check_case(env, &1))
+    total_start = monotonic_time()
 
-    rejection_failures =
-      failures(Corpus.infer_rejection_cases(), &compare_infer_case(env, &1)) ++
-        failures(Corpus.check_rejection_cases(), &compare_check_case(env, &1))
+    {infer_failures, infer_ms} =
+      timed(fn -> failures(Corpus.infer_cases(), &compare_infer_case(env, &1)) end)
 
-    normalize_failures = failures(Corpus.normalize_cases(), &compare_normalize_case(env, &1))
-    defeq_failures = failures(Corpus.defeq_cases(), &compare_defeq_case(env, &1))
+    {check_failures, check_ms} =
+      timed(fn -> failures(Corpus.check_cases(), &compare_check_case(env, &1)) end)
 
-    {theorem_count, theorem_modules, theorem_replay_count, theorem_replay_skipped,
-     theorem_failures} =
-      theorem_failures(env)
+    {rejection_failures, rejection_ms} =
+      timed(fn ->
+        failures(Corpus.infer_rejection_cases(), &compare_infer_case(env, &1)) ++
+          failures(Corpus.check_rejection_cases(), &compare_check_case(env, &1))
+      end)
 
-    {generated_artifact_count, generated_artifact_failures} = generated_artifact_failures(env)
-    {indexed_artifact_count, indexed_artifact_failures} = indexed_artifact_failures(env)
-    replay_report = Replay.run(env)
+    {normalize_failures, normalize_ms} =
+      timed(fn -> failures(Corpus.normalize_cases(), &compare_normalize_case(env, &1)) end)
 
-    artifact_replay = artifact_replay(env)
+    {defeq_failures, defeq_ms} =
+      timed(fn -> failures(Corpus.defeq_cases(), &compare_defeq_case(env, &1)) end)
+
+    {{theorem_count, theorem_modules, theorem_replay_count, theorem_replay_skipped,
+      theorem_failures}, theorem_ms} =
+      timed(fn -> theorem_failures(env) end)
+
+    {{generated_artifact_count, generated_artifact_failures}, generated_artifact_ms} =
+      timed(fn -> generated_artifact_failures(env) end)
+
+    {{indexed_artifact_count, indexed_artifact_failures}, indexed_artifact_ms} =
+      timed(fn -> indexed_artifact_failures(env) end)
+
+    {replay_report, replay_ms} = timed(fn -> Replay.run(env) end)
+    {artifact_replay, artifact_replay_ms} = timed(fn -> artifact_replay(env) end)
+    total_ms = Timings.elapsed_ms(total_start, monotonic_time())
 
     %Report{
       infer_count: length(Corpus.infer_cases()),
@@ -184,6 +217,19 @@ defmodule Theoria.Kernel.Differential do
       indexed_artifact_replay_count: artifact_replay.indexed_checked,
       artifact_replay_skips: artifact_replay.skipped,
       artifact_replay: artifact_replay,
+      timings: %Timings{
+        infer_ms: infer_ms,
+        check_ms: check_ms,
+        normalize_ms: normalize_ms,
+        defeq_ms: defeq_ms,
+        rejection_ms: rejection_ms,
+        theorem_ms: theorem_ms,
+        generated_artifact_ms: generated_artifact_ms,
+        indexed_artifact_ms: indexed_artifact_ms,
+        replay_ms: replay_ms,
+        artifact_replay_ms: artifact_replay_ms,
+        total_ms: total_ms
+      },
       failures:
         infer_failures ++
           check_failures ++
@@ -195,6 +241,14 @@ defmodule Theoria.Kernel.Differential do
           indexed_artifact_failures ++ replay_report.failures ++ artifact_replay.failures
     }
   end
+
+  defp timed(function) do
+    start = monotonic_time()
+    result = function.()
+    {result, Timings.elapsed_ms(start, monotonic_time())}
+  end
+
+  defp monotonic_time, do: System.monotonic_time()
 
   defp artifact_replay(env) do
     with {:ok, generated_theorems} <- Extension.realize_all(env),

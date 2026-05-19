@@ -10,4 +10,40 @@ defmodule Theoria.Kernel.Explanation do
           trusted?: boolean(),
           boundary: atom()
         }
+
+  @spec default() :: [t()]
+  def default do
+    [
+      %__MODULE__{
+        name: :reference_replay,
+        description: "replays declarations through the independent reference checker",
+        trusted?: false,
+        boundary: :assurance
+      },
+      %__MODULE__{
+        name: :theorem_replay,
+        description: "installs theorem modules and replays the extended environments",
+        trusted?: false,
+        boundary: :assurance
+      },
+      %__MODULE__{
+        name: :artifact_replay,
+        description: "installs generated artifacts in suitable environments and replays them",
+        trusted?: false,
+        boundary: :assurance
+      },
+      %__MODULE__{
+        name: :skipped,
+        description: "a skipped item was not replayed as an installed declaration",
+        trusted?: false,
+        boundary: :coverage_gap
+      },
+      %__MODULE__{
+        name: :boundary,
+        description: "these checks are assurance, not a formal proof of kernel correctness",
+        trusted?: false,
+        boundary: :trusted_boundary
+      }
+    ]
+  end
 end

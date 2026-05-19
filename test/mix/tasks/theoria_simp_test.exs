@@ -57,6 +57,34 @@ defmodule Mix.Tasks.Theoria.SimpTest do
     assert output =~ "capability="
   end
 
+  test "prints proof capabilities without running examples" do
+    Mix.Task.clear()
+
+    output =
+      capture_io(fn ->
+        Simp.run(["--capabilities"])
+      end)
+
+    assert output =~ "proof capabilities:"
+    assert output =~ "application_congruence"
+  end
+
+  test "prints JSON proof capabilities" do
+    Mix.Task.clear()
+
+    output =
+      capture_io(fn ->
+        Simp.run(["--capabilities", "--json"])
+      end)
+
+    assert output =~ "\"proof_capabilities\""
+    assert output =~ "\"path\""
+    assert output =~ "\"capability\""
+    assert output =~ "\"supported\""
+    assert output =~ "\"reason\""
+    assert output =~ "\"description\""
+  end
+
   test "prints JSON for examples" do
     Mix.Task.clear()
 
@@ -69,6 +97,9 @@ defmodule Mix.Tasks.Theoria.SimpTest do
     assert output =~ "\"name\":\"nat_add_zero\""
     assert output =~ "\"proof_checked\":true"
     assert output =~ "\"proof\""
+    assert output =~ "\"proof_status\""
+    assert output =~ "\"proof_capability\""
+    assert output =~ "\"has_proof\""
   end
 
   test "runs examples with checked simp artifacts" do

@@ -8,6 +8,7 @@ Post-0.4 development toward stronger kernel assurance and deeper proof automatio
 - Extracted constant/axiom and theorem admission from the main kernel module.
 - Added kernel assurance coverage reporting with `mix theoria.kernel.check --coverage`.
 - Split term quote and Prelude-specific quote sugar out of the main DSL facade.
+- Added an explicit kernel inductive admission boundary.
 
 ## 0.4.0
 

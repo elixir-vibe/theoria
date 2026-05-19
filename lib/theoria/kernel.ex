@@ -12,10 +12,10 @@ defmodule Theoria.Kernel do
   alias Theoria.Env.Matcher, as: EnvMatcher
   alias Theoria.Equation.Matcher.Spec, as: MatcherSpec
   alias Theoria.Error
-  alias Theoria.Inductive.Admission
   alias Theoria.Inductive.Spec
   alias Theoria.Kernel.ConstantAdmission
   alias Theoria.Kernel.DefinitionAdmission
+  alias Theoria.Kernel.InductiveAdmission
   alias Theoria.Kernel.MatcherAdmission
   alias Theoria.Kernel.TheoremAdmission
   alias Theoria.Kernel.TrustReport
@@ -152,7 +152,7 @@ defmodule Theoria.Kernel do
     TheoremAdmission.add(env, name, type, proof, universe_params)
   end
 
-  def add_inductive(%Env{} = env, %Spec{} = spec), do: Admission.install(env, spec)
+  def add_inductive(%Env{} = env, %Spec{} = spec), do: InductiveAdmission.add(env, spec)
 
   def dependencies(%Env{} = env, name) do
     case Env.fetch(env, name) do

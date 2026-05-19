@@ -22,7 +22,7 @@ The 0.7 line focuses on deeper kernel/reference assurance through environment re
 
 ## Assurance summary
 
-`mix theoria.kernel.check --assurance-summary` prints a user-facing summary of curated corpus, generated term, environment, artifact, theorem, and replay assurance coverage. `--json` returns the same summary through Jason-encoded structs.
+`mix theoria.kernel.check --assurance-summary` prints a user-facing summary of curated corpus, generated term, environment, artifact, theorem, and replay assurance coverage. `--json` returns the same summary through Jason-encoded structs. `--coverage` composes with summary output for concise coverage reporting.
 
 ## Downstream smoke coverage
 

@@ -15,6 +15,27 @@ defmodule Theoria.Validation.Corpus do
   @builtin_categories [:logic, :equality, :bool, :nat, :list, :vec]
   @valid_categories @builtin_categories ++ [:defeq, :inductives]
 
+  defmodule Summary do
+    @moduledoc "Summary counts for a validation corpus."
+
+    @enforce_keys [
+      :categories,
+      :theorem_modules,
+      :theorem_checks,
+      :defeq_checks,
+      :inductive_checks
+    ]
+    defstruct [:categories, :theorem_modules, :theorem_checks, :defeq_checks, :inductive_checks]
+
+    @type t :: %__MODULE__{
+            categories: [atom()],
+            theorem_modules: non_neg_integer(),
+            theorem_checks: non_neg_integer(),
+            defeq_checks: non_neg_integer(),
+            inductive_checks: non_neg_integer()
+          }
+  end
+
   @enforce_keys [:categories, :theorem_checks, :theorem_modules, :defeq_checks, :inductive_checks]
   defstruct [:categories, :theorem_checks, :theorem_modules, :defeq_checks, :inductive_checks]
 
@@ -25,6 +46,20 @@ defmodule Theoria.Validation.Corpus do
           defeq_checks: [Theoria.Validation.DefeqCheck.t()],
           inductive_checks: [Theoria.Validation.InductiveCheck.t()]
         }
+
+  @doc "Returns summary counts for a validation corpus."
+  @spec summary(keyword()) :: Summary.t()
+  def summary(opts \\ []) do
+    corpus = build(opts)
+
+    %Summary{
+      categories: corpus.categories,
+      theorem_modules: length(corpus.theorem_modules),
+      theorem_checks: length(corpus.theorem_checks),
+      defeq_checks: length(corpus.defeq_checks),
+      inductive_checks: length(corpus.inductive_checks)
+    }
+  end
 
   @doc "Returns theorem modules included in the default validation corpus."
   @spec builtin_theorem_modules() :: [module()]

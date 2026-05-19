@@ -13,6 +13,9 @@ Post-0.6 development toward deeper replay and environment assurance.
 - Added `Theoria.Kernel.AssuranceSummary` and `mix theoria.kernel.check --assurance-summary`.
 - Added metadata/reduction replay checks and environment corpus report accessors.
 - Added a downstream Mix project smoke fixture covering dependency compilation, theorem task usage, kernel checks, and docs.
+- Improved `mix theoria.theorems MODULE` to load downstream theorem modules directly.
+- Added kernel/validation corpus summary structs and `docs/assurance.md`.
+- Made `--assurance-summary` compose with `--coverage` for text and JSON output.
 
 ## 0.6.0
 

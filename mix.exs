@@ -78,6 +78,7 @@ defmodule Theoria.MixProject do
         "docs/design.md",
         "docs/inductives.md",
         "docs/validation.md",
+        "docs/assurance.md",
         "docs/reports.md",
         "docs/proof_capabilities.md",
         "docs/equations.md",

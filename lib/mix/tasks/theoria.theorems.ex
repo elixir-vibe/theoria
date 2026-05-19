@@ -50,7 +50,7 @@ defmodule Mix.Tasks.Theoria.Theorems do
 
     args
     |> Enum.reduce_while({:ok, []}, fn name, {:ok, modules} ->
-      case Map.fetch(available, name) do
+      case theorem_module(name, available) do
         {:ok, module} -> {:cont, {:ok, [module | modules]}}
         :error -> {:halt, {:error, "unknown theorem module #{name}"}}
       end
@@ -59,6 +59,32 @@ defmodule Mix.Tasks.Theoria.Theorems do
       {:ok, modules} -> {:ok, Enum.reverse(modules)}
       {:error, message} -> {:error, message}
     end)
+  end
+
+  defp theorem_module(name, available) do
+    case Map.fetch(available, name) do
+      {:ok, module} -> {:ok, module}
+      :error -> ensure_theorem_module(name)
+    end
+  end
+
+  defp ensure_theorem_module(name) do
+    with {:ok, module} <- module_from_name(name),
+         {:module, ^module} <- Code.ensure_loaded(module),
+         true <- function_exported?(module, :__theoria_theorems__, 0) do
+      {:ok, module}
+    else
+      _other -> :error
+    end
+  end
+
+  defp module_from_name(name) do
+    name
+    |> String.split(".", trim: true)
+    |> Module.safe_concat()
+    |> then(&{:ok, &1})
+  rescue
+    ArgumentError -> :error
   end
 
   defp available_theorem_modules do

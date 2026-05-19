@@ -247,6 +247,7 @@ Start with:
 - [`docs/inductives.md`](docs/inductives.md) — inductive specs and recursors
 - [`docs/trusted_boundary.md`](docs/trusted_boundary.md) — what is trusted versus automation
 - [`docs/validation.md`](docs/validation.md) — native validation workflow
+- [`docs/assurance.md`](docs/assurance.md) — kernel assurance reports and summaries
 
 Additional maintainer and experimental notes live in the `docs/` directory. See [`CHANGELOG.md`](CHANGELOG.md) for release history.
 

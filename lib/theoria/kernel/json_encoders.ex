@@ -1,3 +1,11 @@
+defimpl Jason.Encoder, for: Theoria.Kernel.Corpus.Summary do
+  def encode(summary, opts), do: Jason.Encode.map(Map.from_struct(summary), opts)
+end
+
+defimpl Jason.Encoder, for: Theoria.Validation.Corpus.Summary do
+  def encode(summary, opts), do: Jason.Encode.map(Map.from_struct(summary), opts)
+end
+
 defimpl Jason.Encoder, for: Theoria.Kernel.AssuranceSummary.Curated do
   def encode(summary, opts), do: Jason.Encode.map(Map.from_struct(summary), opts)
 end

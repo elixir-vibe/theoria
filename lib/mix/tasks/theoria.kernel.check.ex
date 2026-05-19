@@ -62,7 +62,7 @@ defmodule Mix.Tasks.Theoria.Kernel.Check do
 
   defp print_output(env, report, opts) do
     if Keyword.get(opts, :assurance_summary, false) do
-      print_assurance_summary(report, opts)
+      print_assurance_summary(env, report, opts)
     else
       print_report(env, report, opts)
     end
@@ -123,11 +123,22 @@ defmodule Mix.Tasks.Theoria.Kernel.Check do
     end
   end
 
-  defp print_assurance_summary(report, opts) do
+  defp print_assurance_summary(env, report, opts) do
     summary = AssuranceSummary.from_report(report)
 
     if Keyword.get(opts, :json, false) do
-      Mix.shell().info(Jason.encode!(summary))
+      output =
+        if Keyword.get(opts, :coverage, false) do
+          %{
+            summary: summary,
+            coverage: Coverage.summary(env, report),
+            explanation: maybe_explanation(opts)
+          }
+        else
+          summary
+        end
+
+      Mix.shell().info(Jason.encode!(output))
     else
       Mix.shell().info("Theoria kernel assurance summary")
       Mix.shell().info("")
@@ -156,6 +167,8 @@ defmodule Mix.Tasks.Theoria.Kernel.Check do
       Mix.shell().info("")
       Mix.shell().info("Theorems: #{summary.theorems}")
       Mix.shell().info("Total replay checks: #{summary.replay}")
+      maybe_print_coverage(env, report, opts)
+      maybe_print_explain(opts)
     end
   end
 

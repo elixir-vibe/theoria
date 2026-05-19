@@ -3,12 +3,39 @@ defmodule Theoria.Kernel.Corpus do
 
   alias Theoria.Term
 
+  defmodule Summary do
+    @moduledoc "Summary counts for the curated kernel corpus."
+
+    @enforce_keys [:infer, :check, :normalize, :defeq, :rejection]
+    defstruct [:infer, :check, :normalize, :defeq, :rejection]
+
+    @type t :: %__MODULE__{
+            infer: non_neg_integer(),
+            check: non_neg_integer(),
+            normalize: non_neg_integer(),
+            defeq: non_neg_integer(),
+            rejection: non_neg_integer()
+          }
+  end
+
   @type infer_case :: {atom(), Term.t()}
   @type check_case :: {atom(), Term.t(), Term.t()}
   @type normalize_case :: {atom(), Term.t()}
   @type defeq_case :: {atom(), Term.t(), Term.t()}
   @type infer_rejection_case :: {atom(), Term.t()}
   @type check_rejection_case :: {atom(), Term.t(), Term.t()}
+
+  @doc "Returns summary counts for the curated kernel corpus."
+  @spec summary() :: Summary.t()
+  def summary do
+    %Summary{
+      infer: length(infer_cases()),
+      check: length(check_cases()),
+      normalize: length(normalize_cases()),
+      defeq: length(defeq_cases()),
+      rejection: length(infer_rejection_cases()) + length(check_rejection_cases())
+    }
+  end
 
   @doc "Returns reference-kernel inference cases."
   @spec infer_cases() :: [infer_case()]

@@ -6,7 +6,7 @@ defmodule Theoria.Simp.Result do
   alias Theoria.Term
 
   @enforce_keys [:input, :term, :steps, :stopped]
-  defstruct [:input, :term, :steps, :stopped, :type, :proof, :realized]
+  defstruct [:input, :term, :steps, :stopped, :type, :proof, :proof_strategy, :realized]
 
   @type t :: %__MODULE__{
           input: Term.t(),
@@ -15,6 +15,7 @@ defmodule Theoria.Simp.Result do
           stopped: :normal | :fuel,
           type: Term.t() | nil,
           proof: Term.t() | nil,
+          proof_strategy: atom() | nil,
           realized: Realized.t() | nil
         }
 end

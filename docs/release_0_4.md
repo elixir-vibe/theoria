@@ -61,11 +61,11 @@ Theoria.Rewrite.once_with_step(term, rule)
 Theoria.Rewrite.Database.once_with_step(database, term)
 ```
 
-Paths such as `[:arg]` or `[:fun, :arg]` are the groundwork for congruence lifting of local equation proofs into whole-term proofs. Rewrite steps also record schematic substitutions so proof-backed equation rules can instantiate their realized theorem proof at the matched arguments.
+Paths such as `[:arg]` or `[:fun, :arg]` are the groundwork for congruence lifting of local equation proofs into whole-term proofs. Rewrite steps also record schematic substitutions so proof-backed equation rules can instantiate their realized theorem proof at the matched arguments. Current development stores proof status, capability, and optional proof term in a structured `proof_result` field.
 
 ## Congruence and equality chain groundwork
 
-`Theoria.Rewrite.Proof` can instantiate proof-backed rules at matched substitutions and lift supported `[:arg]` and `[:fun]` rewrites through application congruence. `Theoria.Equality.Chain` now consumes step proofs with equality transitivity where available, falling back to kernel-checked reflexivity only when the whole trace is definitionally equal.
+`Theoria.Rewrite.Proof` can instantiate proof-backed rules at matched substitutions and lift supported application and selected equality-side rewrites through congruence/transport when the generated proof kernel-checks. `Theoria.Equality.Chain` now consumes step proofs with equality transitivity where available, marking the selected proof strategy and falling back to kernel-checked reflexivity only when the whole trace is definitionally equal.
 
 Proof diagnostics are explicit on rewrite/simp steps:
 

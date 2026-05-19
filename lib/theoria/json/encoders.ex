@@ -1,3 +1,15 @@
+defimpl Jason.Encoder, for: Theoria.Equality.Chain.Result do
+  def encode(result, opts) do
+    Jason.Encode.map(
+      %{
+        strategy: result.strategy,
+        has_proof: not is_nil(result.proof)
+      },
+      opts
+    )
+  end
+end
+
 defimpl Jason.Encoder, for: Theoria.Rewrite.Proof.Capability do
   def encode(capability, opts) do
     Jason.Encode.map(
@@ -107,7 +119,7 @@ defimpl Jason.Encoder, for: Theoria.Simp.Result do
         stopped: result.stopped,
         steps: result.steps,
         proof_checked: not is_nil(result.realized),
-        proof_strategy: if(result.realized, do: result.realized.proof_strategy),
+        proof_strategy: result.proof_strategy,
         realized: result.realized
       },
       opts

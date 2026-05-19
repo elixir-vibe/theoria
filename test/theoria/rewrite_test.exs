@@ -70,6 +70,38 @@ defmodule Theoria.RewriteTest do
     assert %Term.EqRec{} = Proof.for_step(env, step)
   end
 
+  test "EqRec proof rewrite steps report explicit proof boundary" do
+    {:ok, env} = Prelude.env()
+    zero = Term.const(:zero)
+    nat = Term.const(:Nat)
+    motive = Term.lam(:n, nat, Term.shift(nat, 1))
+    eq_rec = Term.eq_rec(nat, motive, zero, Term.refl(zero))
+    equality = Term.eq(Term.eq(nat, zero, zero), Term.refl(zero), Term.refl(zero))
+    rule = Rule.new(:same_refl, equality, proof: Term.refl(Term.refl(zero)))
+
+    assert {:ok, step} = Rewrite.once_with_step(eq_rec, rule)
+    assert step.path == [:proof]
+
+    assert %{proof_result: %{status: :checked, capability: %{reason: :eq_rec_boundary}}} =
+             Proof.attach(env, step)
+  end
+
+  test "EqRec base rewrite steps report explicit base boundary" do
+    {:ok, env} = Prelude.env()
+    zero = Term.const(:zero)
+    nat = Term.const(:Nat)
+    motive = Term.lam(:n, nat, Term.shift(nat, 1))
+    eq_rec = Term.eq_rec(nat, motive, zero, Term.refl(zero))
+    equality = Term.eq(nat, zero, zero)
+    rule = Rule.new(:same_zero, equality, proof: Term.refl(zero))
+
+    assert {:ok, step} = Rewrite.once_with_step(eq_rec, rule)
+    assert step.path == [:base]
+
+    assert %{proof_result: %{status: :checked, capability: %{reason: :eq_rec_boundary}}} =
+             Proof.attach(env, step)
+  end
+
   test "binder rewrite steps report unsupported proof lifting" do
     {:ok, env} = Prelude.env()
     zero = Term.const(:zero)

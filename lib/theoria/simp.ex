@@ -108,7 +108,13 @@ defmodule Theoria.Simp do
     with {:ok, type} <- Kernel.infer(env, result.input),
          chain = proof_chain(type, result),
          {:ok, realized} <- Chain.realize(env, chain, identity) do
-      %{result | type: realized.type, proof: realized.proof, realized: realized}
+      %{
+        result
+        | type: realized.type,
+          proof: realized.proof,
+          proof_strategy: realized.proof_strategy,
+          realized: realized
+      }
     else
       {:error, _reason} -> result
     end

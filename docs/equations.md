@@ -66,7 +66,7 @@ Untrusted helpers:
 - `Theoria.Rewrite` and `Theoria.Simp`;
 - `Theoria.Lean.*` encoding and the external Lean oracle.
 
-The safety rule is simple: generated artifacts become meaningful only after the native kernel checks them. The Lean oracle is contributor confidence, not runtime trust.
+The safety rule is simple: generated artifacts become meaningful only after the native kernel checks them. Simplification and rewrite traces expose structured `proof_result` values with status/capability metadata; realized simp artifacts also expose `proof_strategy` so callers can distinguish reflexivity, single-step, transitive, and definitional-equality fallback proofs. The Lean oracle is contributor confidence, not runtime trust.
 
 ## Stored equation metadata
 

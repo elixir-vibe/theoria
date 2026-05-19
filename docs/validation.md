@@ -127,10 +127,11 @@ mix theoria.theorems MyApp.Proofs
 
 Use `mix theoria.kernel.check` for production/reference kernel assurance. It covers curated infer/check/normalize/defeq cases, rejection cases, theorem modules, generated artifacts, indexed artifacts, reference replay of the Prelude environment, replay of theorem-module-installed environments, and replay of environments extended with generated and indexed artifacts.
 
-Coverage and JSON modes are intended for CI and tooling:
+Coverage, explanation, and JSON modes are intended for CI and tooling:
 
 ```bash
 mix theoria.kernel.check --coverage
+mix theoria.kernel.check --explain
 mix theoria.kernel.check --json --coverage
 ```
 

@@ -1,3 +1,18 @@
+defimpl Jason.Encoder, for: Theoria.Kernel.TheoremModuleReport do
+  def encode(report, opts) do
+    Jason.Encode.map(
+      %{
+        module: inspect(report.module),
+        checks: report.checks,
+        replay_checks: report.replay_checks,
+        replay_skipped: report.replay_skipped,
+        failures: Enum.map(report.failures, &inspect/1)
+      },
+      opts
+    )
+  end
+end
+
 defimpl Jason.Encoder, for: Theoria.Kernel.ArtifactReplay do
   def encode(replay, opts) do
     Jason.Encode.map(

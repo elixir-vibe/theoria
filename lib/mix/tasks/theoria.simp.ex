@@ -8,6 +8,7 @@ defmodule Mix.Tasks.Theoria.Simp do
   alias Theoria.Equation.Identity
   alias Theoria.Prelude
   alias Theoria.Pretty
+  alias Theoria.Rewrite.Proof.Capabilities
   alias Theoria.Simp
   alias Theoria.Term
 
@@ -53,6 +54,7 @@ defmodule Mix.Tasks.Theoria.Simp do
       Mix.shell().info(Jason.encode!(%{examples: Enum.map(results, &json_example/1)}))
     else
       Mix.shell().info("simplification examples:")
+      maybe_print_capability_matrix(opts)
       Enum.each(results, &print_example(&1, opts))
     end
   end
@@ -80,6 +82,34 @@ defmodule Mix.Tasks.Theoria.Simp do
 
     if Keyword.get(opts, :explain, false), do: print_explain(result)
   end
+
+  defp maybe_print_capability_matrix(opts) do
+    if Keyword.get(opts, :explain, false) do
+      Mix.shell().info("proof capabilities:")
+
+      Enum.each(capability_paths(), fn path ->
+        capability = Capabilities.explain(path)
+
+        Mix.shell().info(
+          "  #{inspect(path)}: #{capability.reason} supported=#{capability.supported?}"
+        )
+      end)
+    end
+  end
+
+  defp capability_paths,
+    do: [
+      [],
+      [:arg],
+      [:arg, :arg],
+      [:fun],
+      [:left],
+      [:right],
+      [:body],
+      [:domain],
+      [:proof],
+      [:base]
+    ]
 
   defp print_explain(%{steps: steps}) do
     Enum.each(steps, fn step ->

@@ -15,7 +15,7 @@ defmodule Mix.Tasks.Theoria.Kernel.Check do
 
     with {opts, [], []} <-
            OptionParser.parse(args,
-             strict: [coverage: :boolean, json: :boolean, verbose: :boolean]
+             strict: [coverage: :boolean, explain: :boolean, json: :boolean, verbose: :boolean]
            ),
          {:ok, env} <- Prelude.env() do
       report = Differential.run(env)
@@ -37,7 +37,8 @@ defmodule Mix.Tasks.Theoria.Kernel.Check do
           %{
             report: report,
             coverage: Coverage.summary(env, report),
-            artifact_replay: report.artifact_replay
+            artifact_replay: report.artifact_replay,
+            explanation: maybe_explanation(opts)
           }
         else
           report
@@ -71,6 +72,7 @@ defmodule Mix.Tasks.Theoria.Kernel.Check do
       Mix.shell().info("- artifact replay skipped: #{report.artifact_replay_skipped}")
       maybe_print_verbose(report, opts)
       maybe_print_coverage(env, report, opts)
+      maybe_print_explain(opts)
     end
   end
 
@@ -135,6 +137,46 @@ defmodule Mix.Tasks.Theoria.Kernel.Check do
 
       Mix.shell().info("  property_families=#{Enum.join(coverage.property_families, ", ")}")
     end
+  end
+
+  defp maybe_print_explain(opts) do
+    if Keyword.get(opts, :explain, false) do
+      Mix.shell().info("")
+      Mix.shell().info("explain:")
+
+      Enum.each(explanation(), fn item ->
+        Mix.shell().info("  #{item.name}: #{item.description}")
+      end)
+    end
+  end
+
+  defp maybe_explanation(opts) do
+    if Keyword.get(opts, :explain, false), do: explanation(), else: nil
+  end
+
+  defp explanation do
+    [
+      %{
+        name: :reference_replay,
+        description: "replays declarations through the independent reference checker"
+      },
+      %{
+        name: :theorem_replay,
+        description: "installs theorem modules and replays the extended environments"
+      },
+      %{
+        name: :artifact_replay,
+        description: "installs generated artifacts in suitable environments and replays them"
+      },
+      %{
+        name: :skipped,
+        description: "a skipped item was not replayed as an installed declaration"
+      },
+      %{
+        name: :boundary,
+        description: "these checks are assurance, not a formal proof of kernel correctness"
+      }
+    ]
   end
 
   defp maybe_raise(report) do

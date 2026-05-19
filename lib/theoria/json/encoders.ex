@@ -1,3 +1,16 @@
+defimpl Jason.Encoder, for: Theoria.Level.Solver.Explanation do
+  def encode(explanation, opts) do
+    Jason.Encode.map(
+      %{
+        constraint: inspect(explanation.constraint),
+        status: explanation.status,
+        rule: explanation.rule
+      },
+      opts
+    )
+  end
+end
+
 defimpl Jason.Encoder, for: Theoria.Equation.Identity do
   alias Theoria.Equation.Identity
 

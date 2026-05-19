@@ -26,6 +26,12 @@ defmodule Theoria.Level.ConstraintSetTest do
              ConstraintSet.explain(set)
   end
 
+  test "encodes explanations as JSON" do
+    set = ConstraintSet.add_leq(ConstraintSet.new(), Level.zero(), Level.param(:u))
+
+    assert Jason.encode!(ConstraintSet.explain(set)) =~ "\"rule\":\"zero\""
+  end
+
   test "explains solved constraints with rules" do
     u = Level.param(:u)
     v = Level.param(:v)

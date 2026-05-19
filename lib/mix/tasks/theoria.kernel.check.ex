@@ -119,7 +119,7 @@ defmodule Mix.Tasks.Theoria.Kernel.Check do
       Mix.shell().info("  replay=#{coverage.replay_checks} skipped=#{coverage.replay_skipped}")
 
       Mix.shell().info(
-        "  artifact_replay=#{coverage.artifact_replay_checks} skipped=#{coverage.artifact_replay_skipped}"
+        "  artifact_replay=#{coverage.artifact_replay_checks} generated=#{coverage.generated_artifact_replay_checks} indexed=#{coverage.indexed_artifact_replay_checks} skipped=#{coverage.artifact_replay_skipped}"
       )
 
       Mix.shell().info("  property_families=#{Enum.join(coverage.property_families, ", ")}")

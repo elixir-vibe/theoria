@@ -18,7 +18,7 @@ The 0.7 line focuses on deeper kernel/reference assurance through environment re
 
 ## Declaration-chain generation
 
-0.7 should generate bounded declaration chains and compare production/reference behavior for declaration admission, replay, normalization, and dependency tracking.
+0.7 generates bounded declaration chains and compares production/reference behavior for replay, normalization, and dependency tracking. Further work should add more environment variants beyond the initial transparent definition chain.
 
 ## Boundaries
 

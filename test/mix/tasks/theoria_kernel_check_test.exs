@@ -22,6 +22,9 @@ defmodule Mix.Tasks.Theoria.Kernel.CheckTest do
     assert output =~ "✓ generated term checks:"
     assert output =~ "bool:"
     assert output =~ "nat_eq_rec:"
+    assert output =~ "✓ environment cases:"
+    assert output =~ "environment replay checks:"
+    assert output =~ "environment normalize checks:"
     assert output =~ "✓ theorem checks:"
     assert output =~ "✓ theorem replay checks:"
     assert output =~ "✓ generated artifact checks:"
@@ -61,6 +64,7 @@ defmodule Mix.Tasks.Theoria.Kernel.CheckTest do
 
     assert output =~ "✓ generated term checks: 39"
     assert output =~ "generated_terms=39 size=1 max_terms=4"
+    assert output =~ "environment_cases="
   end
 
   test "prints verbose report" do
@@ -73,6 +77,7 @@ defmodule Mix.Tasks.Theoria.Kernel.CheckTest do
 
     assert output =~ "verbose:"
     assert output =~ "generated_terms="
+    assert output =~ "environment_cases="
     assert output =~ "indexed_artifacts="
     assert output =~ "replay="
     assert output =~ "artifact_replay="
@@ -110,6 +115,9 @@ defmodule Mix.Tasks.Theoria.Kernel.CheckTest do
     assert output =~ "\"generated_terms\""
     assert output =~ "\"families\""
     assert output =~ "\"max_terms\""
+    assert output =~ "\"environment_cases\""
+    assert output =~ "\"environment_replay_checks\""
+    assert output =~ "\"environment_normalize_checks\""
     assert output =~ "\"generated_artifact_checks\""
     assert output =~ "\"indexed_artifact_checks\""
     assert output =~ "\"proof_strategy_counts\""
@@ -139,6 +147,9 @@ defmodule Mix.Tasks.Theoria.Kernel.CheckTest do
     assert report["generated_terms"]["families"]["bool_beta"] == 4
     assert report["generated_terms"]["families"]["nat_beta"] == 3
     assert is_integer(report["timings"]["generated_term_ms"])
+    assert report["environment_cases"] == 1
+    assert report["environment_replay_checks"] > 0
+    assert report["environment_normalize_checks"] > 0
     assert report["proof_strategies"]["total"] == 40
     assert report["proof_strategies"]["counts"]["refl"] == 38
   end

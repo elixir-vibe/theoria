@@ -77,6 +77,9 @@ defmodule Mix.Tasks.Theoria.Kernel.Check do
       Mix.shell().info("✓ rejection checks: #{report.rejection_count}")
       Mix.shell().info("✓ generated term checks: #{report.generated_term_count}")
       print_generated_term_families(report.generated_term_families, "  ")
+      Mix.shell().info("✓ environment cases: #{report.environment_count}")
+      Mix.shell().info("  environment replay checks: #{report.environment_replay_count}")
+      Mix.shell().info("  environment normalize checks: #{report.environment_normalize_count}")
       Mix.shell().info("✓ theorem checks: #{report.theorem_count}")
       Mix.shell().info("✓ theorem replay checks: #{report.theorem_replay_count}")
       Mix.shell().info("- theorem replay skipped: #{report.theorem_replay_skipped}")
@@ -115,6 +118,11 @@ defmodule Mix.Tasks.Theoria.Kernel.Check do
       )
 
       print_generated_term_families(report.generated_terms.families, "    ")
+
+      Mix.shell().info(
+        "  environment_cases=#{report.environment_count} replay=#{report.environment_replay_count} normalize=#{report.environment_normalize_count}"
+      )
+
       Mix.shell().info("  modules=#{report.theorem_count}")
 
       Enum.each(report.theorem_modules, fn module ->

@@ -5,6 +5,7 @@
 Post-0.6 development toward deeper replay and environment assurance.
 
 - Added structured reference replay failure diagnostics with declaration phase, kind, direct/transitive dependency context, missing dependencies, and details.
+- Added a deterministic environment corpus with declaration-chain replay and normalization differential checks.
 
 ## 0.6.0
 

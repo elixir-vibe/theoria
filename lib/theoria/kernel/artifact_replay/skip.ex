@@ -1,5 +1,9 @@
 defmodule Theoria.Kernel.ArtifactReplay.Skip do
-  @moduledoc "Structured skip recorded while replaying generated artifacts."
+  @moduledoc """
+  Experimental generated-artifact replay skip entry for Theoria 0.5 assurance reports.
+
+  The shape may change before 1.0.
+  """
 
   alias Theoria.Env
   alias Theoria.Equation.Identity

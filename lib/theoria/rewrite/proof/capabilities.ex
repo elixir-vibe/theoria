@@ -1,5 +1,9 @@
 defmodule Theoria.Rewrite.Proof.Capabilities do
-  @moduledoc "Explains proof-producing rewrite support for structural paths."
+  @moduledoc """
+  Experimental proof-lifting capability matrix for Theoria 0.5.
+
+  The shape may change before 1.0.
+  """
 
   alias Theoria.Rewrite.Proof.Capability
   alias Theoria.Rewrite.Proof.Capability.Entry

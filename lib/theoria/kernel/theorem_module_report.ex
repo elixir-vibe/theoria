@@ -1,5 +1,9 @@
 defmodule Theoria.Kernel.TheoremModuleReport do
-  @moduledoc "Assurance summary for one theorem module."
+  @moduledoc """
+  Experimental theorem-module assurance summary for Theoria 0.5 reports.
+
+  The shape may change before 1.0.
+  """
 
   @enforce_keys [:module, :checks, :replay_checks, :replay_skipped, :failures]
   defstruct [:module, :checks, :replay_checks, :replay_skipped, :failures]

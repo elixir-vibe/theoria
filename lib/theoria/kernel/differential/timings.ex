@@ -1,5 +1,9 @@
 defmodule Theoria.Kernel.Differential.Timings do
-  @moduledoc "Timing metadata for kernel differential report phases."
+  @moduledoc """
+  Experimental assurance-report timing metadata for Theoria 0.5.
+
+  The shape may change before 1.0.
+  """
 
   @enforce_keys [
     :infer_ms,

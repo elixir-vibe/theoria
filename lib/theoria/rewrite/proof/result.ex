@@ -1,5 +1,9 @@
 defmodule Theoria.Rewrite.Proof.Result do
-  @moduledoc "Proof outcome attached to a structural rewrite or simplification step."
+  @moduledoc """
+  Experimental proof-diagnostic result for Theoria 0.5 rewrite and simp steps.
+
+  The shape may change before 1.0.
+  """
 
   alias Theoria.Rewrite.Proof.Capability
   alias Theoria.Term

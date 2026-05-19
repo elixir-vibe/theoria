@@ -4,37 +4,33 @@
 
 Post-0.4 development toward stronger kernel assurance and deeper proof automation.
 
-- Added reference environment replay checks to `mix theoria.kernel.check`.
-- Extracted constant/axiom and theorem admission from the main kernel module.
-- Added kernel assurance coverage reporting with `mix theoria.kernel.check --coverage`.
-- Split term quote and Prelude-specific quote sugar out of the main DSL facade.
-- Added an explicit kernel inductive admission boundary.
-- Added explicit universe constraint sets and strengthened conservative universe solving.
-- Extended proof-producing rewrite support to nested application paths and made binder-path proof limits explicit.
-- Added typed generated-term property coverage for dependent fragments.
-- Added replay checks for environments extended with generated and indexed artifacts.
-- Fixed universe-parameter installation for polymorphic generated artifacts.
-- Added structured artifact replay skip reporting and richer JSON coverage output.
-- Added universe solver explanations and a symbolic regression matrix.
-- Added equality-side rewrite proof lifting for equality terms.
-- Added Jason encoders for structured artifact replay reports.
-- Added regression coverage for explicit equality-chain transitivity proofs.
-- Replaced separate step proof fields with a structured proof result.
-- Added proof capability reporting and `mix theoria.simp --explain`.
-- Added equality-chain proof strategy metadata.
-- Added theorem-module environment replay and structured theorem-module report breakdowns.
-- Added `mix theoria.kernel.check --explain` and proof capability matrix output for `mix theoria.simp --explain`.
-- Documented EqRec and binder path proof boundaries with regression coverage.
-- Added direct EqRec reference normalization tests.
-- Added structured kernel explanations and proof capability matrix entries.
-- Added `mix theoria.simp --capabilities` with JSON support.
-- Added proof-result and simp-result accessor helpers.
-- Added report documentation.
-- Added kernel differential timing metadata and report accessors.
-- Added theorem-module report accessors.
-- Added 0.5 development boundary notes.
-- Expanded reference properties with `EqRec` over reflexivity.
+### Added
 
+- Added structured kernel assurance reports with reference replay, theorem-module replay, generated/indexed artifact replay, coverage, explanation, and timing metadata.
+- Added `mix theoria.kernel.check --coverage`, `--explain`, and richer JSON output backed by Jason encoders.
+- Added proof capability reporting through `Theoria.Rewrite.Proof.Capabilities`, `mix theoria.simp --explain`, and `mix theoria.simp --capabilities`.
+- Added structured proof diagnostics via `Theoria.Rewrite.Proof.Result` and proof capability structs.
+- Added equality-chain proof strategy metadata and direct simp result proof accessors.
+- Added explicit universe constraint sets, solver explanations, and a symbolic regression matrix.
+- Added theorem-module, artifact replay, kernel explanation, timing, and proof capability report structs.
+- Added typed generated-term property coverage and direct `EqRec` reference normalization tests.
+- Added examples for kernel reports and simp capabilities.
+- Added `docs/reports.md` and `docs/release_0_5.md`.
+
+### Changed
+
+- Replaced separate rewrite/simp step proof fields with a structured `proof_result`.
+- Split term quote and Prelude-specific quote sugar out of the main DSL facade.
+- Extracted constant/axiom, theorem, definition, matcher, and inductive admission boundaries from the main kernel module.
+- Fixed universe-parameter installation for polymorphic generated artifacts.
+- Extended proof-producing rewrite support to nested application paths and selected equality-side paths.
+- Made binder and `EqRec` proof-path boundaries explicit through capability reporting and tests.
+
+### Validation
+
+- Kernel differential checks now include theorem-module-installed environment replay and generated/indexed artifact environment replay.
+- Reference properties now cover typed dependent fragments and `EqRec` over reflexivity.
+- Native validation, docs, Dialyzer, Credo, ExDNA, Reach checks, tests, and Lean oracle validation remain clean.
 ## 0.4.0
 
 Released 2026-05-18.

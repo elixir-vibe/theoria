@@ -1,5 +1,9 @@
 defmodule Theoria.Rewrite.Proof.Capability.Entry do
-  @moduledoc "One proof capability matrix entry."
+  @moduledoc """
+  Experimental proof capability matrix entry for Theoria 0.5.
+
+  The shape may change before 1.0.
+  """
 
   alias Theoria.Rewrite.Proof.Capability
 

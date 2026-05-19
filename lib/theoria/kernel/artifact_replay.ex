@@ -1,5 +1,9 @@
 defmodule Theoria.Kernel.ArtifactReplay do
-  @moduledoc "Summary for replaying environments extended with generated artifacts."
+  @moduledoc """
+  Experimental generated-artifact replay summary for Theoria 0.5 assurance reports.
+
+  The shape may change before 1.0.
+  """
 
   alias Theoria.Kernel.ArtifactReplay.Skip
 

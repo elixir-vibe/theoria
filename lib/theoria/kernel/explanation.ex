@@ -1,5 +1,9 @@
 defmodule Theoria.Kernel.Explanation do
-  @moduledoc "Trust-boundary explanation entry for kernel assurance reports."
+  @moduledoc """
+  Experimental trust-boundary explanation data for Theoria 0.5 reports.
+
+  The shape may change before 1.0.
+  """
 
   @enforce_keys [:name, :description, :trusted?, :boundary]
   defstruct [:name, :description, :trusted?, :boundary]

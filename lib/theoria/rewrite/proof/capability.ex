@@ -1,5 +1,9 @@
 defmodule Theoria.Rewrite.Proof.Capability do
-  @moduledoc "Proof lifting capability for a rewrite path."
+  @moduledoc """
+  Experimental proof-lifting capability descriptor for Theoria 0.5.
+
+  The shape may change before 1.0.
+  """
 
   @enforce_keys [:supported?, :reason, :description]
   defstruct [:supported?, :reason, :description]

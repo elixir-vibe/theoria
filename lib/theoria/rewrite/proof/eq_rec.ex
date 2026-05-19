@@ -1,5 +1,9 @@
 defmodule Theoria.Rewrite.Proof.EqRec do
-  @moduledoc "Boundary helper for EqRec-path proof lifting attempts."
+  @moduledoc """
+  Experimental boundary helper for EqRec-path proof lifting attempts.
+
+  The shape may change before 1.0.
+  """
 
   alias Theoria.Rewrite.Proof.Capabilities
   alias Theoria.Rewrite.Proof.Capability

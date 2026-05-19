@@ -19,6 +19,7 @@ defmodule Theoria.Kernel.Differential do
       :check_count,
       :normalize_count,
       :defeq_count,
+      :rejection_count,
       :theorem_count,
       :failures
     ]
@@ -27,6 +28,7 @@ defmodule Theoria.Kernel.Differential do
       :check_count,
       :normalize_count,
       :defeq_count,
+      :rejection_count,
       :theorem_count,
       :failures
     ]
@@ -37,6 +39,7 @@ defmodule Theoria.Kernel.Differential do
             check_count: non_neg_integer(),
             normalize_count: non_neg_integer(),
             defeq_count: non_neg_integer(),
+            rejection_count: non_neg_integer(),
             theorem_count: non_neg_integer(),
             failures: [failure()]
           }
@@ -96,6 +99,10 @@ defmodule Theoria.Kernel.Differential do
     infer_failures = failures(Corpus.infer_cases(), &compare_infer_case(env, &1))
     check_failures = failures(Corpus.check_cases(), &compare_check_case(env, &1))
 
+    rejection_failures =
+      failures(Corpus.infer_rejection_cases(), &compare_infer_case(env, &1)) ++
+        failures(Corpus.check_rejection_cases(), &compare_check_case(env, &1))
+
     normalize_failures = failures(Corpus.normalize_cases(), &compare_normalize_case(env, &1))
     defeq_failures = failures(Corpus.defeq_cases(), &compare_defeq_case(env, &1))
     {theorem_count, theorem_failures} = theorem_failures(env)
@@ -105,10 +112,13 @@ defmodule Theoria.Kernel.Differential do
       check_count: length(Corpus.check_cases()),
       normalize_count: length(Corpus.normalize_cases()),
       defeq_count: length(Corpus.defeq_cases()),
+      rejection_count:
+        length(Corpus.infer_rejection_cases()) + length(Corpus.check_rejection_cases()),
       theorem_count: theorem_count,
       failures:
         infer_failures ++
-          check_failures ++ normalize_failures ++ defeq_failures ++ theorem_failures
+          check_failures ++
+          rejection_failures ++ normalize_failures ++ defeq_failures ++ theorem_failures
     }
   end
 

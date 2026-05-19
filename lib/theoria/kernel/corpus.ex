@@ -7,6 +7,8 @@ defmodule Theoria.Kernel.Corpus do
   @type check_case :: {atom(), Term.t(), Term.t()}
   @type normalize_case :: {atom(), Term.t()}
   @type defeq_case :: {atom(), Term.t(), Term.t()}
+  @type infer_rejection_case :: {atom(), Term.t()}
+  @type check_rejection_case :: {atom(), Term.t(), Term.t()}
 
   @doc "Returns reference-kernel inference cases."
   @spec infer_cases() :: [infer_case()]
@@ -58,6 +60,36 @@ defmodule Theoria.Kernel.Corpus do
       {:bool_identity_checks, bool_identity, bool_identity_type},
       {:let_true_checks, Term.let(:b, bool, bool_true, bvar_zero), bool},
       {:eq_rec_refl_checks, eq_rec_refl(bool, bool_true, bool_refl), bool_equality}
+    ]
+  end
+
+  @doc "Returns rejected inference cases for production/reference comparison."
+  @spec infer_rejection_cases() :: [infer_rejection_case()]
+  def infer_rejection_cases do
+    bool = Term.const(:Bool)
+    bool_true = Term.const(true)
+
+    [
+      {:unknown_constant, Term.const(:missing_constant)},
+      {:unbound_variable, Term.bvar(0)},
+      {:not_a_function, Term.app(bool_true, bool_true)},
+      {:equality_left_type_mismatch, Term.eq(bool, Term.const(:zero), bool_true)}
+    ]
+  end
+
+  @doc "Returns rejected checking cases for production/reference comparison."
+  @spec check_rejection_cases() :: [check_rejection_case()]
+  def check_rejection_cases do
+    bool = Term.const(:Bool)
+    nat = Term.const(:Nat)
+    bool_true = Term.const(true)
+    zero = Term.const(:zero)
+
+    [
+      {:true_is_not_nat, bool_true, nat},
+      {:zero_is_not_bool, zero, bool},
+      {:refl_true_not_false_equality, Term.refl(bool_true),
+       Term.eq(bool, bool_true, Term.const(false))}
     ]
   end
 

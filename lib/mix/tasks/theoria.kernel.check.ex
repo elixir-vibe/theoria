@@ -35,6 +35,7 @@ defmodule Mix.Tasks.Theoria.Kernel.Check do
       Mix.shell().info("✓ check checks: #{report.check_count}")
       Mix.shell().info("✓ normalize checks: #{report.normalize_count}")
       Mix.shell().info("✓ defeq checks: #{report.defeq_count}")
+      Mix.shell().info("✓ rejection checks: #{report.rejection_count}")
       Mix.shell().info("✓ theorem checks: #{report.theorem_count}")
     end
   end

@@ -6,6 +6,7 @@ defimpl Jason.Encoder, for: Theoria.Kernel.Differential.Report do
         check_checks: report.check_count,
         normalize_checks: report.normalize_count,
         defeq_checks: report.defeq_count,
+        rejection_checks: report.rejection_count,
         theorem_checks: report.theorem_count,
         failures: Enum.map(report.failures, &encode_failure/1)
       },

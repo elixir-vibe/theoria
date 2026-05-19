@@ -26,7 +26,9 @@ The 0.7 line focuses on deeper kernel/reference assurance through environment re
 
 ## Downstream smoke coverage
 
-The 0.7 test suite includes a small downstream Mix project fixture that consumes Theoria as a path dependency, compiles a theorem module, runs Theoria Mix tasks, and builds docs. This catches packaging and task-discovery regressions before release.
+The 0.7 test suite includes a small downstream Mix project fixture that consumes Theoria as a path dependency, compiles a theorem module, runs Theoria Mix tasks, and builds docs. This catches packaging and task-discovery regressions before release. Package config tests keep fixtures, tests, `_build`, and generated docs out of Hex package files.
+
+Before release, run `mix hex.build` manually as part of the release checkpoint and remove generated tarballs afterward.
 
 ## Boundaries
 

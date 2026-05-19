@@ -23,6 +23,7 @@ Post-0.3 development toward proof-producing rewrite/simp automation.
 - Avoided atom creation from CLI input in theorem, equation, and simp Mix tasks.
 - Extracted matcher declaration admission into a trusted-adjacent kernel admission module.
 - Split theorem macro implementation out of the core term-construction DSL facade.
+- Named the indexed Vec matcher case frame to isolate fragile de Bruijn positions from the main planning flow.
 
 ## 0.3.0
 

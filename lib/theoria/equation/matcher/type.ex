@@ -590,26 +590,20 @@ defmodule Theoria.Equation.Matcher.Type do
          %Alternative{constructor: :vec_cons} = alternative,
          _position
        ) do
-    motive_n_arg2 = Term.bvar(6) |> Term.app(Term.bvar(1)) |> Term.app(Term.bvar(0))
-    succ_n = Term.const(:succ) |> Term.app(Term.bvar(2))
-
-    constructor =
-      Term.const(:vec_cons, [1])
-      |> Term.app(Term.bvar(8))
-      |> Term.app(Term.bvar(3))
-      |> Term.app(Term.bvar(2))
-      |> Term.app(Term.bvar(1))
-
+    frame = vec_cons_case_frame()
+    recursive_hypothesis = apply_motive(frame.motive_before_ih, [frame.field_n, frame.tail])
+    succ_n = Term.app(Term.const(:succ), frame.field_n_with_ih)
+    constructor = vec_cons_constructor(frame)
     motive_arguments = [succ_n, constructor]
-    case_result = Term.bvar(7) |> Term.app(succ_n) |> Term.app(constructor)
+    case_result = apply_motive(frame.motive_with_ih, motive_arguments)
 
     binder_type =
       forall_telescope(
         [
-          arg0: Term.bvar(4),
+          arg0: frame.head_type,
           n: Term.const(:Nat),
-          arg2: Term.const(:Vec, [1]) |> Term.app(Term.bvar(6)) |> Term.app(Term.bvar(0)),
-          _: motive_n_arg2
+          arg2: frame.tail_type,
+          _: recursive_hypothesis
         ],
         case_result
       )
@@ -635,6 +629,29 @@ defmodule Theoria.Equation.Matcher.Type do
         case_result: case_result,
         binder_type: indexed_case_telescope(alternative, case_result)
     }
+  end
+
+  defp vec_cons_case_frame do
+    %{
+      motive_before_ih: Term.bvar(6),
+      motive_with_ih: Term.bvar(7),
+      element_type: Term.bvar(8),
+      head: Term.bvar(3),
+      field_n: Term.bvar(1),
+      field_n_with_ih: Term.bvar(2),
+      tail: Term.bvar(0),
+      tail_with_ih: Term.bvar(1),
+      head_type: Term.bvar(4),
+      tail_type: Term.const(:Vec, [1]) |> Term.app(Term.bvar(6)) |> Term.app(Term.bvar(0))
+    }
+  end
+
+  defp vec_cons_constructor(frame) do
+    Term.const(:vec_cons, [1])
+    |> Term.app(frame.element_type)
+    |> Term.app(frame.head)
+    |> Term.app(frame.field_n_with_ih)
+    |> Term.app(frame.tail_with_ih)
   end
 
   defp indexed_binders_before_alternative(%Shape{} = shape, position) do

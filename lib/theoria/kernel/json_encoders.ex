@@ -85,6 +85,7 @@ defimpl Jason.Encoder, for: Theoria.Kernel.Differential.Report do
         normalize_checks: report.normalize_count,
         defeq_checks: report.defeq_count,
         rejection_checks: report.rejection_count,
+        generated_term_checks: report.generated_term_count,
         theorem_checks: report.theorem_count,
         theorem_modules: report.theorem_modules,
         theorem_replay_checks: report.theorem_replay_count,

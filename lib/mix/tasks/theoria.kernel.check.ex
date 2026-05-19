@@ -53,6 +53,7 @@ defmodule Mix.Tasks.Theoria.Kernel.Check do
       Mix.shell().info("✓ normalize checks: #{report.normalize_count}")
       Mix.shell().info("✓ defeq checks: #{report.defeq_count}")
       Mix.shell().info("✓ rejection checks: #{report.rejection_count}")
+      Mix.shell().info("✓ generated term checks: #{report.generated_term_count}")
       Mix.shell().info("✓ theorem checks: #{report.theorem_count}")
       Mix.shell().info("✓ theorem replay checks: #{report.theorem_replay_count}")
       Mix.shell().info("- theorem replay skipped: #{report.theorem_replay_skipped}")
@@ -84,6 +85,7 @@ defmodule Mix.Tasks.Theoria.Kernel.Check do
       Mix.shell().info("  corpus: infer=#{report.infer_count} check=#{report.check_count}")
       Mix.shell().info("  normalize=#{report.normalize_count} defeq=#{report.defeq_count}")
       Mix.shell().info("  rejected=#{report.rejection_count}")
+      Mix.shell().info("  generated_terms=#{report.generated_term_count}")
       Mix.shell().info("  modules=#{report.theorem_count}")
 
       Enum.each(report.theorem_modules, fn module ->
@@ -131,6 +133,7 @@ defmodule Mix.Tasks.Theoria.Kernel.Check do
       Mix.shell().info("  unsupported_terms=#{length(coverage.unsupported_term_constructors)}")
       Mix.shell().info("  declaration_kinds=#{inspect(coverage.declaration_kinds)}")
       Mix.shell().info("  theorem_modules=#{coverage.theorem_module_checks}")
+      Mix.shell().info("  generated_terms=#{coverage.generated_term_checks}")
       Mix.shell().info("  generated_artifacts=#{coverage.generated_artifact_checks}")
       Mix.shell().info("  indexed_artifacts=#{coverage.indexed_artifact_checks}")
       Mix.shell().info("  replay=#{coverage.replay_checks} skipped=#{coverage.replay_skipped}")

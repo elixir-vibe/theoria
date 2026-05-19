@@ -19,6 +19,7 @@ defmodule Mix.Tasks.Theoria.Kernel.CheckTest do
     assert output =~ "✓ normalize checks:"
     assert output =~ "✓ defeq checks:"
     assert output =~ "✓ rejection checks:"
+    assert output =~ "✓ generated term checks:"
     assert output =~ "✓ theorem checks:"
     assert output =~ "✓ theorem replay checks:"
     assert output =~ "✓ generated artifact checks:"
@@ -40,6 +41,7 @@ defmodule Mix.Tasks.Theoria.Kernel.CheckTest do
       end)
 
     assert output =~ "verbose:"
+    assert output =~ "generated_terms="
     assert output =~ "indexed_artifacts="
     assert output =~ "replay="
     assert output =~ "artifact_replay="
@@ -73,6 +75,7 @@ defmodule Mix.Tasks.Theoria.Kernel.CheckTest do
     assert output =~ "\"theorem_checks\""
     assert output =~ "\"theorem_replay_checks\""
     assert output =~ "\"rejection_checks\""
+    assert output =~ "\"generated_term_checks\""
     assert output =~ "\"generated_artifact_checks\""
     assert output =~ "\"indexed_artifact_checks\""
     assert output =~ "\"replay_checks\""

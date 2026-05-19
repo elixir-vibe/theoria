@@ -3,70 +3,103 @@ defmodule Theoria.Kernel.Generator do
   Experimental typed term generators for kernel/reference differential assurance.
 
   The generators return `%Theoria.Kernel.GeneratedTerm{}` values that pair a
-  closed term with its expected type and environment.
+  closed term with its expected type and environment. They are deterministic so
+  assurance code can use them without depending on test-only property libraries.
   """
-
-  import StreamData
 
   alias Theoria.Kernel.GeneratedTerm
   alias Theoria.Prelude
   alias Theoria.Term
 
-  @spec small_terms(keyword()) :: StreamData.t(GeneratedTerm.t())
+  @spec small_terms(keyword()) :: [GeneratedTerm.t()]
   def small_terms(opts \\ []) do
     size = Keyword.get(opts, :size, 3)
+    max_terms = Keyword.get(opts, :max_terms, 128)
     {:ok, env} = Prelude.env()
     bool = Term.const(:Bool)
     nat = Term.const(:Nat)
 
-    one_of([
-      map(bool_terms(size), &GeneratedTerm.new(env, &1, bool)),
-      map(nat_terms(size), &GeneratedTerm.new(env, &1, nat)),
-      map(nat_terms(size), fn term ->
-        equality = Term.eq(nat, term, term)
-        GeneratedTerm.new(env, Term.refl(term), equality)
-      end),
-      map(nat_terms(size), fn term ->
-        motive = Term.lam(:n, nat, Term.shift(nat, 1))
-        GeneratedTerm.new(env, Term.eq_rec(nat, motive, term, Term.refl(term)), nat)
-      end),
-      map(bool_terms(size), fn term ->
-        GeneratedTerm.new(env, Term.lam(:x, bool, Term.shift(term, 1)), Term.arrow(bool, bool))
-      end)
-    ])
+    bool_terms = bool_terms(size, max_terms: max_terms)
+    nat_terms = nat_terms(size, max_terms: max_terms)
+
+    bool_cases = Enum.map(bool_terms, &GeneratedTerm.new(env, &1, bool))
+    nat_cases = Enum.map(nat_terms, &GeneratedTerm.new(env, &1, nat))
+    equality_cases = Enum.map(nat_terms, &nat_reflexivity_case(env, &1))
+    eq_rec_cases = Enum.map(nat_terms, &nat_eq_rec_case(env, &1))
+    function_cases = Enum.map(bool_terms, &bool_function_case(env, &1))
+
+    uniq_generated_terms(
+      bool_cases ++ nat_cases ++ equality_cases ++ eq_rec_cases ++ function_cases
+    )
   end
 
-  @spec bool_terms(non_neg_integer()) :: StreamData.t(Term.t())
-  def bool_terms(0), do: member_of([Term.const(true), Term.const(false)])
-
-  def bool_terms(size) when size > 0 do
-    smaller = bool_terms(size - 1)
-
-    one_of([
-      bool_terms(0),
-      map(smaller, &Term.app(Term.const(:bool_not), &1)),
-      map(tuple({smaller, smaller}), fn {left, right} ->
-        Term.app(Term.app(Term.const(:bool_and), left), right)
-      end),
-      map(tuple({smaller, smaller}), fn {left, right} ->
-        Term.app(Term.app(Term.const(:bool_or), left), right)
-      end)
-    ])
+  @spec bool_terms(non_neg_integer(), keyword()) :: [Term.t()]
+  def bool_terms(size, opts \\ []) do
+    size
+    |> build_by_size(&bool_layer/2, Keyword.get(opts, :max_terms, 128))
+    |> uniq_terms()
   end
 
-  @spec nat_terms(non_neg_integer()) :: StreamData.t(Term.t())
-  def nat_terms(0),
-    do: member_of([Term.const(:zero), Term.app(Term.const(:succ), Term.const(:zero))])
-
-  def nat_terms(size) when size > 0 do
-    smaller = nat_terms(size - 1)
-
-    one_of([
-      nat_terms(0),
-      map(smaller, &Term.app(Term.const(:succ), &1)),
-      map(tuple({smaller, smaller}), fn {left, right} ->
-        Term.app(Term.app(Term.const(:nat_add), left), right)
-      end)
-    ])
+  @spec nat_terms(non_neg_integer(), keyword()) :: [Term.t()]
+  def nat_terms(size, opts \\ []) do
+    size
+    |> build_by_size(&nat_layer/2, Keyword.get(opts, :max_terms, 128))
+    |> uniq_terms()
   end
+
+  defp build_by_size(size, layer, max_terms) do
+    Enum.reduce(0..size//1, [], fn depth, accumulated ->
+      layer.(depth, accumulated)
+      |> Kernel.++(accumulated)
+      |> uniq_terms()
+      |> Enum.take(max_terms)
+    end)
+  end
+
+  defp bool_layer(0, _previous), do: [Term.const(true), Term.const(false)]
+
+  defp bool_layer(_depth, previous) do
+    not_terms = Enum.map(previous, &Term.app(Term.const(:bool_not), &1))
+
+    binary_terms =
+      binary_applications(Term.const(:bool_and), previous) ++
+        binary_applications(Term.const(:bool_or), previous)
+
+    not_terms ++ binary_terms
+  end
+
+  defp nat_layer(0, _previous), do: [Term.const(:zero)]
+
+  defp nat_layer(_depth, previous) do
+    succ_terms = Enum.map(previous, &Term.app(Term.const(:succ), &1))
+    add_terms = binary_applications(Term.const(:nat_add), previous)
+
+    succ_terms ++ add_terms
+  end
+
+  defp binary_applications(function, terms) do
+    for left <- terms, right <- terms do
+      function |> Term.app(left) |> Term.app(right)
+    end
+  end
+
+  defp nat_reflexivity_case(env, term) do
+    nat = Term.const(:Nat)
+    GeneratedTerm.new(env, Term.refl(term), Term.eq(nat, term, term))
+  end
+
+  defp nat_eq_rec_case(env, term) do
+    nat = Term.const(:Nat)
+    motive = Term.lam(:n, nat, Term.shift(nat, 1))
+
+    GeneratedTerm.new(env, Term.eq_rec(nat, motive, term, Term.refl(term)), nat)
+  end
+
+  defp bool_function_case(env, term) do
+    bool = Term.const(:Bool)
+    GeneratedTerm.new(env, Term.lam(:x, bool, Term.shift(term, 1)), Term.arrow(bool, bool))
+  end
+
+  defp uniq_generated_terms(terms), do: Enum.uniq_by(terms, &{&1.term, &1.type})
+  defp uniq_terms(terms), do: Enum.uniq(terms)
 end

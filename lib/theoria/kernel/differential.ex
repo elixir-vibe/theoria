@@ -10,6 +10,8 @@ defmodule Theoria.Kernel.Differential do
   alias Theoria.Kernel.ArtifactReplay.Skip
   alias Theoria.Kernel.Corpus
   alias Theoria.Kernel.Differential.Timings
+  alias Theoria.Kernel.GeneratedTerm
+  alias Theoria.Kernel.Generator
   alias Theoria.Kernel.Reference
   alias Theoria.Kernel.Reference.Normalize, as: ReferenceNormalize
   alias Theoria.Kernel.Reference.Replay
@@ -29,6 +31,7 @@ defmodule Theoria.Kernel.Differential do
       :normalize_count,
       :defeq_count,
       :rejection_count,
+      :generated_term_count,
       :theorem_count,
       :theorem_modules,
       :theorem_replay_count,
@@ -52,6 +55,7 @@ defmodule Theoria.Kernel.Differential do
       :normalize_count,
       :defeq_count,
       :rejection_count,
+      :generated_term_count,
       :theorem_count,
       :theorem_modules,
       :theorem_replay_count,
@@ -77,6 +81,7 @@ defmodule Theoria.Kernel.Differential do
             normalize_count: non_neg_integer(),
             defeq_count: non_neg_integer(),
             rejection_count: non_neg_integer(),
+            generated_term_count: non_neg_integer(),
             theorem_count: non_neg_integer(),
             theorem_modules: [TheoremModuleReport.t()],
             theorem_replay_count: non_neg_integer(),
@@ -104,8 +109,8 @@ defmodule Theoria.Kernel.Differential do
     @spec total_checks(t()) :: non_neg_integer()
     def total_checks(%__MODULE__{} = report) do
       report.infer_count + report.check_count + report.normalize_count + report.defeq_count +
-        report.rejection_count + report.theorem_count + report.generated_artifact_count +
-        report.indexed_artifact_count
+        report.rejection_count + report.generated_term_count + report.theorem_count +
+        report.generated_artifact_count + report.indexed_artifact_count
     end
 
     @spec total_replay_checks(t()) :: non_neg_integer()
@@ -182,6 +187,9 @@ defmodule Theoria.Kernel.Differential do
     {defeq_failures, defeq_ms} =
       timed(fn -> failures(Corpus.defeq_cases(), &compare_defeq_case(env, &1)) end)
 
+    {{generated_term_count, generated_term_failures}, _generated_term_ms} =
+      timed(fn -> generated_term_failures() end)
+
     {{theorem_count, theorem_modules, theorem_replay_count, theorem_replay_skipped,
       theorem_failures}, theorem_ms} =
       timed(fn -> theorem_failures(env) end)
@@ -203,6 +211,7 @@ defmodule Theoria.Kernel.Differential do
       defeq_count: length(Corpus.defeq_cases()),
       rejection_count:
         length(Corpus.infer_rejection_cases()) + length(Corpus.check_rejection_cases()),
+      generated_term_count: generated_term_count,
       theorem_count: theorem_count,
       theorem_modules: theorem_modules,
       theorem_replay_count: theorem_replay_count,
@@ -236,6 +245,7 @@ defmodule Theoria.Kernel.Differential do
           rejection_failures ++
           normalize_failures ++
           defeq_failures ++
+          generated_term_failures ++
           theorem_failures ++
           generated_artifact_failures ++
           indexed_artifact_failures ++ replay_report.failures ++ artifact_replay.failures
@@ -249,6 +259,30 @@ defmodule Theoria.Kernel.Differential do
   end
 
   defp monotonic_time, do: System.monotonic_time()
+
+  defp generated_term_failures do
+    terms = Generator.small_terms(size: 3)
+    {length(terms), failures(terms, &compare_generated_term/1)}
+  end
+
+  defp compare_generated_term(%GeneratedTerm{env: env, term: term, type: type}) do
+    with :ok <-
+           compare(:generated_infer, :term, Kernel.infer(env, term), Reference.infer(env, term)),
+         :ok <-
+           compare(
+             :generated_check,
+             :term,
+             Kernel.check(env, term, type),
+             Reference.check(env, term, type)
+           ) do
+      compare(
+        :generated_normalize,
+        :term,
+        Normalize.normalize(env, term),
+        ReferenceNormalize.normalize(env, term)
+      )
+    end
+  end
 
   defp artifact_replay(env) do
     with {:ok, generated_theorems} <- Extension.realize_all(env),

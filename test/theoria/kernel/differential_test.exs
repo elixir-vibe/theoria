@@ -16,6 +16,7 @@ defmodule Theoria.Kernel.DifferentialTest do
     assert report.normalize_count > 0
     assert report.defeq_count > 0
     assert report.rejection_count > 0
+    assert report.generated_term_count > 0
     assert report.theorem_count > 0
     assert report.theorem_modules != []
     assert report.theorem_replay_count > 0

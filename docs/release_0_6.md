@@ -23,7 +23,7 @@ No extensionality or proof-irrelevance shortcut is admitted. A path is supported
 
 ## Generated-term assurance
 
-0.6 starts a typed generator layer for kernel/reference differentials. The goal is to generate terms together with expected types and environments, including dependent functions, equality, `EqRec`, and recursor fragments.
+0.6 starts a typed generator layer for kernel/reference differentials. Generated terms are deterministic and dependency-free so native assurance reports can run them outside test-only property tooling. The goal is to generate terms together with expected types and environments, including dependent functions, equality, `EqRec`, and recursor fragments.
 
 ## Reports and examples
 

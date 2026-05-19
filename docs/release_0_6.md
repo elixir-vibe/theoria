@@ -6,8 +6,8 @@ The 0.6 line focuses on deeper proof-producing automation and stronger generated
 
 0.6 explores kernel-checkable proof lifting beyond top-level/application/equality-side paths. Newly supported paths include:
 
-- `EqRec` base paths;
-- `EqRec` proof paths.
+- `EqRec` base paths, including supported nested paths under the base;
+- `EqRec` proof paths, including supported nested paths under the proof;
 
 Candidate paths for further work include:
 

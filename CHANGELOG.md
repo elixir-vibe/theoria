@@ -5,7 +5,7 @@
 Post-0.5 development toward deeper proof-producing automation and stronger generated-term assurance.
 
 - Added an experimental typed generator module for kernel/reference differential assurance.
-- Added kernel-checked proof lifting for `EqRec` base and proof rewrite paths.
+- Added kernel-checked proof lifting for `EqRec` base/proof rewrite paths, including supported nested paths.
 
 ## 0.5.0
 

@@ -1,6 +1,6 @@
 defmodule Theoria.Rewrite.Proof.Capabilities do
   @moduledoc """
-  Experimental proof-lifting capability matrix for Theoria 0.5.
+  Experimental proof-lifting capability matrix for Theoria 0.6.
 
   The shape may change before 1.0.
   """
@@ -24,10 +24,10 @@ defmodule Theoria.Rewrite.Proof.Capabilities do
       path in [[:domain], [:body]] ->
         unsupported(:binder_boundary, "binder paths remain kernel-checked boundaries")
 
-      path == [:base] ->
+      eq_rec_path?(path, :base) ->
         supported(:eq_rec_base_congruence, "EqRec base congruence")
 
-      path == [:proof] ->
+      eq_rec_path?(path, :proof) ->
         supported(:eq_rec_proof_congruence, "EqRec proof congruence")
 
       true ->
@@ -55,12 +55,21 @@ defmodule Theoria.Rewrite.Proof.Capabilities do
       [:body],
       [:domain],
       [:proof],
+      [:proof, :fun],
       [:base],
+      [:base, :arg],
       [:type],
       [:motive]
     ]
 
   defp application_path?(path), do: Enum.all?(path, &(&1 in [:fun, :arg]))
+
+  defp eq_rec_path?([field], field) when field in [:base, :proof], do: true
+
+  defp eq_rec_path?([field | rest], field) when field in [:base, :proof],
+    do: explain(rest).supported?
+
+  defp eq_rec_path?(_path, _field), do: false
 
   defp supported(reason, description),
     do: %Capability{supported?: true, reason: reason, description: description}

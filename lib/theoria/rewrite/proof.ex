@@ -156,6 +156,52 @@ defmodule Theoria.Rewrite.Proof do
     end
   end
 
+  defp lift_path(env, type, proof, %Step{path: [:base | rest]} = step) do
+    case {step.before, step.after} do
+      {%Term.EqRec{} = before, %Term.EqRec{} = after_term}
+      when before.type == after_term.type and before.motive == after_term.motive and
+             before.proof == after_term.proof ->
+        nested = %Step{
+          step
+          | before: before.base,
+            after: after_term.base,
+            path: rest,
+            proof_result: Result.checked(proof, Capabilities.explain(rest))
+        }
+
+        with {:ok, nested_type} <- Kernel.infer(env, before.base),
+             {:ok, nested_proof} <- local_or_defeq_proof(env, nested_type, nested) do
+          lift_eq_rec_base(env, type, nested_proof, %{step | path: [:base]})
+        end
+
+      _ ->
+        {:error, :unsupported_path}
+    end
+  end
+
+  defp lift_path(env, type, proof, %Step{path: [:proof | rest]} = step) do
+    case {step.before, step.after} do
+      {%Term.EqRec{} = before, %Term.EqRec{} = after_term}
+      when before.type == after_term.type and before.motive == after_term.motive and
+             before.base == after_term.base ->
+        nested = %Step{
+          step
+          | before: before.proof,
+            after: after_term.proof,
+            path: rest,
+            proof_result: Result.checked(proof, Capabilities.explain(rest))
+        }
+
+        with {:ok, nested_type} <- Kernel.infer(env, before.proof),
+             {:ok, nested_proof} <- local_or_defeq_proof(env, nested_type, nested) do
+          lift_eq_rec_proof(env, type, nested_proof, %{step | path: [:proof]})
+        end
+
+      _ ->
+        {:error, :unsupported_path}
+    end
+  end
+
   defp lift_path(_env, _type, _proof, _step), do: {:error, :unsupported_path}
 
   defp lift_eq_left(env, proposition_type, proof, step) do

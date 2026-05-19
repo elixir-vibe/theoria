@@ -52,6 +52,8 @@ defmodule Mix.Tasks.Theoria.Kernel.Check do
       Mix.shell().info("✓ indexed artifact checks: #{report.indexed_artifact_count}")
       Mix.shell().info("✓ replay checks: #{report.replay_count}")
       Mix.shell().info("- replay skipped: #{report.replay_skipped}")
+      Mix.shell().info("✓ artifact replay checks: #{report.artifact_replay_count}")
+      Mix.shell().info("- artifact replay skipped: #{report.artifact_replay_skipped}")
       maybe_print_verbose(report, opts)
       maybe_print_coverage(env, report, opts)
     end
@@ -68,6 +70,11 @@ defmodule Mix.Tasks.Theoria.Kernel.Check do
       Mix.shell().info("  generated_artifacts=#{report.generated_artifact_count}")
       Mix.shell().info("  indexed_artifacts=#{report.indexed_artifact_count}")
       Mix.shell().info("  replay=#{report.replay_count} skipped=#{report.replay_skipped}")
+
+      Mix.shell().info(
+        "  artifact_replay=#{report.artifact_replay_count} skipped=#{report.artifact_replay_skipped}"
+      )
+
       Mix.shell().info("  failures=#{length(report.failures)}")
     end
   end
@@ -85,6 +92,11 @@ defmodule Mix.Tasks.Theoria.Kernel.Check do
       Mix.shell().info("  generated_artifacts=#{coverage.generated_artifact_checks}")
       Mix.shell().info("  indexed_artifacts=#{coverage.indexed_artifact_checks}")
       Mix.shell().info("  replay=#{coverage.replay_checks} skipped=#{coverage.replay_skipped}")
+
+      Mix.shell().info(
+        "  artifact_replay=#{coverage.artifact_replay_checks} skipped=#{coverage.artifact_replay_skipped}"
+      )
+
       Mix.shell().info("  property_families=#{Enum.join(coverage.property_families, ", ")}")
     end
   end

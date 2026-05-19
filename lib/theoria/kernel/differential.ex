@@ -30,6 +30,8 @@ defmodule Theoria.Kernel.Differential do
       :indexed_artifact_count,
       :replay_count,
       :replay_skipped,
+      :artifact_replay_count,
+      :artifact_replay_skipped,
       :failures
     ]
     defstruct [
@@ -43,6 +45,8 @@ defmodule Theoria.Kernel.Differential do
       :indexed_artifact_count,
       :replay_count,
       :replay_skipped,
+      :artifact_replay_count,
+      :artifact_replay_skipped,
       :failures
     ]
 
@@ -58,6 +62,8 @@ defmodule Theoria.Kernel.Differential do
             indexed_artifact_count: non_neg_integer(),
             replay_count: non_neg_integer(),
             replay_skipped: non_neg_integer(),
+            artifact_replay_count: non_neg_integer(),
+            artifact_replay_skipped: non_neg_integer(),
             failures: [failure()]
           }
 
@@ -127,6 +133,9 @@ defmodule Theoria.Kernel.Differential do
     {indexed_artifact_count, indexed_artifact_failures} = indexed_artifact_failures(env)
     replay_report = Replay.run(env)
 
+    {artifact_replay_count, artifact_replay_skipped, artifact_replay_failures} =
+      artifact_replay(env)
+
     %Report{
       infer_count: length(Corpus.infer_cases()),
       check_count: length(Corpus.check_cases()),
@@ -139,6 +148,8 @@ defmodule Theoria.Kernel.Differential do
       indexed_artifact_count: indexed_artifact_count,
       replay_count: replay_report.checked,
       replay_skipped: replay_report.skipped,
+      artifact_replay_count: artifact_replay_count,
+      artifact_replay_skipped: artifact_replay_skipped,
       failures:
         infer_failures ++
           check_failures ++
@@ -146,8 +157,54 @@ defmodule Theoria.Kernel.Differential do
           normalize_failures ++
           defeq_failures ++
           theorem_failures ++
-          generated_artifact_failures ++ indexed_artifact_failures ++ replay_report.failures
+          generated_artifact_failures ++
+          indexed_artifact_failures ++ replay_report.failures ++ artifact_replay_failures
     }
+  end
+
+  defp artifact_replay(env) do
+    with {:ok, generated_theorems} <- Extension.realize_all(env),
+         {:ok, generated_result} <- replay_artifact_theorems(env, generated_theorems),
+         {:ok, indexed_package} <- IndexedMatchers.check(env),
+         {:ok, indexed_realized} <- IndexedRealization.realize_all(indexed_package),
+         indexed_theorems = Enum.map(indexed_realized, &Realized.to_theorem/1),
+         {:ok, indexed_result} <- replay_artifact_theorems(indexed_package.env, indexed_theorems) do
+      merge_artifact_replay_results(generated_result, indexed_result)
+    else
+      {:error, reason} -> {0, 0, [{:artifact_replay, :generated, :failed, reason}]}
+    end
+  end
+
+  defp replay_artifact_theorems(env, theorems) do
+    with {:ok, artifact_env, install_skipped} <- install_artifact_theorems(env, theorems) do
+      report = Replay.run(artifact_env)
+      base_count = length(Env.declarations(env))
+
+      {:ok,
+       {max(report.checked - base_count, 0), report.skipped + install_skipped, report.failures}}
+    end
+  end
+
+  defp merge_artifact_replay_results(
+         {left_count, left_skipped, left_failures},
+         {right_count, right_skipped, right_failures}
+       ) do
+    {left_count + right_count, left_skipped + right_skipped, left_failures ++ right_failures}
+  end
+
+  defp install_artifact_theorems(env, theorems) do
+    Enum.reduce_while(theorems, {:ok, env, 0}, fn theorem, {:ok, env, skipped} ->
+      case Theorem.add_to_env(env, theorem) do
+        {:ok, env} ->
+          {:cont, {:ok, env, skipped}}
+
+        {:error, %Theoria.Error{reason: :unknown_universe_parameter}} ->
+          {:cont, {:ok, env, skipped + 1}}
+
+        {:error, reason} ->
+          {:halt, {:error, {theorem.name, reason}}}
+      end
+    end)
   end
 
   defp indexed_artifact_failures(env) do

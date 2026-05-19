@@ -46,6 +46,19 @@ defmodule Theoria.RewriteTest do
              Rewrite.once_with_step(term, rule)
   end
 
+  test "nested application rewrite steps can carry checked proof" do
+    {:ok, env} = Prelude.env()
+    zero = Term.const(:zero)
+    succ = Term.const(:succ)
+    equality = Term.eq(Term.const(:Nat), zero, zero)
+    rule = Rule.new(:same_zero, equality, proof: Term.refl(zero))
+    term = Term.app(succ, Term.app(succ, zero))
+
+    assert {:ok, step} = Rewrite.once_with_step(term, rule)
+    assert step.path == [:arg, :arg]
+    assert %Term.EqRec{} = Proof.for_step(env, step)
+  end
+
   test "function-position rewrite steps can carry checked proof" do
     {:ok, env} = Prelude.env()
     bool_not = Term.const(:bool_not)

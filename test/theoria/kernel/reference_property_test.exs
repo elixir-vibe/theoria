@@ -3,6 +3,7 @@ defmodule Theoria.Kernel.ReferencePropertyTest do
   use ExUnitProperties
 
   alias Theoria.Kernel
+  alias Theoria.Kernel.GeneratedTerm
   alias Theoria.Kernel.Reference
   alias Theoria.Kernel.Reference.Normalize, as: ReferenceNormalize
   alias Theoria.Normalize
@@ -122,12 +123,38 @@ defmodule Theoria.Kernel.ReferencePropertyTest do
     end
   end
 
+  property "production and reference agree on typed generated dependent terms" do
+    check all(%GeneratedTerm{env: env, term: term, type: type} <- typed_dependent_term_gen()) do
+      assert Kernel.infer(env, term) == Reference.infer(env, term)
+      assert Kernel.check(env, term, type) == Reference.check(env, term, type)
+    end
+  end
+
   property "production and reference normalization agree on generated Vec Bool terms" do
     check all({term, _index} <- vec_bool_term_gen()) do
       {:ok, env} = Prelude.env()
 
       assert Normalize.normalize(env, term) == ReferenceNormalize.normalize(env, term)
     end
+  end
+
+  defp typed_dependent_term_gen do
+    {:ok, env} = Prelude.env()
+    bool = Term.const(:Bool)
+    nat = Term.const(:Nat)
+
+    one_of([
+      map(bool_term_gen(), fn term -> GeneratedTerm.new(env, term, bool) end),
+      map(nat_term_gen(), fn term -> GeneratedTerm.new(env, term, nat) end),
+      map(bool_term_gen(), fn term ->
+        type = Term.arrow(bool, bool)
+        GeneratedTerm.new(env, Term.lam(:x, bool, Term.shift(term, 1)), type)
+      end),
+      map(nat_term_gen(), fn term ->
+        equality = Term.eq(nat, term, term)
+        GeneratedTerm.new(env, Term.refl(term), equality)
+      end)
+    ])
   end
 
   defp bool_term_gen do

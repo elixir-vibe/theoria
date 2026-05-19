@@ -58,13 +58,9 @@ defmodule Theoria.Rewrite.Proof do
     end
   end
 
-  defp local_or_defeq_proof(env, type, %Step{proof: proof, path: [:arg]} = step)
-       when not is_nil(proof),
-       do: lift_app_arg_or_defeq(env, type, proof, step)
-
-  defp local_or_defeq_proof(env, type, %Step{proof: proof, path: [:fun]} = step)
-       when not is_nil(proof),
-       do: lift_app_fun_or_defeq(env, type, proof, step)
+  defp local_or_defeq_proof(env, type, %Step{proof: proof, path: path} = step)
+       when not is_nil(proof) and path != [],
+       do: lift_path_or_defeq(env, type, proof, step)
 
   defp local_or_defeq_proof(_env, _type, %Step{proof: nil}),
     do: {:error, :missing_rule_proof}
@@ -76,7 +72,54 @@ defmodule Theoria.Rewrite.Proof do
     end
   end
 
-  defp lift_app_arg_or_defeq(env, type, proof, step) do
+  defp lift_path_or_defeq(env, type, proof, step) do
+    case lift_path(env, type, proof, step) do
+      {:ok, proof} -> {:ok, proof}
+      {:error, _status} -> defeq_proof(env, type, step.before, step.after)
+    end
+  end
+
+  defp lift_path(env, type, proof, %Step{path: [:arg]} = step),
+    do: lift_app_arg(env, type, proof, step)
+
+  defp lift_path(env, type, proof, %Step{path: [:fun]} = step),
+    do: lift_app_fun(env, type, proof, step)
+
+  defp lift_path(env, type, proof, %Step{path: [:arg | rest]} = step) do
+    case {step.before, step.after} do
+      {%Term.App{fun: fun, arg: left}, %Term.App{fun: after_fun, arg: right}}
+      when fun == after_fun ->
+        nested = %Step{step | before: left, after: right, path: rest, proof: proof}
+
+        with {:ok, nested_type} <- Kernel.infer(env, left),
+             {:ok, nested_proof} <- local_or_defeq_proof(env, nested_type, nested) do
+          lift_app_arg(env, type, nested_proof, %{step | path: [:arg]})
+        end
+
+      _ ->
+        {:error, :unsupported_path}
+    end
+  end
+
+  defp lift_path(env, type, proof, %Step{path: [:fun | rest]} = step) do
+    case {step.before, step.after} do
+      {%Term.App{fun: left_fun, arg: arg}, %Term.App{fun: right_fun, arg: after_arg}}
+      when arg == after_arg ->
+        nested = %Step{step | before: left_fun, after: right_fun, path: rest, proof: proof}
+
+        with {:ok, nested_type} <- Kernel.infer(env, left_fun),
+             {:ok, nested_proof} <- local_or_defeq_proof(env, nested_type, nested) do
+          lift_app_fun(env, type, nested_proof, %{step | path: [:fun]})
+        end
+
+      _ ->
+        {:error, :unsupported_path}
+    end
+  end
+
+  defp lift_path(_env, _type, _proof, _step), do: {:error, :unsupported_path}
+
+  defp lift_app_arg(env, type, proof, step) do
     case {step.before, step.after} do
       {%Term.App{fun: fun, arg: left}, %Term.App{fun: after_fun, arg: right}}
       when fun == after_fun ->
@@ -93,7 +136,7 @@ defmodule Theoria.Rewrite.Proof do
     end
   end
 
-  defp lift_app_fun_or_defeq(env, type, proof, step) do
+  defp lift_app_fun(env, type, proof, step) do
     case {step.before, step.after} do
       {%Term.App{fun: left_fun, arg: arg}, %Term.App{fun: right_fun, arg: after_arg}}
       when arg == after_arg ->

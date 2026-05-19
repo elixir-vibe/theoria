@@ -41,6 +41,8 @@ defmodule Theoria.Kernel.Coverage do
       indexed_artifact_checks: report.indexed_artifact_count,
       replay_checks: report.replay_count,
       replay_skipped: report.replay_skipped,
+      artifact_replay_checks: report.artifact_replay_count,
+      artifact_replay_skipped: report.artifact_replay_skipped,
       property_families: @property_families
     }
   end

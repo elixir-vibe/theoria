@@ -153,10 +153,10 @@ defmodule Theoria.Rewrite do
   end
 
   defp rewrite_lam(%Term.Lam{} = term, from, to),
-    do: rewrite_binder(term, [:domain, :body], from, to)
+    do: rewrite_fields(term, [:domain, :body], from, to)
 
   defp rewrite_forall(%Term.Forall{} = term, from, to),
-    do: rewrite_binder(term, [:domain, :body], from, to)
+    do: rewrite_fields(term, [:domain, :body], from, to)
 
   defp rewrite_let(%Term.Let{} = term, from, to),
     do: rewrite_fields(term, [:type, :value, :body], from, to)
@@ -168,8 +168,6 @@ defmodule Theoria.Rewrite do
 
   defp rewrite_eq_rec(%Term.EqRec{} = term, from, to),
     do: rewrite_fields(term, [:type, :motive, :base, :proof], from, to)
-
-  defp rewrite_binder(term, fields, from, to), do: rewrite_fields(term, fields, from, to)
 
   defp rewrite_fields(term, fields, from, to) do
     Enum.reduce_while(fields, :not_found, fn field, :not_found ->

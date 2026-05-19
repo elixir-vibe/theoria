@@ -347,7 +347,7 @@ defmodule Theoria.Inductive do
 
     arguments
     |> Enum.drop(length(spec.parameters))
-    |> Enum.map(&syntax_from_core(&1, field_context(result, field.position)))
+    |> Enum.map(&S.from_core(&1, field_context(result, field.position)))
   end
 
   defp recursor_prefix_binders(recursor_type, prefix_names) do
@@ -364,7 +364,7 @@ defmodule Theoria.Inductive do
          context,
          binders
        ) do
-    binder = {name, syntax_from_core(domain, context)}
+    binder = {name, S.from_core(domain, context)}
     collect_prefix_binders(body, names, [name | context], [binder | binders])
   end
 
@@ -375,7 +375,7 @@ defmodule Theoria.Inductive do
   defp field_rule_binder(result, field) do
     %{domain: domain} = Enum.at(result.binders, field.position)
     context = field_context(result, field.position)
-    {field.name, syntax_from_core(domain, context)}
+    {field.name, S.from_core(domain, context)}
   end
 
   defp field_context(result, position) do
@@ -394,8 +394,6 @@ defmodule Theoria.Inductive do
 
     Enum.reverse(parameters ++ fields)
   end
-
-  defp syntax_from_core(term, context), do: S.from_core(term, context)
 
   defp minor_names(%Spec{} = spec) do
     spec.constructors

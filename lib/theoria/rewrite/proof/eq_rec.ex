@@ -14,8 +14,6 @@ defmodule Theoria.Rewrite.Proof.EqRec do
   alias Theoria.Term
 
   @spec explain(Step.t()) :: Capability.t()
-  def explain(%Step{path: [:proof]}), do: Capabilities.explain([:proof])
-  def explain(%Step{path: [:base]}), do: Capabilities.explain([:base])
   def explain(%Step{path: path}), do: Capabilities.explain(path)
 
   @spec lift_base(Env.t(), Term.t(), Term.t(), Step.t()) :: {:ok, Term.t()} | {:error, atom()}
@@ -40,7 +38,7 @@ defmodule Theoria.Rewrite.Proof.EqRec do
               Term.eq(Term.shift(result_type, 1), Term.shift(step.before, 1), target)
             )
 
-          check_lifted(
+          Check.lifted(
             env,
             result_type,
             Term.eq_rec(base_type, motive, Term.refl(step.before), proof),
@@ -75,7 +73,7 @@ defmodule Theoria.Rewrite.Proof.EqRec do
               Term.eq(Term.shift(result_type, 1), Term.shift(step.before, 1), target)
             )
 
-          check_lifted(
+          Check.lifted(
             env,
             result_type,
             Term.eq_rec(proof_type, motive, Term.refl(step.before), proof),
@@ -87,6 +85,4 @@ defmodule Theoria.Rewrite.Proof.EqRec do
         {:error, :unsupported_path}
     end
   end
-
-  defp check_lifted(env, type, candidate, step), do: Check.lifted(env, type, candidate, step)
 end

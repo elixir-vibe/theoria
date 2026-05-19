@@ -45,21 +45,21 @@ defmodule Theoria.Kernel.Generator do
   def bool_terms(size, opts \\ []) do
     size
     |> build_by_size(&bool_layer/2, Keyword.get(opts, :max_terms, 128))
-    |> uniq_terms()
+    |> Enum.uniq()
   end
 
   @spec nat_terms(non_neg_integer(), keyword()) :: [Term.t()]
   def nat_terms(size, opts \\ []) do
     size
     |> build_by_size(&nat_layer/2, Keyword.get(opts, :max_terms, 128))
-    |> uniq_terms()
+    |> Enum.uniq()
   end
 
   defp build_by_size(size, layer, max_terms) do
     Enum.reduce(0..size//1, [], fn depth, accumulated ->
       layer.(depth, accumulated)
       |> Kernel.++(accumulated)
-      |> uniq_terms()
+      |> Enum.uniq()
       |> Enum.take(max_terms)
     end)
   end
@@ -126,5 +126,4 @@ defmodule Theoria.Kernel.Generator do
   end
 
   defp uniq_generated_terms(terms), do: Enum.uniq_by(terms, &{&1.term, &1.type})
-  defp uniq_terms(terms), do: Enum.uniq(terms)
 end

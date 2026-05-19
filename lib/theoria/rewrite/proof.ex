@@ -225,7 +225,7 @@ defmodule Theoria.Rewrite.Proof do
             )
           )
 
-        check_lifted(
+        Check.lifted(
           env,
           proposition_type,
           Term.eq_rec(value_type, motive, Term.refl(step.before), proof),
@@ -253,7 +253,7 @@ defmodule Theoria.Rewrite.Proof do
             )
           )
 
-        check_lifted(
+        Check.lifted(
           env,
           proposition_type,
           Term.eq_rec(value_type, motive, Term.refl(step.before), proof),
@@ -290,7 +290,7 @@ defmodule Theoria.Rewrite.Proof do
               Term.eq(Term.shift(result_type, 1), Term.shift(step.before, 1), target)
             )
 
-          check_lifted(
+          Check.lifted(
             env,
             result_type,
             Term.eq_rec(value_type, motive, Term.refl(step.before), proof),
@@ -302,8 +302,6 @@ defmodule Theoria.Rewrite.Proof do
         {:error, :unsupported_path}
     end
   end
-
-  defp check_lifted(env, type, candidate, step), do: Check.lifted(env, type, candidate, step)
 
   defp lift_app_arg(env, type, proof, step) do
     case {step.before, step.after} do

@@ -269,7 +269,7 @@ defmodule Theoria.Inductive.Generate do
     |> Enum.drop(parameter_count)
     |> Enum.reverse()
     |> Enum.reduce(S.var(result_name), fn binder, body ->
-      domain = syntax_from_core(binder.domain, binder_context(result.binders, binder.depth))
+      domain = S.from_core(binder.domain, binder_context(result.binders, binder.depth))
 
       body =
         if recursive_binder?(result, binder.depth, spec.name),
@@ -284,7 +284,7 @@ defmodule Theoria.Inductive.Generate do
     spec.parameters
     |> Enum.reverse()
     |> Enum.reduce(type, fn parameter, body ->
-      S.forall(parameter.name, syntax_from_core(parameter.type), body)
+      S.forall(parameter.name, S.from_core(parameter.type), body)
     end)
   end
 
@@ -349,7 +349,7 @@ defmodule Theoria.Inductive.Generate do
     spec.indices
     |> Enum.reverse()
     |> Enum.reduce(S.arrow(target, S.sort(level)), fn index, body ->
-      S.forall(index.name, syntax_from_core(index.type), body)
+      S.forall(index.name, S.from_core(index.type), body)
     end)
   end
 
@@ -366,7 +366,7 @@ defmodule Theoria.Inductive.Generate do
     spec.indices
     |> Enum.reverse()
     |> Enum.reduce(S.forall(major_name, target, motive_app), fn index, body ->
-      S.forall(index.name, syntax_from_core(index.type), body)
+      S.forall(index.name, S.from_core(index.type), body)
     end)
   end
 
@@ -404,7 +404,7 @@ defmodule Theoria.Inductive.Generate do
             body
         end
 
-      S.forall(binder.name, syntax_from_core(binder.domain, binder.context), body)
+      S.forall(binder.name, S.from_core(binder.domain, binder.context), body)
     end)
   end
 
@@ -420,7 +420,7 @@ defmodule Theoria.Inductive.Generate do
         |> Enum.reverse()
       )
 
-    Enum.map(result.indices, &syntax_from_core(&1, context))
+    Enum.map(result.indices, &S.from_core(&1, context))
   end
 
   defp indexed_context(result, position, parameter_count) do
@@ -444,7 +444,7 @@ defmodule Theoria.Inductive.Generate do
         {:ok,
          arguments
          |> Enum.drop(length(spec.parameters))
-         |> Enum.map(&syntax_from_core(&1, context))}
+         |> Enum.map(&S.from_core(&1, context))}
 
       _other ->
         :error
@@ -467,7 +467,7 @@ defmodule Theoria.Inductive.Generate do
           do: S.arrow(S.app(S.var(:motive), S.var(binder.name)), body),
           else: body
 
-      S.forall(binder.name, syntax_from_core(binder.domain, binder.context), body)
+      S.forall(binder.name, S.from_core(binder.domain, binder.context), body)
     end)
   end
 
@@ -504,8 +504,6 @@ defmodule Theoria.Inductive.Generate do
       end
     )
   end
-
-  defp syntax_from_core(term, context \\ []), do: S.from_core(term, context)
 
   defp base_name(name) do
     name

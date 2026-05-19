@@ -80,7 +80,7 @@ defmodule Theoria.Rewrite.Database do
   defp indexed_matcher_rules(env, matcher, opts) do
     with {:ok, info} <- indexed_matcher_info(matcher),
          {:ok, lemmas} <- MatcherEqns.indexed_lemmas(info, env) do
-      Enum.map(lemmas, &indexed_rule(env, &1, opts))
+      Enum.map(lemmas, &Rule.from_realizing_lemma(env, &1, opts))
     else
       {:error, _reason} -> []
     end
@@ -101,8 +101,6 @@ defmodule Theoria.Rewrite.Database do
       Rule.from_lemma(lemma, opts)
     end
   end
-
-  defp indexed_rule(env, lemma, opts), do: Rule.from_realizing_lemma(env, lemma, opts)
 
   defp indexed_matcher_info(%{schema: nil}), do: {:error, :missing_indexed_matcher_schema}
 

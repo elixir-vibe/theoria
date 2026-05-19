@@ -46,6 +46,18 @@ defmodule Theoria.RewriteTest do
              Rewrite.once_with_step(term, rule)
   end
 
+  test "equality-side rewrite steps can carry checked proof" do
+    {:ok, env} = Prelude.env()
+    zero = Term.const(:zero)
+    equality = Term.eq(Term.const(:Nat), zero, zero)
+    rule = Rule.new(:same_zero, equality, proof: Term.refl(zero))
+    term = Term.eq(Term.const(:Nat), zero, zero)
+
+    assert {:ok, step} = Rewrite.once_with_step(term, rule)
+    assert step.path == [:left]
+    assert %Term.EqRec{} = Proof.for_step(env, step)
+  end
+
   test "binder rewrite steps report unsupported proof lifting" do
     {:ok, env} = Prelude.env()
     zero = Term.const(:zero)

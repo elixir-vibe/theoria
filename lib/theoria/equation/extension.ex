@@ -387,10 +387,10 @@ defmodule Theoria.Equation.Extension do
 
     cond do
       unfold.name == theorem_name ->
-        Lemma.to_theorem(env, unfold)
+        Lemma.to_theorem(env, unfold, universe_params: info.level_params)
 
       lemma = Enum.find(Lemma.generated_for(info), &(&1.name == theorem_name)) ->
-        Lemma.to_theorem(env, lemma)
+        Lemma.to_theorem(env, lemma, universe_params: info.level_params)
 
       true ->
         {:error, {:unknown_equation_for_source, info.name, theorem_name}}

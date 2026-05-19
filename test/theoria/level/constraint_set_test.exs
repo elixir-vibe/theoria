@@ -21,6 +21,16 @@ defmodule Theoria.Level.ConstraintSetTest do
 
     assert {:error, [{:unsolved, constraint}]} = ConstraintSet.check(set)
     assert constraint.left == Level.from_integer(1)
-    assert [%{constraint: ^constraint, solved?: false}] = ConstraintSet.explain(set)
+
+    assert [%{constraint: ^constraint, status: :unsolved, rule: :none}] =
+             ConstraintSet.explain(set)
+  end
+
+  test "explains solved constraints with rules" do
+    u = Level.param(:u)
+    v = Level.param(:v)
+    set = ConstraintSet.add_leq(ConstraintSet.new(), u, Level.max(u, v))
+
+    assert [%{status: :solved, rule: :max_left}] = ConstraintSet.explain(set)
   end
 end

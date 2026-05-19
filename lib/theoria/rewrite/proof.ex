@@ -85,6 +85,12 @@ defmodule Theoria.Rewrite.Proof do
   defp lift_path(env, type, proof, %Step{path: [:fun]} = step),
     do: lift_app_fun(env, type, proof, step)
 
+  defp lift_path(env, type, proof, %Step{path: [:left]} = step),
+    do: lift_eq_left(env, type, proof, step)
+
+  defp lift_path(env, type, proof, %Step{path: [:right]} = step),
+    do: lift_eq_right(env, type, proof, step)
+
   defp lift_path(env, type, proof, %Step{path: [:arg | rest]} = step) do
     case {step.before, step.after} do
       {%Term.App{fun: fun, arg: left}, %Term.App{fun: after_fun, arg: right}}
@@ -118,6 +124,69 @@ defmodule Theoria.Rewrite.Proof do
   end
 
   defp lift_path(_env, _type, _proof, _step), do: {:error, :unsupported_path}
+
+  defp lift_eq_left(env, proposition_type, proof, step) do
+    case {step.before, step.after} do
+      {%Term.Eq{type: value_type, left: left, right: right},
+       %Term.Eq{type: after_type, left: _after_left, right: after_right}}
+      when value_type == after_type and right == after_right ->
+        motive =
+          Term.lam(
+            :z,
+            value_type,
+            Term.eq(
+              Term.shift(proposition_type, 1),
+              Term.eq(Term.shift(value_type, 1), Term.shift(left, 1), Term.shift(right, 1)),
+              Term.eq(Term.shift(value_type, 1), Term.bvar(0), Term.shift(right, 1))
+            )
+          )
+
+        check_lifted(
+          env,
+          proposition_type,
+          Term.eq_rec(value_type, motive, Term.refl(step.before), proof),
+          step
+        )
+
+      _ ->
+        {:error, :unsupported_path}
+    end
+  end
+
+  defp lift_eq_right(env, proposition_type, proof, step) do
+    case {step.before, step.after} do
+      {%Term.Eq{type: value_type, left: left, right: right},
+       %Term.Eq{type: after_type, left: after_left, right: _after_right}}
+      when value_type == after_type and left == after_left ->
+        motive =
+          Term.lam(
+            :z,
+            value_type,
+            Term.eq(
+              Term.shift(proposition_type, 1),
+              Term.eq(Term.shift(value_type, 1), Term.shift(left, 1), Term.shift(right, 1)),
+              Term.eq(Term.shift(value_type, 1), Term.shift(left, 1), Term.bvar(0))
+            )
+          )
+
+        check_lifted(
+          env,
+          proposition_type,
+          Term.eq_rec(value_type, motive, Term.refl(step.before), proof),
+          step
+        )
+
+      _ ->
+        {:error, :unsupported_path}
+    end
+  end
+
+  defp check_lifted(env, type, candidate, step) do
+    case Kernel.check(env, candidate, Term.eq(type, step.before, step.after)) do
+      :ok -> {:ok, candidate}
+      {:error, _reason} -> {:error, :kernel_rejected}
+    end
+  end
 
   defp lift_app_arg(env, type, proof, step) do
     case {step.before, step.after} do

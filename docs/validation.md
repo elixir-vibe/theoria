@@ -123,6 +123,19 @@ From Mix:
 mix theoria.theorems MyApp.Proofs
 ```
 
+## Kernel differential reports
+
+Use `mix theoria.kernel.check` for production/reference kernel assurance. It covers curated infer/check/normalize/defeq cases, rejection cases, theorem modules, generated artifacts, indexed artifacts, reference replay of the Prelude environment, and replay of environments extended with generated and indexed artifacts.
+
+Coverage and JSON modes are intended for CI and tooling:
+
+```bash
+mix theoria.kernel.check --coverage
+mix theoria.kernel.check --json --coverage
+```
+
+The JSON output is encoded through Jason encoders and includes structured artifact replay counts and skip entries. A skipped artifact means it was not replayed as an installed declaration in that environment; it is not silently treated as checked. Rewrite/simp remain untrusted search even when these reports pass—the trusted boundary is still the final kernel-checked artifact or theorem declaration.
+
 After adding checks, run:
 
 ```bash

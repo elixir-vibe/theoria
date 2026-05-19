@@ -56,7 +56,7 @@ Definitional equality compares normalized core terms through `Theoria.Term.equiv
 
 ## Differential assurance
 
-`Theoria.Kernel.Differential` compares production kernel results against `Theoria.Kernel.Reference` on the curated kernel corpus, including Bool/Nat/List/Vec examples, rejected inference/checking cases, generated equation artifacts, explicit indexed matcher artifacts, the built-in theorem modules, and reference replay of environment declarations. Property tests also generate closed Bool, Nat, List Bool, and Vec Bool terms, plus generated equalities and List eliminator applications, then compare production inference, checking, and normalization with the reference path.
+`Theoria.Kernel.Differential` compares production kernel results against `Theoria.Kernel.Reference` on the curated kernel corpus, including Bool/Nat/List/Vec examples, rejected inference/checking cases, generated equation artifacts, explicit indexed matcher artifacts, the built-in theorem modules, reference replay of environment declarations, and replay of environments extended with generated artifacts. Property tests also generate closed Bool, Nat, List Bool, Vec Bool, and typed dependent fragments, plus generated equalities and List eliminator applications, then compare production inference, checking, and normalization with the reference path.
 
 Run it with:
 
@@ -64,6 +64,10 @@ Run it with:
 mix theoria.kernel.check
 mix theoria.kernel.check --verbose
 mix theoria.kernel.check --json
+mix theoria.kernel.check --coverage
+mix theoria.kernel.check --json --coverage
 ```
+
+Verbose and coverage modes report ordinary environment replay separately from generated-artifact replay. Artifact replay installs generated and indexed equation artifacts into suitable environments and then replays those declarations through the reference path. Any skipped artifact is reported by structured identity and reason; a skip is not a proof failure, but it marks a boundary that was not replayed as an installed declaration.
 
 This is assurance groundwork, not a formal proof that the Elixir kernel is correct. The goal is to keep the maintained source Elixir-first while adding an independent, explicit, slower reference path that catches regressions in the trusted kernel.

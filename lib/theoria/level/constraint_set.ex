@@ -32,13 +32,6 @@ defmodule Theoria.Level.ConstraintSet do
     end
   end
 
-  @spec explain(t()) :: [map()]
-  def explain(%__MODULE__{constraints: constraints}) do
-    Enum.map(constraints, fn constraint ->
-      %{
-        constraint: constraint,
-        solved?: Solver.solve?(constraint)
-      }
-    end)
-  end
+  @spec explain(t()) :: [Solver.Explanation.t()]
+  def explain(%__MODULE__{constraints: constraints}), do: Enum.map(constraints, &Solver.explain/1)
 end

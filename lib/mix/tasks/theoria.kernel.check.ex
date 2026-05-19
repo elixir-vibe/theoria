@@ -34,7 +34,11 @@ defmodule Mix.Tasks.Theoria.Kernel.Check do
     if Keyword.get(opts, :json, false) do
       output =
         if Keyword.get(opts, :coverage, false) do
-          %{report: report, coverage: Coverage.summary(env, report)}
+          %{
+            report: report,
+            coverage: Coverage.summary(env, report),
+            artifact_replay: artifact_replay_json(report)
+          }
         else
           report
         end
@@ -53,6 +57,15 @@ defmodule Mix.Tasks.Theoria.Kernel.Check do
       Mix.shell().info("✓ replay checks: #{report.replay_count}")
       Mix.shell().info("- replay skipped: #{report.replay_skipped}")
       Mix.shell().info("✓ artifact replay checks: #{report.artifact_replay_count}")
+
+      Mix.shell().info(
+        "  generated artifact replay checks: #{report.generated_artifact_replay_count}"
+      )
+
+      Mix.shell().info(
+        "  indexed artifact replay checks: #{report.indexed_artifact_replay_count}"
+      )
+
       Mix.shell().info("- artifact replay skipped: #{report.artifact_replay_skipped}")
       maybe_print_verbose(report, opts)
       maybe_print_coverage(env, report, opts)
@@ -72,11 +85,33 @@ defmodule Mix.Tasks.Theoria.Kernel.Check do
       Mix.shell().info("  replay=#{report.replay_count} skipped=#{report.replay_skipped}")
 
       Mix.shell().info(
-        "  artifact_replay=#{report.artifact_replay_count} skipped=#{report.artifact_replay_skipped}"
+        "  artifact_replay=#{report.artifact_replay_count} generated=#{report.generated_artifact_replay_count} indexed=#{report.indexed_artifact_replay_count} skipped=#{report.artifact_replay_skipped}"
       )
+
+      print_artifact_replay_skips(report.artifact_replay_skips)
 
       Mix.shell().info("  failures=#{length(report.failures)}")
     end
+  end
+
+  defp artifact_replay_json(report) do
+    %{
+      checked: report.artifact_replay_count,
+      generated_checked: report.generated_artifact_replay_count,
+      indexed_checked: report.indexed_artifact_replay_count,
+      skipped: report.artifact_replay_skips,
+      failures: report.failures
+    }
+  end
+
+  defp print_artifact_replay_skips([]), do: :ok
+
+  defp print_artifact_replay_skips(skips) do
+    Mix.shell().info("  artifact replay skipped:")
+
+    Enum.each(skips, fn skip ->
+      Mix.shell().info("    - #{inspect(skip.name)}: #{skip.reason} #{inspect(skip.details)}")
+    end)
   end
 
   defp maybe_print_coverage(env, report, opts) do

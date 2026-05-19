@@ -13,6 +13,10 @@ Post-0.4 development toward stronger kernel assurance and deeper proof automatio
 - Extended proof-producing rewrite support to nested application paths and made binder-path proof limits explicit.
 - Added typed generated-term property coverage for dependent fragments.
 - Added replay checks for environments extended with generated and indexed artifacts.
+- Fixed universe-parameter installation for polymorphic generated artifacts.
+- Added structured artifact replay skip reporting and richer JSON coverage output.
+- Added universe solver explanations and a symbolic regression matrix.
+- Added equality-side rewrite proof lifting for equality terms.
 
 ## 0.4.0
 

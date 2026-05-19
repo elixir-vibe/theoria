@@ -1,3 +1,16 @@
+defimpl Jason.Encoder, for: Theoria.Kernel.ArtifactReplay.Skip do
+  def encode(skip, opts) do
+    Jason.Encode.map(
+      %{
+        name: inspect(skip.name),
+        reason: skip.reason,
+        details: inspect(skip.details)
+      },
+      opts
+    )
+  end
+end
+
 defimpl Jason.Encoder, for: Theoria.Kernel.Differential.Report do
   def encode(report, opts) do
     Jason.Encode.map(
@@ -14,6 +27,9 @@ defimpl Jason.Encoder, for: Theoria.Kernel.Differential.Report do
         replay_skipped: report.replay_skipped,
         artifact_replay_checks: report.artifact_replay_count,
         artifact_replay_skipped: report.artifact_replay_skipped,
+        generated_artifact_replay_checks: report.generated_artifact_replay_count,
+        indexed_artifact_replay_checks: report.indexed_artifact_replay_count,
+        artifact_replay_skips: report.artifact_replay_skips,
         failures: Enum.map(report.failures, &encode_failure/1)
       },
       opts

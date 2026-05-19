@@ -25,6 +25,8 @@ defmodule Mix.Tasks.Theoria.Kernel.CheckTest do
     assert output =~ "✓ replay checks:"
     assert output =~ "- replay skipped:"
     assert output =~ "✓ artifact replay checks:"
+    assert output =~ "generated artifact replay checks:"
+    assert output =~ "indexed artifact replay checks:"
     assert output =~ "- artifact replay skipped:"
   end
 
@@ -71,6 +73,7 @@ defmodule Mix.Tasks.Theoria.Kernel.CheckTest do
     assert output =~ "\"indexed_artifact_checks\""
     assert output =~ "\"replay_checks\""
     assert output =~ "\"artifact_replay_checks\""
+    assert output =~ "\"generated_artifact_replay_checks\""
     assert output =~ "\"failures\":[]"
   end
 
@@ -84,6 +87,7 @@ defmodule Mix.Tasks.Theoria.Kernel.CheckTest do
 
     assert output =~ "\"report\""
     assert output =~ "\"coverage\""
+    assert output =~ "\"artifact_replay\""
     assert output =~ "\"supported_term_constructors\""
   end
 end

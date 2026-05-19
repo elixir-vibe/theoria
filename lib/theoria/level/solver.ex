@@ -3,12 +3,19 @@ defmodule Theoria.Level.Solver do
 
   alias Theoria.Level
   alias Theoria.Level.{Constraint, Max, Succ}
+  alias Theoria.Level.Solver.Explanation
 
   @spec leq?(Level.t(), Level.t()) :: boolean()
   def leq?(left, right), do: solve?(Constraint.leq(left, right))
 
   @spec solve?(Constraint.t()) :: boolean()
   def solve?(%Constraint{} = constraint), do: solve?(constraint, MapSet.new())
+
+  @spec explain(Constraint.t()) :: Explanation.t()
+  def explain(%Constraint{} = constraint) do
+    {status, rule} = explain_constraint(constraint.left, constraint.right)
+    %Explanation{constraint: constraint, status: status, rule: rule}
+  end
 
   defp solve?(%Constraint{} = constraint, seen) do
     key = {constraint.left, constraint.right}
@@ -23,6 +30,37 @@ defmodule Theoria.Level.Solver do
   defp solve_unseen?(%Constraint{left: left, right: right}, seen) do
     direct_solution?(left, right) or decompose?(left, right, seen)
   end
+
+  defp explain_constraint(left, right) do
+    cond do
+      Level.equal?(left, right) -> {:solved, :reflexive}
+      Level.zero?(left) -> {:solved, :zero}
+      closed_leq?(left, right) -> {:solved, :closed}
+      true -> explain_decomposition(left, right)
+    end
+  end
+
+  defp explain_decomposition(%Succ{} = left, %Succ{} = right) do
+    if decompose?(left, right, MapSet.new()), do: {:solved, :succ}, else: {:unsolved, :none}
+  end
+
+  defp explain_decomposition(left, %Succ{} = right) do
+    if decompose?(left, right, MapSet.new()), do: {:solved, :succ_right}, else: {:unsolved, :none}
+  end
+
+  defp explain_decomposition(%Max{} = left, right) do
+    if decompose?(left, right, MapSet.new()), do: {:solved, :max_upper}, else: {:unsolved, :none}
+  end
+
+  defp explain_decomposition(left, %Max{} = right) do
+    cond do
+      solve?(Constraint.leq(left, right.left)) -> {:solved, :max_left}
+      solve?(Constraint.leq(left, right.right)) -> {:solved, :max_right}
+      true -> {:unsolved, :none}
+    end
+  end
+
+  defp explain_decomposition(_left, _right), do: {:unsolved, :none}
 
   defp direct_solution?(left, right) do
     Level.equal?(left, right) or Level.zero?(left) or closed_leq?(left, right)

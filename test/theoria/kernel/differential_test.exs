@@ -15,10 +15,10 @@ defmodule Theoria.Kernel.DifferentialTest do
     assert report.check_count > 0
   end
 
-  test "reference checker reports unsupported terms explicitly" do
+  test "reference checker covers let terms" do
     {:ok, env} = Prelude.env()
-    unsupported = Term.let(:x, Term.const(:Bool), Term.const(true), Term.bvar(0))
+    term = Term.let(:x, Term.const(:Bool), Term.const(true), Term.bvar(0))
 
-    assert {:error, %{reason: :unsupported_reference_term}} = Reference.infer(env, unsupported)
+    assert {:ok, Term.const(:Bool)} == Reference.infer(env, term)
   end
 end

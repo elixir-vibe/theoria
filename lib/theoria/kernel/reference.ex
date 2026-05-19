@@ -7,7 +7,7 @@ defmodule Theoria.Kernel.Reference do
   alias Theoria.Level
   alias Theoria.Normalize
   alias Theoria.Term
-  alias Theoria.Term.{App, BVar, Const, Eq, Forall, Lam, Refl, Sort}
+  alias Theoria.Term.{App, BVar, Const, Eq, EqRec, Forall, Lam, Let, Refl, Sort}
 
   @type result :: {:ok, Term.t()} | {:error, Error.t()}
 
@@ -64,6 +64,18 @@ defmodule Theoria.Kernel.Reference do
     end
   end
 
+  def infer(%Env{} = env, %Context{} = context, %Let{
+        name: name,
+        type: type,
+        value: value,
+        body: body
+      }) do
+    case infer_sort(env, context, type) do
+      {:ok, %Sort{}} -> infer_checked_let(env, context, name, type, value, body)
+      {:error, _reason} = error -> error
+    end
+  end
+
   def infer(%Env{} = env, %Context{} = context, %Eq{type: type, left: left, right: right}) do
     with {:ok, %Sort{}} <- infer_sort(env, context, type),
          :ok <- check(env, context, left, type),
@@ -78,7 +90,39 @@ defmodule Theoria.Kernel.Reference do
     end
   end
 
+  def infer(%Env{} = env, %Context{} = context, %EqRec{} = eq_rec) do
+    infer_eq_rec(env, context, eq_rec)
+  end
+
   def infer(%Env{}, %Context{}, term), do: error(:unsupported_reference_term, term: term)
+
+  defp infer_checked_let(env, context, name, type, value, body) do
+    case check(env, context, value, type) do
+      :ok ->
+        body_type = infer(env, Context.push(context, name, type), body)
+        substitute_let_type(body_type, value)
+
+      {:error, _reason} = error ->
+        error
+    end
+  end
+
+  defp substitute_let_type({:ok, body_type}, value), do: {:ok, Term.subst_top(body_type, value)}
+  defp substitute_let_type({:error, _reason} = error, _value), do: error
+
+  defp infer_eq_rec(env, context, %EqRec{type: type, motive: motive, base: base, proof: proof}) do
+    with {:ok, %Sort{}} <- infer_sort(env, context, type),
+         {:ok, %Eq{type: proof_type, left: left, right: right}} <-
+           infer_equality_proof(env, context, proof),
+         :ok <- ensure_defeq(env, proof_type, type, :equality_type_mismatch),
+         left_target = Term.app(motive, left),
+         right_target = Term.app(motive, right),
+         {:ok, %Sort{}} <- infer_sort(env, context, left_target),
+         {:ok, %Sort{}} <- infer_sort(env, context, right_target),
+         :ok <- check(env, context, base, left_target) do
+      {:ok, right_target}
+    end
+  end
 
   defp infer_application(env, context, %Forall{domain: domain, body: body}, arg) do
     with :ok <- check(env, context, arg, domain) do
@@ -117,6 +161,21 @@ defmodule Theoria.Kernel.Reference do
   defp check_lambda(env, context, lam, expected) do
     case infer(env, context, lam) do
       {:ok, actual} -> ensure_defeq(env, actual, expected, :type_mismatch)
+      {:error, _reason} = error -> error
+    end
+  end
+
+  defp infer_equality_proof(env, context, proof) do
+    case infer(env, context, proof) do
+      {:ok, proof_type} -> normalize_equality(proof_type, env)
+      {:error, _reason} = error -> error
+    end
+  end
+
+  defp normalize_equality(proof_type, env) do
+    case Normalize.whnf(env, proof_type) do
+      {:ok, %Eq{} = equality} -> {:ok, equality}
+      {:ok, other} -> error(:expected_equality, type: other)
       {:error, _reason} = error -> error
     end
   end

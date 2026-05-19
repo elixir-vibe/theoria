@@ -6,7 +6,7 @@ defmodule Theoria.Kernel.Corpus do
   @type infer_case :: {atom(), Term.t()}
   @type check_case :: {atom(), Term.t(), Term.t()}
 
-  @doc "Returns reference-kernel inference cases that avoid unsupported constructs."
+  @doc "Returns reference-kernel inference cases."
   @spec infer_cases() :: [infer_case()]
   def infer_cases do
     bool = Term.const(:Bool)
@@ -14,7 +14,9 @@ defmodule Theoria.Kernel.Corpus do
     zero = Term.const(:zero)
     bool_true = Term.const(true)
     type_zero = Term.sort(0)
-    identity_type = Term.forall(:a, type_zero, Term.arrow(Term.bvar(0), Term.bvar(0)))
+    bvar_zero = Term.bvar(0)
+    identity_type = Term.forall(:a, type_zero, Term.arrow(bvar_zero, bvar_zero))
+    bool_refl = Term.refl(bool_true)
 
     [
       {:type_zero, type_zero},
@@ -26,11 +28,13 @@ defmodule Theoria.Kernel.Corpus do
       {:bool_not_true, Term.app(Term.const(:bool_not), bool_true)},
       {:identity_type, identity_type},
       {:bool_equality_type, Term.eq(bool, bool_true, bool_true)},
-      {:bool_refl, Term.refl(bool_true)}
+      {:bool_refl, bool_refl},
+      {:let_true, Term.let(:b, bool, bool_true, bvar_zero)},
+      {:eq_rec_refl, eq_rec_refl(bool, bool_true, bool_refl)}
     ]
   end
 
-  @doc "Returns reference-kernel checking cases that avoid unsupported constructs."
+  @doc "Returns reference-kernel checking cases."
   @spec check_cases() :: [check_case()]
   def check_cases do
     bool = Term.const(:Bool)
@@ -38,15 +42,25 @@ defmodule Theoria.Kernel.Corpus do
     zero = Term.const(:zero)
     bool_true = Term.const(true)
     bool_false = Term.const(false)
-    bool_identity = Term.lam(:b, bool, Term.bvar(0))
+    bvar_zero = Term.bvar(0)
+    bool_refl = Term.refl(bool_true)
+    bool_equality = Term.eq(bool, bool_true, bool_true)
+    bool_identity = Term.lam(:b, bool, bvar_zero)
     bool_identity_type = Term.arrow(bool, bool)
 
     [
       {:zero_has_nat, zero, nat},
       {:true_has_bool, bool_true, bool},
       {:false_has_bool, bool_false, bool},
-      {:bool_refl_checks, Term.refl(bool_true), Term.eq(bool, bool_true, bool_true)},
-      {:bool_identity_checks, bool_identity, bool_identity_type}
+      {:bool_refl_checks, bool_refl, bool_equality},
+      {:bool_identity_checks, bool_identity, bool_identity_type},
+      {:let_true_checks, Term.let(:b, bool, bool_true, bvar_zero), bool},
+      {:eq_rec_refl_checks, eq_rec_refl(bool, bool_true, bool_refl), bool_equality}
     ]
+  end
+
+  defp eq_rec_refl(type, value, proof) do
+    motive = Term.lam(:z, type, Term.eq(Term.shift(type, 1), Term.bvar(0), Term.bvar(0)))
+    Term.eq_rec(type, motive, Term.refl(value), proof)
   end
 end

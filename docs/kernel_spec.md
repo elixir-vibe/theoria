@@ -16,7 +16,7 @@ Automation such as DSL expansion, theorem macros, equation compilation, matcher 
 
 ## Supported reference fragment
 
-The first reference checker covers these core terms:
+The reference checker now covers these core terms:
 
 - `Sort`
 - `Const`
@@ -24,18 +24,19 @@ The first reference checker covers these core terms:
 - `Lam`
 - `Forall`
 - `BVar`
+- `Let`
 - `Eq`
 - `Refl`
-
-The first fragment intentionally leaves these for later phases:
-
-- `Let`
 - `EqRec`
+
+Later phases still need deeper independent coverage for:
+
 - full inductive/recursor reference validation
 - matcher declarations
 - environment replay
+- a reference normalizer independent of `Theoria.Normalize`
 
-The production kernel supports more than the reference checker. Differential checks therefore use a curated corpus that stays inside the supported fragment.
+Differential checks use a curated corpus that stays inside the explicitly supported reference fragment.
 
 ## Judgments
 

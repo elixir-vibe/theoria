@@ -96,7 +96,7 @@ Theoria.Rewrite.Database.from_env_equations(env, realize: :lazy)
 mix theoria.kernel.check
 ```
 
-The check compares the production kernel with `Theoria.Kernel.Reference`, a slower explicit checker for the first core fragment (`Sort`, `Const`, `App`, `Lam`, `Forall`, `BVar`, `Eq`, `Refl`). The maintained source remains Elixir; Lean remains generated external oracle output, not a hand-written source of truth.
+The check compares the production kernel with `Theoria.Kernel.Reference`, a slower explicit checker for the core term fragment (`Sort`, `Const`, `App`, `Lam`, `Forall`, `BVar`, `Let`, `Eq`, `Refl`, `EqRec`). The maintained source remains Elixir; Lean remains generated external oracle output, not a hand-written source of truth.
 
 ## Stability
 

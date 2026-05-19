@@ -8,14 +8,16 @@ defmodule Theoria.Kernel.Spec do
     lam: [:name, :domain, :body],
     forall: [:name, :domain, :body],
     bvar: [:index],
+    let: [:name, :type, :value, :body],
     eq: [:type, :left, :right],
-    refl: [:value]
+    refl: [:value],
+    eq_rec: [:type, :motive, :base, :proof]
   ]
 
   @judgments [:infer, :check, :defeq]
 
   @supported_terms Keyword.keys(@syntax)
-  @unsupported_terms [:let, :eq_rec]
+  @unsupported_terms []
 
   @doc "Returns the term constructors in the first reference-checker fragment."
   @spec syntax() :: keyword([atom()])

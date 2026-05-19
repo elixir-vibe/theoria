@@ -7,6 +7,7 @@ defmodule Theoria.Kernel.SpecTest do
     assert :sort in Keyword.keys(Spec.syntax())
     assert :refl in Keyword.keys(Spec.syntax())
     assert :infer in Spec.judgments()
-    assert :eq_rec in Spec.unsupported_terms()
+    assert :eq_rec in Keyword.keys(Spec.syntax())
+    assert Spec.unsupported_terms() == []
   end
 end

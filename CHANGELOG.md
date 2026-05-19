@@ -15,7 +15,7 @@ Post-0.3 development toward proof-producing rewrite/simp automation.
 - Added lazy rewrite-rule realization with `realize: :lazy`.
 - Added proof-status diagnostics on rewrite and simp steps.
 - Added JSON output for equation realization and simp proof examples.
-- Added Elixir-authored kernel spec metadata, a first reference checker fragment, differential checks, and `mix theoria.kernel.check`.
+- Added Elixir-authored kernel spec metadata, a reference checker for core terms, differential checks, and `mix theoria.kernel.check`.
 - Updated equality chains to combine available step proofs with transitivity.
 - Added trusted boundary documentation for kernel-checked artifacts versus untrusted automation.
 

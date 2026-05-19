@@ -21,6 +21,8 @@ defmodule Theoria.Kernel.Corpus do
     bvar_zero = Term.bvar(0)
     identity_type = Term.forall(:a, type_zero, Term.arrow(bvar_zero, bvar_zero))
     bool_refl = Term.refl(bool_true)
+    list_bool = list_bool_example()
+    vec_bool = vec_bool_example()
 
     [
       {:type_zero, type_zero},
@@ -28,13 +30,15 @@ defmodule Theoria.Kernel.Corpus do
       {:nat_constant, nat},
       {:zero_constructor, zero},
       {:true_constructor, bool_true},
-      {:succ_zero, Term.app(Term.const(:succ), zero)},
+      {:succ_zero, succ(zero)},
       {:bool_not_true, Term.app(Term.const(:bool_not), bool_true)},
       {:identity_type, identity_type},
       {:bool_equality_type, Term.eq(bool, bool_true, bool_true)},
       {:bool_refl, bool_refl},
       {:let_true, Term.let(:b, bool, bool_true, bvar_zero)},
-      {:eq_rec_refl, eq_rec_refl(bool, bool_true, bool_refl)}
+      {:eq_rec_refl, eq_rec_refl(bool, bool_true, bool_refl)},
+      {:list_bool_example, list_bool},
+      {:vec_bool_example, vec_bool}
     ]
   end
 
@@ -59,7 +63,9 @@ defmodule Theoria.Kernel.Corpus do
       {:bool_refl_checks, bool_refl, bool_equality},
       {:bool_identity_checks, bool_identity, bool_identity_type},
       {:let_true_checks, Term.let(:b, bool, bool_true, bvar_zero), bool},
-      {:eq_rec_refl_checks, eq_rec_refl(bool, bool_true, bool_refl), bool_equality}
+      {:eq_rec_refl_checks, eq_rec_refl(bool, bool_true, bool_refl), bool_equality},
+      {:list_bool_example_checks, list_bool_example(), list_bool_type()},
+      {:vec_bool_example_checks, vec_bool_example(), vec_bool_type(succ(zero))}
     ]
   end
 
@@ -88,6 +94,8 @@ defmodule Theoria.Kernel.Corpus do
     [
       {:true_is_not_nat, bool_true, nat},
       {:zero_is_not_bool, zero, bool},
+      {:list_nil_is_not_bool, list_nil_bool(), bool},
+      {:vec_nil_has_wrong_index, vec_nil_bool(), vec_bool_type(succ(zero))},
       {:refl_true_not_false_equality, Term.refl(bool_true),
        Term.eq(bool, bool_true, Term.const(false))}
     ]
@@ -102,13 +110,21 @@ defmodule Theoria.Kernel.Corpus do
     bvar_zero = Term.bvar(0)
     identity = Term.lam(:x, bool, bvar_zero)
     bool_refl = Term.refl(bool_true)
+    list_bool = list_bool_example()
 
     [
       {:beta_identity_true, Term.app(identity, bool_true)},
       {:let_true, Term.let(:b, bool, bool_true, bvar_zero)},
       {:bool_not_true, Term.app(Term.const(:bool_not), bool_true)},
-      {:succ_zero, Term.app(Term.const(:succ), zero)},
-      {:eq_rec_refl, eq_rec_refl(bool, bool_true, bool_refl)}
+      {:succ_zero, succ(zero)},
+      {:eq_rec_refl, eq_rec_refl(bool, bool_true, bool_refl)},
+      {:list_length_bool_example,
+       Term.app(Term.app(Term.const(:list_length, [1]), bool), list_bool)},
+      {:list_append_nil_left,
+       Term.app(
+         Term.app(Term.app(Term.const(:list_append, [1]), bool), list_nil_bool()),
+         list_bool
+       )}
     ]
   end
 
@@ -120,11 +136,15 @@ defmodule Theoria.Kernel.Corpus do
     bool_false = Term.const(false)
     bvar_zero = Term.bvar(0)
     identity = Term.lam(:x, bool, bvar_zero)
+    zero = Term.const(:zero)
 
     [
       {:beta_identity_true, Term.app(identity, bool_true), bool_true},
       {:let_true, Term.let(:b, bool, bool_true, bvar_zero), bool_true},
-      {:bool_not_true, Term.app(Term.const(:bool_not), bool_true), bool_false}
+      {:bool_not_true, Term.app(Term.const(:bool_not), bool_true), bool_false},
+      {:true_not_defeq_false, bool_true, bool_false},
+      {:zero_not_defeq_succ_zero, zero, succ(zero)},
+      {:list_append_nil_left, list_append_nil_left(list_bool_example()), list_bool_example()}
     ]
   end
 
@@ -132,4 +152,48 @@ defmodule Theoria.Kernel.Corpus do
     motive = Term.lam(:z, type, Term.eq(Term.shift(type, 1), Term.bvar(0), Term.bvar(0)))
     Term.eq_rec(type, motive, Term.refl(value), proof)
   end
+
+  defp list_bool_example do
+    list_cons_bool(Term.const(true), list_nil_bool())
+  end
+
+  defp list_bool_type do
+    Term.app(Term.const(:List, [1]), Term.const(:Bool))
+  end
+
+  defp list_nil_bool do
+    Term.app(Term.const(:list_nil, [1]), Term.const(:Bool))
+  end
+
+  defp list_cons_bool(head, tail) do
+    Term.app(Term.app(Term.app(Term.const(:list_cons, [1]), Term.const(:Bool)), head), tail)
+  end
+
+  defp list_append_nil_left(term) do
+    Term.app(
+      Term.app(Term.app(Term.const(:list_append, [1]), Term.const(:Bool)), list_nil_bool()),
+      term
+    )
+  end
+
+  defp vec_bool_example do
+    vec_cons_bool(Term.const(true), Term.const(:zero), vec_nil_bool())
+  end
+
+  defp vec_bool_type(index) do
+    Term.app(Term.app(Term.const(:Vec, [1]), Term.const(:Bool)), index)
+  end
+
+  defp vec_nil_bool do
+    Term.app(Term.const(:vec_nil, [1]), Term.const(:Bool))
+  end
+
+  defp vec_cons_bool(head, index, tail) do
+    Term.app(
+      Term.app(Term.app(Term.app(Term.const(:vec_cons, [1]), Term.const(:Bool)), head), index),
+      tail
+    )
+  end
+
+  defp succ(term), do: Term.app(Term.const(:succ), term)
 end

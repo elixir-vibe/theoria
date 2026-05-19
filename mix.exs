@@ -43,6 +43,7 @@ defmodule Theoria.MixProject do
         "reach.check --arch --smells",
         "dialyzer",
         "theoria.validate",
+        "theoria.kernel.check",
         "test"
       ]
     ]
@@ -74,6 +75,7 @@ defmodule Theoria.MixProject do
         "docs/inductives.md",
         "docs/validation.md",
         "docs/equations.md",
+        "docs/kernel_spec.md",
         "docs/lean_validation.md",
         "docs/lean_alignment.md",
         "docs/lean_roadmap.md",

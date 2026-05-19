@@ -88,6 +88,16 @@ Theoria.Rewrite.Database.from_env_equations(env, realize: :lazy)
 
 `Theoria.Equality.Chain` records the shape needed for multi-step equality traces. The current implementation realizes chains by checking definitional equality with `refl`; future work can replace that with explicit transitivity/congruence proof terms without changing the simp result boundary.
 
+## Kernel assurance groundwork
+
+0.4 starts an Elixir-first kernel assurance track:
+
+```bash
+mix theoria.kernel.check
+```
+
+The check compares the production kernel with `Theoria.Kernel.Reference`, a slower explicit checker for the first core fragment (`Sort`, `Const`, `App`, `Lam`, `Forall`, `BVar`, `Eq`, `Refl`). The maintained source remains Elixir; Lean remains generated external oracle output, not a hand-written source of truth.
+
 ## Stability
 
 This line is still experimental. Rewrite/simp search is untrusted; only the final proof artifact or installed theorem matters after kernel checking.

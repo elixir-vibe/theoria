@@ -4,6 +4,8 @@
 
 Post-0.5 development toward deeper proof-producing automation and stronger generated-term assurance.
 
+- Added an experimental typed generator module for kernel/reference differential assurance.
+
 ## 0.5.0
 
 Released 2026-05-18.

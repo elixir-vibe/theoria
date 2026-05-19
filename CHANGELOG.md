@@ -1,24 +1,16 @@
 # Changelog
 
-## Unreleased
+## 0.7.0
 
-Post-0.6 development toward deeper replay and environment assurance.
+Kernel/reference assurance depth, replay diagnostics, and downstream smoke coverage.
 
-- Added structured reference replay failure diagnostics with declaration phase, kind, direct/transitive dependency context, missing dependencies, and details.
-- Added a deterministic environment corpus with declaration-chain, let-chain, theorem-chain, and universe-polymorphic replay/normalization differential checks.
-- Added structured environment corpus reports and `mix theoria.kernel.check --environment-depth`.
-- Added invalid environment corpus checks for native environment validation rejection assurance.
-- Added replay-order and dependency-path diagnostics to reference replay failures.
-- Strengthened invalid environment assurance to match expected rejection reasons and cover duplicate declarations, bad theorem proofs, and unknown dependencies.
-- Added `Theoria.Kernel.AssuranceSummary` and `mix theoria.kernel.check --assurance-summary`.
-- Added metadata/reduction replay checks and environment corpus report accessors.
-- Added a downstream Mix project smoke fixture covering dependency compilation, theorem task usage, kernel checks, and docs.
+- Added structured reference replay diagnostics with declaration phase, kind, dependency context, dependency path, replay order, and pending declarations.
+- Added deterministic environment assurance for declaration, let, theorem, and universe-polymorphic chains with configurable `--environment-depth`.
+- Added invalid environment rejection assurance with expected reasons for malformed indexes, bad declaration values, bad theorem proofs, duplicate declarations, and unknown dependencies.
+- Added structured metadata/reduction replay reports with source breakdowns for Prelude, generated environments, generated artifacts, indexed artifacts, and theorem modules.
+- Added `Theoria.Kernel.AssuranceSummary`, kernel/validation corpus summary structs, `docs/assurance.md`, and `mix theoria.kernel.check --assurance-summary` with coverage/JSON support.
 - Improved `mix theoria.theorems MODULE` to load downstream theorem modules directly.
-- Added kernel/validation corpus summary structs and `docs/assurance.md`.
-- Made `--assurance-summary` compose with `--coverage` for text and JSON output.
-- Added structured metadata replay reports with source breakdowns for Prelude, generated environments, artifacts, indexed artifacts, and theorem modules.
-- Added artifact replay source accessors and documented new assurance report JSON fields.
-- Added package file sanity coverage to keep fixtures/tests/build artifacts out of Hex package files.
+- Added downstream Mix project smoke coverage and package file boundary checks.
 
 ## 0.6.0
 

@@ -34,7 +34,7 @@ Before release preparation:
 - convert `## Unreleased` to `## 0.7.0`;
 - do not add release date lines;
 - keep notes user-facing and concise;
-- bump `mix.exs` from `0.7.0-dev` to `0.7.0` only when preparing the release commit.
+- confirm `mix.exs` version is `0.7.0` in the release commit.
 
 ## Release side effects
 

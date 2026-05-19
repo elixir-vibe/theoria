@@ -46,7 +46,7 @@ defmodule Theoria.RewriteTest do
              Rewrite.once_with_step(term, rule)
   end
 
-  test "equality-side rewrite steps can carry checked proof" do
+  test "equality-left rewrite steps can carry checked proof" do
     {:ok, env} = Prelude.env()
     zero = Term.const(:zero)
     equality = Term.eq(Term.const(:Nat), zero, zero)
@@ -55,6 +55,18 @@ defmodule Theoria.RewriteTest do
 
     assert {:ok, step} = Rewrite.once_with_step(term, rule)
     assert step.path == [:left]
+    assert %Term.EqRec{} = Proof.for_step(env, step)
+  end
+
+  test "equality-right rewrite steps can carry checked proof" do
+    {:ok, env} = Prelude.env()
+    bool_true = Term.const(true)
+    equality = Term.eq(Term.const(:Bool), bool_true, bool_true)
+    rule = Rule.new(:same_true, equality, proof: Term.refl(bool_true))
+    term = Term.eq(Term.const(:Bool), Term.const(false), bool_true)
+
+    assert {:ok, step} = Rewrite.once_with_step(term, rule)
+    assert step.path == [:right]
     assert %Term.EqRec{} = Proof.for_step(env, step)
   end
 

@@ -17,6 +17,8 @@ Post-0.4 development toward stronger kernel assurance and deeper proof automatio
 - Added structured artifact replay skip reporting and richer JSON coverage output.
 - Added universe solver explanations and a symbolic regression matrix.
 - Added equality-side rewrite proof lifting for equality terms.
+- Added Jason encoders for structured artifact replay reports.
+- Added regression coverage for explicit equality-chain transitivity proofs.
 
 ## 0.4.0
 

@@ -37,6 +37,7 @@ defmodule Theoria.Kernel.Differential do
       :generated_artifact_replay_count,
       :indexed_artifact_replay_count,
       :artifact_replay_skips,
+      :artifact_replay,
       :failures
     ]
     defstruct [
@@ -55,6 +56,7 @@ defmodule Theoria.Kernel.Differential do
       :generated_artifact_replay_count,
       :indexed_artifact_replay_count,
       :artifact_replay_skips,
+      :artifact_replay,
       :failures
     ]
 
@@ -75,6 +77,7 @@ defmodule Theoria.Kernel.Differential do
             generated_artifact_replay_count: non_neg_integer(),
             indexed_artifact_replay_count: non_neg_integer(),
             artifact_replay_skips: [ArtifactReplay.skip()],
+            artifact_replay: ArtifactReplay.t(),
             failures: [failure()]
           }
 
@@ -163,6 +166,7 @@ defmodule Theoria.Kernel.Differential do
       generated_artifact_replay_count: artifact_replay.generated_checked,
       indexed_artifact_replay_count: artifact_replay.indexed_checked,
       artifact_replay_skips: artifact_replay.skipped,
+      artifact_replay: artifact_replay,
       failures:
         infer_failures ++
           check_failures ++

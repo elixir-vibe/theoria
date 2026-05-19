@@ -37,7 +37,7 @@ defmodule Mix.Tasks.Theoria.Kernel.Check do
           %{
             report: report,
             coverage: Coverage.summary(env, report),
-            artifact_replay: artifact_replay_json(report)
+            artifact_replay: report.artifact_replay
           }
         else
           report
@@ -92,16 +92,6 @@ defmodule Mix.Tasks.Theoria.Kernel.Check do
 
       Mix.shell().info("  failures=#{length(report.failures)}")
     end
-  end
-
-  defp artifact_replay_json(report) do
-    %{
-      checked: report.artifact_replay_count,
-      generated_checked: report.generated_artifact_replay_count,
-      indexed_checked: report.indexed_artifact_replay_count,
-      skipped: report.artifact_replay_skips,
-      failures: report.failures
-    }
   end
 
   defp print_artifact_replay_skips([]), do: :ok

@@ -20,6 +20,8 @@ Post-0.3 development toward proof-producing rewrite/simp automation.
 - Added trusted boundary documentation and architecture policy guards for kernel-checked artifacts versus untrusted automation.
 - Hardened definitional equality so diagnostic binder names no longer affect de Bruijn alpha-equivalent terms.
 - Removed the unsound symbolic universe upper-bound shortcut and normalized universe `max` modulo commutativity/associativity for level equality.
+- Avoided atom creation from CLI input in theorem, equation, and simp Mix tasks.
+- Extracted matcher declaration admission into a trusted-adjacent kernel admission module.
 
 ## 0.3.0
 

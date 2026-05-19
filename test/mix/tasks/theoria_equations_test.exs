@@ -96,4 +96,15 @@ defmodule Mix.Tasks.Theoria.EquationsTest do
     assert output =~ "nat_add.eq_succ"
     assert output =~ "Installed 2 equation theorem(s)."
   end
+
+  test "does not create atoms for unknown equation names" do
+    Mix.Task.clear()
+    unknown = "unknown_equation_#{System.unique_integer([:positive])}"
+
+    assert_raise Mix.Error, ~r/unknown equation definition/, fn ->
+      capture_io(fn -> Equations.run([unknown]) end)
+    end
+
+    assert_raise ArgumentError, fn -> String.to_existing_atom(unknown) end
+  end
 end

@@ -83,14 +83,14 @@ defmodule Mix.Tasks.Theoria.Simp do
   end
 
   defp select_examples(names) do
-    available = Map.new(examples())
+    available = Map.new(examples(), fn {name, term} -> {Atom.to_string(name), {name, term}} end)
 
     Enum.map(names, fn name ->
-      key = String.to_atom(name)
-      {key, Map.fetch!(available, key)}
+      case Map.fetch(available, name) do
+        {:ok, example} -> example
+        :error -> Mix.raise("unknown simplification example #{name}")
+      end
     end)
-  rescue
-    KeyError -> Mix.raise("unknown simplification example")
   end
 
   defp examples do

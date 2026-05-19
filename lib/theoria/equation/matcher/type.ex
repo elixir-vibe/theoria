@@ -188,6 +188,12 @@ defmodule Theoria.Equation.Matcher.Type do
   @doc "Plans matcher declaration binders and body from a descriptor."
   @spec shape_from_descriptor(MatcherDescriptor.t()) :: {:ok, Shape.t()} | {:error, term()}
   def shape_from_descriptor(%MatcherDescriptor{} = descriptor) do
+    do_shape_from_descriptor(descriptor)
+  catch
+    {:matcher_type_error, reason} -> {:error, reason}
+  end
+
+  defp do_shape_from_descriptor(%MatcherDescriptor{} = descriptor) do
     alternatives = alternatives_from_descriptor(descriptor)
 
     with {:ok, plan} <- shape_plan(descriptor) do
@@ -202,14 +208,14 @@ defmodule Theoria.Equation.Matcher.Type do
         motive_type: Keyword.fetch!(plan, :motive_type),
         motive_binders: Keyword.get(plan, :motive_binders, []),
         motive_arguments: [],
-        motive_result: Term.const(:unplanned_motive_result),
+        motive_result: nil,
         discriminants: descriptor.discriminants,
         discriminant_binders: Keyword.fetch!(plan, :discriminant_binders),
         alternatives: alternatives,
         alternative_binders: Enum.map(alternatives, &{&1.binder_name, &1.binder_type}),
         result: Keyword.fetch!(plan, :result),
         recursor_arguments: [],
-        body: Term.const(:unplanned_matcher_body),
+        body: nil,
         recursor: descriptor.recursor,
         recursor_descriptor: descriptor.recursor_descriptor
       }
@@ -504,7 +510,7 @@ defmodule Theoria.Equation.Matcher.Type do
   defp alternative_binder_type(_descriptor, alternative, _position), do: alternative.result
 
   defp indexed_case_telescope(alternative),
-    do: indexed_case_telescope(alternative, Term.const(:unsupported_indexed_case))
+    do: indexed_case_telescope(alternative, alternative.result)
 
   defp indexed_case_telescope(alternative, result) do
     alternative.fields
@@ -744,7 +750,7 @@ defmodule Theoria.Equation.Matcher.Type do
     apply_recursor!(shape.recursor, shape.recursor_arguments)
   end
 
-  defp body_from_shape(%Shape{indexed?: true}), do: Term.const(:unsupported_indexed_matcher_body)
+  defp body_from_shape(%Shape{indexed?: true}), do: nil
 
   defp body_from_shape(%Shape{family: :bool, discriminants: [_, _]} = shape) do
     bool_binary_body(shape)
@@ -757,7 +763,7 @@ defmodule Theoria.Equation.Matcher.Type do
   defp apply_recursor!(recursor, arguments) do
     case RecursorApplication.build(recursor, arguments) do
       {:ok, term} -> term
-      {:error, reason} -> raise ArgumentError, "invalid recursor application: #{inspect(reason)}"
+      {:error, reason} -> throw({:matcher_type_error, {:invalid_recursor_application, reason}})
     end
   end
 
@@ -767,7 +773,7 @@ defmodule Theoria.Equation.Matcher.Type do
     index = Enum.find_index(binders, &(elem(&1, 0) == name))
 
     if is_nil(index) do
-      raise ArgumentError, "unknown matcher binder #{inspect(name)}"
+      throw({:matcher_type_error, {:unknown_matcher_binder, name}})
     end
 
     Term.bvar(length(binders) - index - 1)

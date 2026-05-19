@@ -43,7 +43,7 @@ defmodule Mix.Tasks.Theoria.Equations do
   defp parse_args(args) do
     case OptionParser.parse(args, strict: [install: :boolean, json: :boolean, realize: :boolean]) do
       {opts, names, []} ->
-        {:ok, opts, Enum.map(names, &String.to_atom/1)}
+        {:ok, opts, names}
 
       {_opts, _names, invalid} ->
         {:error, "invalid option(s): #{format_invalid_options(invalid)}"}
@@ -57,10 +57,12 @@ defmodule Mix.Tasks.Theoria.Equations do
   defp select_equations(env, []), do: Info.all(env)
 
   defp select_equations(env, names) do
+    available = Map.new(Info.all(env), &{Atom.to_string(&1.name), &1})
+
     Enum.map(names, fn name ->
-      case Info.fetch(env, name) do
+      case Map.fetch(available, name) do
         {:ok, info} -> info
-        {:error, reason} -> Mix.raise("unknown equation definition #{name}: #{inspect(reason)}")
+        :error -> Mix.raise("unknown equation definition #{name}")
       end
     end)
   end

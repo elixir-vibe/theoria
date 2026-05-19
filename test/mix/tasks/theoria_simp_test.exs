@@ -68,4 +68,15 @@ defmodule Mix.Tasks.Theoria.SimpTest do
 
     assert output =~ "proof: checked simp.normalize"
   end
+
+  test "does not create atoms for unknown example names" do
+    Mix.Task.clear()
+    unknown = "unknown_simp_example_#{System.unique_integer([:positive])}"
+
+    assert_raise Mix.Error, ~r/unknown simplification example/, fn ->
+      capture_io(fn -> Simp.run([unknown]) end)
+    end
+
+    assert_raise ArgumentError, fn -> String.to_existing_atom(unknown) end
+  end
 end

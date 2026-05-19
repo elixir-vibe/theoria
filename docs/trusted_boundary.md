@@ -1,6 +1,6 @@
 # Trusted boundary
 
-Theoria keeps the trusted boundary small. Automation may search, compile, plan, or render proof data, but the result matters only after the native kernel checks it. The Reach architecture policy enforces this directionally by forbidding the kernel layer from depending on DSL, library, rewrite/simp, Lean, or Mix task layers.
+Theoria keeps the trusted boundary small. Automation may search, compile, plan, or render proof data, but the result matters only after the native kernel checks it. The Reach architecture policy enforces this directionally by forbidding the kernel layer from depending on DSL, library, rewrite/simp, Lean, or Mix task layers. Trusted-adjacent declaration admission helpers such as `Theoria.Kernel.MatcherAdmission` keep metadata-specific admission checks outside the main type-checking module while still treating successful admission as part of the native trusted path.
 
 ## Trusted
 

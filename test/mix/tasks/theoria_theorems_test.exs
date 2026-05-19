@@ -108,4 +108,15 @@ defmodule Mix.Tasks.Theoria.TheoremsTest do
       capture_io(fn -> Theorems.run(["--bad"]) end)
     end
   end
+
+  test "does not create atoms for unknown theorem module names" do
+    Mix.Task.clear()
+    unknown = "Unknown.Theorem.Module.#{System.unique_integer([:positive])}"
+
+    assert_raise Mix.Error, ~r/unknown theorem module/, fn ->
+      capture_io(fn -> Theorems.run([unknown]) end)
+    end
+
+    assert_raise ArgumentError, fn -> String.to_existing_atom(unknown) end
+  end
 end

@@ -18,6 +18,8 @@ defmodule Theoria.Kernel do
   alias Theoria.Error
   alias Theoria.Inductive.Admission
   alias Theoria.Inductive.Spec
+  alias Theoria.Kernel.AdmissionChecks
+  alias Theoria.Kernel.MatcherAdmission
   alias Theoria.Kernel.RecursorRules
   alias Theoria.Kernel.TrustReport
   alias Theoria.Normalize
@@ -177,19 +179,7 @@ defmodule Theoria.Kernel do
     end
   end
 
-  def add_matcher(%Env{} = env, %MatcherSpec{} = spec) do
-    metadata = MatcherSpec.metadata(spec)
-
-    with :ok <- ensure_fresh_declaration(env, spec.name),
-         :ok <- ensure_universe_params(spec.level_params),
-         :ok <- ensure_matcher_metadata(metadata, spec),
-         :ok <- ensure_level_params(spec.type, spec.level_params),
-         :ok <- ensure_level_params(spec.value, spec.level_params),
-         {:ok, %Sort{}} <- infer_sort(env, Context.new(), spec.type),
-         :ok <- check(env, Context.new(), spec.value, spec.type) do
-      {:ok, Env.put_matcher(env, spec.name, spec.type, spec.value, spec.level_params, metadata)}
-    end
-  end
+  def add_matcher(%Env{} = env, %MatcherSpec{} = spec), do: MatcherAdmission.add(env, spec)
 
   def add_theorem(%Env{} = env, name, type, proof, universe_params \\ [])
       when is_list(universe_params) do
@@ -297,18 +287,7 @@ defmodule Theoria.Kernel do
     end
   end
 
-  defp ensure_universe_params(params) do
-    cond do
-      not Enum.all?(params, &is_atom/1) ->
-        error(:invalid_universe_parameters, params: params)
-
-      length(params) != MapSet.size(MapSet.new(params)) ->
-        error(:duplicate_universe_parameter, params: params)
-
-      true ->
-        :ok
-    end
-  end
+  defp ensure_universe_params(params), do: AdmissionChecks.ensure_universe_params(params)
 
   defp ensure_definition_metadata(nil, _name, _type, _value), do: :ok
 
@@ -325,31 +304,6 @@ defmodule Theoria.Kernel do
 
   defp ensure_definition_metadata(metadata, name, _type, _value) do
     error(:invalid_declaration, kind: :definition_metadata, name: name, metadata: metadata)
-  end
-
-  defp ensure_matcher_metadata(%EnvMatcher{} = metadata, %MatcherSpec{} = spec) do
-    cond do
-      metadata.name != spec.name ->
-        error(:invalid_declaration, kind: :matcher_metadata, name: spec.name, metadata: metadata)
-
-      metadata.source != spec.source ->
-        error(:invalid_declaration, kind: :matcher_metadata, name: spec.name, metadata: metadata)
-
-      metadata.type != spec.type ->
-        error(:invalid_declaration, kind: :matcher_metadata, name: spec.name, metadata: metadata)
-
-      metadata.value != spec.value ->
-        error(:invalid_declaration, kind: :matcher_metadata, name: spec.name, metadata: metadata)
-
-      metadata.info.name != spec.name ->
-        error(:invalid_declaration, kind: :matcher_metadata, name: spec.name, metadata: metadata)
-
-      metadata.mode != spec.mode ->
-        error(:invalid_declaration, kind: :matcher_metadata, name: spec.name, metadata: metadata)
-
-      true ->
-        :ok
-    end
   end
 
   defp ensure_constant_kind(:constant, nil, nil), do: :ok
@@ -434,15 +388,8 @@ defmodule Theoria.Kernel do
   defp recursor_inductive(%EnvRecursor{inductives: [inductive]}), do: {:ok, inductive}
   defp recursor_inductive(_recursor), do: :error
 
-  defp ensure_level_params(term, allowed_params) do
-    params = Term.level_params(term)
-    allowed_params = MapSet.new(allowed_params)
-
-    case MapSet.difference(params, allowed_params) |> MapSet.to_list() do
-      [] -> :ok
-      params -> error(:unknown_universe_parameter, params: Enum.sort(params))
-    end
-  end
+  defp ensure_level_params(term, allowed_params),
+    do: AdmissionChecks.ensure_level_params(term, allowed_params)
 
   def validate_env(%Env{} = env) do
     with :ok <- validate_declaration_index(env) do
@@ -560,12 +507,8 @@ defmodule Theoria.Kernel do
     end
   end
 
-  defp ensure_fresh_declaration(env, name) do
-    case Env.fetch(env, name) do
-      {:ok, _constant} -> error(:duplicate_declaration, name: name)
-      :error -> :ok
-    end
-  end
+  defp ensure_fresh_declaration(env, name),
+    do: AdmissionChecks.ensure_fresh_declaration(env, name)
 
   defp check_lambda(env, context, %Lam{} = lam, %Forall{} = expected) do
     with :ok <- ensure_defeq(env, lam.domain, expected.domain, :lambda_domain_mismatch) do

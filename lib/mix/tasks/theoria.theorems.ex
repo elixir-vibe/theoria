@@ -46,12 +46,13 @@ defmodule Mix.Tasks.Theoria.Theorems do
   defp theorem_modules([]), do: {:ok, Corpus.builtin_theorem_modules()}
 
   defp theorem_modules(args) do
+    available = Map.new(available_theorem_modules(), &{module_name(&1), &1})
+
     args
-    |> Enum.map(&Module.concat([&1]))
-    |> Enum.reduce_while({:ok, []}, fn module, {:ok, modules} ->
-      case load_theorem_module(module) do
-        :ok -> {:cont, {:ok, [module | modules]}}
-        {:error, message} -> {:halt, {:error, message}}
+    |> Enum.reduce_while({:ok, []}, fn name, {:ok, modules} ->
+      case Map.fetch(available, name) do
+        {:ok, module} -> {:cont, {:ok, [module | modules]}}
+        :error -> {:halt, {:error, "unknown theorem module #{name}"}}
       end
     end)
     |> then(fn
@@ -60,15 +61,17 @@ defmodule Mix.Tasks.Theoria.Theorems do
     end)
   end
 
-  defp load_theorem_module(module) do
-    with {:module, ^module} <- Code.ensure_loaded(module),
-         true <- function_exported?(module, :__theoria_theorems__, 0) do
-      :ok
-    else
-      {:error, _reason} -> {:error, "could not load theorem module #{inspect(module)}"}
-      false -> {:error, "#{inspect(module)} is not a Theoria theorem module"}
-    end
+  defp available_theorem_modules do
+    loaded_theorem_modules =
+      :code.all_loaded()
+      |> Enum.map(fn {module, _path} -> module end)
+      |> Enum.filter(&function_exported?(&1, :__theoria_theorems__, 0))
+
+    (Corpus.builtin_theorem_modules() ++ loaded_theorem_modules)
+    |> Enum.uniq()
   end
+
+  defp module_name(module), do: module |> Module.split() |> Enum.join(".")
 
   defp check_modules(env, modules, opts) do
     if Keyword.get(opts, :install, false) do

@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+Post-0.4 development toward stronger kernel assurance and deeper proof automation.
+
+- Bumped development version to `0.5.0-dev`.
+
 ## 0.4.0
 
 Released 2026-05-18.

@@ -20,7 +20,7 @@ mix theoria.kernel.check --explain
 mix theoria.kernel.check --json --coverage --explain
 ```
 
-The report compares production kernel behavior with the independent reference checker/normalizer, checks deterministic generated typed terms, replays the Prelude environment, replays theorem-module-installed environments, and replays generated/indexed artifact environments.
+The report compares production kernel behavior with the independent reference checker/normalizer, checks deterministic generated typed terms with stable family counts, replays the Prelude environment, replays theorem-module-installed environments, and replays generated/indexed artifact environments.
 
 These reports are assurance, not a formal proof of kernel correctness. The trusted boundary remains native kernel checking of declarations and artifacts.
 
@@ -41,13 +41,13 @@ step.proof_result.capability
 step.proof_result.proof
 ```
 
-`Theoria.Simp.Result.proof_strategy/1` reports how the final checked artifact was produced: reflexivity, single step, transitive chain, or definitional-equality fallback.
+`Theoria.Simp.Result.proof_strategy/1` reports how the final checked artifact was produced: reflexivity, single step, transitive chain, or definitional-equality fallback. `Theoria.Simp.Result.proof_status_counts/1` summarizes checked/missing/unsupported step proofs in a trace.
 
 ## JSON output
 
 JSON output is produced through Jason encoders for report structs and proof diagnostics. Mix tasks should pass structs/maps to `Jason.encode!/1`; do not hand-roll JSON strings.
 
-Capability output has this shape:
+Capability output has this shape. Nested structural lifts may include `inner` to describe the supported proof method used below the outer constructor path:
 
 ```json
 {
@@ -57,7 +57,8 @@ Capability output has this shape:
       "capability": {
         "supported": true,
         "reason": "application_congruence",
-        "description": "application congruence"
+        "description": "application congruence",
+        "inner": null
       }
     }
   ]

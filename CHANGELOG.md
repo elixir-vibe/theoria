@@ -6,7 +6,12 @@ Post-0.5 development toward deeper proof-producing automation and stronger gener
 
 - Added an experimental deterministic typed generator module and wired generated-term checks into kernel differential reports.
 - Added kernel-checked proof lifting for `EqRec` base/proof rewrite paths, including supported nested paths.
+- Added kernel-checked proof lifting for supported constructor value rewrite paths, including `let` values.
 - Equality chains now bridge missing definitional-equality steps when composing explicit checked proofs.
+- Kernel differential reports now include generated-term family counts.
+- Generated-term assurance now covers deterministic `let` and `forall` families.
+- Proof capability JSON can expose nested `inner` capabilities for composed structural lifts.
+- Simp results now expose proof status counts for trace reports.
 
 ## 0.5.0
 

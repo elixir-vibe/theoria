@@ -24,4 +24,11 @@ defmodule Theoria.Simp.Result do
 
   @spec proof_strategy(t()) :: atom() | nil
   def proof_strategy(%__MODULE__{proof_strategy: strategy}), do: strategy
+
+  @spec proof_status_counts(t()) :: %{atom() => non_neg_integer()}
+  def proof_status_counts(%__MODULE__{steps: steps}) do
+    steps
+    |> Enum.map(&Step.proof_status/1)
+    |> Enum.frequencies()
+  end
 end

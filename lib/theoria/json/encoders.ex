@@ -28,7 +28,8 @@ defimpl Jason.Encoder, for: Theoria.Rewrite.Proof.Capability do
       %{
         supported: capability.supported?,
         reason: capability.reason,
-        description: capability.description
+        description: capability.description,
+        inner: capability.inner
       },
       opts
     )
@@ -132,6 +133,7 @@ defimpl Jason.Encoder, for: Theoria.Simp.Result do
         steps: result.steps,
         proof_checked: not is_nil(result.realized),
         proof_strategy: result.proof_strategy,
+        proof_status_counts: Theoria.Simp.Result.proof_status_counts(result),
         realized: result.realized
       },
       opts

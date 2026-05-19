@@ -54,6 +54,7 @@ defmodule Mix.Tasks.Theoria.Kernel.Check do
       Mix.shell().info("✓ defeq checks: #{report.defeq_count}")
       Mix.shell().info("✓ rejection checks: #{report.rejection_count}")
       Mix.shell().info("✓ generated term checks: #{report.generated_term_count}")
+      print_generated_term_families(report.generated_term_families, "  ")
       Mix.shell().info("✓ theorem checks: #{report.theorem_count}")
       Mix.shell().info("✓ theorem replay checks: #{report.theorem_replay_count}")
       Mix.shell().info("- theorem replay skipped: #{report.theorem_replay_skipped}")
@@ -86,6 +87,7 @@ defmodule Mix.Tasks.Theoria.Kernel.Check do
       Mix.shell().info("  normalize=#{report.normalize_count} defeq=#{report.defeq_count}")
       Mix.shell().info("  rejected=#{report.rejection_count}")
       Mix.shell().info("  generated_terms=#{report.generated_term_count}")
+      print_generated_term_families(report.generated_term_families, "    ")
       Mix.shell().info("  modules=#{report.theorem_count}")
 
       Enum.each(report.theorem_modules, fn module ->
@@ -111,6 +113,12 @@ defmodule Mix.Tasks.Theoria.Kernel.Check do
       Mix.shell().info("  total_replay_checks=#{Differential.Report.total_replay_checks(report)}")
       Mix.shell().info("  failures=#{Differential.Report.failure_count(report)}")
     end
+  end
+
+  defp print_generated_term_families(families, prefix) do
+    families
+    |> Enum.sort_by(fn {family, _count} -> family end)
+    |> Enum.each(fn {family, count} -> Mix.shell().info("#{prefix}#{family}: #{count}") end)
   end
 
   defp print_artifact_replay_skips([]), do: :ok

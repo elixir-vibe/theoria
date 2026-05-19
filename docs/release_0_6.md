@@ -8,6 +8,7 @@ The 0.6 line focuses on deeper proof-producing automation and stronger generated
 
 - `EqRec` base paths, including supported nested paths under the base;
 - `EqRec` proof paths, including supported nested paths under the proof;
+- supported constructor value paths, including `let` values.
 
 Candidate paths for further work include:
 
@@ -15,7 +16,7 @@ Candidate paths for further work include:
 - binder domain paths;
 - let type/value paths.
 
-No extensionality or proof-irrelevance shortcut is admitted. A path is supported only when the generated proof term checks in the native kernel.
+No extensionality or proof-irrelevance shortcut is admitted. A path is supported only when the generated proof term checks in the native kernel. `Eq.type` and non-definitional `Refl.value` rewrites remain explicit boundaries for now because they require stronger typed transport than homogeneous equality alone provides in the current core.
 
 ## Equality chains
 
@@ -23,8 +24,8 @@ No extensionality or proof-irrelevance shortcut is admitted. A path is supported
 
 ## Generated-term assurance
 
-0.6 starts a typed generator layer for kernel/reference differentials. Generated terms are deterministic and dependency-free so native assurance reports can run them outside test-only property tooling. The goal is to generate terms together with expected types and environments, including dependent functions, equality, `EqRec`, and recursor fragments.
+0.6 starts a typed generator layer for kernel/reference differentials. Generated terms are deterministic and dependency-free so native assurance reports can run them outside test-only property tooling. Generated-term reports include stable family counts. The goal is to generate terms together with expected types and environments, including dependent functions, equality, `EqRec`, `let`, `forall`, and recursor fragments.
 
 ## Reports and examples
 
-0.5 made report/capability APIs structured. 0.6 uses those APIs to explain newly supported proof paths and to document boundaries when proof construction remains unsupported.
+0.5 made report/capability APIs structured. 0.6 uses those APIs to explain newly supported proof paths and to document boundaries when proof construction remains unsupported. Nested capability entries may include an `inner` capability so callers can see both the outer constructor lift and the inner path proof method.

@@ -26,7 +26,9 @@ defmodule Theoria.Kernel.Coverage do
     "Vec Bool terms",
     "List eliminator applications",
     "closed equality proofs",
-    "deterministic generated typed terms"
+    "deterministic generated typed terms",
+    "generated let terms",
+    "generated forall terms"
   ]
 
   @spec summary(Env.t(), Report.t()) :: map()
@@ -39,6 +41,7 @@ defmodule Theoria.Kernel.Coverage do
       declaration_kinds: declaration_kinds(env, declarations),
       theorem_module_checks: report.theorem_count,
       generated_term_checks: report.generated_term_count,
+      generated_term_families: report.generated_term_families,
       generated_artifact_checks: report.generated_artifact_count,
       indexed_artifact_checks: report.indexed_artifact_count,
       replay_checks: report.replay_count,

@@ -108,6 +108,7 @@ defmodule Theoria.SimpTest do
 
     assert result.term == one
     assert Enum.map(result.steps, & &1.proof_result.status) == [:checked, :checked]
+    assert Simp.Result.proof_status_counts(result) == %{checked: 2}
     assert %Term.EqRec{} = result.realized.proof
     assert :ok = Kernel.check(env, result.realized.proof, result.realized.type)
   end

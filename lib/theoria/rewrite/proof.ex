@@ -6,6 +6,8 @@ defmodule Theoria.Rewrite.Proof do
   alias Theoria.Kernel
   alias Theoria.Rewrite.Match
   alias Theoria.Rewrite.Proof.Capabilities
+  alias Theoria.Rewrite.Proof.Check
+  alias Theoria.Rewrite.Proof.EqRec, as: EqRecProof
   alias Theoria.Rewrite.Proof.Result
   alias Theoria.Rewrite.Rule
   alias Theoria.Rewrite.Step
@@ -107,10 +109,13 @@ defmodule Theoria.Rewrite.Proof do
     do: lift_eq_right(env, type, proof, step)
 
   defp lift_path(env, type, proof, %Step{path: [:base]} = step),
-    do: lift_eq_rec_base(env, type, proof, step)
+    do: EqRecProof.lift_base(env, type, proof, step)
 
   defp lift_path(env, type, proof, %Step{path: [:proof]} = step),
-    do: lift_eq_rec_proof(env, type, proof, step)
+    do: EqRecProof.lift_proof(env, type, proof, step)
+
+  defp lift_path(env, type, proof, %Step{path: [:value]} = step),
+    do: lift_value(env, type, proof, step)
 
   defp lift_path(env, type, proof, %Step{path: [:arg | rest]} = step) do
     case {step.before, step.after} do
@@ -171,7 +176,7 @@ defmodule Theoria.Rewrite.Proof do
 
         with {:ok, nested_type} <- Kernel.infer(env, before.base),
              {:ok, nested_proof} <- local_or_defeq_proof(env, nested_type, nested) do
-          lift_eq_rec_base(env, type, nested_proof, %{step | path: [:base]})
+          EqRecProof.lift_base(env, type, nested_proof, %{step | path: [:base]})
         end
 
       _ ->
@@ -194,7 +199,7 @@ defmodule Theoria.Rewrite.Proof do
 
         with {:ok, nested_type} <- Kernel.infer(env, before.proof),
              {:ok, nested_proof} <- local_or_defeq_proof(env, nested_type, nested) do
-          lift_eq_rec_proof(env, type, nested_proof, %{step | path: [:proof]})
+          EqRecProof.lift_proof(env, type, nested_proof, %{step | path: [:proof]})
         end
 
       _ ->
@@ -260,31 +265,35 @@ defmodule Theoria.Rewrite.Proof do
     end
   end
 
-  defp lift_eq_rec_base(env, result_type, proof, step) do
+  defp lift_value(env, result_type, proof, %Step{before: %Term.Let{}} = step),
+    do: lift_let_value(env, result_type, proof, step)
+
+  defp lift_value(_env, _result_type, _proof, _step), do: {:error, :unsupported_path}
+
+  defp lift_let_value(env, result_type, proof, step) do
     case {step.before, step.after} do
-      {%Term.EqRec{} = before, %Term.EqRec{} = after_term}
-      when before.type == after_term.type and before.motive == after_term.motive and
-             before.proof == after_term.proof ->
-        with {:ok, base_type} <- Kernel.infer(env, before.base) do
-          target = %Term.EqRec{
+      {%Term.Let{} = before, %Term.Let{} = after_term}
+      when before.name == after_term.name and before.type == after_term.type and
+             before.body == after_term.body ->
+        with {:ok, value_type} <- Kernel.infer(env, before.value) do
+          target = %Term.Let{
             before
             | type: Term.shift(before.type, 1),
-              motive: Term.shift(before.motive, 1),
-              base: Term.bvar(0),
-              proof: Term.shift(before.proof, 1)
+              value: Term.bvar(0),
+              body: Term.shift(before.body, 1)
           }
 
           motive =
             Term.lam(
-              :z,
-              base_type,
+              before.name,
+              value_type,
               Term.eq(Term.shift(result_type, 1), Term.shift(step.before, 1), target)
             )
 
           check_lifted(
             env,
             result_type,
-            Term.eq_rec(base_type, motive, Term.refl(step.before), proof),
+            Term.eq_rec(value_type, motive, Term.refl(step.before), proof),
             step
           )
         end
@@ -294,46 +303,7 @@ defmodule Theoria.Rewrite.Proof do
     end
   end
 
-  defp lift_eq_rec_proof(env, result_type, proof, step) do
-    case {step.before, step.after} do
-      {%Term.EqRec{} = before, %Term.EqRec{} = after_term}
-      when before.type == after_term.type and before.motive == after_term.motive and
-             before.base == after_term.base ->
-        with {:ok, proof_type} <- Kernel.infer(env, before.proof) do
-          target = %Term.EqRec{
-            before
-            | type: Term.shift(before.type, 1),
-              motive: Term.shift(before.motive, 1),
-              base: Term.shift(before.base, 1),
-              proof: Term.bvar(0)
-          }
-
-          motive =
-            Term.lam(
-              :h,
-              proof_type,
-              Term.eq(Term.shift(result_type, 1), Term.shift(step.before, 1), target)
-            )
-
-          check_lifted(
-            env,
-            result_type,
-            Term.eq_rec(proof_type, motive, Term.refl(step.before), proof),
-            step
-          )
-        end
-
-      _ ->
-        {:error, :unsupported_path}
-    end
-  end
-
-  defp check_lifted(env, type, candidate, step) do
-    case Kernel.check(env, candidate, Term.eq(type, step.before, step.after)) do
-      :ok -> {:ok, candidate}
-      {:error, _reason} -> {:error, :kernel_rejected}
-    end
-  end
+  defp check_lifted(env, type, candidate, step), do: Check.lifted(env, type, candidate, step)
 
   defp lift_app_arg(env, type, proof, step) do
     case {step.before, step.after} do

@@ -27,9 +27,17 @@ defmodule Theoria.Kernel.Generator do
     equality_cases = named_cases(:nat_refl, nat_terms, &nat_reflexivity_case(env, &1, &2))
     eq_rec_cases = named_cases(:nat_eq_rec, nat_terms, &nat_eq_rec_case(env, &1, &2))
     function_cases = named_cases(:bool_function, bool_terms, &bool_function_case(env, &1, &2))
+    let_cases = named_cases(:nat_let, nat_terms, &nat_let_case(env, &1, &2))
+    forall_cases = named_cases(:bool_forall, bool_terms, &bool_forall_case(env, &1, &2))
 
     uniq_generated_terms(
-      bool_cases ++ nat_cases ++ equality_cases ++ eq_rec_cases ++ function_cases
+      bool_cases ++
+        nat_cases ++
+        equality_cases ++
+        eq_rec_cases ++
+        function_cases ++
+        let_cases ++
+        forall_cases
     )
   end
 
@@ -104,6 +112,17 @@ defmodule Theoria.Kernel.Generator do
   defp bool_function_case(env, term, name) do
     bool = Term.const(:Bool)
     GeneratedTerm.new(env, Term.lam(:x, bool, Term.shift(term, 1)), Term.arrow(bool, bool), name)
+  end
+
+  defp nat_let_case(env, term, name) do
+    nat = Term.const(:Nat)
+    GeneratedTerm.new(env, Term.let(:n, nat, term, Term.bvar(0)), nat, name)
+  end
+
+  defp bool_forall_case(env, term, name) do
+    bool = Term.const(:Bool)
+    body = Term.eq(Term.shift(bool, 1), Term.bvar(0), Term.shift(term, 1))
+    GeneratedTerm.new(env, Term.forall(:b, bool, body), Term.sort(0), name)
   end
 
   defp uniq_generated_terms(terms), do: Enum.uniq_by(terms, &{&1.term, &1.type})

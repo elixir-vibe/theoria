@@ -24,11 +24,14 @@ defmodule Theoria.Rewrite.Proof.Capabilities do
       path in [[:domain], [:body]] ->
         unsupported(:binder_boundary, "binder paths remain kernel-checked boundaries")
 
+      path == [:value] ->
+        supported(:value_congruence, "value congruence for supported constructors")
+
       eq_rec_path?(path, :base) ->
-        supported(:eq_rec_base_congruence, "EqRec base congruence")
+        supported_eq_rec(path, :base, :eq_rec_base_congruence, "EqRec base congruence")
 
       eq_rec_path?(path, :proof) ->
-        supported(:eq_rec_proof_congruence, "EqRec proof congruence")
+        supported_eq_rec(path, :proof, :eq_rec_proof_congruence, "EqRec proof congruence")
 
       true ->
         unsupported(:unknown_path, "no proof lifting rule for this path")
@@ -52,6 +55,7 @@ defmodule Theoria.Rewrite.Proof.Capabilities do
       [:fun],
       [:left],
       [:right],
+      [:value],
       [:body],
       [:domain],
       [:proof],
@@ -70,6 +74,17 @@ defmodule Theoria.Rewrite.Proof.Capabilities do
     do: explain(rest).supported?
 
   defp eq_rec_path?(_path, _field), do: false
+
+  defp supported_eq_rec([field], field, reason, description),
+    do: %Capability{supported?: true, reason: reason, description: description}
+
+  defp supported_eq_rec([field | rest], field, reason, description),
+    do: %Capability{
+      supported?: true,
+      reason: reason,
+      description: description,
+      inner: explain(rest)
+    }
 
   defp supported(reason, description),
     do: %Capability{supported?: true, reason: reason, description: description}

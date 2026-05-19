@@ -6,11 +6,12 @@ defmodule Theoria.Rewrite.Proof.Capability do
   """
 
   @enforce_keys [:supported?, :reason, :description]
-  defstruct [:supported?, :reason, :description]
+  defstruct [:supported?, :reason, :description, inner: nil]
 
   @type t :: %__MODULE__{
           supported?: boolean(),
           reason: atom(),
-          description: String.t()
+          description: String.t(),
+          inner: t() | nil
         }
 end

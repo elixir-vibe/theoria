@@ -176,6 +176,29 @@ defmodule Theoria.RewriteTest do
              Proof.attach(env, step)
 
     assert capability.reason == :eq_rec_base_congruence
+    assert capability.inner.reason == :application_congruence
+  end
+
+  test "let value rewrite steps can carry checked proof" do
+    {:ok, env} = Prelude.env()
+    zero = Term.const(:zero)
+    one = Term.app(Term.const(:succ), zero)
+    nat = Term.const(:Nat)
+    equality = Term.eq(nat, zero, one)
+
+    {:ok, env} = Kernel.add_axiom(env, :zero_eq_one, equality)
+
+    term = Term.let(:x, nat, zero, Term.bvar(0))
+    rule = Rule.new(:zero_to_one, equality, proof: Term.const(:zero_eq_one))
+
+    assert {:ok, step} = Rewrite.once_with_step(term, rule)
+    assert step.path == [:value]
+    assert step.after == Term.let(:x, nat, one, Term.bvar(0))
+
+    assert %{proof_result: %{status: :checked, proof: %Term.EqRec{}, capability: capability}} =
+             Proof.attach(env, step)
+
+    assert capability.reason == :value_congruence
   end
 
   test "binder rewrite steps report unsupported proof lifting" do

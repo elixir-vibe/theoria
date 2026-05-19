@@ -32,6 +32,7 @@ defmodule Theoria.Kernel.Differential do
       :defeq_count,
       :rejection_count,
       :generated_term_count,
+      :generated_term_families,
       :theorem_count,
       :theorem_modules,
       :theorem_replay_count,
@@ -56,6 +57,7 @@ defmodule Theoria.Kernel.Differential do
       :defeq_count,
       :rejection_count,
       :generated_term_count,
+      :generated_term_families,
       :theorem_count,
       :theorem_modules,
       :theorem_replay_count,
@@ -82,6 +84,7 @@ defmodule Theoria.Kernel.Differential do
             defeq_count: non_neg_integer(),
             rejection_count: non_neg_integer(),
             generated_term_count: non_neg_integer(),
+            generated_term_families: %{atom() => non_neg_integer()},
             theorem_count: non_neg_integer(),
             theorem_modules: [TheoremModuleReport.t()],
             theorem_replay_count: non_neg_integer(),
@@ -187,7 +190,7 @@ defmodule Theoria.Kernel.Differential do
     {defeq_failures, defeq_ms} =
       timed(fn -> failures(Corpus.defeq_cases(), &compare_defeq_case(env, &1)) end)
 
-    {{generated_term_count, generated_term_failures}, _generated_term_ms} =
+    {{generated_term_count, generated_term_families, generated_term_failures}, _generated_term_ms} =
       timed(fn -> generated_term_failures() end)
 
     {{theorem_count, theorem_modules, theorem_replay_count, theorem_replay_skipped,
@@ -212,6 +215,7 @@ defmodule Theoria.Kernel.Differential do
       rejection_count:
         length(Corpus.infer_rejection_cases()) + length(Corpus.check_rejection_cases()),
       generated_term_count: generated_term_count,
+      generated_term_families: generated_term_families,
       theorem_count: theorem_count,
       theorem_modules: theorem_modules,
       theorem_replay_count: theorem_replay_count,
@@ -262,8 +266,18 @@ defmodule Theoria.Kernel.Differential do
 
   defp generated_term_failures do
     terms = Generator.small_terms(size: 3)
-    {length(terms), failures(terms, &compare_generated_term/1)}
+    {length(terms), generated_term_families(terms), failures(terms, &compare_generated_term/1)}
   end
+
+  defp generated_term_families(terms) do
+    terms
+    |> Enum.map(&generated_term_family/1)
+    |> Enum.frequencies()
+  end
+
+  defp generated_term_family(%GeneratedTerm{name: {family, _index}}), do: family
+  defp generated_term_family(%GeneratedTerm{name: family}) when is_atom(family), do: family
+  defp generated_term_family(%GeneratedTerm{}), do: :unnamed
 
   defp compare_generated_term(%GeneratedTerm{name: name, env: env, term: term, type: type}) do
     with :ok <-

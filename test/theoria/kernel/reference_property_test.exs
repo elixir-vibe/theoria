@@ -100,6 +100,36 @@ defmodule Theoria.Kernel.ReferencePropertyTest do
     end
   end
 
+  property "production and reference agree on generated Vec Bool terms" do
+    check all({term, index} <- vec_bool_term_gen()) do
+      {:ok, env} = Prelude.env()
+      type = vec_bool_type(index)
+
+      assert Kernel.infer(env, term) == Reference.infer(env, term)
+      assert Kernel.check(env, term, type) == Reference.check(env, term, type)
+    end
+  end
+
+  property "production and reference agree on generated Vec Bool equalities" do
+    check all({term, index} <- vec_bool_term_gen()) do
+      {:ok, env} = Prelude.env()
+      type = vec_bool_type(index)
+      equality = Term.eq(type, term, term)
+      proof = Term.refl(term)
+
+      assert Kernel.infer(env, equality) == Reference.infer(env, equality)
+      assert Kernel.check(env, proof, equality) == Reference.check(env, proof, equality)
+    end
+  end
+
+  property "production and reference normalization agree on generated Vec Bool terms" do
+    check all({term, _index} <- vec_bool_term_gen()) do
+      {:ok, env} = Prelude.env()
+
+      assert Normalize.normalize(env, term) == ReferenceNormalize.normalize(env, term)
+    end
+  end
+
   defp bool_term_gen do
     bool_term_gen(3)
   end
@@ -184,5 +214,43 @@ defmodule Theoria.Kernel.ReferencePropertyTest do
 
   defp list_cons_bool(head, tail) do
     Term.app(Term.app(Term.app(Term.const(:list_cons, [1]), Term.const(:Bool)), head), tail)
+  end
+
+  defp vec_bool_term_gen do
+    vec_bool_term_gen(3)
+  end
+
+  defp vec_bool_term_gen(0) do
+    constant({empty_vec_bool(), Term.const(:zero)})
+  end
+
+  defp vec_bool_term_gen(size) do
+    smaller = vec_bool_term_gen(size - 1)
+
+    one_of([
+      vec_bool_term_gen(0),
+      map({bool_term_gen(), smaller}, fn {head, {tail, index}} ->
+        {vec_cons_bool(head, index, tail), Term.app(Term.const(:succ), index)}
+      end),
+      map(smaller, fn {value, index} ->
+        Term.let(:xs, vec_bool_type(index), value, Term.bvar(0))
+        |> then(&{&1, index})
+      end)
+    ])
+  end
+
+  defp vec_bool_type(index) do
+    Term.app(Term.app(Term.const(:Vec, [1]), Term.const(:Bool)), index)
+  end
+
+  defp empty_vec_bool do
+    Term.app(Term.const(:vec_nil, [1]), Term.const(:Bool))
+  end
+
+  defp vec_cons_bool(head, index, tail) do
+    Term.app(
+      Term.app(Term.app(Term.app(Term.const(:vec_cons, [1]), Term.const(:Bool)), head), index),
+      tail
+    )
   end
 end

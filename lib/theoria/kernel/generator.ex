@@ -22,11 +22,11 @@ defmodule Theoria.Kernel.Generator do
     bool_terms = bool_terms(size, max_terms: max_terms)
     nat_terms = nat_terms(size, max_terms: max_terms)
 
-    bool_cases = Enum.map(bool_terms, &GeneratedTerm.new(env, &1, bool))
-    nat_cases = Enum.map(nat_terms, &GeneratedTerm.new(env, &1, nat))
-    equality_cases = Enum.map(nat_terms, &nat_reflexivity_case(env, &1))
-    eq_rec_cases = Enum.map(nat_terms, &nat_eq_rec_case(env, &1))
-    function_cases = Enum.map(bool_terms, &bool_function_case(env, &1))
+    bool_cases = named_cases(:bool, bool_terms, &GeneratedTerm.new(env, &1, bool, &2))
+    nat_cases = named_cases(:nat, nat_terms, &GeneratedTerm.new(env, &1, nat, &2))
+    equality_cases = named_cases(:nat_refl, nat_terms, &nat_reflexivity_case(env, &1, &2))
+    eq_rec_cases = named_cases(:nat_eq_rec, nat_terms, &nat_eq_rec_case(env, &1, &2))
+    function_cases = named_cases(:bool_function, bool_terms, &bool_function_case(env, &1, &2))
 
     uniq_generated_terms(
       bool_cases ++ nat_cases ++ equality_cases ++ eq_rec_cases ++ function_cases
@@ -83,21 +83,27 @@ defmodule Theoria.Kernel.Generator do
     end
   end
 
-  defp nat_reflexivity_case(env, term) do
-    nat = Term.const(:Nat)
-    GeneratedTerm.new(env, Term.refl(term), Term.eq(nat, term, term))
+  defp named_cases(prefix, terms, callback) do
+    terms
+    |> Enum.with_index()
+    |> Enum.map(fn {term, index} -> callback.(term, {prefix, index}) end)
   end
 
-  defp nat_eq_rec_case(env, term) do
+  defp nat_reflexivity_case(env, term, name) do
+    nat = Term.const(:Nat)
+    GeneratedTerm.new(env, Term.refl(term), Term.eq(nat, term, term), name)
+  end
+
+  defp nat_eq_rec_case(env, term, name) do
     nat = Term.const(:Nat)
     motive = Term.lam(:n, nat, Term.shift(nat, 1))
 
-    GeneratedTerm.new(env, Term.eq_rec(nat, motive, term, Term.refl(term)), nat)
+    GeneratedTerm.new(env, Term.eq_rec(nat, motive, term, Term.refl(term)), nat, name)
   end
 
-  defp bool_function_case(env, term) do
+  defp bool_function_case(env, term, name) do
     bool = Term.const(:Bool)
-    GeneratedTerm.new(env, Term.lam(:x, bool, Term.shift(term, 1)), Term.arrow(bool, bool))
+    GeneratedTerm.new(env, Term.lam(:x, bool, Term.shift(term, 1)), Term.arrow(bool, bool), name)
   end
 
   defp uniq_generated_terms(terms), do: Enum.uniq_by(terms, &{&1.term, &1.type})

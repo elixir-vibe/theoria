@@ -265,19 +265,19 @@ defmodule Theoria.Kernel.Differential do
     {length(terms), failures(terms, &compare_generated_term/1)}
   end
 
-  defp compare_generated_term(%GeneratedTerm{env: env, term: term, type: type}) do
+  defp compare_generated_term(%GeneratedTerm{name: name, env: env, term: term, type: type}) do
     with :ok <-
-           compare(:generated_infer, :term, Kernel.infer(env, term), Reference.infer(env, term)),
+           compare(:generated_infer, name, Kernel.infer(env, term), Reference.infer(env, term)),
          :ok <-
            compare(
              :generated_check,
-             :term,
+             name,
              Kernel.check(env, term, type),
              Reference.check(env, term, type)
            ) do
       compare(
         :generated_normalize,
-        :term,
+        name,
         Normalize.normalize(env, term),
         ReferenceNormalize.normalize(env, term)
       )

@@ -9,9 +9,12 @@ defmodule Theoria.Kernel.GeneratorTest do
   alias Theoria.Normalize
 
   test "generated typed terms agree between production and reference" do
-    assert Generator.small_terms(size: 3) != []
+    generated = Generator.small_terms(size: 3)
 
-    for %GeneratedTerm{env: env, term: term, type: type} <- Generator.small_terms(size: 3) do
+    assert generated != []
+    assert Enum.all?(generated, & &1.name)
+
+    for %GeneratedTerm{env: env, term: term, type: type} <- generated do
       assert Kernel.infer(env, term) == Reference.infer(env, term)
       assert Kernel.check(env, term, type) == Reference.check(env, term, type)
       assert Normalize.normalize(env, term) == ReferenceNormalize.normalize(env, term)

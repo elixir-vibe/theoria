@@ -120,7 +120,7 @@ defimpl Jason.Encoder, for: Theoria.Kernel.Differential.Report do
   defp encode_failure({kind, name, production, reference}) do
     %{
       kind: kind,
-      name: name,
+      name: inspect(name),
       production: inspect(production),
       reference: inspect(reference)
     }

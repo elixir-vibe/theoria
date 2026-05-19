@@ -20,6 +20,10 @@ The 0.7 line focuses on deeper kernel/reference assurance through environment re
 
 0.7 generates bounded declaration, let, theorem, and universe-polymorphic chains and compares production/reference behavior for replay, normalization, and dependency tracking. `mix theoria.kernel.check --environment-depth N` controls the generated chain depth. Invalid environment cases also check that malformed declaration indexes, bad declaration values, bad theorem proofs, duplicate declaration indexes, and unknown dependencies are rejected by native environment validation with the expected reason.
 
+## Assurance summary
+
+`mix theoria.kernel.check --assurance-summary` prints a user-facing summary of curated corpus, generated term, environment, artifact, theorem, and replay assurance coverage. `--json` returns the same summary through Jason-encoded structs.
+
 ## Boundaries
 
 This is still assurance, not a formal proof of kernel correctness. The trusted runtime boundary remains native kernel checking of declarations and artifacts. Lean remains an optional contributor oracle outside the trusted runtime path.

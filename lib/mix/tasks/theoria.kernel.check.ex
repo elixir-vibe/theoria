@@ -3,6 +3,7 @@ defmodule Mix.Tasks.Theoria.Kernel.Check do
 
   use Mix.Task
 
+  alias Theoria.Kernel.AssuranceSummary
   alias Theoria.Kernel.Coverage
   alias Theoria.Kernel.Differential
   alias Theoria.Kernel.Differential.Options
@@ -18,6 +19,7 @@ defmodule Mix.Tasks.Theoria.Kernel.Check do
     with {opts, [], []} <-
            OptionParser.parse(args,
              strict: [
+               assurance_summary: :boolean,
                coverage: :boolean,
                explain: :boolean,
                generated_size: :integer,
@@ -30,7 +32,7 @@ defmodule Mix.Tasks.Theoria.Kernel.Check do
          {:ok, env} <- Prelude.env(),
          {:ok, differential_opts} <- Options.parse(differential_opts(opts)) do
       report = Differential.run(env, differential_opts)
-      print_report(env, report, opts)
+      print_output(env, report, opts)
       maybe_raise(report)
     else
       {_opts, _args, invalid} ->
@@ -56,6 +58,14 @@ defmodule Mix.Tasks.Theoria.Kernel.Check do
       generated_max_terms: Keyword.get(opts, :generated_max_terms, 128),
       environment_depth: Keyword.get(opts, :environment_depth, 4)
     ]
+  end
+
+  defp print_output(env, report, opts) do
+    if Keyword.get(opts, :assurance_summary, false) do
+      print_assurance_summary(report, opts)
+    else
+      print_report(env, report, opts)
+    end
   end
 
   defp print_report(env, report, opts) do
@@ -109,6 +119,41 @@ defmodule Mix.Tasks.Theoria.Kernel.Check do
       maybe_print_verbose(report, opts)
       maybe_print_coverage(env, report, opts)
       maybe_print_explain(opts)
+    end
+  end
+
+  defp print_assurance_summary(report, opts) do
+    summary = AssuranceSummary.from_report(report)
+
+    if Keyword.get(opts, :json, false) do
+      Mix.shell().info(Jason.encode!(summary))
+    else
+      Mix.shell().info("Theoria kernel assurance summary")
+      Mix.shell().info("")
+      Mix.shell().info("Curated corpus:")
+      Mix.shell().info("  infer: #{summary.curated.infer}")
+      Mix.shell().info("  check: #{summary.curated.check}")
+      Mix.shell().info("  normalize: #{summary.curated.normalize}")
+      Mix.shell().info("  defeq: #{summary.curated.defeq}")
+      Mix.shell().info("  rejection: #{summary.curated.rejection}")
+      Mix.shell().info("")
+      Mix.shell().info("Generated terms:")
+      Mix.shell().info("  total: #{summary.generated_terms.total}")
+      Mix.shell().info("  families: #{summary.generated_terms.families}")
+      Mix.shell().info("")
+      Mix.shell().info("Environment corpus:")
+      Mix.shell().info("  cases: #{summary.environments.cases}")
+      Mix.shell().info("  replay: #{summary.environments.replay}")
+      Mix.shell().info("  normalize: #{summary.environments.normalize}")
+      Mix.shell().info("  invalid: #{summary.environments.invalid}")
+      Mix.shell().info("")
+      Mix.shell().info("Artifacts:")
+      Mix.shell().info("  generated: #{summary.artifacts.generated}")
+      Mix.shell().info("  indexed: #{summary.artifacts.indexed}")
+      Mix.shell().info("  replay: #{summary.artifacts.replay}")
+      Mix.shell().info("")
+      Mix.shell().info("Theorems: #{summary.theorems}")
+      Mix.shell().info("Total replay checks: #{summary.replay}")
     end
   end
 

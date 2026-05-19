@@ -1,3 +1,23 @@
+defimpl Jason.Encoder, for: Theoria.Kernel.AssuranceSummary.Curated do
+  def encode(summary, opts), do: Jason.Encode.map(Map.from_struct(summary), opts)
+end
+
+defimpl Jason.Encoder, for: Theoria.Kernel.AssuranceSummary.GeneratedTerms do
+  def encode(summary, opts), do: Jason.Encode.map(Map.from_struct(summary), opts)
+end
+
+defimpl Jason.Encoder, for: Theoria.Kernel.AssuranceSummary.Environments do
+  def encode(summary, opts), do: Jason.Encode.map(Map.from_struct(summary), opts)
+end
+
+defimpl Jason.Encoder, for: Theoria.Kernel.AssuranceSummary.Artifacts do
+  def encode(summary, opts), do: Jason.Encode.map(Map.from_struct(summary), opts)
+end
+
+defimpl Jason.Encoder, for: Theoria.Kernel.AssuranceSummary do
+  def encode(summary, opts), do: Jason.Encode.map(Map.from_struct(summary), opts)
+end
+
 defimpl Jason.Encoder, for: Theoria.Kernel.GeneratedTerm.Report do
   def encode(report, opts) do
     Jason.Encode.map(

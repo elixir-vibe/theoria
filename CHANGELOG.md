@@ -10,6 +10,7 @@ Post-0.6 development toward deeper replay and environment assurance.
 - Added invalid environment corpus checks for native environment validation rejection assurance.
 - Added replay-order and dependency-path diagnostics to reference replay failures.
 - Strengthened invalid environment assurance to match expected rejection reasons and cover duplicate declarations, bad theorem proofs, and unknown dependencies.
+- Added `Theoria.Kernel.AssuranceSummary` and `mix theoria.kernel.check --assurance-summary`.
 
 ## 0.6.0
 

@@ -174,6 +174,37 @@ defmodule Mix.Tasks.Theoria.Kernel.CheckTest do
     assert report["proof_strategies"]["counts"]["refl"] == 38
   end
 
+  test "prints assurance summary" do
+    Mix.Task.clear()
+
+    output =
+      capture_io(fn ->
+        Check.run(["--assurance-summary"])
+      end)
+
+    assert output =~ "Theoria kernel assurance summary"
+    assert output =~ "Curated corpus:"
+    assert output =~ "Generated terms:"
+    assert output =~ "Environment corpus:"
+    assert output =~ "Artifacts:"
+  end
+
+  test "prints JSON assurance summary" do
+    Mix.Task.clear()
+
+    output =
+      capture_io(fn ->
+        Check.run(["--assurance-summary", "--json"])
+      end)
+
+    summary = Jason.decode!(output)
+
+    assert summary["curated"]["infer"] > 0
+    assert summary["generated_terms"]["total"] > 0
+    assert summary["environments"]["cases"] == 4
+    assert summary["artifacts"]["generated"] > 0
+  end
+
   test "prints explanation report" do
     Mix.Task.clear()
 

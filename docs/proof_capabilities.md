@@ -14,7 +14,7 @@ Capability reports describe which structural paths currently have proof construc
 | `[:base]` | `:eq_rec_base_congruence` | `EqRec` base congruence. |
 | `[:proof]` | `:eq_rec_proof_congruence` | `EqRec` proof congruence; this does not assume proof irrelevance. |
 | `[:base, ...]`, `[:proof, ...]` | outer `EqRec` capability with `inner` | Supported when the nested path is itself supported. |
-| `[:value]` | `:value_congruence` | Step-aware support for constructors implemented by `Theoria.Rewrite.Proof.Value`, currently `let` values. |
+| `[:value]` | `:value_congruence` | Step-aware support for implemented constructor-value transports, currently `let` values. |
 
 Nested capability JSON may contain an `inner` capability:
 

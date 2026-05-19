@@ -123,6 +123,26 @@ defmodule Mix.Tasks.Theoria.Kernel.CheckTest do
     assert output =~ "\"failures\":[]"
   end
 
+  test "prints structured JSON report shape" do
+    Mix.Task.clear()
+
+    output =
+      capture_io(fn ->
+        Check.run(["--json", "--generated-size", "1", "--generated-max-terms", "4"])
+      end)
+
+    report = Jason.decode!(output)
+
+    assert report["generated_terms"]["total"] == 39
+    assert report["generated_terms"]["size"] == 1
+    assert report["generated_terms"]["max_terms"] == 4
+    assert report["generated_terms"]["families"]["bool_beta"] == 4
+    assert report["generated_terms"]["families"]["nat_beta"] == 3
+    assert is_integer(report["timings"]["generated_term_ms"])
+    assert report["proof_strategies"]["total"] == 40
+    assert report["proof_strategies"]["counts"]["refl"] == 38
+  end
+
   test "prints explanation report" do
     Mix.Task.clear()
 

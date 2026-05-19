@@ -1,9 +1,5 @@
 defmodule Theoria.Rewrite.Proof.Value do
-  @moduledoc """
-  Experimental proof lifting for supported constructor value paths.
-
-  The shape may change before 1.0.
-  """
+  @moduledoc false
 
   alias Theoria.Env
   alias Theoria.Kernel

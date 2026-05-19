@@ -1,5 +1,9 @@
 defmodule Theoria.Kernel.ProofStrategyReport do
-  @moduledoc "Structured proof-strategy count summary for generated artifacts."
+  @moduledoc """
+  Structured proof-strategy count summary for generated artifacts.
+
+  Experimental in the 0.6 line; the shape may change before 1.0.
+  """
 
   @enforce_keys [:total, :counts]
   defstruct [:total, :counts]

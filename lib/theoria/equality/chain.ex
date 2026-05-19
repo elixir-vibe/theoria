@@ -35,7 +35,7 @@ defmodule Theoria.Equality.Chain do
   @spec realize(Env.t(), t(), Identity.t()) :: {:ok, Realized.t()} | {:error, term()}
   def realize(%Env{} = env, %__MODULE__{} = chain, %Identity{} = identity) do
     theorem_type = Term.eq(chain.type, chain.start, chain.current)
-    proof_result = proof_result(chain)
+    proof_result = proof_result(env, chain)
 
     with :ok <- Kernel.check(env, proof_result.proof, theorem_type),
          {:ok, realized} <- Realized.check(env, identity, theorem_type, proof_result.proof) do
@@ -52,6 +52,20 @@ defmodule Theoria.Equality.Chain do
     steps = Enum.reverse(chain.steps)
 
     case proof_term(chain, steps) do
+      {proof, strategy} -> %Result{proof: proof, strategy: strategy}
+      nil -> %Result{proof: Term.refl(chain.start), strategy: :fallback_defeq}
+    end
+  end
+
+  @doc "Returns the proof term and strategy selected for a chain, using defeq proofs for missing steps when possible."
+  @spec proof_result(Env.t(), t()) :: Result.t()
+  def proof_result(%Env{} = _env, %__MODULE__{start: start, steps: []}),
+    do: %Result{proof: Term.refl(start), strategy: :refl}
+
+  def proof_result(%Env{} = env, %__MODULE__{} = chain) do
+    steps = Enum.reverse(chain.steps)
+
+    case proof_term(env, chain, steps) do
       {proof, strategy} -> %Result{proof: proof, strategy: strategy}
       nil -> %Result{proof: Term.refl(chain.start), strategy: :fallback_defeq}
     end
@@ -77,4 +91,55 @@ defmodule Theoria.Equality.Chain do
       {_current, proof, strategy} -> {proof, strategy}
     end
   end
+
+  defp proof_term(%Env{} = env, %__MODULE__{} = chain, steps) do
+    steps
+    |> Enum.reduce_while({chain.start, nil, 0, false}, fn step,
+                                                          {current, acc, count, explicit?} ->
+      case checked_step_proof(env, chain.type, current, step) do
+        {:ok, proof, source} ->
+          next = step.after
+          proof = compose(chain.type, chain.start, current, next, acc, proof)
+          {:cont, {next, proof, count + 1, explicit? or source == :explicit}}
+
+        :error ->
+          {:halt, :error}
+      end
+    end)
+    |> case do
+      :error ->
+        nil
+
+      {_current, nil, _count, _explicit?} ->
+        nil
+
+      {_current, proof, count, explicit?} ->
+        {proof, chain_strategy(count, explicit?)}
+    end
+  end
+
+  defp checked_step_proof(env, type, current, %{after: next, proof: nil}) do
+    proof = Term.refl(current)
+
+    case Kernel.check(env, proof, Term.eq(type, current, next)) do
+      :ok -> {:ok, proof, :defeq}
+      {:error, _reason} -> :error
+    end
+  end
+
+  defp checked_step_proof(env, type, current, %{after: next, proof: proof}) do
+    case Kernel.check(env, proof, Term.eq(type, current, next)) do
+      :ok -> {:ok, proof, :explicit}
+      {:error, _reason} -> :error
+    end
+  end
+
+  defp compose(_type, _start, _current, _next, nil, proof), do: proof
+
+  defp compose(type, start, current, next, acc, proof),
+    do: Equality.trans(type, start, current, next, acc, proof)
+
+  defp chain_strategy(_count, false), do: :fallback_defeq
+  defp chain_strategy(1, true), do: :single
+  defp chain_strategy(_count, true), do: :transitive
 end

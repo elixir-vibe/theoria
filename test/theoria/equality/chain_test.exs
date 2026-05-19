@@ -23,6 +23,24 @@ defmodule Theoria.Equality.ChainTest do
     assert realized.proof_strategy == :transitive
   end
 
+  test "bridges missing defeq steps inside explicit transitive chains" do
+    {:ok, env} = Prelude.env()
+    nat = Term.const(:Nat)
+    zero = Term.const(:zero)
+
+    chain =
+      nat
+      |> Chain.new(zero)
+      |> Chain.step(zero, Term.refl(zero))
+      |> Chain.step(zero)
+      |> Chain.step(zero, Term.refl(zero))
+
+    assert {:ok, realized} = Chain.realize(env, chain, Identity.simp(:chain, :defeq_bridge))
+
+    assert %Term.EqRec{} = realized.proof
+    assert realized.proof_strategy == :transitive
+  end
+
   test "marks defeq fallback when step proofs are missing" do
     {:ok, env} = Prelude.env()
     nat = Term.const(:Nat)

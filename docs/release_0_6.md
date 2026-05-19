@@ -19,7 +19,7 @@ No extensionality or proof-irrelevance shortcut is admitted. A path is supported
 
 ## Equality chains
 
-0.6 should reduce reliance on `:fallback_defeq` by composing explicit checked proofs for multi-step traces where possible. Fallback remains valid only when the final reflexivity proof kernel-checks.
+0.6 should reduce reliance on `:fallback_defeq` by composing explicit checked proofs for multi-step traces where possible. Missing intermediate steps that are definitionally equal are bridged with kernel-checked reflexivity proofs, allowing surrounding explicit proofs to remain transitive. Fallback remains valid only when the final reflexivity proof kernel-checks.
 
 ## Generated-term assurance
 

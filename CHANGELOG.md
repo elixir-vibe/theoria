@@ -2,8 +2,6 @@
 
 ## 0.6.0
 
-Released 2026-05-18.
-
 Proof-producing rewrite expansion and structured generated assurance reports.
 
 - Added an experimental deterministic typed generator module and wired generated-term checks into kernel differential reports.
@@ -18,8 +16,6 @@ Proof-producing rewrite expansion and structured generated assurance reports.
 - Proof capabilities now include step-aware diagnostics for parent-specific boundaries such as `Refl.value` and type-changing paths.
 
 ## 0.5.0
-
-Released 2026-05-18.
 
 Structured assurance reports, proof diagnostics, and theorem/artifact replay.
 
@@ -52,8 +48,6 @@ Structured assurance reports, proof diagnostics, and theorem/artifact replay.
 - Native validation, docs, Dialyzer, Credo, ExDNA, Reach checks, tests, and Lean oracle validation remain clean.
 ## 0.4.0
 
-Released 2026-05-18.
-
 Proof-producing rewrite/simp automation and Elixir-authored kernel assurance groundwork.
 
 - Added `Theoria.Equality.Chain` as equality trace realization groundwork.
@@ -77,8 +71,6 @@ Proof-producing rewrite/simp automation and Elixir-authored kernel assurance gro
 - Named the indexed Vec matcher case frame to isolate fragile de Bruijn positions from the main planning flow.
 
 ## 0.3.0
-
-Released 2026-05-18.
 
 - Introduced structured `Theoria.Equation.Identity` identities for ordinary, unfold, matcher, and indexed matcher equations.
 - Removed generated equation declaration atoms; installed generated equations now use structured `Theoria.Equation.Identity` values as environment keys.

@@ -1,5 +1,5 @@
 defmodule Theoria.Equation.Extension do
-  @moduledoc "Experimental/internal API for 0.2; subject to change before 0.3. Typed registry helpers for generated equation and matcher metadata."
+  @moduledoc "Experimental before 1.0; the shape may change. Typed registry helpers for generated equation and matcher metadata."
 
   alias Theoria.Env
   alias Theoria.Env.Matcher, as: EnvMatcher

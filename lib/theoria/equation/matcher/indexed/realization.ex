@@ -1,5 +1,5 @@
 defmodule Theoria.Equation.Matcher.Indexed.Realization do
-  @moduledoc "Experimental/internal API for 0.2; subject to change before 0.3. Realization planning for indexed matcher equations."
+  @moduledoc "Experimental before 1.0; the shape may change. Realization planning for indexed matcher equations."
 
   alias Theoria.Equation.Identity
   alias Theoria.Equation.Matcher.Indexed.Package

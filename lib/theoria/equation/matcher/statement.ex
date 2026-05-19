@@ -1,5 +1,5 @@
 defmodule Theoria.Equation.Matcher.Statement do
-  @moduledoc "Experimental/internal API for 0.2; subject to change before 0.3. Statement planning for matcher equations."
+  @moduledoc "Experimental before 1.0; the shape may change. Statement planning for matcher equations."
 
   alias Theoria.Equation.Lemma
   alias Theoria.Equation.Matcher.Equation, as: MatcherEquation

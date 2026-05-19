@@ -1,5 +1,5 @@
 defmodule Theoria.Equation.Compiler do
-  @moduledoc "Experimental/internal API for 0.2; subject to change before 0.3. Internal constructor-equation compiler for the initial Bool/Nat/List fragment."
+  @moduledoc "Experimental before 1.0; the shape may change. Internal constructor-equation compiler for the initial Bool/Nat/List fragment."
 
   alias Theoria.Equation.Branch
   alias Theoria.Equation.Clause

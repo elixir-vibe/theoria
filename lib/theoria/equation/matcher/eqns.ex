@@ -1,5 +1,5 @@
 defmodule Theoria.Equation.Matcher.Eqns do
-  @moduledoc "Experimental/internal API for 0.2; subject to change before 0.3. Lookup helpers for generated matcher equation metadata."
+  @moduledoc "Experimental before 1.0; the shape may change. Lookup helpers for generated matcher equation metadata."
 
   alias Theoria.Env
   alias Theoria.Env.Matcher, as: EnvMatcher

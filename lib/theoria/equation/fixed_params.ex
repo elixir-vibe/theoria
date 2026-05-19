@@ -1,5 +1,5 @@
 defmodule Theoria.Equation.FixedParams do
-  @moduledoc "Experimental/internal API for 0.2; subject to change before 0.3. Minimal descriptor for fixed parameters of compiled equation definitions."
+  @moduledoc "Experimental before 1.0; the shape may change. Minimal descriptor for fixed parameters of compiled equation definitions."
 
   @enforce_keys [:positions]
   defstruct [:positions]

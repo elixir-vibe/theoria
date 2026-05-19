@@ -1,5 +1,5 @@
 defmodule Theoria.Rewrite do
-  @moduledoc "Experimental/internal API for 0.2; subject to change before 0.3. Untrusted structural rewrite helpers over core terms."
+  @moduledoc "Experimental before 1.0; the shape may change. Untrusted structural rewrite helpers over core terms."
 
   alias Theoria.Rewrite.Match
   alias Theoria.Rewrite.Proof

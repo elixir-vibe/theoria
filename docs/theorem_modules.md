@@ -1,6 +1,6 @@
 # Theorem Modules
 
-Theoria theorem modules are ordinary Elixir modules that `use Theoria.DSL` and declare checked theorem functions with the `theorem` macro.
+Theoria theorem modules are ordinary Elixir modules that `use Theoria.DSL` and declare checked theorem functions with the `theorem` macro. See `examples/theorem_module/run.exs` for a small runnable workflow.
 
 ```elixir
 defmodule MyApp.Proofs do
@@ -77,7 +77,7 @@ mix theoria.theorems --axioms MyApp.Proofs
 mix theoria.validate --only logic
 ```
 
-`mix theoria.theorems` checks theorem modules against `Theoria.Prelude.env/0`. With `--install`, theorem modules are checked sequentially and installed as opaque theorem declarations, so later theorems/modules can refer to earlier theorem constants. With `--axioms`, the task reports trusted axiom assumptions used by each theorem module.
+`mix theoria.theorems` checks theorem modules against `Theoria.Prelude.env/0`. Named downstream modules are loaded directly from the project code path. With `--install`, theorem modules are checked sequentially and installed as opaque theorem declarations, so later theorems/modules can refer to earlier theorem constants. With `--axioms`, the task reports trusted axiom assumptions used by each theorem module.
 
 `mix theoria.check` runs the full native validation corpus, including theorem modules, definitional-equality checks, and inductive specs. Use `mix theoria.validate --only CATEGORY` to narrow validation while developing.
 

@@ -1,5 +1,5 @@
 defmodule Theoria.Lean.Module do
-  @moduledoc "Experimental/internal API for 0.2; subject to change before 0.3. Builds Lean oracle source files from encoded checks."
+  @moduledoc "Experimental before 1.0; the shape may change. Builds Lean oracle source files from encoded checks."
 
   alias Theoria.Elaborator
   alias Theoria.Equation.Identity

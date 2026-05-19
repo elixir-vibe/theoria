@@ -4,6 +4,12 @@
 
 Post-0.7 development toward public DSL and equation API stabilization.
 
+- Added 0.8 API stabilization boundary docs and public API stability guide.
+- Added a theorem module example and wired public examples into tests.
+- Added `Theoria.Equation` facade helpers for registry summary, identities, and theorem realization.
+- Made experimental pre-1.0 module docs version-neutral.
+- Added assurance summary accessors and extended downstream smoke coverage for installed theorem modules and assurance JSON.
+
 ## 0.7.0
 
 Kernel/reference assurance depth, replay diagnostics, and downstream smoke coverage.

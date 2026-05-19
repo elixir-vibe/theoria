@@ -1,5 +1,5 @@
 defmodule Theoria.Simp.Database do
-  @moduledoc "Experimental/internal API for 0.2; subject to change before 0.3. Untrusted simplifier database with rule priorities."
+  @moduledoc "Experimental before 1.0; the shape may change. Untrusted simplifier database with rule priorities."
 
   alias Theoria.Env
   alias Theoria.Equation.Eqns

@@ -1,5 +1,5 @@
 defmodule Theoria.Equation.Matcher.Type do
-  @moduledoc "Experimental/internal API for 0.2; subject to change before 0.3. Internal builder for checked matcher declaration types and bodies for supported fragments."
+  @moduledoc "Experimental before 1.0; the shape may change. Internal builder for checked matcher declaration types and bodies for supported fragments."
 
   alias Theoria.Equation.Matcher.Descriptor, as: MatcherDescriptor
   alias Theoria.Equation.Matcher.Info, as: MatcherInfo

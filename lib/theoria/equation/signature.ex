@@ -1,5 +1,5 @@
 defmodule Theoria.Equation.Signature do
-  @moduledoc "Experimental/internal API for 0.2; subject to change before 0.3. Telescope summary for compiler-owned equation metadata generation."
+  @moduledoc "Experimental before 1.0; the shape may change. Telescope summary for compiler-owned equation metadata generation."
 
   alias Theoria.Equation.FixedParams
   alias Theoria.Term

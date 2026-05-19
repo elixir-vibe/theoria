@@ -1,5 +1,5 @@
 defmodule Theoria.Lean.Encode.Application do
-  @moduledoc "Experimental/internal API for 0.2; subject to change before 0.3. Specialized Lean encoders for application spines."
+  @moduledoc "Experimental before 1.0; the shape may change. Specialized Lean encoders for application spines."
 
   alias Theoria.Lean.Encode
   alias Theoria.Term.Const

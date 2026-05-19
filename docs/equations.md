@@ -1,6 +1,6 @@
 # Equation metadata and generated lemmas
 
-Theoria's equation compiler is still internal groundwork, but compiled library definitions already carry auditable equation metadata.
+Theoria's equation compiler is still experimental groundwork, but compiled library definitions already carry auditable equation metadata. Prefer the `Theoria.Equation` facade for package usage; nested `Theoria.Equation.*` modules remain implementation details unless documented otherwise.
 
 Current flow:
 
@@ -133,7 +133,16 @@ Theoria.Equation.Matcher.Eqns.source(env, Identity.matcher_equation(:nat_add_mat
 #=> {:ok, :nat_add_match_1}
 ```
 
-Generated metadata can also be realized as checked `Theoria.Equation.Realized` artifacts without installing declarations:
+Generated metadata can also be realized as checked theorem artifacts without installing declarations. The facade exposes common registry/realization helpers:
+
+```elixir
+Theoria.Equation.summary(env)
+Theoria.Equation.identities(env, :nat_add)
+Theoria.Equation.realize(env, Identity.equation(:nat_add, :succ))
+Theoria.Equation.realize_all(env)
+```
+
+Lower-level lookup modules remain available for experimental workflows:
 
 ```elixir
 Theoria.Equation.Eqns.realize(env, :nat_add)

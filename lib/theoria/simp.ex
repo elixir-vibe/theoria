@@ -1,5 +1,5 @@
 defmodule Theoria.Simp do
-  @moduledoc "Experimental/internal API for 0.2; subject to change before 0.3. Tiny untrusted simplification groundwork backed by generated equation rules."
+  @moduledoc "Experimental before 1.0; the shape may change. Tiny untrusted simplification groundwork backed by generated equation rules."
 
   alias Theoria.Env
   alias Theoria.Equality.Chain

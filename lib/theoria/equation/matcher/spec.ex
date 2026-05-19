@@ -1,5 +1,5 @@
 defmodule Theoria.Equation.Matcher.Spec do
-  @moduledoc "Experimental/internal API for 0.2; subject to change before 0.3. Checked declaration package for a generated matcher."
+  @moduledoc "Experimental before 1.0; the shape may change. Checked declaration package for a generated matcher."
 
   alias Theoria.Env.Matcher, as: EnvMatcher
   alias Theoria.Equation.Info

@@ -1,5 +1,5 @@
 defmodule Theoria.Equation.Validator do
-  @moduledoc "Experimental/internal API for 0.2; subject to change before 0.3. Validation for constructor-equation clauses."
+  @moduledoc "Experimental before 1.0; the shape may change. Validation for constructor-equation clauses."
 
   alias Theoria.Equation.Clause
   alias Theoria.Equation.Pattern.{Constructor, Var, Wildcard}

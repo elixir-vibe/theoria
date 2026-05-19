@@ -1,5 +1,5 @@
 defmodule Theoria.Lean.MirrorPrelude do
-  @moduledoc "Experimental/internal API for 0.2; subject to change before 0.3. Lean declarations that bridge Theoria primitives not rendered directly to Lean core."
+  @moduledoc "Experimental before 1.0; the shape may change. Lean declarations that bridge Theoria primitives not rendered directly to Lean core."
 
   alias Theoria.Equation.Matcher.Spec, as: MatcherSpec
   alias Theoria.Lean.Encode

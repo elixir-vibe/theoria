@@ -1,5 +1,5 @@
 defmodule Theoria.Equation.Matcher.Indexed.Package do
-  @moduledoc "Experimental/internal API for 0.2; subject to change before 0.3. Coherent package for indexed matcher equation metadata."
+  @moduledoc "Experimental before 1.0; the shape may change. Coherent package for indexed matcher equation metadata."
 
   alias Theoria.Env
   alias Theoria.Equation.Info

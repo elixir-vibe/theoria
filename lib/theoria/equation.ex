@@ -1,16 +1,19 @@
 defmodule Theoria.Equation do
   @moduledoc """
-  Experimental/internal API for 0.2; subject to change before 0.3.
+  Experimental equation API facade.
 
-  Internal constructor-equation compiler facade.
+  `Theoria.Equation` exposes the supported Bool/Nat/List recursor fragment and
+  generated-equation registry helpers. It is not yet a public pattern-matching
+  language: callers still construct core terms and explicit clauses, while the
+  compiler handles coverage, pattern-shape validation, and recursor assembly.
 
-  `Theoria.Equation` supports the current Bool/Nat/List recursor fragment. It is
-  not yet a public pattern-matching language: callers still construct core terms
-  and explicit clauses, while the compiler handles coverage, pattern-shape
-  validation, and recursor assembly.
+  Experimental before 1.0; prefer this facade over depending on nested
+  `Theoria.Equation.*` implementation modules directly.
   """
 
+  alias Theoria.Env
   alias Theoria.Equation.Compiler
+  alias Theoria.Equation.Extension
   alias Theoria.Equation.Recursor.Application, as: RecursorApplication
 
   defdelegate bool_rec(motive, on_true, on_false, major), to: RecursorApplication
@@ -27,4 +30,24 @@ defmodule Theoria.Equation do
   defdelegate compile_nat(motive, clauses, major), to: Compiler
   defdelegate compile_list(element_type, motive, clauses, major), to: Compiler
   defdelegate compile_list(element_type, motive, clauses, major, levels), to: Compiler
+
+  @doc "Builds a generated equation registry snapshot from an environment."
+  @spec registry(Env.t()) :: Extension.Registry.t()
+  def registry(%Env{} = env), do: Extension.build(env)
+
+  @doc "Returns a compact generated equation registry summary."
+  @spec summary(Env.t() | Extension.Registry.t()) :: map()
+  def summary(env_or_registry), do: Extension.summary(env_or_registry)
+
+  @doc "Returns generated equation identities for a source definition in an environment."
+  @spec identities(Env.t(), atom()) :: {:ok, [Theoria.Equation.Identity.t()]} | {:error, term()}
+  def identities(%Env{} = env, source), do: Extension.equation_ids(env, source)
+
+  @doc "Realizes one generated equation theorem without installing it."
+  @spec realize(Env.t(), term()) :: {:ok, Theoria.Theorem.t()} | {:error, term()}
+  def realize(%Env{} = env, identity), do: Extension.realize(env, identity)
+
+  @doc "Realizes every generated equation theorem known to the environment."
+  @spec realize_all(Env.t()) :: {:ok, [Theoria.Theorem.t()]} | {:error, term()}
+  def realize_all(%Env{} = env), do: Extension.realize_all(env)
 end

@@ -1,5 +1,5 @@
 defmodule Theoria.Equation.Context do
-  @moduledoc "Experimental/internal API for 0.2; subject to change before 0.3. Internal named values available while materializing an equation branch body."
+  @moduledoc "Experimental before 1.0; the shape may change. Internal named values available while materializing an equation branch body."
 
   alias Theoria.Term
 

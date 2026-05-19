@@ -1,5 +1,5 @@
 defmodule Theoria.Equation.Recursor.Application do
-  @moduledoc "Experimental/internal API for 0.2; subject to change before 0.3. Internal raw recursor application builders used by the equation compiler."
+  @moduledoc "Experimental before 1.0; the shape may change. Internal raw recursor application builders used by the equation compiler."
 
   alias Theoria.Level
   alias Theoria.Term

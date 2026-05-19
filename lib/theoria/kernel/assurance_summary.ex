@@ -63,6 +63,24 @@ defmodule Theoria.Kernel.AssuranceSummary do
           replay: non_neg_integer()
         }
 
+  @spec curated(t()) :: Curated.t()
+  def curated(%__MODULE__{curated: curated}), do: curated
+
+  @spec generated_terms(t()) :: GeneratedTerms.t()
+  def generated_terms(%__MODULE__{generated_terms: generated_terms}), do: generated_terms
+
+  @spec environments(t()) :: Environments.t()
+  def environments(%__MODULE__{environments: environments}), do: environments
+
+  @spec artifacts(t()) :: Artifacts.t()
+  def artifacts(%__MODULE__{artifacts: artifacts}), do: artifacts
+
+  @spec theorem_count(t()) :: non_neg_integer()
+  def theorem_count(%__MODULE__{theorems: theorems}), do: theorems
+
+  @spec replay_count(t()) :: non_neg_integer()
+  def replay_count(%__MODULE__{replay: replay}), do: replay
+
   @spec from_report(Differential.Report.t()) :: t()
   def from_report(%Differential.Report{} = report) do
     %__MODULE__{

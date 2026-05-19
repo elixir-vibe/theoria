@@ -1,5 +1,5 @@
 defmodule Theoria.Lean.Mirror.Inductive do
-  @moduledoc "Experimental/internal API for 0.2; subject to change before 0.3. Generates small Lean mirror declarations from Theoria inductive specs."
+  @moduledoc "Experimental before 1.0; the shape may change. Generates small Lean mirror declarations from Theoria inductive specs."
 
   alias Theoria.Inductive.Constructor
   alias Theoria.Inductive.Spec

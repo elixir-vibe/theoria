@@ -1,5 +1,5 @@
 defmodule Theoria.Equation.Pattern do
-  @moduledoc "Experimental/internal API for 0.2; subject to change before 0.3. Equation compiler patterns."
+  @moduledoc "Experimental before 1.0; the shape may change. Equation compiler patterns."
 
   defmodule Var do
     @moduledoc "A variable pattern."

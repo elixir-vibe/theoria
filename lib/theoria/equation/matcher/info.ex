@@ -1,5 +1,5 @@
 defmodule Theoria.Equation.Matcher.Info do
-  @moduledoc "Experimental/internal API for 0.2; subject to change before 0.3. Small Theoria-side mirror of Lean matcher metadata."
+  @moduledoc "Experimental before 1.0; the shape may change. Small Theoria-side mirror of Lean matcher metadata."
 
   defmodule Alternative do
     @moduledoc "Metadata for one matcher alternative."

@@ -248,6 +248,7 @@ Start with:
 - [`docs/trusted_boundary.md`](docs/trusted_boundary.md) — what is trusted versus automation
 - [`docs/validation.md`](docs/validation.md) — native validation workflow
 - [`docs/assurance.md`](docs/assurance.md) — kernel assurance reports and summaries
+- [`docs/public_api.md`](docs/public_api.md) — stable, experimental, and internal API surfaces
 
 Additional maintainer and experimental notes live in the `docs/` directory. See [`CHANGELOG.md`](CHANGELOG.md) for release history.
 

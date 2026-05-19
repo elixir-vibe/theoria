@@ -20,4 +20,18 @@ defmodule DownstreamProofs do
       end
     end
   end
+
+  theorem :identity_again do
+    type do
+      forall :a, type(0) do
+        forall :x, var(:a) do
+          var(:a)
+        end
+      end
+    end
+
+    proof do
+      const(:identity)
+    end
+  end
 end

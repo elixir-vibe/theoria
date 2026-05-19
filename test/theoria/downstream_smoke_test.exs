@@ -11,7 +11,7 @@ defmodule Theoria.DownstreamSmokeTest do
     run_mix!(project_dir, ["deps.get"])
     run_mix!(project_dir, ["compile", "--warnings-as-errors"])
 
-    run_mix!(project_dir, ["theoria.theorems", "DownstreamProofs"])
+    run_mix!(project_dir, ["theoria.theorems", "--install", "DownstreamProofs"])
 
     run_mix!(project_dir, [
       "theoria.kernel.check",
@@ -23,6 +23,7 @@ defmodule Theoria.DownstreamSmokeTest do
       "1"
     ])
 
+    run_mix!(project_dir, ["theoria.kernel.check", "--assurance-summary", "--json"])
     run_mix!(project_dir, ["docs"])
   end
 

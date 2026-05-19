@@ -1,5 +1,5 @@
 defmodule Theoria.Equation.Clause do
-  @moduledoc "Experimental/internal API for 0.2; subject to change before 0.3. A constructor equation clause."
+  @moduledoc "Experimental before 1.0; the shape may change. A constructor equation clause."
 
   alias Theoria.Equation.Context
   alias Theoria.Equation.Pattern

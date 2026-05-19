@@ -19,6 +19,7 @@ defmodule Theoria.Kernel do
   alias Theoria.Inductive.Admission
   alias Theoria.Inductive.Spec
   alias Theoria.Kernel.AdmissionChecks
+  alias Theoria.Kernel.DefinitionAdmission
   alias Theoria.Kernel.MatcherAdmission
   alias Theoria.Kernel.RecursorRules
   alias Theoria.Kernel.TrustReport
@@ -168,15 +169,7 @@ defmodule Theoria.Kernel do
 
   def add_definition(%Env{} = env, name, type, value, universe_params \\ [], opts \\ [])
       when is_list(universe_params) and is_list(opts) do
-    with :ok <- ensure_fresh_declaration(env, name),
-         :ok <- ensure_universe_params(universe_params),
-         :ok <- ensure_definition_metadata(Keyword.get(opts, :metadata), name, type, value),
-         :ok <- ensure_level_params(type, universe_params),
-         :ok <- ensure_level_params(value, universe_params),
-         {:ok, %Sort{}} <- infer_sort(env, Context.new(), type),
-         :ok <- check(env, Context.new(), value, type) do
-      {:ok, Env.put_definition(env, name, type, value, universe_params, opts)}
-    end
+    DefinitionAdmission.add(env, name, type, value, universe_params, opts)
   end
 
   def add_matcher(%Env{} = env, %MatcherSpec{} = spec), do: MatcherAdmission.add(env, spec)
@@ -288,23 +281,6 @@ defmodule Theoria.Kernel do
   end
 
   defp ensure_universe_params(params), do: AdmissionChecks.ensure_universe_params(params)
-
-  defp ensure_definition_metadata(nil, _name, _type, _value), do: :ok
-
-  defp ensure_definition_metadata(
-         %Theoria.Equation.Info{name: name, type: type, value: value},
-         name,
-         type,
-         value
-       ),
-       do: :ok
-
-  defp ensure_definition_metadata(%Theoria.Equation.Info{} = metadata, name, _type, _value),
-    do: error(:invalid_declaration, kind: :equation_metadata, name: name, metadata: metadata)
-
-  defp ensure_definition_metadata(metadata, name, _type, _value) do
-    error(:invalid_declaration, kind: :definition_metadata, name: name, metadata: metadata)
-  end
 
   defp ensure_constant_kind(:constant, nil, nil), do: :ok
   defp ensure_constant_kind(:inductive, %Theoria.Env.Inductive{}, nil), do: :ok

@@ -21,7 +21,7 @@ Post-0.3 development toward proof-producing rewrite/simp automation.
 - Hardened definitional equality so diagnostic binder names no longer affect de Bruijn alpha-equivalent terms.
 - Removed the unsound symbolic universe upper-bound shortcut and normalized universe `max` modulo commutativity/associativity for level equality.
 - Avoided atom creation from CLI input in theorem, equation, and simp Mix tasks.
-- Extracted matcher declaration admission into a trusted-adjacent kernel admission module.
+- Extracted definition and matcher declaration admission into trusted-adjacent kernel admission modules.
 - Split theorem macro implementation out of the core term-construction DSL facade.
 - Named the indexed Vec matcher case frame to isolate fragile de Bruijn positions from the main planning flow.
 

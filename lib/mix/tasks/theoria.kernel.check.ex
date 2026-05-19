@@ -3,6 +3,7 @@ defmodule Mix.Tasks.Theoria.Kernel.Check do
 
   use Mix.Task
 
+  alias Theoria.Kernel.Coverage
   alias Theoria.Kernel.Differential
   alias Theoria.Prelude
 
@@ -12,10 +13,13 @@ defmodule Mix.Tasks.Theoria.Kernel.Check do
   def run(args) do
     Mix.Task.run("app.start")
 
-    with {opts, [], []} <- OptionParser.parse(args, strict: [json: :boolean, verbose: :boolean]),
+    with {opts, [], []} <-
+           OptionParser.parse(args,
+             strict: [coverage: :boolean, json: :boolean, verbose: :boolean]
+           ),
          {:ok, env} <- Prelude.env() do
       report = Differential.run(env)
-      print_report(report, opts)
+      print_report(env, report, opts)
       maybe_raise(report)
     else
       {_opts, _args, invalid} ->
@@ -26,9 +30,16 @@ defmodule Mix.Tasks.Theoria.Kernel.Check do
     end
   end
 
-  defp print_report(report, opts) do
+  defp print_report(env, report, opts) do
     if Keyword.get(opts, :json, false) do
-      Mix.shell().info(Jason.encode!(report))
+      output =
+        if Keyword.get(opts, :coverage, false) do
+          %{report: report, coverage: Coverage.summary(env, report)}
+        else
+          report
+        end
+
+      Mix.shell().info(Jason.encode!(output))
     else
       Mix.shell().info("Kernel differential checks...")
       Mix.shell().info("✓ infer checks: #{report.infer_count}")
@@ -42,6 +53,7 @@ defmodule Mix.Tasks.Theoria.Kernel.Check do
       Mix.shell().info("✓ replay checks: #{report.replay_count}")
       Mix.shell().info("- replay skipped: #{report.replay_skipped}")
       maybe_print_verbose(report, opts)
+      maybe_print_coverage(env, report, opts)
     end
   end
 
@@ -57,6 +69,23 @@ defmodule Mix.Tasks.Theoria.Kernel.Check do
       Mix.shell().info("  indexed_artifacts=#{report.indexed_artifact_count}")
       Mix.shell().info("  replay=#{report.replay_count} skipped=#{report.replay_skipped}")
       Mix.shell().info("  failures=#{length(report.failures)}")
+    end
+  end
+
+  defp maybe_print_coverage(env, report, opts) do
+    if Keyword.get(opts, :coverage, false) do
+      coverage = Coverage.summary(env, report)
+
+      Mix.shell().info("")
+      Mix.shell().info("coverage:")
+      Mix.shell().info("  supported_terms=#{length(coverage.supported_term_constructors)}")
+      Mix.shell().info("  unsupported_terms=#{length(coverage.unsupported_term_constructors)}")
+      Mix.shell().info("  declaration_kinds=#{inspect(coverage.declaration_kinds)}")
+      Mix.shell().info("  theorem_modules=#{coverage.theorem_module_checks}")
+      Mix.shell().info("  generated_artifacts=#{coverage.generated_artifact_checks}")
+      Mix.shell().info("  indexed_artifacts=#{coverage.indexed_artifact_checks}")
+      Mix.shell().info("  replay=#{coverage.replay_checks} skipped=#{coverage.replay_skipped}")
+      Mix.shell().info("  property_families=#{Enum.join(coverage.property_families, ", ")}")
     end
   end
 

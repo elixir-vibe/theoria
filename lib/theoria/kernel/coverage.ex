@@ -1,0 +1,57 @@
+defmodule Theoria.Kernel.Coverage do
+  @moduledoc "Kernel assurance coverage summary."
+
+  alias Theoria.Env
+  alias Theoria.Kernel.Differential.Report
+  alias Theoria.Kernel.Reference
+  alias Theoria.Term
+
+  @supported_terms [
+    Term.Sort,
+    Term.Const,
+    Term.App,
+    Term.Lam,
+    Term.Forall,
+    Term.BVar,
+    Term.Let,
+    Term.Eq,
+    Term.Refl,
+    Term.EqRec
+  ]
+
+  @property_families [
+    "Bool terms",
+    "Nat terms",
+    "List Bool terms",
+    "Vec Bool terms",
+    "List eliminator applications",
+    "closed equality proofs"
+  ]
+
+  @spec summary(Env.t(), Report.t()) :: map()
+  def summary(%Env{} = env, %Report{} = report) do
+    declarations = Env.declarations(env)
+
+    %{
+      supported_term_constructors: Enum.map(@supported_terms, &inspect/1),
+      unsupported_term_constructors: Enum.map(Reference.unsupported_terms(), &inspect/1),
+      declaration_kinds: declaration_kinds(env, declarations),
+      theorem_module_checks: report.theorem_count,
+      generated_artifact_checks: report.generated_artifact_count,
+      indexed_artifact_checks: report.indexed_artifact_count,
+      replay_checks: report.replay_count,
+      replay_skipped: report.replay_skipped,
+      property_families: @property_families
+    }
+  end
+
+  defp declaration_kinds(env, declarations) do
+    declarations
+    |> Enum.map(fn name -> Env.fetch(env, name) end)
+    |> Enum.flat_map(fn
+      {:ok, constant} -> [constant.kind]
+      :error -> []
+    end)
+    |> Enum.frequencies()
+  end
+end

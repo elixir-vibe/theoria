@@ -39,6 +39,19 @@ defmodule Mix.Tasks.Theoria.Kernel.CheckTest do
     assert output =~ "replay="
   end
 
+  test "prints coverage report" do
+    Mix.Task.clear()
+
+    output =
+      capture_io(fn ->
+        Check.run(["--coverage"])
+      end)
+
+    assert output =~ "coverage:"
+    assert output =~ "supported_terms="
+    assert output =~ "property_families="
+  end
+
   test "prints JSON report" do
     Mix.Task.clear()
 
@@ -55,5 +68,18 @@ defmodule Mix.Tasks.Theoria.Kernel.CheckTest do
     assert output =~ "\"indexed_artifact_checks\""
     assert output =~ "\"replay_checks\""
     assert output =~ "\"failures\":[]"
+  end
+
+  test "prints JSON coverage report" do
+    Mix.Task.clear()
+
+    output =
+      capture_io(fn ->
+        Check.run(["--coverage", "--json"])
+      end)
+
+    assert output =~ "\"report\""
+    assert output =~ "\"coverage\""
+    assert output =~ "\"supported_term_constructors\""
   end
 end

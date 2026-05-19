@@ -132,6 +132,10 @@ defmodule Theoria.Kernel.Reference do
 
   defp infer_application(_env, _context, other, _arg), do: error(:not_a_function, type: other)
 
+  @doc "Core term constructors not covered by the reference checker."
+  @spec unsupported_terms() :: [module()]
+  def unsupported_terms, do: []
+
   @doc "Reference type checking for the supported core fragment."
   @spec check(Env.t(), Term.t(), Term.t()) :: :ok | {:error, Error.t()}
   def check(%Env{} = env, term, expected), do: check(env, Context.new(), term, expected)

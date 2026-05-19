@@ -3,6 +3,9 @@
     public: ["Theoria"],
     dsl: "Theoria.DSL.*",
     library: "Theoria.Library.*",
+    rewrite: ["Theoria.Rewrite", "Theoria.Rewrite.*", "Theoria.Simp", "Theoria.Simp.*"],
+    lean: "Theoria.Lean.*",
+    mix_tasks: "Mix.Tasks.Theoria.*",
     kernel: [
       "Theoria.Context",
       "Theoria.Env",
@@ -17,7 +20,10 @@
   deps: [
     forbidden: [
       {:kernel, :dsl},
-      {:kernel, :library}
+      {:kernel, :library},
+      {:kernel, :rewrite},
+      {:kernel, :lean},
+      {:kernel, :mix_tasks}
     ]
   ],
   calls: [

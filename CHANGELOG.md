@@ -17,7 +17,7 @@ Post-0.3 development toward proof-producing rewrite/simp automation.
 - Added JSON output for equation realization and simp proof examples.
 - Added Elixir-authored kernel spec metadata, a reference checker for core terms, a reference normalizer, theorem-corpus differential checks, and `mix theoria.kernel.check`.
 - Updated equality chains to combine available step proofs with transitivity.
-- Added trusted boundary documentation for kernel-checked artifacts versus untrusted automation.
+- Added trusted boundary documentation and architecture policy guards for kernel-checked artifacts versus untrusted automation.
 
 ## 0.3.0
 

@@ -1,6 +1,6 @@
 # Trusted boundary
 
-Theoria keeps the trusted boundary small. Automation may search, compile, plan, or render proof data, but the result matters only after the native kernel checks it.
+Theoria keeps the trusted boundary small. Automation may search, compile, plan, or render proof data, but the result matters only after the native kernel checks it. The Reach architecture policy enforces this directionally by forbidding the kernel layer from depending on DSL, library, rewrite/simp, Lean, or Mix task layers.
 
 ## Trusted
 

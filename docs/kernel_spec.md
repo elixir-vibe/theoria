@@ -12,7 +12,7 @@ The trusted runtime boundary is centered on:
 - `Theoria.Context`
 - `Theoria.Env`
 
-Automation such as DSL expansion, theorem macros, equation compilation, matcher planning, rewrite/simp search, CLI rendering, and Lean encoding is untrusted. Their outputs matter only after native kernel checking.
+Automation such as DSL expansion, theorem macros, equation compilation, matcher planning, rewrite/simp search, CLI rendering, and Lean encoding is untrusted. Their outputs matter only after native kernel checking. The Reach architecture policy also forbids the kernel layer from depending on the DSL, library modules, rewrite/simp automation, Lean encoding, or Mix task entrypoints.
 
 ## Supported reference fragment
 
@@ -54,7 +54,7 @@ defeq(env, left, right) -> boolean
 
 ## Differential assurance
 
-`Theoria.Kernel.Differential` compares production kernel results against `Theoria.Kernel.Reference` on the curated kernel corpus and the built-in theorem modules. Property tests also generate closed Bool terms/equalities and compare production inference, checking, and normalization with the reference path.
+`Theoria.Kernel.Differential` compares production kernel results against `Theoria.Kernel.Reference` on the curated kernel corpus and the built-in theorem modules. Property tests also generate closed Bool/Nat terms and equalities, then compare production inference, checking, and normalization with the reference path.
 
 Run it with:
 

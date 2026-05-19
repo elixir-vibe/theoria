@@ -29,6 +29,10 @@ defmodule Theoria.Kernel.Generator do
     function_cases = named_cases(:bool_function, bool_terms, &bool_function_case(env, &1, &2))
     let_cases = named_cases(:nat_let, nat_terms, &nat_let_case(env, &1, &2))
     forall_cases = named_cases(:bool_forall, bool_terms, &bool_forall_case(env, &1, &2))
+    bool_equality_cases = named_cases(:bool_refl, bool_terms, &bool_reflexivity_case(env, &1, &2))
+    bool_eq_rec_cases = named_cases(:bool_eq_rec, bool_terms, &bool_eq_rec_case(env, &1, &2))
+    bool_beta_cases = named_cases(:bool_beta, bool_terms, &bool_beta_case(env, &1, &2))
+    nat_beta_cases = named_cases(:nat_beta, nat_terms, &nat_beta_case(env, &1, &2))
 
     uniq_generated_terms(
       bool_cases ++
@@ -37,7 +41,11 @@ defmodule Theoria.Kernel.Generator do
         eq_rec_cases ++
         function_cases ++
         let_cases ++
-        forall_cases
+        forall_cases ++
+        bool_equality_cases ++
+        bool_eq_rec_cases ++
+        bool_beta_cases ++
+        nat_beta_cases
     )
   end
 
@@ -102,11 +110,23 @@ defmodule Theoria.Kernel.Generator do
     GeneratedTerm.new(env, Term.refl(term), Term.eq(nat, term, term), name)
   end
 
+  defp bool_reflexivity_case(env, term, name) do
+    bool = Term.const(:Bool)
+    GeneratedTerm.new(env, Term.refl(term), Term.eq(bool, term, term), name)
+  end
+
   defp nat_eq_rec_case(env, term, name) do
     nat = Term.const(:Nat)
     motive = Term.lam(:n, nat, Term.shift(nat, 1))
 
     GeneratedTerm.new(env, Term.eq_rec(nat, motive, term, Term.refl(term)), nat, name)
+  end
+
+  defp bool_eq_rec_case(env, term, name) do
+    bool = Term.const(:Bool)
+    motive = Term.lam(:b, bool, Term.shift(bool, 1))
+
+    GeneratedTerm.new(env, Term.eq_rec(bool, motive, term, Term.refl(term)), bool, name)
   end
 
   defp bool_function_case(env, term, name) do
@@ -123,6 +143,18 @@ defmodule Theoria.Kernel.Generator do
     bool = Term.const(:Bool)
     body = Term.eq(Term.shift(bool, 1), Term.bvar(0), Term.shift(term, 1))
     GeneratedTerm.new(env, Term.forall(:b, bool, body), Term.sort(0), name)
+  end
+
+  defp bool_beta_case(env, term, name) do
+    bool = Term.const(:Bool)
+    identity = Term.lam(:b, bool, Term.bvar(0))
+    GeneratedTerm.new(env, Term.app(identity, term), bool, name)
+  end
+
+  defp nat_beta_case(env, term, name) do
+    nat = Term.const(:Nat)
+    successor = Term.lam(:n, nat, Term.app(Term.const(:succ), Term.bvar(0)))
+    GeneratedTerm.new(env, Term.app(successor, term), nat, name)
   end
 
   defp uniq_generated_terms(terms), do: Enum.uniq_by(terms, &{&1.term, &1.type})

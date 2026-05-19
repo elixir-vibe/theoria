@@ -11,7 +11,10 @@ defmodule Theoria.Kernel.Differential do
   alias Theoria.Kernel.Corpus
   alias Theoria.Kernel.Differential.Timings
   alias Theoria.Kernel.GeneratedTerm
+  alias Theoria.Kernel.GeneratedTerm.Failure, as: GeneratedTermFailure
+  alias Theoria.Kernel.GeneratedTerm.Report, as: GeneratedTermReport
   alias Theoria.Kernel.Generator
+  alias Theoria.Kernel.ProofStrategyReport
   alias Theoria.Kernel.Reference
   alias Theoria.Kernel.Reference.Normalize, as: ReferenceNormalize
   alias Theoria.Kernel.Reference.Replay
@@ -33,6 +36,7 @@ defmodule Theoria.Kernel.Differential do
       :rejection_count,
       :generated_term_count,
       :generated_term_families,
+      :generated_terms,
       :theorem_count,
       :theorem_modules,
       :theorem_replay_count,
@@ -40,6 +44,7 @@ defmodule Theoria.Kernel.Differential do
       :generated_artifact_count,
       :indexed_artifact_count,
       :proof_strategy_counts,
+      :proof_strategies,
       :replay_count,
       :replay_skipped,
       :artifact_replay_count,
@@ -59,6 +64,7 @@ defmodule Theoria.Kernel.Differential do
       :rejection_count,
       :generated_term_count,
       :generated_term_families,
+      :generated_terms,
       :theorem_count,
       :theorem_modules,
       :theorem_replay_count,
@@ -66,6 +72,7 @@ defmodule Theoria.Kernel.Differential do
       :generated_artifact_count,
       :indexed_artifact_count,
       :proof_strategy_counts,
+      :proof_strategies,
       :replay_count,
       :replay_skipped,
       :artifact_replay_count,
@@ -87,6 +94,7 @@ defmodule Theoria.Kernel.Differential do
             rejection_count: non_neg_integer(),
             generated_term_count: non_neg_integer(),
             generated_term_families: %{atom() => non_neg_integer()},
+            generated_terms: GeneratedTermReport.t(),
             theorem_count: non_neg_integer(),
             theorem_modules: [TheoremModuleReport.t()],
             theorem_replay_count: non_neg_integer(),
@@ -94,6 +102,7 @@ defmodule Theoria.Kernel.Differential do
             generated_artifact_count: non_neg_integer(),
             indexed_artifact_count: non_neg_integer(),
             proof_strategy_counts: %{atom() => non_neg_integer()},
+            proof_strategies: ProofStrategyReport.t(),
             replay_count: non_neg_integer(),
             replay_skipped: non_neg_integer(),
             artifact_replay_count: non_neg_integer(),
@@ -171,8 +180,8 @@ defmodule Theoria.Kernel.Differential do
   end
 
   @doc "Runs the default kernel differential corpus."
-  @spec run(Env.t()) :: Report.t()
-  def run(%Env{} = env) do
+  @spec run(Env.t(), keyword()) :: Report.t()
+  def run(%Env{} = env, opts \\ []) do
     total_start = monotonic_time()
 
     {infer_failures, infer_ms} =
@@ -193,8 +202,8 @@ defmodule Theoria.Kernel.Differential do
     {defeq_failures, defeq_ms} =
       timed(fn -> failures(Corpus.defeq_cases(), &compare_defeq_case(env, &1)) end)
 
-    {{generated_term_count, generated_term_families, generated_term_failures}, _generated_term_ms} =
-      timed(fn -> generated_term_failures() end)
+    {{generated_terms, generated_term_failures}, _generated_term_ms} =
+      timed(fn -> generated_term_failures(opts) end)
 
     {{theorem_count, theorem_modules, theorem_replay_count, theorem_replay_skipped,
       theorem_failures}, theorem_ms} =
@@ -208,6 +217,10 @@ defmodule Theoria.Kernel.Differential do
 
     {replay_report, replay_ms} = timed(fn -> Replay.run(env) end)
     {artifact_replay, artifact_replay_ms} = timed(fn -> artifact_replay(env) end)
+
+    proof_strategy_counts =
+      proof_strategy_counts(generated_artifact_count, indexed_artifact_count)
+
     total_ms = Timings.elapsed_ms(total_start, monotonic_time())
 
     %Report{
@@ -217,16 +230,17 @@ defmodule Theoria.Kernel.Differential do
       defeq_count: length(Corpus.defeq_cases()),
       rejection_count:
         length(Corpus.infer_rejection_cases()) + length(Corpus.check_rejection_cases()),
-      generated_term_count: generated_term_count,
-      generated_term_families: generated_term_families,
+      generated_term_count: generated_terms.total,
+      generated_term_families: generated_terms.families,
+      generated_terms: generated_terms,
       theorem_count: theorem_count,
       theorem_modules: theorem_modules,
       theorem_replay_count: theorem_replay_count,
       theorem_replay_skipped: theorem_replay_skipped,
       generated_artifact_count: generated_artifact_count,
       indexed_artifact_count: indexed_artifact_count,
-      proof_strategy_counts:
-        proof_strategy_counts(generated_artifact_count, indexed_artifact_count),
+      proof_strategy_counts: proof_strategy_counts,
+      proof_strategies: ProofStrategyReport.new(proof_strategy_counts),
       replay_count: replay_report.checked,
       replay_skipped: replay_report.skipped,
       artifact_replay_count: ArtifactReplay.checked(artifact_replay),
@@ -278,37 +292,50 @@ defmodule Theoria.Kernel.Differential do
 
   defp monotonic_time, do: System.monotonic_time()
 
-  defp generated_term_failures do
-    terms = Generator.small_terms(size: 3)
-    {length(terms), generated_term_families(terms), failures(terms, &compare_generated_term/1)}
+  defp generated_term_failures(opts) do
+    generator_opts = generated_term_options(opts)
+    terms = Generator.small_terms(generator_opts)
+    {GeneratedTermReport.new(terms, generator_opts), failures(terms, &compare_generated_term/1)}
   end
 
-  defp generated_term_families(terms) do
-    terms
-    |> Enum.map(&generated_term_family/1)
-    |> Enum.frequencies()
+  defp generated_term_options(opts) do
+    [
+      size: Keyword.get(opts, :generated_size, 3),
+      max_terms: Keyword.get(opts, :generated_max_terms, 128)
+    ]
   end
 
-  defp generated_term_family(%GeneratedTerm{name: {family, _index}}), do: family
-  defp generated_term_family(%GeneratedTerm{name: family}) when is_atom(family), do: family
-  defp generated_term_family(%GeneratedTerm{}), do: :unnamed
-
-  defp compare_generated_term(%GeneratedTerm{name: name, env: env, term: term, type: type}) do
+  defp compare_generated_term(%GeneratedTerm{env: env, term: term, type: type} = generated) do
     with :ok <-
-           compare(:generated_infer, name, Kernel.infer(env, term), Reference.infer(env, term)),
+           compare_generated(
+             :generated_infer,
+             generated,
+             Kernel.infer(env, term),
+             Reference.infer(env, term)
+           ),
          :ok <-
-           compare(
+           compare_generated(
              :generated_check,
-             name,
+             generated,
              Kernel.check(env, term, type),
              Reference.check(env, term, type)
            ) do
-      compare(
+      compare_generated(
         :generated_normalize,
-        name,
+        generated,
         Normalize.normalize(env, term),
         ReferenceNormalize.normalize(env, term)
       )
+    end
+  end
+
+  defp compare_generated(kind, generated, production, reference) do
+    if comparable(production) == comparable(reference) do
+      :ok
+    else
+      {:error,
+       {:generated_term, generated.name,
+        GeneratedTermFailure.new(kind, generated, production, reference)}}
     end
   end
 

@@ -252,6 +252,7 @@ Guides included with the package:
 - [`docs/kernel_spec.md`](docs/kernel_spec.md) — Elixir-authored kernel spec, reference checker, and differential checks
 - [`docs/validation.md`](docs/validation.md) — native validation corpus
 - [`docs/reports.md`](docs/reports.md) — CLI report, coverage, explanation, and JSON output guide
+- [`docs/proof_capabilities.md`](docs/proof_capabilities.md) — proof-producing rewrite/simp path support and boundaries
 - [`docs/lean_validation.md`](docs/lean_validation.md) — contributor-only Lean oracle validation
 - [`docs/equations.md`](docs/equations.md) — internal equation, matcher, rewrite, and simp groundwork
 - [`CHANGELOG.md`](CHANGELOG.md) — release history

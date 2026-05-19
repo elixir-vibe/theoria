@@ -77,6 +77,7 @@ defmodule Theoria.MixProject do
         "docs/inductives.md",
         "docs/validation.md",
         "docs/reports.md",
+        "docs/proof_capabilities.md",
         "docs/equations.md",
         "docs/kernel_spec.md",
         "docs/lean_validation.md",

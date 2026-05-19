@@ -17,10 +17,17 @@ defmodule Theoria.Kernel.DifferentialTest do
     assert report.defeq_count > 0
     assert report.rejection_count > 0
     assert report.generated_term_count > 0
+    assert report.generated_terms.total == report.generated_term_count
+    assert report.generated_terms.size == 3
+    assert report.generated_terms.max_terms == 128
     assert report.generated_term_families.bool > 0
     assert report.generated_term_families.nat_eq_rec > 0
     assert report.generated_term_families.nat_let > 0
     assert report.generated_term_families.bool_forall > 0
+    assert report.generated_term_families.bool_refl > 0
+    assert report.generated_term_families.bool_eq_rec > 0
+    assert report.generated_term_families.bool_beta > 0
+    assert report.generated_term_families.nat_beta > 0
     assert report.theorem_count > 0
     assert report.theorem_modules != []
     assert report.theorem_replay_count > 0
@@ -28,6 +35,10 @@ defmodule Theoria.Kernel.DifferentialTest do
     assert report.indexed_artifact_count > 0
     assert report.proof_strategy_counts.refl == report.generated_artifact_count
     assert report.proof_strategy_counts.recursor_iota_refl == report.indexed_artifact_count
+
+    assert report.proof_strategies.total ==
+             report.generated_artifact_count + report.indexed_artifact_count
+
     assert report.replay_count > 0
     assert report.artifact_replay_count > 0
   end

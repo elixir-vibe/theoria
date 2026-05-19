@@ -1,3 +1,39 @@
+defimpl Jason.Encoder, for: Theoria.Kernel.GeneratedTerm.Report do
+  def encode(report, opts) do
+    Jason.Encode.map(
+      %{
+        total: report.total,
+        families: report.families,
+        size: report.size,
+        max_terms: report.max_terms
+      },
+      opts
+    )
+  end
+end
+
+defimpl Jason.Encoder, for: Theoria.Kernel.GeneratedTerm.Failure do
+  def encode(failure, opts) do
+    Jason.Encode.map(
+      %{
+        phase: failure.phase,
+        name: inspect(failure.name),
+        term: failure.term,
+        type: failure.type,
+        production: failure.production,
+        reference: failure.reference
+      },
+      opts
+    )
+  end
+end
+
+defimpl Jason.Encoder, for: Theoria.Kernel.ProofStrategyReport do
+  def encode(report, opts) do
+    Jason.Encode.map(%{total: report.total, counts: report.counts}, opts)
+  end
+end
+
 defimpl Jason.Encoder, for: Theoria.Kernel.Differential.Timings do
   def encode(timings, opts) do
     Jason.Encode.map(
@@ -86,10 +122,7 @@ defimpl Jason.Encoder, for: Theoria.Kernel.Differential.Report do
         defeq_checks: report.defeq_count,
         rejection_checks: report.rejection_count,
         generated_term_checks: report.generated_term_count,
-        generated_terms: %{
-          total: report.generated_term_count,
-          families: report.generated_term_families
-        },
+        generated_terms: report.generated_terms,
         theorem_checks: report.theorem_count,
         theorem_modules: report.theorem_modules,
         theorem_replay_checks: report.theorem_replay_count,
@@ -97,6 +130,7 @@ defimpl Jason.Encoder, for: Theoria.Kernel.Differential.Report do
         generated_artifact_checks: report.generated_artifact_count,
         indexed_artifact_checks: report.indexed_artifact_count,
         proof_strategy_counts: report.proof_strategy_counts,
+        proof_strategies: report.proof_strategies,
         replay_checks: report.replay_count,
         replay_skipped: report.replay_skipped,
         artifact_replay_checks: report.artifact_replay_count,
@@ -112,6 +146,14 @@ defimpl Jason.Encoder, for: Theoria.Kernel.Differential.Report do
       },
       opts
     )
+  end
+
+  defp encode_failure({:generated_term, name, reason}) do
+    %{
+      kind: :generated_term,
+      name: inspect(name),
+      reason: reason
+    }
   end
 
   defp encode_failure({name, kind, reason}) do

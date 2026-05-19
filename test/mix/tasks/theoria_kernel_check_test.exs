@@ -37,6 +37,18 @@ defmodule Mix.Tasks.Theoria.Kernel.CheckTest do
     assert output =~ "- artifact replay skipped:"
   end
 
+  test "accepts generated term bounds" do
+    Mix.Task.clear()
+
+    output =
+      capture_io(fn ->
+        Check.run(["--generated-size", "1", "--generated-max-terms", "4", "--verbose"])
+      end)
+
+    assert output =~ "✓ generated term checks: 39"
+    assert output =~ "generated_terms=39 size=1 max_terms=4"
+  end
+
   test "prints verbose report" do
     Mix.Task.clear()
 
@@ -83,9 +95,11 @@ defmodule Mix.Tasks.Theoria.Kernel.CheckTest do
     assert output =~ "\"generated_term_checks\""
     assert output =~ "\"generated_terms\""
     assert output =~ "\"families\""
+    assert output =~ "\"max_terms\""
     assert output =~ "\"generated_artifact_checks\""
     assert output =~ "\"indexed_artifact_checks\""
     assert output =~ "\"proof_strategy_counts\""
+    assert output =~ "\"proof_strategies\""
     assert output =~ "\"replay_checks\""
     assert output =~ "\"artifact_replay_checks\""
     assert output =~ "\"generated_artifact_replay_checks\""

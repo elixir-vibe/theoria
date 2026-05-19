@@ -9,6 +9,7 @@ defmodule Theoria.Rewrite.Proof do
   alias Theoria.Rewrite.Proof.Check
   alias Theoria.Rewrite.Proof.EqRec, as: EqRecProof
   alias Theoria.Rewrite.Proof.Result
+  alias Theoria.Rewrite.Proof.Value, as: ValueProof
   alias Theoria.Rewrite.Rule
   alias Theoria.Rewrite.Step
   alias Theoria.Term
@@ -265,43 +266,8 @@ defmodule Theoria.Rewrite.Proof do
     end
   end
 
-  defp lift_value(env, result_type, proof, %Step{before: %Term.Let{}} = step),
-    do: lift_let_value(env, result_type, proof, step)
-
-  defp lift_value(_env, _result_type, _proof, _step), do: {:error, :unsupported_path}
-
-  defp lift_let_value(env, result_type, proof, step) do
-    case {step.before, step.after} do
-      {%Term.Let{} = before, %Term.Let{} = after_term}
-      when before.name == after_term.name and before.type == after_term.type and
-             before.body == after_term.body ->
-        with {:ok, value_type} <- Kernel.infer(env, before.value) do
-          target = %Term.Let{
-            before
-            | type: Term.shift(before.type, 1),
-              value: Term.bvar(0),
-              body: Term.shift(before.body, 1)
-          }
-
-          motive =
-            Term.lam(
-              before.name,
-              value_type,
-              Term.eq(Term.shift(result_type, 1), Term.shift(step.before, 1), target)
-            )
-
-          Check.lifted(
-            env,
-            result_type,
-            Term.eq_rec(value_type, motive, Term.refl(step.before), proof),
-            step
-          )
-        end
-
-      _ ->
-        {:error, :unsupported_path}
-    end
-  end
+  defp lift_value(env, result_type, proof, %Step{} = step),
+    do: ValueProof.lift(env, result_type, proof, step)
 
   defp lift_app_arg(env, type, proof, step) do
     case {step.before, step.after} do

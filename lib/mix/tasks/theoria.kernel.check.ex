@@ -16,10 +16,17 @@ defmodule Mix.Tasks.Theoria.Kernel.Check do
 
     with {opts, [], []} <-
            OptionParser.parse(args,
-             strict: [coverage: :boolean, explain: :boolean, json: :boolean, verbose: :boolean]
+             strict: [
+               coverage: :boolean,
+               explain: :boolean,
+               generated_size: :integer,
+               generated_max_terms: :integer,
+               json: :boolean,
+               verbose: :boolean
+             ]
            ),
          {:ok, env} <- Prelude.env() do
-      report = Differential.run(env)
+      report = Differential.run(env, differential_opts(opts))
       print_report(env, report, opts)
       maybe_raise(report)
     else
@@ -29,6 +36,13 @@ defmodule Mix.Tasks.Theoria.Kernel.Check do
       {:error, reason} ->
         Mix.raise("failed to build Theoria prelude: #{inspect(reason)}")
     end
+  end
+
+  defp differential_opts(opts) do
+    [
+      generated_size: Keyword.get(opts, :generated_size, 3),
+      generated_max_terms: Keyword.get(opts, :generated_max_terms, 128)
+    ]
   end
 
   defp print_report(env, report, opts) do
@@ -87,8 +101,12 @@ defmodule Mix.Tasks.Theoria.Kernel.Check do
       Mix.shell().info("  corpus: infer=#{report.infer_count} check=#{report.check_count}")
       Mix.shell().info("  normalize=#{report.normalize_count} defeq=#{report.defeq_count}")
       Mix.shell().info("  rejected=#{report.rejection_count}")
-      Mix.shell().info("  generated_terms=#{report.generated_term_count}")
-      print_generated_term_families(report.generated_term_families, "    ")
+
+      Mix.shell().info(
+        "  generated_terms=#{report.generated_terms.total} size=#{report.generated_terms.size} max_terms=#{report.generated_terms.max_terms}"
+      )
+
+      print_generated_term_families(report.generated_terms.families, "    ")
       Mix.shell().info("  modules=#{report.theorem_count}")
 
       Enum.each(report.theorem_modules, fn module ->

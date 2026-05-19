@@ -12,6 +12,7 @@ Post-0.6 development toward deeper replay and environment assurance.
 - Strengthened invalid environment assurance to match expected rejection reasons and cover duplicate declarations, bad theorem proofs, and unknown dependencies.
 - Added `Theoria.Kernel.AssuranceSummary` and `mix theoria.kernel.check --assurance-summary`.
 - Added metadata/reduction replay checks and environment corpus report accessors.
+- Added a downstream Mix project smoke fixture covering dependency compilation, theorem task usage, kernel checks, and docs.
 
 ## 0.6.0
 

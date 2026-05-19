@@ -24,6 +24,10 @@ The 0.7 line focuses on deeper kernel/reference assurance through environment re
 
 `mix theoria.kernel.check --assurance-summary` prints a user-facing summary of curated corpus, generated term, environment, artifact, theorem, and replay assurance coverage. `--json` returns the same summary through Jason-encoded structs.
 
+## Downstream smoke coverage
+
+The 0.7 test suite includes a small downstream Mix project fixture that consumes Theoria as a path dependency, compiles a theorem module, runs Theoria Mix tasks, and builds docs. This catches packaging and task-discovery regressions before release.
+
 ## Boundaries
 
 This is still assurance, not a formal proof of kernel correctness. The trusted runtime boundary remains native kernel checking of declarations and artifacts. Lean remains an optional contributor oracle outside the trusted runtime path.

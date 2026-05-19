@@ -1,8 +1,10 @@
 # Changelog
 
-## Unreleased
+## 0.6.0
 
-Post-0.5 development toward deeper proof-producing automation and stronger generated-term assurance.
+Released 2026-05-18.
+
+Proof-producing rewrite expansion and structured generated assurance reports.
 
 - Added an experimental deterministic typed generator module and wired generated-term checks into kernel differential reports.
 - Added kernel-checked proof lifting for `EqRec` base/proof rewrite paths, including supported nested paths.

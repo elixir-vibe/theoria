@@ -6,6 +6,7 @@ Post-0.4 development toward stronger kernel assurance and deeper proof automatio
 
 - Bumped development version to `0.5.0-dev`.
 - Added reference environment replay checks to `mix theoria.kernel.check`.
+- Extracted constant/axiom and theorem admission from the main kernel module.
 
 ## 0.4.0
 

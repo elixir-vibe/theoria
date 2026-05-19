@@ -9,19 +9,15 @@ defmodule Theoria.Kernel do
   alias Theoria.Context
   alias Theoria.Env
   alias Theoria.Env.Constant
-  alias Theoria.Env.Constructor, as: EnvConstructor
-  alias Theoria.Env.Inductive, as: EnvInductive
   alias Theoria.Env.Matcher, as: EnvMatcher
-  alias Theoria.Env.Recursor, as: EnvRecursor
-  alias Theoria.Env.Reduction
   alias Theoria.Equation.Matcher.Spec, as: MatcherSpec
   alias Theoria.Error
   alias Theoria.Inductive.Admission
   alias Theoria.Inductive.Spec
-  alias Theoria.Kernel.AdmissionChecks
+  alias Theoria.Kernel.ConstantAdmission
   alias Theoria.Kernel.DefinitionAdmission
   alias Theoria.Kernel.MatcherAdmission
-  alias Theoria.Kernel.RecursorRules
+  alias Theoria.Kernel.TheoremAdmission
   alias Theoria.Kernel.TrustReport
   alias Theoria.Normalize
   alias Theoria.Term
@@ -136,35 +132,12 @@ defmodule Theoria.Kernel do
 
   def add_constant(%Env{} = env, name, type, universe_params \\ [], opts \\ [])
       when is_list(universe_params) and is_list(opts) do
-    with :ok <- ensure_fresh_declaration(env, name),
-         :ok <- ensure_universe_params(universe_params),
-         :ok <-
-           ensure_constant_kind(
-             Keyword.get(opts, :kind, :constant),
-             Keyword.get(opts, :metadata),
-             Keyword.get(opts, :reduction)
-           ),
-         :ok <- ensure_reduction(Keyword.get(opts, :reduction)),
-         :ok <-
-           ensure_reduction_metadata(
-             env,
-             Keyword.get(opts, :reduction),
-             Keyword.get(opts, :metadata)
-           ),
-         :ok <- ensure_level_params(type, universe_params),
-         {:ok, %Sort{}} <- infer_sort(env, Context.new(), type) do
-      {:ok, Env.put_constant(env, name, type, universe_params, opts)}
-    end
+    ConstantAdmission.add_constant(env, name, type, universe_params, opts)
   end
 
   def add_axiom(%Env{} = env, name, type, universe_params \\ [])
       when is_list(universe_params) do
-    with :ok <- ensure_fresh_declaration(env, name),
-         :ok <- ensure_universe_params(universe_params),
-         :ok <- ensure_level_params(type, universe_params),
-         {:ok, %Sort{}} <- infer_sort(env, Context.new(), type) do
-      {:ok, Env.put_axiom(env, name, type, universe_params)}
-    end
+    ConstantAdmission.add_axiom(env, name, type, universe_params)
   end
 
   def add_definition(%Env{} = env, name, type, value, universe_params \\ [], opts \\ [])
@@ -176,14 +149,7 @@ defmodule Theoria.Kernel do
 
   def add_theorem(%Env{} = env, name, type, proof, universe_params \\ [])
       when is_list(universe_params) do
-    with :ok <- ensure_fresh_declaration(env, name),
-         :ok <- ensure_universe_params(universe_params),
-         :ok <- ensure_level_params(type, universe_params),
-         :ok <- ensure_level_params(proof, universe_params),
-         {:ok, %Sort{}} <- infer_sort(env, Context.new(), type),
-         :ok <- check(env, Context.new(), proof, type) do
-      {:ok, Env.put_theorem(env, name, type, proof, universe_params)}
-    end
+    TheoremAdmission.add(env, name, type, proof, universe_params)
   end
 
   def add_inductive(%Env{} = env, %Spec{} = spec), do: Admission.install(env, spec)
@@ -279,93 +245,6 @@ defmodule Theoria.Kernel do
       )
     end
   end
-
-  defp ensure_universe_params(params), do: AdmissionChecks.ensure_universe_params(params)
-
-  defp ensure_constant_kind(:constant, nil, nil), do: :ok
-  defp ensure_constant_kind(:inductive, %Theoria.Env.Inductive{}, nil), do: :ok
-  defp ensure_constant_kind(:constructor, %EnvConstructor{}, nil), do: :ok
-  defp ensure_constant_kind(:matcher, %EnvMatcher{}, nil), do: :ok
-
-  defp ensure_constant_kind(:recursor, %EnvRecursor{num_indices: indices}, nil) when indices > 0,
-    do: :ok
-
-  defp ensure_constant_kind(:recursor, %EnvRecursor{rules: []}, nil), do: :ok
-  defp ensure_constant_kind(:recursor, %EnvRecursor{}, %Reduction.Iota{}), do: :ok
-
-  defp ensure_constant_kind(_kind, _metadata, _reduction),
-    do: error(:invalid_declaration, kind: :metadata)
-
-  defp ensure_reduction(nil), do: :ok
-
-  defp ensure_reduction(reduction) do
-    if Reduction.known?(reduction) do
-      :ok
-    else
-      error(:invalid_reduction, reduction: reduction)
-    end
-  end
-
-  defp ensure_reduction_metadata(env, nil, %EnvRecursor{num_indices: indices} = recursor)
-       when indices > 0 do
-    with :ok <- ensure_recursor_rule_count(recursor),
-         :ok <- ensure_recursor_rule_coverage(env, recursor),
-         :ok <- ensure_recursor_rules(env, recursor) do
-      :ok
-    else
-      {:error, _error} = error -> error
-    end
-  end
-
-  defp ensure_reduction_metadata(_env, nil, _metadata), do: :ok
-
-  defp ensure_reduction_metadata(env, %Reduction.Iota{}, %EnvRecursor{} = recursor) do
-    with :ok <- ensure_recursor_rule_count(recursor),
-         :ok <- ensure_recursor_rule_coverage(env, recursor),
-         :ok <- ensure_recursor_rules(env, recursor) do
-      :ok
-    else
-      {:error, _error} = error -> error
-    end
-  end
-
-  defp ensure_reduction_metadata(_env, %Reduction.Iota{} = reduction, metadata) do
-    error(:invalid_reduction, reduction: reduction, metadata: metadata)
-  end
-
-  defp ensure_reduction_metadata(_env, _reduction, _metadata), do: :ok
-
-  defp ensure_recursor_rule_count(%EnvRecursor{} = recursor) do
-    if recursor.num_minors == length(recursor.rules) do
-      :ok
-    else
-      error(:invalid_reduction, reduction: %Reduction.Iota{}, metadata: recursor)
-    end
-  end
-
-  defp ensure_recursor_rule_coverage(env, %EnvRecursor{} = recursor) do
-    with {:ok, inductive} <- recursor_inductive(recursor),
-         {:ok, %EnvInductive{constructors: constructors}} <- Env.fetch_inductive(env, inductive),
-         true <- constructors == Enum.map(recursor.rules, & &1.constructor),
-         true <- length(constructors) == MapSet.size(MapSet.new(constructors)) do
-      :ok
-    else
-      _other -> error(:invalid_reduction, reduction: %Reduction.Iota{}, metadata: recursor)
-    end
-  end
-
-  defp ensure_recursor_rules(env, %EnvRecursor{} = recursor) do
-    case RecursorRules.validate(env, recursor) do
-      :ok -> :ok
-      :error -> error(:invalid_reduction, reduction: %Reduction.Iota{}, metadata: recursor)
-    end
-  end
-
-  defp recursor_inductive(%EnvRecursor{inductives: [inductive]}), do: {:ok, inductive}
-  defp recursor_inductive(_recursor), do: :error
-
-  defp ensure_level_params(term, allowed_params),
-    do: AdmissionChecks.ensure_level_params(term, allowed_params)
 
   def validate_env(%Env{} = env) do
     with :ok <- validate_declaration_index(env) do
@@ -482,9 +361,6 @@ defmodule Theoria.Kernel do
         error(:missing_declaration, name: name)
     end
   end
-
-  defp ensure_fresh_declaration(env, name),
-    do: AdmissionChecks.ensure_fresh_declaration(env, name)
 
   defp check_lambda(env, context, %Lam{} = lam, %Forall{} = expected) do
     with :ok <- ensure_defeq(env, lam.domain, expected.domain, :lambda_domain_mismatch) do

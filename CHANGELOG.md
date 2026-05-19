@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+Post-0.7 development toward public DSL and equation API stabilization.
+
 ## 0.7.0
 
 Kernel/reference assurance depth, replay diagnostics, and downstream smoke coverage.

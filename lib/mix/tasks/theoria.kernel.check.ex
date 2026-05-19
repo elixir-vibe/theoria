@@ -12,7 +12,7 @@ defmodule Mix.Tasks.Theoria.Kernel.Check do
   def run(args) do
     Mix.Task.run("app.start")
 
-    with {opts, [], []} <- OptionParser.parse(args, strict: [json: :boolean]),
+    with {opts, [], []} <- OptionParser.parse(args, strict: [json: :boolean, verbose: :boolean]),
          {:ok, env} <- Prelude.env() do
       report = Differential.run(env)
       print_report(report, opts)
@@ -38,6 +38,22 @@ defmodule Mix.Tasks.Theoria.Kernel.Check do
       Mix.shell().info("✓ rejection checks: #{report.rejection_count}")
       Mix.shell().info("✓ theorem checks: #{report.theorem_count}")
       Mix.shell().info("✓ generated artifact checks: #{report.generated_artifact_count}")
+      Mix.shell().info("✓ indexed artifact checks: #{report.indexed_artifact_count}")
+      maybe_print_verbose(report, opts)
+    end
+  end
+
+  defp maybe_print_verbose(report, opts) do
+    if Keyword.get(opts, :verbose, false) do
+      Mix.shell().info("")
+      Mix.shell().info("verbose:")
+      Mix.shell().info("  corpus: infer=#{report.infer_count} check=#{report.check_count}")
+      Mix.shell().info("  normalize=#{report.normalize_count} defeq=#{report.defeq_count}")
+      Mix.shell().info("  rejected=#{report.rejection_count}")
+      Mix.shell().info("  modules=#{report.theorem_count}")
+      Mix.shell().info("  generated_artifacts=#{report.generated_artifact_count}")
+      Mix.shell().info("  indexed_artifacts=#{report.indexed_artifact_count}")
+      Mix.shell().info("  failures=#{length(report.failures)}")
     end
   end
 

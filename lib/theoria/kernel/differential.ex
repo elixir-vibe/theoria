@@ -3,6 +3,8 @@ defmodule Theoria.Kernel.Differential do
 
   alias Theoria.Env
   alias Theoria.Equation.Extension
+  alias Theoria.Equation.Matcher.Indexed.Realization, as: IndexedRealization
+  alias Theoria.Equation.Realized
   alias Theoria.Kernel
   alias Theoria.Kernel.Corpus
   alias Theoria.Kernel.Reference
@@ -11,6 +13,7 @@ defmodule Theoria.Kernel.Differential do
   alias Theoria.Term
   alias Theoria.Theorem
   alias Theoria.Validation.Corpus, as: ValidationCorpus
+  alias Theoria.Validation.IndexedMatchers
 
   defmodule Report do
     @moduledoc "Summary of kernel differential checks."
@@ -23,6 +26,7 @@ defmodule Theoria.Kernel.Differential do
       :rejection_count,
       :theorem_count,
       :generated_artifact_count,
+      :indexed_artifact_count,
       :failures
     ]
     defstruct [
@@ -33,6 +37,7 @@ defmodule Theoria.Kernel.Differential do
       :rejection_count,
       :theorem_count,
       :generated_artifact_count,
+      :indexed_artifact_count,
       :failures
     ]
 
@@ -45,6 +50,7 @@ defmodule Theoria.Kernel.Differential do
             rejection_count: non_neg_integer(),
             theorem_count: non_neg_integer(),
             generated_artifact_count: non_neg_integer(),
+            indexed_artifact_count: non_neg_integer(),
             failures: [failure()]
           }
 
@@ -111,6 +117,7 @@ defmodule Theoria.Kernel.Differential do
     defeq_failures = failures(Corpus.defeq_cases(), &compare_defeq_case(env, &1))
     {theorem_count, theorem_failures} = theorem_failures(env)
     {generated_artifact_count, generated_artifact_failures} = generated_artifact_failures(env)
+    {indexed_artifact_count, indexed_artifact_failures} = indexed_artifact_failures(env)
 
     %Report{
       infer_count: length(Corpus.infer_cases()),
@@ -121,13 +128,26 @@ defmodule Theoria.Kernel.Differential do
         length(Corpus.infer_rejection_cases()) + length(Corpus.check_rejection_cases()),
       theorem_count: theorem_count,
       generated_artifact_count: generated_artifact_count,
+      indexed_artifact_count: indexed_artifact_count,
       failures:
         infer_failures ++
           check_failures ++
           rejection_failures ++
           normalize_failures ++
-          defeq_failures ++ theorem_failures ++ generated_artifact_failures
+          defeq_failures ++
+          theorem_failures ++ generated_artifact_failures ++ indexed_artifact_failures
     }
+  end
+
+  defp indexed_artifact_failures(env) do
+    with {:ok, package} <- IndexedMatchers.check(env),
+         {:ok, realized} <- IndexedRealization.realize_all(package) do
+      theorems = Enum.map(realized, &Realized.to_theorem/1)
+      {length(theorems), failures(theorems, &compare_theorem(package.env, &1))}
+    else
+      {:error, reason} ->
+        {0, [{:indexed_artifact, :vec_validation_match, :realization_failed, reason}]}
+    end
   end
 
   defp generated_artifact_failures(env) do

@@ -56,12 +56,13 @@ Definitional equality compares normalized core terms through `Theoria.Term.equiv
 
 ## Differential assurance
 
-`Theoria.Kernel.Differential` compares production kernel results against `Theoria.Kernel.Reference` on the curated kernel corpus, including Bool/Nat/List/Vec examples, rejected inference/checking cases, generated equation artifacts, and the built-in theorem modules. Property tests also generate closed Bool, Nat, List Bool, and Vec Bool terms, plus generated equalities and List eliminator applications, then compare production inference, checking, and normalization with the reference path.
+`Theoria.Kernel.Differential` compares production kernel results against `Theoria.Kernel.Reference` on the curated kernel corpus, including Bool/Nat/List/Vec examples, rejected inference/checking cases, generated equation artifacts, explicit indexed matcher artifacts, and the built-in theorem modules. Property tests also generate closed Bool, Nat, List Bool, and Vec Bool terms, plus generated equalities and List eliminator applications, then compare production inference, checking, and normalization with the reference path.
 
 Run it with:
 
 ```bash
 mix theoria.kernel.check
+mix theoria.kernel.check --verbose
 mix theoria.kernel.check --json
 ```
 

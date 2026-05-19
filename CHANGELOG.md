@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+Post-0.6 development toward deeper replay and environment assurance.
+
 ## 0.6.0
 
 Proof-producing rewrite expansion and structured generated assurance reports.

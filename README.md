@@ -242,6 +242,7 @@ Theoria.Theorem.add_all_to_env(MyProofs, env)
 
 Guides included with the package:
 
+- [`docs/release_0_7.md`](docs/release_0_7.md) — 0.7 development boundary for replay and environment assurance
 - [`docs/release_0_6.md`](docs/release_0_6.md) — 0.6 development boundary for deeper proof automation
 - [`docs/release_0_6_checklist.md`](docs/release_0_6_checklist.md) — 0.6 release readiness checklist
 - [`docs/release_0_5.md`](docs/release_0_5.md) — 0.5 development boundary and assurance/reporting notes

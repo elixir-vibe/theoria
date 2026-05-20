@@ -1,3 +1,51 @@
+defimpl Jason.Encoder, for: Theoria.Obligation do
+  def encode(obligation, opts) do
+    Jason.Encode.map(
+      %{
+        id: inspect(obligation.id),
+        kind: obligation.kind,
+        goal: inspect(obligation.goal),
+        has_proof: not is_nil(obligation.proof),
+        assumptions: obligation.assumptions,
+        witness: obligation.witness,
+        source: obligation.source,
+        metadata: obligation.metadata
+      },
+      opts
+    )
+  end
+end
+
+defimpl Jason.Encoder, for: Theoria.Certificate do
+  def encode(certificate, opts) do
+    Jason.Encode.map(
+      %{
+        obligation: certificate.obligation,
+        status: certificate.status,
+        reason: inspect(certificate.reason),
+        checked_at: certificate.checked_at,
+        diagnostics: certificate.diagnostics
+      },
+      opts
+    )
+  end
+end
+
+defimpl Jason.Encoder, for: Theoria.Certificate.Report do
+  def encode(report, opts) do
+    Jason.Encode.map(
+      %{
+        certificates: report.certificates,
+        total: report.total,
+        checked: report.checked,
+        failed: report.failed,
+        unchecked: report.unchecked
+      },
+      opts
+    )
+  end
+end
+
 defimpl Jason.Encoder, for: Theoria.Equality.Chain.Result do
   def encode(result, opts) do
     Jason.Encode.map(

@@ -13,6 +13,8 @@ Theoria should favor small, replayable certificates over large domain-specific p
 
 ## 0.9 — obligations and certificates
 
+Status: started in `0.9.0-dev` with the initial `Theoria.Obligation`, `Theoria.Certificate`, and `Theoria.Certificate.Report` structs.
+
 Add a generic checked-claim layer:
 
 ```elixir

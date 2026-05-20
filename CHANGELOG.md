@@ -5,6 +5,7 @@
 Post-0.8 development toward obligations, certificates, Elixir typespec facts, and tool integrations.
 
 - Added post-0.8 Elixir/Vibe roadmap docs and reframed the Lean roadmap around tool-generated claims.
+- Added initial obligation and certificate structs for tool-generated checked claims.
 
 ## 0.8.0
 

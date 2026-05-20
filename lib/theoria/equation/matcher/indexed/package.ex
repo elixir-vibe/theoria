@@ -1,5 +1,13 @@
 defmodule Theoria.Equation.Matcher.Indexed.Package do
-  @moduledoc "Experimental before 1.0; the shape may change. Coherent package for indexed matcher equation metadata."
+  @moduledoc """
+  Coherent package for explicit indexed matcher equation metadata.
+
+  The package gathers the checked matcher declaration, planned indexed equation
+  metadata, generated theorem statements, and metadata-only lemmas for the
+  current validation-only indexed matcher path. It is useful for native
+  assurance and contributor experiments, but it is not a stable package-user API
+  before 1.0.
+  """
 
   alias Theoria.Env
   alias Theoria.Equation.Info

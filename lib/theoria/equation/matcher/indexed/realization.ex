@@ -1,5 +1,12 @@
 defmodule Theoria.Equation.Matcher.Indexed.Realization do
-  @moduledoc "Experimental before 1.0; the shape may change. Realization planning for indexed matcher equations."
+  @moduledoc """
+  Realization planning for explicit indexed matcher equations.
+
+  The current indexed path proves supported Vec matcher equations by recursor
+  iota reflexivity and reports blockers for shapes outside that fragment. This
+  module is documented for assurance/debugging, but indexed matcher realization
+  remains experimental before 1.0.
+  """
 
   alias Theoria.Equation.Identity
   alias Theoria.Equation.Matcher.Indexed.Package

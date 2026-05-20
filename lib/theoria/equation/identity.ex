@@ -1,5 +1,21 @@
 defmodule Theoria.Equation.Identity do
-  @moduledoc "Structured identity for generated equation artifacts."
+  @moduledoc """
+  Structured identity for generated equation artifacts.
+
+  Equation identities replace generated public atoms such as encoded theorem
+  names. They are stable data: `:owner` names the definition or matcher,
+  `:kind` describes the artifact family, and `:target` names the constructor,
+  unfold marker, or simplifier result.
+
+      iex> Theoria.Equation.Identity.format(Theoria.Equation.Identity.equation(:nat_add, :succ))
+      "nat_add.eq_succ"
+
+      iex> Theoria.Equation.Identity.unfold(:nat_add)
+      #Theoria.EquationIdentity<nat_add.eq_def>
+
+  Mix tasks and JSON encoders use `format/1` for human-readable output, while
+  environment declarations can use the struct itself as the declaration key.
+  """
 
   @enforce_keys [:owner, :kind, :target]
   defstruct [:owner, :kind, :target, namespace: nil]

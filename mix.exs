@@ -69,6 +69,7 @@ defmodule Theoria.MixProject do
         "README.md",
         "CHANGELOG.md",
         "docs/release_0_8.md",
+        "docs/release_0_8_checklist.md",
         "docs/release_0_7.md",
         "docs/release_0_7_checklist.md",
         "docs/release_0_6.md",

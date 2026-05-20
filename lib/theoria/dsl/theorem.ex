@@ -14,7 +14,30 @@ defmodule Theoria.DSL.Theorem do
   end
 
   @doc "Declares a checked theorem function trio from `type` and `proof` blocks."
-  defmacro theorem(name, opts \\ [], do: block) when is_atom(name) and is_list(opts) do
+  defmacro theorem(name, do: block) when is_atom(name), do: theorem_impl(name, [], block)
+
+  defmacro theorem(name, contents) do
+    if Keyword.keyword?(contents) and Keyword.has_key?(contents, :do) do
+      raise ArgumentError, "theorem name must be an atom, got: #{Macro.to_string(name)}"
+    else
+      raise ArgumentError, "expected theorem declaration with a do block"
+    end
+  end
+
+  defmacro theorem(name, opts, do: block) when is_atom(name) and is_list(opts),
+    do: theorem_impl(name, opts, block)
+
+  defmacro theorem(name, opts, do: _block) do
+    cond do
+      not is_atom(name) ->
+        raise ArgumentError, "theorem name must be an atom, got: #{Macro.to_string(name)}"
+
+      not is_list(opts) ->
+        raise ArgumentError, "theorem options must be a keyword list"
+    end
+  end
+
+  defp theorem_impl(name, opts, block) do
     universe_params = Keyword.get(opts, :universes, [])
     validate_universe_params!(universe_params)
 
@@ -75,13 +98,17 @@ defmodule Theoria.DSL.Theorem do
     |> validate_theorem_parts!()
   end
 
-  defp theorem_part({:type, _meta, [[do: body]]}, {_type, proof}), do: {body, proof}
-  defp theorem_part({:proof, _meta, [[do: body]]}, {type, _proof}), do: {type, body}
+  defp theorem_part({:type, _meta, [[do: body]]}, {nil, proof}), do: {body, proof}
+  defp theorem_part({:type, _meta, [[do: _body]]}, {_type, _proof}), do: duplicate_block!(:type)
+  defp theorem_part({:proof, _meta, [[do: body]]}, {type, nil}), do: {type, body}
+  defp theorem_part({:proof, _meta, [[do: _body]]}, {_type, _proof}), do: duplicate_block!(:proof)
 
   defp theorem_part(other, _acc) do
     raise ArgumentError,
           "expected theorem blocks named type/proof, got: #{Macro.to_string(other)}"
   end
+
+  defp duplicate_block!(name), do: raise(ArgumentError, "theorem has duplicate #{name} block")
 
   defp validate_theorem_parts!({nil, _proof}),
     do: raise(ArgumentError, "theorem is missing a type block")

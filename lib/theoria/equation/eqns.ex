@@ -1,5 +1,14 @@
 defmodule Theoria.Equation.Eqns do
-  @moduledoc "Experimental before 1.0; the shape may change. Lookup helpers for generated equation theorem metadata."
+  @moduledoc """
+  Lookup and realization helpers for ordinary generated equation metadata.
+
+  Most package code should start with the `Theoria.Equation` facade. This module
+  is the lower-level ordinary-equation lookup layer used by rewrite/simp and CLI
+  tooling. It returns structured `Theoria.Equation.Identity` values, metadata
+  lemmas, rewrite rules, and realized artifacts for stored equation definitions.
+
+  Experimental before 1.0; the shape may change.
+  """
 
   alias Theoria.Env
   alias Theoria.Equation.Extension

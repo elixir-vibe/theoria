@@ -1,5 +1,13 @@
 defmodule Theoria.Equation.Realized do
-  @moduledoc "A kernel-checked generated equation artifact that is not necessarily installed as a theorem."
+  @moduledoc """
+  Kernel-checked generated equation artifact.
+
+  Realization checks a generated equation proof against its theorem type through
+  `Theoria.Kernel.check/3`, but does not install a declaration by itself. This
+  lets tools inspect generated artifacts without mutating the environment.
+  Call `install/2` when the checked artifact should become an opaque theorem
+  declaration.
+  """
 
   alias Theoria.Env
   alias Theoria.Equation.Identity

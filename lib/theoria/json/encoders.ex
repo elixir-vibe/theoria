@@ -72,6 +72,33 @@ defimpl Jason.Encoder, for: Theoria.Equation.Identity do
   def encode(identity, opts), do: Jason.Encode.string(Identity.format(identity), opts)
 end
 
+defimpl Jason.Encoder, for: Theoria.Equation.Report.Entry do
+  def encode(entry, opts) do
+    Jason.Encode.map(
+      %{
+        definition: entry.definition,
+        identities: entry.identities,
+        unfold_identity: entry.unfold_identity,
+        matcher_identities: entry.matcher_identities,
+        realized: entry.realized
+      },
+      opts
+    )
+  end
+end
+
+defimpl Jason.Encoder, for: Theoria.Equation.Report do
+  def encode(report, opts) do
+    Jason.Encode.map(
+      %{
+        equations: report.equations,
+        registry_entries: report.registry_entries
+      },
+      opts
+    )
+  end
+end
+
 defimpl Jason.Encoder, for: Theoria.Equation.Realized do
   def encode(realized, opts) do
     Jason.Encode.map(

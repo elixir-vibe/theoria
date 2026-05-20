@@ -8,6 +8,7 @@ defmodule Theoria.DocsTest do
           "docs/public_api.md",
           "docs/assurance.md",
           "docs/release_0_8.md",
+          "docs/release_0_8_checklist.md",
           "docs/theorem_modules.md",
           "docs/equations.md"
         ] do

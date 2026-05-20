@@ -12,10 +12,10 @@ defmodule Mix.Tasks.Theoria.Equations do
 
   alias Theoria.Equation.{
     Eqns,
-    Extension,
     Identity,
     Info,
-    Lemma
+    Lemma,
+    Report
   }
 
   alias Theoria.Prelude
@@ -90,33 +90,9 @@ defmodule Mix.Tasks.Theoria.Equations do
   end
 
   defp print_json(env, equations, opts) do
-    Mix.shell().info(
-      Jason.encode!(%{
-        equations: Enum.map(equations, &json_equation(env, &1, opts)),
-        registry_entries: registry_entry_count(env, equations)
-      })
-    )
-  end
+    report = Report.from_equations(env, equations, realize?: Keyword.get(opts, :realize, false))
 
-  defp json_equation(env, info, opts) do
-    %{
-      definition: info.name,
-      identities: Extension.equation_identities(info),
-      matcher_identities: info |> MatcherEqns.generated() |> Enum.map(& &1.identity),
-      realized: realized_count(env, info, opts)
-    }
-  end
-
-  defp realized_count(env, info, opts) do
-    if Keyword.get(opts, :realize, false) do
-      case Eqns.realize(env, info.name) do
-        {:ok, artifacts} when is_list(artifacts) -> length(artifacts)
-        {:ok, _artifact} -> 1
-        {:error, _reason} -> 0
-      end
-    else
-      0
-    end
+    Mix.shell().info(Jason.encode!(report))
   end
 
   defp print_equations(_env, []), do: Mix.shell().info("No equation metadata found.")
@@ -124,7 +100,9 @@ defmodule Mix.Tasks.Theoria.Equations do
   defp print_equations(env, equations) do
     matchers = selected_matchers(env, equations)
     Mix.shell().info("matcher declarations: #{length(matchers)}")
-    Mix.shell().info("registry entries: #{registry_entry_count(env, equations)}")
+    report = Report.from_equations(env, equations)
+
+    Mix.shell().info("registry entries: #{Report.registry_entries(report)}")
     Mix.shell().info("")
     print_equations(env, equations, :details)
   end
@@ -218,22 +196,6 @@ defmodule Mix.Tasks.Theoria.Equations do
 
   defp print_unfold(%Info{} = info) do
     Mix.shell().info("    unfold: #{format_equation_name(Lemma.unfold_for(info))}")
-  end
-
-  defp registry_entry_count(env, equations) do
-    ordinary_count =
-      Enum.reduce(equations, 0, fn info, count ->
-        count + 1 + length(Extension.equation_identities(info))
-      end)
-
-    matcher_count =
-      env
-      |> selected_matchers(equations)
-      |> Enum.reduce(0, fn matcher, count ->
-        count + length(Extension.matcher_equation_identities(env, matcher))
-      end)
-
-    ordinary_count + matcher_count
   end
 
   defp selected_matchers(env, equations) do

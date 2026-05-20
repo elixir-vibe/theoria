@@ -1,5 +1,16 @@
 defmodule Theoria.Equation.Matcher.Eqns do
-  @moduledoc "Experimental before 1.0; the shape may change. Lookup helpers for generated matcher equation metadata."
+  @moduledoc """
+  Lookup, planning, and realization helpers for matcher equation metadata.
+
+  Matcher equation metadata records how generated matcher declarations reduce on
+  constructor alternatives. Ordinary package code should prefer
+  `Theoria.Equation` for definition-level equation workflows. This module remains
+  documented for contributors and advanced tooling that need matcher equations,
+  indexed statement planning, or validation-only indexed realization.
+
+  Experimental before 1.0; matcher and indexed matcher APIs are not stable user
+  APIs yet.
+  """
 
   alias Theoria.Env
   alias Theoria.Env.Matcher, as: EnvMatcher

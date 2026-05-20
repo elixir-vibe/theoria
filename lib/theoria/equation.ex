@@ -2,10 +2,24 @@ defmodule Theoria.Equation do
   @moduledoc """
   Experimental equation API facade.
 
-  `Theoria.Equation` exposes the supported Bool/Nat/List recursor fragment and
-  generated-equation registry helpers. It is not yet a public pattern-matching
-  language: callers still construct core terms and explicit clauses, while the
-  compiler handles coverage, pattern-shape validation, and recursor assembly.
+  `Theoria.Equation` is the preferred entrypoint for package code that needs to
+  inspect or realize generated equation metadata. It exposes a compact registry
+  summary, structured ordinary/unfold identities, and realization helpers while
+  keeping lower-level compiler and matcher modules available for contributor
+  workflows.
+
+      {:ok, env} = Theoria.Prelude.env()
+      summary = Theoria.Equation.summary(env)
+      Theoria.Equation.Summary.theorems(summary)
+
+      {:ok, identities} = Theoria.Equation.identities(env, :nat_add)
+      {:ok, unfold} = Theoria.Equation.unfold_identity(env, :nat_add)
+      {:ok, artifact} = Theoria.Equation.realize(env, hd(identities))
+
+  The compiler-facing functions in this module expose the supported Bool/Nat/List
+  recursor fragment. Theoria is not yet a public pattern-matching language:
+  callers still construct core terms and explicit clauses, while the compiler
+  handles coverage, pattern-shape validation, and recursor assembly.
 
   Experimental before 1.0; prefer this facade over depending on nested
   `Theoria.Equation.*` implementation modules directly.

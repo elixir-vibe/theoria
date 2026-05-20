@@ -88,4 +88,76 @@ defmodule Theoria.DSL.TheoremTest do
     assert {:error, error} = BasicProofs.bad_identity_theorem()
     assert error.reason == :type_mismatch
   end
+
+  test "raises clear error for missing theorem type block" do
+    assert_compile_error(~r/theorem is missing a type block/, """
+    defmodule MissingTypeProof do
+      use Theoria.DSL
+
+      theorem :missing_type do
+        proof do
+          const(:true_intro)
+        end
+      end
+    end
+    """)
+  end
+
+  test "raises clear error for missing theorem proof block" do
+    assert_compile_error(~r/theorem is missing a proof block/, """
+    defmodule MissingProofProof do
+      use Theoria.DSL
+
+      theorem :missing_proof do
+        type do
+          const(:True)
+        end
+      end
+    end
+    """)
+  end
+
+  test "raises clear error for duplicate theorem blocks" do
+    assert_compile_error(~r/theorem has duplicate type block/, """
+    defmodule DuplicateTypeProof do
+      use Theoria.DSL
+
+      theorem :duplicate_type do
+        type do
+          const(:True)
+        end
+
+        type do
+          const(:True)
+        end
+
+        proof do
+          const(:true_intro)
+        end
+      end
+    end
+    """)
+  end
+
+  test "raises clear error for invalid theorem name" do
+    assert_compile_error(~r/theorem name must be an atom/, """
+    defmodule InvalidTheoremNameProof do
+      use Theoria.DSL
+
+      theorem "truth" do
+        type do
+          const(:True)
+        end
+
+        proof do
+          const(:true_intro)
+        end
+      end
+    end
+    """)
+  end
+
+  defp assert_compile_error(pattern, source) do
+    assert_raise ArgumentError, pattern, fn -> Code.compile_string(source) end
+  end
 end

@@ -80,9 +80,14 @@ defmodule Mix.Tasks.Theoria.EquationsTest do
         Equations.run(["--json", "--realize", "nat_add"])
       end)
 
-    assert output =~ "\"definition\":\"nat_add\""
-    assert output =~ "\"realized\":2"
-    assert output =~ "nat_add.eq_succ"
+    assert {:ok, json} = Jason.decode(output)
+    assert json["registry_entries"] == 5
+    assert [entry] = json["equations"]
+    assert entry["definition"] == "nat_add"
+    assert entry["realized"] == 2
+    assert "nat_add.eq_succ" in entry["identities"]
+    assert entry["unfold_identity"] == "nat_add.eq_def"
+    assert "nat_add_match_1.eq_succ" in entry["matcher_identities"]
   end
 
   test "installs generated equations on request" do

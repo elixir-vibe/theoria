@@ -22,7 +22,8 @@ defmodule Theoria.ExamplesTest do
     assert {output, 0} = run_example("examples/theorem_module/run.exs")
 
     assert output =~ "theorem: :identity"
-    assert output =~ "registered: [:identity]"
+    assert output =~ "registered: [:identity, :identity_again]"
+    assert output =~ "installed: [:identity, :identity_again]"
   end
 
   test "kernel reports example runs" do

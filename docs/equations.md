@@ -28,6 +28,33 @@ Signature + Case.Template + Clause/Pattern
 
 The metadata is Theoria-owned data. It is checked by native validation and can be translated to Lean by the contributor-only oracle, but Lean is not part of the runtime trusted path.
 
+## CLI workflow
+
+Use `mix theoria.equations` to inspect generated equation metadata from the Prelude:
+
+```bash
+mix theoria.equations nat_add
+mix theoria.equations --realize nat_add
+mix theoria.equations --json --realize nat_add
+```
+
+JSON output is encoded from `Theoria.Equation.Report` structs with Jason. Identity fields use the same structured `Theoria.Equation.Identity` encoder as the Elixir API:
+
+```json
+{
+  "registry_entries": 5,
+  "equations": [
+    {
+      "definition": "nat_add",
+      "identities": ["nat_add.eq_zero", "nat_add.eq_succ"],
+      "unfold_identity": "nat_add.eq_def",
+      "matcher_identities": ["nat_add_match_1.eq_zero", "nat_add_match_1.eq_succ"],
+      "realized": 2
+    }
+  ]
+}
+```
+
 ## Equation identities
 
 Generated equation artifacts use `Theoria.Equation.Identity` as their canonical domain identity. The struct records the owner, kind, and target of an equation:

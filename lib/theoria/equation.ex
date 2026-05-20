@@ -36,7 +36,7 @@ defmodule Theoria.Equation do
   def registry(%Env{} = env), do: Extension.build(env)
 
   @doc "Returns a compact generated equation registry summary."
-  @spec summary(Env.t() | Extension.Registry.t()) :: map()
+  @spec summary(Env.t() | Extension.Registry.t()) :: Theoria.Equation.Summary.t()
   def summary(env_or_registry), do: Extension.summary(env_or_registry)
 
   @doc "Returns ordinary generated equation identities for a source definition in an environment."

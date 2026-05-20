@@ -62,6 +62,10 @@ defimpl Jason.Encoder, for: Theoria.Level.Solver.Explanation do
   end
 end
 
+defimpl Jason.Encoder, for: Theoria.Equation.Summary do
+  def encode(summary, opts), do: Jason.Encode.map(Map.from_struct(summary), opts)
+end
+
 defimpl Jason.Encoder, for: Theoria.Equation.Identity do
   alias Theoria.Equation.Identity
 

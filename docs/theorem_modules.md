@@ -81,6 +81,13 @@ mix theoria.validate --only logic
 
 `mix theoria.check` runs the full native validation corpus, including theorem modules, definitional-equality checks, and inductive specs. Use `mix theoria.validate --only CATEGORY` to narrow validation while developing.
 
+## Common failures
+
+- `unknown constant: name` means the proof references a declaration that is not in the current environment. If a theorem depends on an earlier theorem from the same module, run the Mix task with `--install` or call `Theoria.Theorem.add_all_to_env/2` so checked theorems are installed before later proofs are elaborated.
+- A module-loading error from `mix theoria.theorems MyApp.Proofs` usually means the module has not been compiled or is not on the project code path. Compile the downstream project first, or pass the module name exactly as Elixir knows it.
+- Custom constants must be installed into the environment before theorem checking. `Theoria.Prelude.env/0` only provides Theoria's built-in libraries.
+- Type/proof mismatch errors come from the native kernel: the elaborated proof term did not check against the declared theorem type.
+
 The generated theorem functions are intentionally normal Elixir functions so ExDoc can document them alongside their surrounding module docs.
 
 ## Quoted term DSL

@@ -11,6 +11,12 @@ defmodule Theoria.DownstreamSmokeTest do
     run_mix!(project_dir, ["deps.get"])
     run_mix!(project_dir, ["compile", "--warnings-as-errors"])
 
+    assert_mix_fails!(
+      project_dir,
+      ["theoria.theorems", "DownstreamProofs"],
+      "unknown constant: identity"
+    )
+
     run_mix!(project_dir, ["theoria.theorems", "--install", "DownstreamProofs"])
 
     run_mix!(project_dir, [
@@ -28,16 +34,26 @@ defmodule Theoria.DownstreamSmokeTest do
   end
 
   defp run_mix!(project_dir, args) do
-    root = Path.expand("../..", __DIR__)
-
-    {output, status} =
-      System.cmd("mix", args,
-        cd: project_dir,
-        env: [{"THEORIA_PATH", root}],
-        stderr_to_stdout: true
-      )
+    {output, status} = run_mix(project_dir, args)
 
     assert status == 0, "mix #{Enum.join(args, " ")} failed:\n#{output}"
     output
+  end
+
+  defp assert_mix_fails!(project_dir, args, expected_output) do
+    {output, status} = run_mix(project_dir, args)
+
+    assert status != 0, "mix #{Enum.join(args, " ")} unexpectedly passed:\n#{output}"
+    assert output =~ expected_output
+  end
+
+  defp run_mix(project_dir, args) do
+    root = Path.expand("../..", __DIR__)
+
+    System.cmd("mix", args,
+      cd: project_dir,
+      env: [{"THEORIA_PATH", root}],
+      stderr_to_stdout: true
+    )
   end
 end

@@ -6,7 +6,7 @@ The 0.8 line focuses on public DSL and equation API stabilization. The goal is t
 
 - Polish theorem module workflow and downstream usage.
 - Clarify public, experimental, and internal API surfaces.
-- Provide stable facade helpers for common equation workflows.
+- Provide stable facade helpers for common ordinary equation, unfold identity, summary, and realization workflows.
 - Document structured equation identities and generated artifact usage.
 - Prefer report accessors in examples and user-facing docs.
 - Keep assurance and downstream smoke coverage running as public API guardrails.
@@ -15,7 +15,7 @@ The 0.8 line focuses on public DSL and equation API stabilization. The goal is t
 
 - Lean runtime compatibility or full Lean feature parity.
 - A full Lean-style elaborator or tactic framework.
-- Freezing explicit indexed matcher internals as public stable API.
+- Freezing matcher lookup/planning or explicit indexed matcher internals as public stable API.
 - A formal proof of the Elixir kernel.
 
 ## Public API posture

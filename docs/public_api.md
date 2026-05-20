@@ -12,23 +12,24 @@ These modules are intended for normal package usage and should evolve conservati
 - `Theoria.DSL`, `Theoria.Theorem`, `Theoria.Prelude` — theorem module workflow.
 - `Theoria.Validation` — native validation workflows.
 - `Theoria.Kernel.AssuranceSummary` — user-facing assurance summary.
+- `Theoria.Equation.Summary` — compact generated-equation registry counts returned by the equation facade.
 
 ## Experimental public APIs
 
 These are useful but may change before 1.0:
 
-- `Theoria.Equation` — equation compilation/realization facade.
+- `Theoria.Equation` — equation compilation/realization facade. The ordinary equation, unfold identity, all-identity, summary, and realization helpers are the preferred 0.8-facing entrypoints.
 - `Theoria.Rewrite`, `Theoria.Simp` — proof-producing rewrite/simp helpers.
 - report structs under `Theoria.Kernel.*Report`.
 
-Prefer documented facade functions and accessors instead of depending on internal struct layout.
+Prefer documented facade functions and accessors instead of depending on internal struct layout. Module documentation is the primary API reference; guide pages explain workflows and stability posture.
 
 ## Internal and contributor APIs
 
 These support generated artifacts, assurance, and contributor-only validation. They may change without compatibility shims before 1.0:
 
-- `Theoria.Equation.Matcher.*`
-- `Theoria.Equation.Matcher.Indexed.*`
+- `Theoria.Equation.Matcher.*` — matcher equation lookup/planning remains experimental.
+- `Theoria.Equation.Matcher.Indexed.*` — indexed matcher APIs are explicit validation/contributor surfaces, not stable user APIs.
 - `Theoria.Equation.Schema.*`
 - `Theoria.Kernel.Reference.*`
 - `Theoria.Kernel.EnvironmentCorpus.*`

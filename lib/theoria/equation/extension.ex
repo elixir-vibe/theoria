@@ -8,6 +8,7 @@ defmodule Theoria.Equation.Extension do
   alias Theoria.Equation.Lemma
   alias Theoria.Equation.Matcher.Eqns, as: MatcherEqns
   alias Theoria.Equation.Matcher.Equation, as: MatcherEquation
+  alias Theoria.Equation.Summary
 
   defmodule Registry do
     @moduledoc "In-memory registry snapshot for generated equation metadata."
@@ -106,11 +107,11 @@ defmodule Theoria.Equation.Extension do
   end
 
   @doc "Returns compact registry counts for diagnostics and validation output."
-  @spec summary(Env.t() | Registry.t()) :: map()
+  @spec summary(Env.t() | Registry.t()) :: Summary.t()
   def summary(%Env{} = env), do: env |> build() |> summary()
 
   def summary(%Registry{} = registry) do
-    %{
+    %Summary{
       definitions: map_size(registry.definitions),
       matchers: map_size(registry.matchers),
       ordinary_equations: count_identities(registry.equation_identities),

@@ -143,7 +143,7 @@ defmodule Theoria.EquationTest do
              registry
            )
 
-    assert Extension.summary(registry) == %{
+    assert Extension.summary(registry) == %Theoria.Equation.Summary{
              definitions: 6,
              matchers: 6,
              ordinary_equations: 16,

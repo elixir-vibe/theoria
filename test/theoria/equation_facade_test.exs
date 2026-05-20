@@ -9,8 +9,10 @@ defmodule Theoria.EquationFacadeTest do
     {:ok, env} = Prelude.env()
 
     summary = Equation.summary(env)
-    assert summary.definitions > 0
-    assert summary.theorems > 0
+    assert Equation.Summary.definitions(summary) > 0
+    assert Equation.Summary.theorems(summary) > 0
+    assert {:ok, %{"theorems" => theorem_count}} = Jason.encode!(summary) |> Jason.decode()
+    assert theorem_count == Equation.Summary.theorems(summary)
 
     assert {:ok, identities} = Equation.identities(env, :nat_add)
     assert Identity.equation(:nat_add, :succ) in identities

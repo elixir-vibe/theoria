@@ -48,6 +48,18 @@ defmodule Theoria.DSL.TermQuoteErrorTest do
     end
   end
 
+  test "guides malformed type universe syntax" do
+    assert_raise ArgumentError,
+                 ~r/expected type universe level to be a non-negative integer/,
+                 fn ->
+                   eval_term("type(:u)")
+                 end
+
+    assert_raise ArgumentError, ~r/expected type syntax/, fn ->
+      eval_term("type()")
+    end
+  end
+
   test "guides malformed binders" do
     assert_raise ArgumentError, ~r/expected forall binder syntax/, fn ->
       eval_term("forall(:p)")

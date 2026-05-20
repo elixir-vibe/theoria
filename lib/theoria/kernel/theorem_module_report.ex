@@ -16,6 +16,21 @@ defmodule Theoria.Kernel.TheoremModuleReport do
           failures: [term()]
         }
 
+  @spec module(t()) :: module()
+  def module(%__MODULE__{module: module}), do: module
+
+  @spec checks(t()) :: non_neg_integer()
+  def checks(%__MODULE__{checks: checks}), do: checks
+
+  @spec replay_checks(t()) :: non_neg_integer()
+  def replay_checks(%__MODULE__{replay_checks: replay_checks}), do: replay_checks
+
+  @spec replay_skipped(t()) :: non_neg_integer()
+  def replay_skipped(%__MODULE__{replay_skipped: replay_skipped}), do: replay_skipped
+
+  @spec failures(t()) :: [term()]
+  def failures(%__MODULE__{failures: failures}), do: failures
+
   @spec ok?(t()) :: boolean()
   def ok?(%__MODULE__{failures: failures}), do: failures == []
 

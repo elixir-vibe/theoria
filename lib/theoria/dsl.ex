@@ -1,9 +1,54 @@
 defmodule Theoria.DSL do
   @moduledoc """
-  Small Elixir DSL for constructing named Theoria syntax terms.
+  Small Elixir DSL for constructing named Theoria syntax terms and theorem modules.
 
   The DSL is deliberately untrusted. It only builds `Theoria.Syntax` values;
   terms must still be elaborated and checked by `Theoria.Kernel`.
+
+  ## Theorem modules
+
+      defmodule MyProofs do
+        use Theoria.DSL
+
+        theorem :identity do
+          type do
+            forall :a, type(0) do
+              forall :x, var(:a) do
+                var(:a)
+              end
+            end
+          end
+
+          proof do
+            lam :a, type(0) do
+              lam :x, var(:a) do
+                var(:x)
+              end
+            end
+          end
+        end
+      end
+
+      {:ok, theorem} = MyProofs.identity_theorem()
+
+  The generated theorem functions are ordinary Elixir functions. Use
+  `Theoria.Theorem.add_all_to_env/2` when later theorems in a module refer to
+  earlier theorem constants.
+
+  ## Quoted terms
+
+  `term do ... end` accepts an Elixir-like term language where lowercase names
+  become variables and function calls become constant applications:
+
+      term do
+        forall :p, prop() do
+          p ~> p
+        end
+      end
+
+      term do
+        eq(bool(), bool_not(bool_true()), bool_false())
+      end
   """
 
   alias Theoria.DSL.Quote

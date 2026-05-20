@@ -13,6 +13,9 @@ Post-0.7 development toward public DSL and equation API stabilization.
 - Added `Theoria.Equation.Report` for `mix theoria.equations --json` output backed by Jason encoders.
 - Improved equation/module docs and theorem DSL compile-time errors for missing, duplicate, or malformed theorem declarations.
 - Added the 0.8 release checklist.
+- Added downstream smoke coverage for the public equation facade.
+- Added doctests for equation identity/summary docs, expanded DSL module docs, and improved quote DSL error messages.
+- Added accessors for metadata replay, generated-term, and theorem-module reports.
 
 ## 0.7.0
 

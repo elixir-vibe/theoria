@@ -24,6 +24,12 @@ defmodule Theoria.Kernel.GeneratedTerm.Report do
   @spec family_count(t(), atom()) :: non_neg_integer()
   def family_count(%__MODULE__{families: families}, family), do: Map.get(families, family, 0)
 
+  @spec size(t()) :: non_neg_integer()
+  def size(%__MODULE__{size: size}), do: size
+
+  @spec max_terms(t()) :: pos_integer()
+  def max_terms(%__MODULE__{max_terms: max_terms}), do: max_terms
+
   @spec new([Theoria.Kernel.GeneratedTerm.t()], keyword()) :: t()
   def new(terms, opts) do
     %__MODULE__{

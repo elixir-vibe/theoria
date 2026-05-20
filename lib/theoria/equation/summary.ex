@@ -7,6 +7,19 @@ defmodule Theoria.Equation.Summary do
   theorem identities. It is intended for diagnostics, reports, and lightweight
   public API checks; use `Theoria.Equation.identities/2` and related facade
   helpers when callers need the actual identities.
+
+      iex> summary = %Theoria.Equation.Summary{
+      ...>   definitions: 1,
+      ...>   matchers: 1,
+      ...>   ordinary_equations: 2,
+      ...>   matcher_equations: 2,
+      ...>   unfolds: 1,
+      ...>   theorems: 5
+      ...> }
+      iex> Theoria.Equation.Summary.theorems(summary)
+      5
+      iex> Theoria.Equation.Summary.ordinary_equations(summary)
+      2
   """
 
   @type t :: %__MODULE__{

@@ -66,6 +66,15 @@ defmodule Theoria.DSL.Quote do
     end
   end
 
+  defp do_core_quote_term({:type, _meta, [level]}) do
+    raise ArgumentError,
+          "expected type universe level to be a non-negative integer, got: #{Macro.to_string(level)}"
+  end
+
+  defp do_core_quote_term({:type, _meta, _args}) do
+    raise ArgumentError, "expected type syntax: type(non_negative_integer)"
+  end
+
   defp do_core_quote_term({:refl, _meta, [value]}) do
     value = do_quote_term(value)
 

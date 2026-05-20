@@ -1,5 +1,26 @@
 defmodule Theoria.DSL.Theorem do
-  @moduledoc "Theorem macro support for `Theoria.DSL`."
+  @moduledoc """
+  Theorem macro support for `Theoria.DSL`.
+
+  `theorem/2` declares a named theorem from explicit `type` and `proof` blocks.
+  The macro generates `<name>_type/0`, `<name>_proof/0`, and
+  `<name>_theorem/1` functions and registers the theorem name for module-level
+  workflows.
+
+      theorem :truth do
+        type do
+          const(:True)
+        end
+
+        proof do
+          const(:true_intro)
+        end
+      end
+
+  The generated theorem checker elaborates both blocks and asks the native
+  kernel to check the proof. The macro only builds syntax and does not extend the
+  trusted boundary.
+  """
 
   @doc false
   defmacro __before_compile__(env) do

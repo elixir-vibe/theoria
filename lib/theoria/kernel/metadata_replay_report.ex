@@ -23,6 +23,12 @@ defmodule Theoria.Kernel.MetadataReplayReport do
   @spec checked(t()) :: non_neg_integer()
   def checked(%__MODULE__{checked: checked}), do: checked
 
+  @spec sources(t()) :: %{atom() => non_neg_integer()}
+  def sources(%__MODULE__{sources: sources}), do: sources
+
+  @spec failures(t()) :: [term()]
+  def failures(%__MODULE__{failures: failures}), do: failures
+
   @spec source_count(t(), atom()) :: non_neg_integer()
   def source_count(%__MODULE__{sources: sources}, source), do: Map.get(sources, source, 0)
 

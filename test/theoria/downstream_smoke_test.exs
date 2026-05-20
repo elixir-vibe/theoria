@@ -10,6 +10,7 @@ defmodule Theoria.DownstreamSmokeTest do
 
     run_mix!(project_dir, ["deps.get"])
     run_mix!(project_dir, ["compile", "--warnings-as-errors"])
+    run_mix!(project_dir, ["run", "-e", "{:ok, _} = DownstreamEquations.check()"])
 
     assert_mix_fails!(
       project_dir,

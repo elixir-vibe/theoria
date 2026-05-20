@@ -15,16 +15,18 @@ defmodule Theoria.Typespec do
   @doc "Fetches and normalizes all specs for a loaded module."
   @spec fetch(module()) :: {:ok, [Contract.t()]} | {:error, term()}
   def fetch(module) when is_atom(module) do
-    with {:ok, specs} <- Code.Typespec.fetch_specs(module) do
-      {:ok, normalize_specs(module, specs)}
+    case Code.Typespec.fetch_specs(module) do
+      {:ok, specs} -> {:ok, normalize_specs(module, specs)}
+      :error -> {:error, :no_typespecs}
     end
   end
 
   @doc "Fetches a structured report for a loaded module's specs."
   @spec report(module()) :: {:ok, Report.t()} | {:error, term()}
   def report(module) when is_atom(module) do
-    with {:ok, contracts} <- fetch(module) do
-      {:ok, Report.new(module, contracts)}
+    case fetch(module) do
+      {:ok, contracts} -> {:ok, Report.new(module, contracts)}
+      {:error, _reason} = error -> error
     end
   end
 

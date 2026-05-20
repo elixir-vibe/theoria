@@ -274,6 +274,7 @@ mix theoria.validate
 mix theoria.validate --only defeq
 mix theoria.kernel.check
 mix theoria.kernel.check --json
+mix theoria.typespecs MyApp.Context --json
 ```
 
 Contributors with Lean installed can also run:

@@ -45,6 +45,7 @@ User-facing CLI workflows:
 ```bash
 mix theoria.theorems MyApp.Proofs
 mix theoria.theorems --json --install MyApp.Proofs
+mix theoria.typespecs MyApp.Context --json
 mix theoria.validate
 mix theoria.kernel.check
 mix theoria.kernel.check --assurance-summary

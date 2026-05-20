@@ -32,7 +32,7 @@ Goals:
 
 ## 0.10 — Elixir typespec facts
 
-Status: initial extractor started in `0.9.0-dev` with `Theoria.Typespec`, `Contract`, `Type`, and `Report` for common Elixir typespec fragments.
+Status: initial extractor started in `0.9.0-dev` with `Theoria.Typespec`, `Contract`, `Type`, `Report`, and `mix theoria.typespecs` for common Elixir typespec fragments.
 
 Normalize Elixir typespecs into Theoria-friendly contract data:
 

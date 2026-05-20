@@ -253,6 +253,7 @@ Start with:
 - [`docs/validation.md`](docs/validation.md) — native validation workflow
 - [`docs/assurance.md`](docs/assurance.md) — kernel assurance reports and summaries
 - [`docs/public_api.md`](docs/public_api.md) — stable, experimental, and internal API surfaces
+- [`docs/roadmap.md`](docs/roadmap.md) — post-0.8 Elixir/Vibe roadmap
 
 Additional maintainer and experimental notes live in the `docs/` directory. See [`CHANGELOG.md`](CHANGELOG.md) for release history.
 

@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+Post-0.8 development toward obligations, certificates, Elixir typespec facts, and tool integrations.
+
+- Added post-0.8 Elixir/Vibe roadmap docs and reframed the Lean roadmap around tool-generated claims.
+
 ## 0.8.0
 
 Public DSL and equation API stabilization.

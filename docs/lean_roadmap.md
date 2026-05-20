@@ -1,6 +1,8 @@
 # Lean-inspired roadmap
 
-This document tracks which Lean ideas Theoria has already adapted and which ones are worth building next. It is not a plan to port all of Lean. Theoria should remain Elixir-native and keep the trusted kernel small.
+This document tracks which Lean ideas Theoria has already adapted and which ones remain useful as references. It is not the product roadmap and not a plan to port all of Lean. Theoria should remain Elixir-native and keep the trusted kernel small.
+
+For the post-0.8 Elixir/Vibe roadmap, see [`roadmap.md`](roadmap.md). That roadmap prioritizes obligations, certificates, Elixir typespec facts, Reach integration, and agent-facing trust reports over recreating Lean's library stack.
 
 Legend:
 
@@ -123,7 +125,7 @@ Legend:
 | `Fin` | Bounded naturals | 🔴 | Missing | Needs indexed families | P2 |
 | `Vec` | Length-indexed list | ✅ / 🟡 | `Theoria.Library.Vec` with indexed `vec_ind` reduction and theorem corpus | Expand theorem corpus | P1 |
 | Decidable propositions | Computable decisions | 🔴 | Missing | Needed for automation/specs | P2 |
-| Finite maps/sets | Program/spec library | 🔴 | Missing | Needed before Reach integration | P3 |
+| Finite maps/sets | Program/spec library | 🔴 | Missing | Add only when concrete obligations need them; not a prerequisite for Reach facts/certificates | P4 |
 
 ## Equality
 
@@ -180,21 +182,21 @@ Legend:
 | Theorem checking Mix task | CI checker | ✅ | `mix theoria.check` | Stable | P0 |
 | Theorem corpus | Regression proofs | ✅ | 53 theorem-module proof(s) plus generated equation proofs, all covered by native validation and Lean oracle | Expand libraries | P1 |
 | Proof irrelevance for theorem proofs | Lean Prop behavior | ❌ | None | Decide theory later | P4 |
-| Proof artifact serialization | Cache/share proofs | 🔴 | Missing | Add before larger corpora | P3 |
-| Incremental proof checking | Avoid checking everything | 🔴 | Missing | After env hashing | P3 |
+| Proof artifact serialization | Cache/share proofs | 🔴 | Missing | Reframe as certificate persistence/replay for tools | P0 |
+| Incremental proof checking | Avoid checking everything | 🔴 | Missing | After certificate/env hashing | P3 |
 
 ## Tactics and automation
 
 | Lean feature / concept | Lean role | Theoria status | Current Theoria state | Needed roadmap | Priority |
 |---|---|---:|---|---|---:|
-| Tactic state/goals | Interactive proof engine | 🔴 | Missing | Add untrusted proof-state layer | P2 |
-| `intro` | Introduce forall/implication | 🔴 | Missing | First tactic milestone | P2 |
-| `exact` | Close goal with term | 🔴 | Missing | First tactic milestone | P2 |
-| `assumption` | Find local hypothesis | 🔴 | Missing | First tactic milestone | P2 |
-| `apply` | Backward reasoning | 🔴 | Missing | After holes/metavars | P2 |
-| `constructor` | Use constructor/introduction rule | 🔴 | Missing | After inductive APIs mature | P2 |
-| `cases` | Case split | 🔴 | Missing | Needs eliminator usage | P2 |
-| `induction` | Induction tactic | 🔴 | Missing | Needs robust recursors | P2 |
+| Tactic state/goals | Interactive proof engine | 🔴 | Missing | Postpone until tool-generated obligations expose real needs | P3 |
+| `intro` | Introduce forall/implication | 🔴 | Missing | Add as obligation automation when needed | P3 |
+| `exact` | Close goal with term | 🔴 | Missing | Add as obligation automation when needed | P3 |
+| `assumption` | Find local hypothesis | 🔴 | Missing | Add as obligation automation when needed | P3 |
+| `apply` | Backward reasoning | 🔴 | Missing | After obligations/certificates | P3 |
+| `constructor` | Use constructor/introduction rule | 🔴 | Missing | After obligations/certificates | P3 |
+| `cases` | Case split | 🔴 | Missing | After concrete certifier need | P3 |
+| `induction` | Induction tactic | 🔴 | Missing | After concrete certifier need | P3 |
 | `rewrite` / `rw` | Rewrite by equality | 🟡 | Low-level equality transport, `symm`/`trans`/`congr`, provisional `Theoria.Rewrite.once/3`, and rewrite databases built from generated env equation metadata | Add proof-producing tactic ergonomics | P2 |
 | `simp` | Simplifier | 🟡 | Tiny untrusted priority-aware `Theoria.Simp.once/3` and `normalize/3` over generated equation DBs, plus example CLI | Needs attributes, richer rule sets, and proof-producing rewrite | P3 |
 | `omega` / arithmetic solvers | Automation | ❌ | Missing | Much later / maybe not | P5 |
@@ -348,26 +350,27 @@ Legend:
 | List append/map/member | Useful list library | P2 |
 | Decidable predicates | Automation/specs | P3 |
 
-### Milestone 7 — specs and Reach integration
+### Milestone 7 — Elixir tool obligations and Reach integration
 
 | Step | Deliverable | Priority |
 |---|---|---:|
-| `Theoria.Spec` | Elixir-facing spec layer | P3 |
+| `Theoria.Obligation` / `Theoria.Certificate` | Generic checked-claim and replay layer | P0 |
+| `Theoria.Typespec` | Elixir typespec contract facts | P0 |
+| `Theoria.Spec.*` | Small finite/graph/effect/rewrite claim vocabulary | P1 |
+| Reach obligation bridge | Dependency/effect/architecture claims over Reach facts | P1 |
+| Vibe report integration | Agent-facing checked/unchecked trust levels | P2 |
 | Executable property bridge | StreamData/ExUnit integration | P3 |
-| Finite graph library | Graph predicates/theorems | P3 |
-| Reach invariant specs | CFG/dataflow/effects invariants | P4 |
-| Report integration | CI/spec reports | P4 |
 
 ## Strategic recommendation
 
-For the next several cycles, prioritize:
+For the next cycles, prioritize Elixir-native tool consumption:
 
 ```text
-1. opaque indexed eliminators
-2. indexed recursor metadata
-3. indexed iota rules
-4. equality eliminator
-5. equation compiler
+1. obligations and certificates
+2. certificate persistence/replay diagnostics
+3. Elixir typespec fact extraction
+4. small Spec vocabularies for finite facts, graph paths, effects, and rewrites
+5. Reach and Vibe integration
 ```
 
-Avoid spending much time on tactics or DSL cosmetics until those are done. Theoria's differentiator will be a small, credible kernel, not surface syntax.
+Keep Lean as an architectural reference and contributor oracle, not the product shape. Do not build generic maps/sets/bitvectors, a large tactic layer, or broad theorem libraries until concrete Elixir tool obligations require them. Theoria's differentiator is a small credible kernel that can check claims emitted by Elixir tools and AI agents.

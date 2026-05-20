@@ -6,6 +6,7 @@ defmodule Theoria.DocsTest do
 
     for path <- [
           "docs/public_api.md",
+          "docs/roadmap.md",
           "docs/assurance.md",
           "docs/release_0_8.md",
           "docs/release_0_8_checklist.md",

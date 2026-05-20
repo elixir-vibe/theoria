@@ -8,6 +8,7 @@ Post-0.8 development toward obligations, certificates, Elixir typespec facts, an
 - Added initial obligation and certificate structs for tool-generated checked claims.
 - Added initial Elixir typespec contract normalization for common API shapes and `mix theoria.typespecs`.
 - Added initial spec vocabularies for finite-set claims, graph path witnesses, effect deltas, and typespec compatibility.
+- Added `Theoria.Spec.Claim`, `Theoria.Spec.Report`, spec claim examples, and obligations documentation.
 
 ## 0.8.0
 

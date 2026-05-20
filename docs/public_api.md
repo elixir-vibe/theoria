@@ -12,6 +12,9 @@ These modules are intended for normal package usage and should evolve conservati
 - `Theoria.DSL`, `Theoria.Theorem`, `Theoria.Prelude` — theorem module workflow.
 - `Theoria.Validation` — native validation workflows.
 - `Theoria.Kernel.AssuranceSummary` — user-facing assurance summary.
+- `Theoria.Obligation`, `Theoria.Certificate`, and `Theoria.Certificate.Report` — experimental checked-claim/certificate layer for tools.
+- `Theoria.Typespec` and `Theoria.Typespec.*` — experimental normalized Elixir typespec facts.
+- `Theoria.Spec.*` — experimental finite fact/claim vocabularies for tool integrations.
 - `Theoria.Equation.Summary`, `Theoria.Equation.Report`, `Theoria.Theorem.Report`, `Theoria.Theorem.ModuleReport`, `Theoria.Simp.Report`, and `Theoria.Simp.ExampleReport` — structured report data for public CLI/API workflows.
 
 ## Experimental public APIs

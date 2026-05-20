@@ -46,6 +46,21 @@ defimpl Jason.Encoder, for: Theoria.Certificate.Report do
   end
 end
 
+defimpl Jason.Encoder, for: Theoria.Spec.Report do
+  def encode(report, opts) do
+    Jason.Encode.map(
+      %{
+        claims: report.claims,
+        total: report.total,
+        valid: report.valid,
+        invalid: report.invalid,
+        kinds: report.kinds
+      },
+      opts
+    )
+  end
+end
+
 defimpl Jason.Encoder, for: Theoria.Spec.Finite.SubsetClaim do
   def encode(claim, opts) do
     Jason.Encode.map(

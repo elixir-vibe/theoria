@@ -252,6 +252,7 @@ Start with:
 - [`docs/trusted_boundary.md`](docs/trusted_boundary.md) — what is trusted versus automation
 - [`docs/validation.md`](docs/validation.md) — native validation workflow
 - [`docs/assurance.md`](docs/assurance.md) — kernel assurance reports and summaries
+- [`docs/obligations.md`](docs/obligations.md) — tool-generated claims, obligations, and certificates
 - [`docs/public_api.md`](docs/public_api.md) — stable, experimental, and internal API surfaces
 - [`docs/roadmap.md`](docs/roadmap.md) — post-0.8 Elixir/Vibe roadmap
 

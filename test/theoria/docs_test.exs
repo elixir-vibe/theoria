@@ -5,6 +5,7 @@ defmodule Theoria.DocsTest do
     extras = Theoria.MixProject.project() |> Keyword.fetch!(:docs) |> Keyword.fetch!(:extras)
 
     for path <- [
+          "docs/obligations.md",
           "docs/public_api.md",
           "docs/roadmap.md",
           "docs/assurance.md",

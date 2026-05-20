@@ -1,8 +1,8 @@
 # Changelog
 
-## Unreleased
+## 0.8.0
 
-Post-0.7 development toward public DSL and equation API stabilization.
+Public DSL and equation API stabilization.
 
 - Added 0.8 API stabilization boundary docs and public API stability guide.
 - Added a theorem module example and wired public examples into tests.

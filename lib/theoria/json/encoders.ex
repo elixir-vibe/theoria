@@ -46,6 +46,34 @@ defimpl Jason.Encoder, for: Theoria.Certificate.Report do
   end
 end
 
+defimpl Jason.Encoder, for: Theoria.Spec.Finite.SubsetClaim do
+  def encode(claim, opts) do
+    Jason.Encode.map(
+      %{
+        subset: Enum.map(claim.subset, &inspect/1),
+        superset: Enum.map(claim.superset, &inspect/1),
+        valid: claim.valid?,
+        missing: Enum.map(claim.missing, &inspect/1)
+      },
+      opts
+    )
+  end
+end
+
+defimpl Jason.Encoder, for: Theoria.Spec.Finite.NoNewClaim do
+  def encode(claim, opts) do
+    Jason.Encode.map(
+      %{
+        old: Enum.map(claim.old, &inspect/1),
+        new: Enum.map(claim.new, &inspect/1),
+        valid: claim.valid?,
+        added: Enum.map(claim.added, &inspect/1)
+      },
+      opts
+    )
+  end
+end
+
 defimpl Jason.Encoder, for: Theoria.Spec.Graph.PathClaim do
   def encode(claim, opts) do
     Jason.Encode.map(

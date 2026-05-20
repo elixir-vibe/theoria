@@ -7,7 +7,7 @@ Post-0.8 development toward obligations, certificates, Elixir typespec facts, an
 - Added post-0.8 Elixir/Vibe roadmap docs and reframed the Lean roadmap around tool-generated claims.
 - Added initial obligation and certificate structs for tool-generated checked claims.
 - Added initial Elixir typespec contract normalization for common API shapes and `mix theoria.typespecs`.
-- Added initial spec vocabularies for finite graph path witnesses, effect deltas, and typespec compatibility.
+- Added initial spec vocabularies for finite-set claims, graph path witnesses, effect deltas, and typespec compatibility.
 
 ## 0.8.0
 

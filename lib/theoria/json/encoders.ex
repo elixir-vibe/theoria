@@ -46,6 +46,55 @@ defimpl Jason.Encoder, for: Theoria.Certificate.Report do
   end
 end
 
+defimpl Jason.Encoder, for: Theoria.Typespec.Type do
+  def encode(type, opts) do
+    Jason.Encode.map(
+      %{
+        kind: type.kind,
+        args: type.args,
+        module: inspect(type.module),
+        name: type.name,
+        value: inspect(type.value),
+        raw: inspect(type.raw),
+        label: Theoria.Typespec.Type.format(type)
+      },
+      opts
+    )
+  end
+end
+
+defimpl Jason.Encoder, for: Theoria.Typespec.Contract do
+  def encode(contract, opts) do
+    Jason.Encode.map(
+      %{
+        module: inspect(contract.module),
+        function: contract.function,
+        arity: contract.arity,
+        args: contract.args,
+        result: contract.result,
+        source: contract.source,
+        unsupported: Theoria.Typespec.Contract.unsupported?(contract),
+        label: Theoria.Typespec.Contract.format(contract)
+      },
+      opts
+    )
+  end
+end
+
+defimpl Jason.Encoder, for: Theoria.Typespec.Report do
+  def encode(report, opts) do
+    Jason.Encode.map(
+      %{
+        module: inspect(report.module),
+        contracts: report.contracts,
+        total: report.total,
+        unsupported: report.unsupported
+      },
+      opts
+    )
+  end
+end
+
 defimpl Jason.Encoder, for: Theoria.Equality.Chain.Result do
   def encode(result, opts) do
     Jason.Encode.map(

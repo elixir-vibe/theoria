@@ -27,6 +27,13 @@ Current vocabularies:
 - `Theoria.Spec.Effect` — coarse effect deltas and no-new-effects checks.
 - `Theoria.Spec.Typespec` — shallow compatibility over normalized Elixir typespec facts.
 
+Use `mix theoria.spec` to print the built-in structural claim examples:
+
+```bash
+mix theoria.spec
+mix theoria.spec --json
+```
+
 `Theoria.Spec.Report` summarizes any structs implementing `Theoria.Spec.Claim`:
 
 ```elixir

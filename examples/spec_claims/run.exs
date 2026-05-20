@@ -1,23 +1,7 @@
-alias Theoria.Spec.Effect
-alias Theoria.Spec.Finite
-alias Theoria.Spec.Graph
+alias Theoria.Spec.Examples
 alias Theoria.Spec.Report
-alias Theoria.Spec.Typespec
-alias Theoria.Typespec.Type
 
-reachable = Graph.new([{:controller, :context}, {:context, :repo}])
-path = Graph.path_claim(reachable, :controller, :repo, [:controller, :context, :repo])
-
-no_new_effect = Effect.deltas([:write], [:read]) |> hd()
-new_effect = Effect.deltas([:pure], [:write]) |> hd()
-
-allowed_deps = Finite.subset_claim([:context], [:context, :schema])
-
-old_type = %Type{kind: :integer}
-new_type = %Type{kind: :non_neg_integer}
-typespec = Typespec.compatibility(old_type, new_type)
-
-report = Report.new([path, no_new_effect, new_effect, allowed_deps, typespec])
+report = Theoria.Spec.report(Examples.claims())
 
 IO.puts("spec claims")
 IO.puts("  total: #{Report.total(report)}")

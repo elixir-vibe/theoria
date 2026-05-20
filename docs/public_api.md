@@ -49,6 +49,7 @@ User-facing CLI workflows:
 mix theoria.theorems MyApp.Proofs
 mix theoria.theorems --json --install MyApp.Proofs
 mix theoria.typespecs MyApp.Context --json
+mix theoria.spec --json
 mix theoria.validate
 mix theoria.kernel.check
 mix theoria.kernel.check --assurance-summary

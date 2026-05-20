@@ -1,5 +1,17 @@
 defmodule Theoria.Simp.Report do
-  @moduledoc "Structured report for a built-in simplification example run."
+  @moduledoc """
+  Structured report for a built-in simplification example run.
+
+      iex> example = %Theoria.Simp.ExampleReport{
+      ...>   name: :demo,
+      ...>   stopped: :normal,
+      ...>   proof_checked: false,
+      ...>   result: %Theoria.Simp.Result{input: :input, term: :output, steps: [], stopped: :normal}
+      ...> }
+      iex> report = Theoria.Simp.Report.new([example])
+      iex> Theoria.Simp.Report.examples(report) == [example]
+      true
+  """
 
   alias Theoria.Simp.ExampleReport
 

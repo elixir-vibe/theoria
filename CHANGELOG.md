@@ -18,6 +18,7 @@ Post-0.7 development toward public DSL and equation API stabilization.
 - Added accessors for metadata replay, generated-term, and theorem-module reports.
 - Added structured theorem and simp CLI JSON report structs.
 - Polished ExDoc module grouping and README equation/theorem guidance.
+- Added report module doctests and documented 0.8 as feature-complete pending release polish.
 
 ## 0.7.0
 

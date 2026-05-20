@@ -6,6 +6,19 @@ defmodule Theoria.Equation.Report do
   intentionally small: it describes the selected definitions, their structured
   ordinary/unfold/matcher identities, and how many artifacts were realized when
   realization was requested.
+
+      iex> entry = %Theoria.Equation.Report.Entry{
+      ...>   definition: :nat_add,
+      ...>   identities: [Theoria.Equation.Identity.equation(:nat_add, :succ)],
+      ...>   unfold_identity: Theoria.Equation.Identity.unfold(:nat_add),
+      ...>   matcher_identities: [],
+      ...>   realized: 1
+      ...> }
+      iex> report = %Theoria.Equation.Report{equations: [entry], registry_entries: 2}
+      iex> Theoria.Equation.Report.registry_entries(report)
+      2
+      iex> Theoria.Equation.Report.Entry.definition(entry)
+      :nat_add
   """
 
   alias Theoria.Env

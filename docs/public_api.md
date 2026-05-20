@@ -12,7 +12,7 @@ These modules are intended for normal package usage and should evolve conservati
 - `Theoria.DSL`, `Theoria.Theorem`, `Theoria.Prelude` — theorem module workflow.
 - `Theoria.Validation` — native validation workflows.
 - `Theoria.Kernel.AssuranceSummary` — user-facing assurance summary.
-- `Theoria.Equation.Summary` — compact generated-equation registry counts returned by the equation facade.
+- `Theoria.Equation.Summary`, `Theoria.Equation.Report`, `Theoria.Theorem.Report`, `Theoria.Theorem.ModuleReport`, `Theoria.Simp.Report`, and `Theoria.Simp.ExampleReport` — structured report data for public CLI/API workflows.
 
 ## Experimental public APIs
 
@@ -20,7 +20,7 @@ These are useful but may change before 1.0:
 
 - `Theoria.Equation` — equation compilation/realization facade. The ordinary equation, unfold identity, all-identity, summary, and realization helpers are the preferred 0.8-facing entrypoints.
 - `Theoria.Rewrite`, `Theoria.Simp` — proof-producing rewrite/simp helpers.
-- report structs under `Theoria.Kernel.*Report`.
+- report structs under `Theoria.Kernel.*Report` and deeper assurance report modules.
 
 Prefer documented facade functions and accessors instead of depending on internal struct layout. Module documentation is the primary API reference; guide pages explain workflows and stability posture.
 
@@ -44,6 +44,7 @@ User-facing CLI workflows:
 
 ```bash
 mix theoria.theorems MyApp.Proofs
+mix theoria.theorems --json --install MyApp.Proofs
 mix theoria.validate
 mix theoria.kernel.check
 mix theoria.kernel.check --assurance-summary
@@ -52,7 +53,8 @@ mix theoria.kernel.check --assurance-summary
 Experimental CLI workflows:
 
 ```bash
-mix theoria.equations --realize nat_add
+mix theoria.equations --json --realize nat_add
+mix theoria.simp nat_add_zero --prove --json
 mix theoria.simp nat_add_zero --prove --explain
 mix theoria.lean.check
 ```

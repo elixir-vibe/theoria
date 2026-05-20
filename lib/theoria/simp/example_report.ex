@@ -1,9 +1,18 @@
 defmodule Theoria.Simp.ExampleReport do
-  @moduledoc "Structured report for one built-in simplification example."
+  @moduledoc """
+  Structured report for one built-in simplification example.
+
+      iex> result = %Theoria.Simp.Result{input: :input, term: :output, steps: [], stopped: :normal}
+      iex> report = Theoria.Simp.ExampleReport.new(:demo, result)
+      iex> Theoria.Simp.ExampleReport.name(report)
+      :demo
+      iex> Theoria.Simp.ExampleReport.proof_checked?(report)
+      false
+  """
 
   @type t :: %__MODULE__{
           name: atom(),
-          stopped: boolean(),
+          stopped: atom(),
           proof_checked: boolean(),
           result: Theoria.Simp.Result.t()
         }
@@ -26,9 +35,13 @@ defmodule Theoria.Simp.ExampleReport do
   @spec name(t()) :: atom()
   def name(%__MODULE__{name: name}), do: name
 
+  @doc "Returns the simplifier stop reason."
+  @spec stopped(t()) :: atom()
+  def stopped(%__MODULE__{stopped: stopped}), do: stopped
+
   @doc "Returns true if simplification stopped before exhausting rules."
   @spec stopped?(t()) :: boolean()
-  def stopped?(%__MODULE__{stopped: stopped}), do: stopped
+  def stopped?(%__MODULE__{stopped: stopped}), do: stopped != :normal
 
   @doc "Returns true if a generated proof artifact was checked."
   @spec proof_checked?(t()) :: boolean()

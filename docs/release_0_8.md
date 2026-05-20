@@ -27,3 +27,16 @@ The 0.8 line focuses on public DSL and equation API stabilization. The goal is t
 - internal modules that support implementation and assurance workflows.
 
 The trusted runtime boundary remains the native kernel admission/checking path. DSL, equation generation, rewrite/simp, validation, and Lean oracle tooling remain untrusted helpers whose outputs must be checked by the kernel when trust matters.
+
+## Current 0.8 status
+
+The 0.8 line now has the intended public-facing stabilization pieces in place:
+
+- `Theoria.Equation` facade helpers for summary, ordinary identities, unfold identities, all identities, and realization.
+- Structured equation, theorem-module, and simp JSON reports backed by Jason encoders.
+- Public report accessors for the new reports and key assurance reports.
+- Downstream smoke coverage for theorem module installation and the equation facade.
+- Module-doc examples/doctests for equation identities, equation summaries, and report structs.
+- Theorem DSL documentation and clearer compile-time errors for malformed declarations.
+
+Remaining work should be release polish and bug fixes unless a concrete public API gap appears.

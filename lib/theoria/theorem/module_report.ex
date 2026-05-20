@@ -5,6 +5,18 @@ defmodule Theoria.Theorem.ModuleReport do
   `mix theoria.theorems --json` encodes these reports with Jason. Text output is
   still intentionally concise, while JSON consumers can rely on this struct shape
   and accessor functions instead of parsing human output.
+
+      iex> report = %Theoria.Theorem.ModuleReport{
+      ...>   module: MyProofs,
+      ...>   theorem_names: [:identity],
+      ...>   theorem_count: 1,
+      ...>   installed?: true,
+      ...>   axioms: []
+      ...> }
+      iex> Theoria.Theorem.ModuleReport.theorem_count(report)
+      1
+      iex> Theoria.Theorem.ModuleReport.installed?(report)
+      true
   """
 
   @type t :: %__MODULE__{

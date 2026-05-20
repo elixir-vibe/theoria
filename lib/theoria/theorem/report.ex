@@ -4,6 +4,16 @@ defmodule Theoria.Theorem.Report do
 
   The report is produced by `mix theoria.theorems --json` and contains one
   `Theoria.Theorem.ModuleReport` per checked module plus the total theorem count.
+
+      iex> module_report = %Theoria.Theorem.ModuleReport{
+      ...>   module: MyProofs,
+      ...>   theorem_names: [:identity],
+      ...>   theorem_count: 1,
+      ...>   installed?: false
+      ...> }
+      iex> report = Theoria.Theorem.Report.new([module_report])
+      iex> Theoria.Theorem.Report.total(report)
+      1
   """
 
   alias Theoria.Theorem.ModuleReport

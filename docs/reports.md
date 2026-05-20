@@ -1,6 +1,6 @@
 # CLI reports
 
-Theoria exposes native reports for validation, assurance, and proof-producing simplification diagnostics.
+Theoria exposes native reports for validation, assurance, theorem modules, equation metadata, and proof-producing simplification diagnostics. CLI JSON output is backed by report structs and Jason encoders where the output is intended for downstream automation. Current public-facing report structs include `Theoria.Equation.Report`, `Theoria.Simp.Report`, `Theoria.Theorem.Report`, and `Theoria.Kernel.AssuranceSummary`.
 
 ## Native validation
 

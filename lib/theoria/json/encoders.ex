@@ -49,6 +49,27 @@ defimpl Jason.Encoder, for: Theoria.Rewrite.Proof.Result do
   end
 end
 
+defimpl Jason.Encoder, for: Theoria.Theorem.ModuleReport do
+  def encode(report, opts) do
+    Jason.Encode.map(
+      %{
+        module: inspect(report.module),
+        theorem_names: report.theorem_names,
+        theorem_count: report.theorem_count,
+        installed: report.installed?,
+        axioms: report.axioms
+      },
+      opts
+    )
+  end
+end
+
+defimpl Jason.Encoder, for: Theoria.Theorem.Report do
+  def encode(report, opts) do
+    Jason.Encode.map(%{modules: report.modules, total: report.total}, opts)
+  end
+end
+
 defimpl Jason.Encoder, for: Theoria.Level.Solver.Explanation do
   def encode(explanation, opts) do
     Jason.Encode.map(
@@ -152,6 +173,24 @@ defimpl Jason.Encoder, for: Theoria.Simp.Step do
       opts
     )
   end
+end
+
+defimpl Jason.Encoder, for: Theoria.Simp.ExampleReport do
+  def encode(report, opts) do
+    Jason.Encode.map(
+      %{
+        name: report.name,
+        stopped: report.stopped,
+        proof_checked: report.proof_checked,
+        result: report.result
+      },
+      opts
+    )
+  end
+end
+
+defimpl Jason.Encoder, for: Theoria.Simp.Report do
+  def encode(report, opts), do: Jason.Encode.map(%{examples: report.examples}, opts)
 end
 
 defimpl Jason.Encoder, for: Theoria.Simp.Result do

@@ -58,9 +58,47 @@ The macro also registers theorem names through `__theoria_theorems__/0`, which l
 Checked theorems can also be installed into an environment as opaque theorem declarations. This lets later theorems refer to earlier theorem constants without making proofs unfold during normalization:
 
 ```elixir
+defmodule MyApp.DependentProofs do
+  use Theoria.DSL
+
+  theorem :identity do
+    type do
+      forall :a, type(0) do
+        forall :x, var(:a) do
+          var(:a)
+        end
+      end
+    end
+
+    proof do
+      lam :a, type(0) do
+        lam :x, var(:a) do
+          var(:x)
+        end
+      end
+    end
+  end
+
+  theorem :identity_again do
+    type do
+      forall :a, type(0) do
+        forall :x, var(:a) do
+          var(:a)
+        end
+      end
+    end
+
+    proof do
+      const(:identity)
+    end
+  end
+end
+
 {:ok, env} = Theoria.Prelude.env()
-{:ok, env, theorems} = Theoria.Theorem.add_all_to_env(MyApp.Proofs, env)
+{:ok, env, theorems} = Theoria.Theorem.add_all_to_env(MyApp.DependentProofs, env)
 ```
+
+Checking `identity_again` independently fails because `:identity` is not in the environment yet. Sequential installation succeeds because each checked theorem is installed before the next theorem is elaborated.
 
 A checked theorem's trusted assumptions can be inspected with:
 
@@ -74,10 +112,11 @@ From Mix, use:
 mix theoria.theorems MyApp.Proofs
 mix theoria.theorems --install MyApp.Proofs
 mix theoria.theorems --axioms MyApp.Proofs
+mix theoria.theorems --json --install MyApp.Proofs
 mix theoria.validate --only logic
 ```
 
-`mix theoria.theorems` checks theorem modules against `Theoria.Prelude.env/0`. Named downstream modules are loaded directly from the project code path. With `--install`, theorem modules are checked sequentially and installed as opaque theorem declarations, so later theorems/modules can refer to earlier theorem constants. With `--axioms`, the task reports trusted axiom assumptions used by each theorem module.
+`mix theoria.theorems` checks theorem modules against `Theoria.Prelude.env/0`. Named downstream modules are loaded directly from the project code path. With `--install`, theorem modules are checked sequentially and installed as opaque theorem declarations, so later theorems/modules can refer to earlier theorem constants. With `--axioms`, the task reports trusted axiom assumptions used by each theorem module. With `--json`, the task emits a `Theoria.Theorem.Report` encoded by Jason for downstream automation.
 
 `mix theoria.check` runs the full native validation corpus, including theorem modules, definitional-equality checks, and inductive specs. Use `mix theoria.validate --only CATEGORY` to narrow validation while developing.
 

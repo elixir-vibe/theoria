@@ -96,15 +96,24 @@ defmodule Theoria.MixProject do
       ],
       groups_for_extras: [Guides: ~r/docs\//],
       groups_for_modules: [
-        Kernel: [Theoria.Kernel, Theoria.Env, Theoria.Context, Theoria.Error],
-        Syntax: [Theoria.Syntax, Theoria.Elaborator, Theoria.DSL, Theoria.Pretty],
+        Core: [Theoria, Theoria.Term, Theoria.Level, Theoria.Context, Theoria.Env, Theoria.Error],
+        Kernel: [Theoria.Kernel, Theoria.Normalize],
+        "Theorem DSL": [
+          Theoria.Syntax,
+          Theoria.Elaborator,
+          Theoria.DSL,
+          Theoria.DSL.Theorem,
+          Theoria.Prelude,
+          Theoria.Theorem
+        ],
         Inductives: ~r/^Theoria\.Inductive/,
-        Equations: ~r/^Theoria\.Equation/,
-        Rewrite: ~r/^Theoria\.(Rewrite|Simp)/,
-        Validation: ~r/^Theoria\.Validation/,
+        Equations: ~r/^Theoria\.Equation(?!\.Matcher)/,
+        "Equation Matchers": ~r/^Theoria\.Equation\.Matcher/,
+        "Rewrite and Simp": ~r/^Theoria\.(Rewrite|Simp)/,
+        "Validation and Assurance":
+          ~r/^Theoria\.(Validation|Kernel\.(ArtifactReplay|AssuranceSummary|Corpus|Differential|EnvironmentCorpus|GeneratedTerm|MetadataReplayReport|ProofStrategyReport|TheoremModuleReport))/,
         Libraries: ~r/^Theoria\.Library\./,
-        Workflows: [Theoria.Prelude, Theoria.Theorem],
-        Tooling: ~r/^Theoria\.Lean/
+        "Lean Oracle Tooling": ~r/^Theoria\.Lean/
       ]
     ]
   end

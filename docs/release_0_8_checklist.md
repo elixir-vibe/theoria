@@ -7,8 +7,9 @@
 - Public APIs are documented primarily in module docs.
 - `docs/public_api.md` accurately separates stable-ish, experimental, and contributor APIs.
 - `docs/equations.md` documents structured identities, the `Theoria.Equation` facade, and `mix theoria.equations` JSON output.
-- `docs/theorem_modules.md` covers independent theorem checking, `--install`, and common failures.
+- `docs/theorem_modules.md` covers independent theorem checking, `--install`, JSON reports, and common failures.
 - README links stay user-facing and avoid internal release/checklist noise.
+- `mix theoria.equations --json`, `mix theoria.simp --json`, and `mix theoria.theorems --json` encode report structs with Jason.
 
 ## Validation commands
 

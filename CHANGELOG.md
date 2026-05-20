@@ -16,6 +16,8 @@ Post-0.7 development toward public DSL and equation API stabilization.
 - Added downstream smoke coverage for the public equation facade.
 - Added doctests for equation identity/summary docs, expanded DSL module docs, and improved quote DSL error messages.
 - Added accessors for metadata replay, generated-term, and theorem-module reports.
+- Added structured theorem and simp CLI JSON report structs.
+- Polished ExDoc module grouping and README equation/theorem guidance.
 
 ## 0.7.0
 

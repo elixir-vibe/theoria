@@ -84,6 +84,23 @@ defmodule Mix.Tasks.Theoria.TheoremsTest do
     assert output =~ "Checked 2 theorem(s)."
   end
 
+  test "prints JSON theorem module reports" do
+    Mix.Task.clear()
+
+    output =
+      capture_io(fn ->
+        Theorems.run(["--json", "--install", "Mix.Tasks.Theoria.TheoremsTest.DependentProofs"])
+      end)
+
+    assert {:ok, json} = Jason.decode(output)
+    assert json["total"] == 2
+    assert [module] = json["modules"]
+    assert module["module"] =~ "DependentProofs"
+    assert module["theorem_count"] == 2
+    assert module["theorem_names"] == ["truth", "truth_again"]
+    assert module["installed"] == true
+  end
+
   test "reports axiom summaries" do
     Mix.Task.clear()
 

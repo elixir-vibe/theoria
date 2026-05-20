@@ -10,6 +10,8 @@ defmodule Mix.Tasks.Theoria.Simp do
   alias Theoria.Pretty
   alias Theoria.Rewrite.Proof.Capabilities
   alias Theoria.Simp
+  alias Theoria.Simp.ExampleReport
+  alias Theoria.Simp.Report
   alias Theoria.Term
 
   @shortdoc "Runs generated-equation simplification examples"
@@ -70,7 +72,8 @@ defmodule Mix.Tasks.Theoria.Simp do
     results = Enum.map(examples, &run_example(env, &1, opts))
 
     if Keyword.get(opts, :json, false) do
-      Mix.shell().info(Jason.encode!(%{examples: Enum.map(results, &json_example/1)}))
+      report = results |> Enum.map(&example_report/1) |> Report.new()
+      Mix.shell().info(Jason.encode!(report))
     else
       Mix.shell().info("simplification examples:")
       maybe_print_capability_matrix(opts)
@@ -130,14 +133,7 @@ defmodule Mix.Tasks.Theoria.Simp do
   defp capability_reason(nil), do: :none
   defp capability_reason(capability), do: capability.reason
 
-  defp json_example(%{name: name, result: result}) do
-    %{
-      name: name,
-      stopped: result.stopped,
-      proof_checked: not is_nil(result.realized),
-      result: result
-    }
-  end
+  defp example_report(%{name: name, result: result}), do: ExampleReport.new(name, result)
 
   defp select_examples(names) do
     available = Map.new(examples(), fn {name, term} -> {Atom.to_string(name), {name, term}} end)

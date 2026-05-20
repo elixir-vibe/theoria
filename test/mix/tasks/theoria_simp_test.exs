@@ -95,9 +95,10 @@ defmodule Mix.Tasks.Theoria.SimpTest do
         Simp.run(["nat_add_zero", "--prove", "--json"])
       end)
 
+    assert {:ok, json} = Jason.decode(output)
+    assert [%{"name" => "nat_add_zero", "proof_checked" => true}] = json["examples"]
+
     assert output =~ "\"examples\""
-    assert output =~ "\"name\":\"nat_add_zero\""
-    assert output =~ "\"proof_checked\":true"
     assert output =~ "\"proof\""
     assert output =~ "\"proof_status\""
     assert output =~ "\"proof_capability\""

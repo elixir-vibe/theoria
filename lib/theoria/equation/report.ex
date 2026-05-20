@@ -29,6 +29,27 @@ defmodule Theoria.Equation.Report do
 
     @enforce_keys [:definition, :identities, :unfold_identity, :matcher_identities, :realized]
     defstruct @enforce_keys
+
+    @doc "Returns the source definition name."
+    @spec definition(t()) :: atom()
+    def definition(%__MODULE__{definition: definition}), do: definition
+
+    @doc "Returns ordinary generated equation identities."
+    @spec identities(t()) :: [Identity.t()]
+    def identities(%__MODULE__{identities: identities}), do: identities
+
+    @doc "Returns the generated unfold identity."
+    @spec unfold_identity(t()) :: Identity.t()
+    def unfold_identity(%__MODULE__{unfold_identity: unfold_identity}), do: unfold_identity
+
+    @doc "Returns generated matcher equation identities."
+    @spec matcher_identities(t()) :: [Identity.t()]
+    def matcher_identities(%__MODULE__{matcher_identities: matcher_identities}),
+      do: matcher_identities
+
+    @doc "Returns the number of realized artifacts for this entry."
+    @spec realized(t()) :: non_neg_integer()
+    def realized(%__MODULE__{realized: realized}), do: realized
   end
 
   @type t :: %__MODULE__{

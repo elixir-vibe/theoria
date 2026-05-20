@@ -11,7 +11,7 @@ Elixir 1.19+. The package is experimental: the kernel and validation flow are th
 ```elixir
 def deps do
   [
-    {:theoria, "~> 0.6.0"}
+    {:theoria, "~> 0.7.0"}
   ]
 end
 ```
@@ -174,20 +174,23 @@ The resulting term is not trusted until checked by `Theoria.Kernel`.
 
 ## Equation and matcher metadata
 
-Theoria already compiles a small internal Bool/Nat/List equation fragment into auditable metadata:
+Theoria already compiles a small Bool/Nat/List equation fragment into auditable metadata:
 
 ```elixir
 {:ok, env} = Theoria.Prelude.env()
-Theoria.Equation.Info.fetch(env, :nat_add)
+alias Theoria.Equation
 alias Theoria.Equation.Identity
 
-Theoria.Equation.Eqns.get(env, :nat_add)
-Theoria.Equation.Eqns.realize(env, Identity.equation(:nat_add, :succ))
+summary = Equation.summary(env)
+Equation.Summary.theorems(summary)
+
+{:ok, identities} = Equation.identities(env, :nat_add)
+{:ok, artifact} = Equation.realize(env, Identity.equation(:nat_add, :succ))
 ```
 
-Generated ordinary equations, matcher equations, unfold equations, and checked matcher declarations are validated natively. Equation artifacts are identified by `Theoria.Equation.Identity` structs and can be checked or installed directly under those structured keys. This is internal groundwork rather than stable public equation-definition syntax.
+Generated ordinary equations, matcher equations, unfold equations, and checked matcher declarations are validated natively. Equation artifacts are identified by `Theoria.Equation.Identity` structs and can be checked or installed directly under those structured keys. The equation facade is the preferred API; matcher/indexed internals remain experimental before 1.0.
 
-The 0.4 development line also starts proof-producing simplification:
+Theoria also includes experimental proof-producing simplification:
 
 ```elixir
 result = Theoria.Simp.normalize(env, term, prove: true)
@@ -204,7 +207,7 @@ mix theoria.equations bool_and
 mix theoria.simp --examples
 ```
 
-Rewrite and simp helpers are untrusted consumers of generated equation lemmas; they do not produce trusted proofs yet.
+Rewrite and simp helpers are untrusted consumers of generated equation lemmas. When proof production is requested, generated artifacts are trusted only after native kernel checking.
 
 ## Inspect and errors
 
@@ -245,6 +248,7 @@ Start with:
 - [`docs/design.md`](docs/design.md) — kernel and environment design
 - [`docs/theorem_modules.md`](docs/theorem_modules.md) — writing checked theorem modules
 - [`docs/inductives.md`](docs/inductives.md) — inductive specs and recursors
+- [`docs/equations.md`](docs/equations.md) — generated equation identities, reports, and CLI workflow
 - [`docs/trusted_boundary.md`](docs/trusted_boundary.md) — what is trusted versus automation
 - [`docs/validation.md`](docs/validation.md) — native validation workflow
 - [`docs/assurance.md`](docs/assurance.md) — kernel assurance reports and summaries

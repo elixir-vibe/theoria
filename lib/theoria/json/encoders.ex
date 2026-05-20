@@ -74,6 +74,20 @@ defimpl Jason.Encoder, for: Theoria.Spec.Effect.Delta do
   end
 end
 
+defimpl Jason.Encoder, for: Theoria.Spec.Typespec.Compatibility do
+  def encode(compatibility, opts) do
+    Jason.Encode.map(
+      %{
+        old: inspect(compatibility.old),
+        new: inspect(compatibility.new),
+        compatible: compatibility.compatible?,
+        reason: compatibility.reason
+      },
+      opts
+    )
+  end
+end
+
 defimpl Jason.Encoder, for: Theoria.Typespec.Type do
   def encode(type, opts) do
     Jason.Encode.map(

@@ -57,7 +57,7 @@ Typespecs are not trusted proofs. They are Elixir-native contract declarations t
 
 ## 0.11 — generic spec vocabulary
 
-Status: initial graph path and effect lattice vocabularies started in `0.9.0-dev` with `Theoria.Spec.Graph` and `Theoria.Spec.Effect`.
+Status: initial graph path, effect lattice, and typespec compatibility vocabularies started in `0.9.0-dev` with `Theoria.Spec.Graph`, `Theoria.Spec.Effect`, and `Theoria.Spec.Typespec`.
 
 Add small reusable claim families for tool-generated facts:
 

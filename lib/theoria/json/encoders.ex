@@ -46,6 +46,34 @@ defimpl Jason.Encoder, for: Theoria.Certificate.Report do
   end
 end
 
+defimpl Jason.Encoder, for: Theoria.Spec.Graph.PathClaim do
+  def encode(claim, opts) do
+    Jason.Encode.map(
+      %{
+        from: inspect(claim.from),
+        to: inspect(claim.to),
+        path: Enum.map(claim.path, &inspect/1),
+        valid: claim.valid?,
+        reason: claim.reason
+      },
+      opts
+    )
+  end
+end
+
+defimpl Jason.Encoder, for: Theoria.Spec.Effect.Delta do
+  def encode(delta, opts) do
+    Jason.Encode.map(
+      %{
+        before: delta.before,
+        after: delta.after,
+        allowed: delta.allowed?
+      },
+      opts
+    )
+  end
+end
+
 defimpl Jason.Encoder, for: Theoria.Typespec.Type do
   def encode(type, opts) do
     Jason.Encode.map(

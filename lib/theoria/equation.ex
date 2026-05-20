@@ -39,9 +39,18 @@ defmodule Theoria.Equation do
   @spec summary(Env.t() | Extension.Registry.t()) :: map()
   def summary(env_or_registry), do: Extension.summary(env_or_registry)
 
-  @doc "Returns generated equation identities for a source definition in an environment."
+  @doc "Returns ordinary generated equation identities for a source definition in an environment."
   @spec identities(Env.t(), atom()) :: {:ok, [Theoria.Equation.Identity.t()]} | {:error, term()}
   def identities(%Env{} = env, source), do: Extension.equation_ids(env, source)
+
+  @doc "Returns the generated unfold identity for a source definition."
+  @spec unfold_identity(Env.t(), atom()) ::
+          {:ok, Theoria.Equation.Identity.t()} | {:error, term()}
+  def unfold_identity(%Env{} = env, source), do: Extension.unfold_id(env, source)
+
+  @doc "Returns all generated theorem identities known to an environment."
+  @spec all_identities(Env.t()) :: [Theoria.Equation.Identity.t()]
+  def all_identities(%Env{} = env), do: Extension.theorem_ids(env)
 
   @doc "Realizes one generated equation theorem without installing it."
   @spec realize(Env.t(), term()) :: {:ok, Theoria.Theorem.t()} | {:error, term()}

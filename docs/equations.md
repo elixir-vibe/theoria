@@ -138,6 +138,8 @@ Generated metadata can also be realized as checked theorem artifacts without ins
 ```elixir
 Theoria.Equation.summary(env)
 Theoria.Equation.identities(env, :nat_add)
+Theoria.Equation.unfold_identity(env, :nat_add)
+Theoria.Equation.all_identities(env)
 Theoria.Equation.realize(env, Identity.equation(:nat_add, :succ))
 Theoria.Equation.realize_all(env)
 ```

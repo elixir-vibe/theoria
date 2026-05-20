@@ -14,6 +14,8 @@ defmodule Theoria.EquationFacadeTest do
 
     assert {:ok, identities} = Equation.identities(env, :nat_add)
     assert Identity.equation(:nat_add, :succ) in identities
+    assert {:ok, Identity.unfold(:nat_add)} == Equation.unfold_identity(env, :nat_add)
+    assert Identity.unfold(:nat_add) in Equation.all_identities(env)
 
     assert {:ok, theorem} = Equation.realize(env, Identity.equation(:nat_add, :succ))
     assert theorem.name == Identity.equation(:nat_add, :succ)

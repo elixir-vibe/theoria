@@ -58,6 +58,19 @@ Theoria.Certificate.checked?(certificate)
 
 `Theoria.Certificate.replay/2` rechecks the original obligation against an environment. `Theoria.Certificate.Report` summarizes checked, failed, and unchecked certificates.
 
+A valid structural claim can also be attached as the witness for a kernel obligation:
+
+```elixir
+claim = Theoria.Spec.Finite.subset_claim([:context], [:context, :schema])
+goal = Theoria.Term.eq(Theoria.Term.sort(1), Theoria.Term.sort(0), Theoria.Term.sort(0))
+proof = Theoria.Term.refl(Theoria.Term.sort(0))
+
+{:ok, obligation} = Theoria.Spec.obligation(claim, goal, proof: proof)
+{:ok, certificate} = Theoria.Spec.check_claim(Theoria.new_env(), claim, goal, proof: proof)
+```
+
+If the structural claim is invalid, `Theoria.Spec.obligation/3` refuses to build the obligation and returns the claim kind and reason.
+
 ## Intended tool flow
 
 ```text

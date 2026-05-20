@@ -8,6 +8,7 @@ defmodule Theoria.Spec do
   checked certificates.
   """
 
+  alias Theoria.Obligation
   alias Theoria.Spec.Claim
   alias Theoria.Spec.Report
 
@@ -22,4 +23,37 @@ defmodule Theoria.Spec do
   @doc "Builds a report for structural claims."
   @spec report([term()]) :: Report.t()
   def report(claims) when is_list(claims), do: Report.new(claims)
+
+  @doc "Builds a kernel obligation from a valid structural claim."
+  @spec obligation(term(), Theoria.Term.t(), keyword()) ::
+          {:ok, Obligation.t()} | {:error, term()}
+  def obligation(claim, goal, opts \\ []) do
+    claim_kind = Claim.kind(claim)
+
+    if Claim.valid?(claim) do
+      kind = Keyword.get(opts, :kind, claim_kind)
+      metadata = Map.put(Map.new(Keyword.get(opts, :metadata, %{})), :claim_kind, claim_kind)
+
+      {:ok,
+       Obligation.new(kind, goal,
+         id: Keyword.get(opts, :id),
+         proof: Keyword.get(opts, :proof),
+         assumptions: Keyword.get(opts, :assumptions, []),
+         witness: claim,
+         source: Keyword.get(opts, :source, %{}),
+         metadata: metadata
+       )}
+    else
+      {:error, {:invalid_spec_claim, claim_kind, Claim.reason(claim)}}
+    end
+  end
+
+  @doc "Builds and checks a kernel obligation from a valid structural claim."
+  @spec check_claim(Theoria.Env.t(), term(), Theoria.Term.t(), keyword()) ::
+          {:ok, Theoria.Certificate.t()} | {:error, term()}
+  def check_claim(env, claim, goal, opts \\ []) do
+    with {:ok, obligation} <- obligation(claim, goal, opts) do
+      Obligation.check(env, obligation)
+    end
+  end
 end

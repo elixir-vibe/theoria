@@ -180,8 +180,6 @@ defmodule Theoria.Equation.Recursor.Descriptor do
     end
   end
 
-  defp fields_for_rule(%RecursorRule{}, nil, %Recursor{}), do: {:ok, []}
-
   defp fields_for_rule(%RecursorRule{}, constructor, %Recursor{} = recursor) do
     constructor.type
     |> field_types(constructor.num_params, constructor.num_fields)

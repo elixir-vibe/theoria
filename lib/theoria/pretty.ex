@@ -246,7 +246,6 @@ defmodule Theoria.Pretty do
     end
   end
 
-  defp do_render_level(%Theoria.Level.Zero{}), do: "0"
   defp do_render_level(%Theoria.Level.Param{name: name}), do: Atom.to_string(name)
   defp do_render_level(%Theoria.Level.Succ{level: level}), do: "succ(#{render_level(level)})"
 

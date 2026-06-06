@@ -16,7 +16,7 @@ defmodule TheoriaDownstreamSmoke.MixProject do
   defp deps do
     [
       {:theoria, path: System.get_env("THEORIA_PATH", "../../..")},
-      {:ex_doc, "~> 0.34", only: :dev, runtime: false}
+      {:ex_doc, "~> 0.34", only: [:dev, :test], runtime: false}
     ]
   end
 end

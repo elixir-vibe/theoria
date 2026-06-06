@@ -16,7 +16,8 @@ defmodule Theoria.MixProject do
       aliases: aliases(),
       dialyzer: [
         plt_file: {:no_warn, "_build/dev/dialyxir_plt.plt"},
-        plt_add_apps: [:mix]
+        plt_add_apps: [:mix],
+        flags: [:no_opaque]
       ],
       start_permanent: Mix.env() == :prod,
       deps: deps()
